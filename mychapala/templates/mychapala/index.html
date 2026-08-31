@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Inventario y Reportes Diarios - Proyecto Chapala</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'mychapala/css/styles.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Layout Principal de la Aplicación -->
+  <div class="app-layout">
+
+    <!-- BARRA LATERAL (SIDEBAR) -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+          <div>
+            <span class="brand-title">AOS INVENTARIO</span>
+            <span class="brand-subtitle">Control & Reportes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menú de Navegación -->
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">MÓDULOS PRINCIPALES</div>
+        
+        <!-- Pestaña 1: General -->
+        <button class="nav-item" data-tab="general" id="tab-btn-general">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          <span>General</span>
+        </button>
+
+        <!-- Pestaña 2: Inventario -->
+        <button class="nav-item active" data-tab="inventario" id="tab-btn-inventario">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+          <span>Inventario</span>
+        </button>
+
+        <!-- Pestaña 3: Uso -->
+        <button class="nav-item" data-tab="uso" id="tab-btn-uso">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span>Uso y Costos</span>
+          <span class="nav-badge" id="badge-uso-count">0</span>
+        </button>
+      </nav>
+
+      <!-- Pie del Sidebar -->
+      <div class="sidebar-footer">
+        <div class="system-status-indicator">
+          <span class="status-dot online"></span>
+          <span>Backend Django Activo</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="main-content">
+
+      <!-- BARRA SUPERIOR (HEADER) -->
+      <header class="top-navbar">
+        <div class="header-breadcrumb">
+          <span class="breadcrumb-root">Sistema AOS</span>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current" id="header-current-tab">Inventario</span>
+        </div>
+
+        <div class="header-right-actions">
+          <div class="header-date-badge">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span id="header-date-display">Fecha: --/--/----</span>
+          </div>
+
+          <button class="btn-primary-header" id="btn-quick-print">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            <span>Planilla Oficial</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="content-wrapper">
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 1: GENERAL (METADATOS DEL REPORTE, OBSERVACIONES Y COSTO) -->
+        <!-- ================================================================= -->
+        <section id="tab-general" class="tab-panel" style="display: none;">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">GENERAL - REPORTE DIARIO DE ALMACÉN</h1>
+              <p class="panel-subtitle">Configuración de metadatos, comentarios acumulativos, control de firmas y costo consolidado del día.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-secondary" id="btn-open-history-gen">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                Historial de Reportes
+              </button>
+              <button type="button" class="btn btn-primary" id="btn-save-general">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                Actualizar Reporte
+              </button>
+            </div>
+          </div>
+
+          <!-- Tarjetas de Resumen Superior de la Sección General -->
+          <div class="metrics-grid">
+            <div class="metric-card metric-primary">
+              <div class="metric-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              </div>
+              <div class="metric-info">
+                <span class="metric-label">Costo Final Acumulado del Día</span>
+                <span class="metric-value text-highlight" id="general-costo-total">$0.00</span>
+                <span class="metric-footnote">Calculado automáticamente desde el módulo de Uso</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              </div>
+              <div class="metric-info">
+                <span class="metric-label">Identificación / N° Reporte</span>
+                <span class="metric-value" id="general-codigo-badge">REP-0001</span>
+                <span class="metric-footnote" id="general-fecha-badge">Fecha: --/--/----</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              </div>
+              <div class="metric-info">
+                <span class="metric-label">Salidas Registradas</span>
+                <span class="metric-value" id="general-total-salidas">0 productos</span>
+                <span class="metric-footnote">Movimientos registrados en este reporte</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Formulario General del Reporte -->
+          <div class="general-form-container">
+            <div class="form-section-card">
+              <h2 class="form-section-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                Datos del Almacén, N° de Reporte y Responsables
+              </h2>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label" for="gen-codigo-reporte">Número / Código del Reporte</label>
+                  <input type="text" id="gen-codigo-reporte" class="form-control" placeholder="Ej: REP-2026-0001">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="gen-departamento">Departamento</label>
+                  <input type="text" id="gen-departamento" class="form-control" value="ALMACÉN">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="gen-encargado">Encargado de Almacén</label>
+                <input type="text" id="gen-encargado" class="form-control" value="LUIS BRICEÑO">
+              </div>
+
+              <div class="form-divider"></div>
+
+              <h2 class="form-section-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                Firmas Oficiales del Reporte
+              </h2>
+              <div class="form-row-2">
+                <div class="signature-box">
+                  <span class="sig-badge">REALIZADO POR:</span>
+                  <div class="form-group">
+                    <label class="form-label" for="gen-elaborado-nombre">Nombre</label>
+                    <input type="text" id="gen-elaborado-nombre" class="form-control" value="Lusneila Franceschi">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="gen-elaborado-cargo">Cargo</label>
+                    <input type="text" id="gen-elaborado-cargo" class="form-control" value="Administración">
+                  </div>
+                </div>
+
+                <div class="signature-box">
+                  <span class="sig-badge">REVISADO POR:</span>
+                  <div class="form-group">
+                    <label class="form-label" for="gen-revisado-nombre">Nombre</label>
+                    <input type="text" id="gen-revisado-nombre" class="form-control" value="Luis Briceño">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="gen-revisado-cargo">Cargo</label>
+                    <input type="text" id="gen-revisado-cargo" class="form-control" value="Encargado de Almacen">
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-divider"></div>
+
+              <!-- Campo de Observaciones / Comentarios Generales -->
+              <h2 class="form-section-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                Observaciones y Comentarios Generales del Reporte
+              </h2>
+              <div class="form-group">
+                <textarea id="gen-observaciones" class="form-control textarea-large" rows="5" placeholder="Escriba aquí los comentarios u observaciones generales del día correspondientes a la planilla de reporte oficial..."></textarea>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 2: INVENTARIO (TABLA, CRUD, ESPECIFICACIONES SEGÚN DIAGRAMA) -->
+        <!-- ================================================================= -->
+        <section id="tab-inventario" class="tab-panel active">
+          
+          <!-- Encabezado del Módulo de Inventario -->
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">INVENTARIO</h1>
+              <p class="panel-subtitle">Catálogo técnico y control de existencias de reactivos y productos químicos.</p>
+            </div>
+            
+            <!-- Acciones: Agregar / Modificar / Estado -->
+            <div class="inventory-top-actions">
+              <button type="button" class="btn btn-primary" id="btn-open-create-modal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                + Añadir Producto
+              </button>
+              <button type="button" class="btn btn-danger" id="btn-delete-selected" disabled>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                Eliminar
+              </button>
+              <button type="button" class="btn btn-outline" id="btn-open-history-inv">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                Consultar Reportes
+              </button>
+              <button type="button" class="btn btn-outline" id="btn-open-print-preview">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                Imprimir Planilla
+              </button>
+            </div>
+          </div>
+
+          <!-- Métricas Rápidas de Inventario -->
+          <div class="inventory-stats-bar">
+            <div class="stat-pill"><span class="stat-bullet bg-navy"></span> <span id="stat-total">Total Productos: 0</span></div>
+            <div class="stat-pill"><span class="stat-bullet bg-warning"></span> <span id="stat-low">Bajo Stock (≤15): 0</span></div>
+            <div class="stat-pill"><span class="stat-bullet bg-danger"></span> <span id="stat-out">Sin Stock: 0</span></div>
+          </div>
+
+          <!-- Barra de Búsqueda y Filtro en Tiempo Real -->
+          <div class="table-toolbar">
+            <div class="search-box">
+              <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="inventory-search-input" class="search-input" placeholder="Buscar por código, descripción, unidad, libraje...">
+              <button id="btn-clear-search" class="clear-search-btn" style="display:none;">&times;</button>
+            </div>
+          </div>
+
+          <!-- Tabla Principal de Inventario (Estructura del Diagrama) -->
+          <div class="table-container">
+            <table class="inventory-table">
+              <thead>
+                <tr>
+                  <th style="width: 38px; text-align: center;">
+                    <input type="checkbox" id="select-all-products" class="custom-checkbox">
+                  </th>
+                  <th style="width: 110px;">Codigo</th>
+                  <th>Descripcion</th>
+                  <th style="width: 160px;">Unidad</th>
+                  <th style="width: 110px;">Libraje</th>
+                  <th style="width: 120px;">Gravedad E</th>
+                  <th style="width: 100px; text-align: right;">Cantidad</th>
+                  <th style="width: 110px; text-align: center;">Estado</th>
+                  <th style="width: 110px; text-align: center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body">
+                <tr>
+                  <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    Cargando catálogo de productos...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Paginación -->
+          <div class="pagination-wrapper">
+            <div id="pagination-controls" class="pagination-buttons"></div>
+            <div id="pagination-info" class="pagination-info-text">Mostrando 0 de 0 productos</div>
+          </div>
+        </section>
+
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 3: USO (LISTA ORGANIZADA JS, CANTIDAD, PRECIO VARIABLE, SUBTOTALES) -->
+        <!-- ================================================================= -->
+        <section id="tab-uso" class="tab-panel" style="display: none;">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">REGISTRO DE USO Y CÁLCULO DE COSTOS</h1>
+              <p class="panel-subtitle">Selección de insumos, cantidades a retirar, ingreso dinámico de precios variables y cálculo inmediato de subtotales.</p>
+            </div>
+            <div class="panel-actions">
+              <div class="costo-acumulado-badge">
+                <span class="costo-badge-label">Costo Total del Reporte:</span>
+                <span class="costo-badge-amount" id="uso-costo-total-header">$0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="uso-grid-layout">
+            
+            <!-- Columna Izquierda: Formulario de Salida y Cálculo -->
+            <div class="uso-form-card">
+              <h2 class="card-box-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                Registrar Salida de Insumo
+              </h2>
+
+              <form id="form-registro-uso">
+                
+                <!-- Selector del Producto Químico -->
+                <div class="form-group">
+                  <label class="form-label" for="uso-select-producto">Seleccionar Producto *</label>
+                  <select id="uso-select-producto" class="form-control" required>
+                    <option value="">-- Seleccione un producto del catálogo --</option>
+                  </select>
+                  <div class="form-hint" id="uso-stock-disponible-hint">Stock disponible: -</div>
+                </div>
+
+                <div class="form-row-2">
+                  <!-- Cantidad a utilizar -->
+                  <div class="form-group">
+                    <label class="form-label" for="uso-input-cantidad">Cantidad a Retirar *</label>
+                    <input type="number" id="uso-input-cantidad" class="form-control" min="1" step="1" value="1" required>
+                  </div>
+
+                  <!-- Precio Unitario Variable (solicitado al momento) -->
+                  <div class="form-group">
+                    <label class="form-label" for="uso-input-precio">Precio Unitario ($) *</label>
+                    <input type="number" id="uso-input-precio" class="form-control" min="0" step="0.01" placeholder="0.00" required>
+                  </div>
+                </div>
+
+                <!-- Tarjeta de Cálculo en Vivo (JavaScript Multiplicación) -->
+                <div class="live-calculation-box">
+                  <div class="calc-row">
+                    <span>Fórmula:</span>
+                    <span class="calc-math">Cantidad &times; Precio Unitario</span>
+                  </div>
+                  <div class="calc-row main-subtotal">
+                    <span>Subtotal a Sumar al Reporte:</span>
+                    <span class="calc-result" id="uso-live-subtotal">$0.00</span>
+                  </div>
+                </div>
+
+                <!-- Campo de Observación / Comentario -->
+                <div class="form-group" style="margin-top: 14px;">
+                  <label class="form-label" for="uso-input-observacion">Observación de la Salida (Opcional)</label>
+                  <textarea id="uso-input-observacion" class="form-control" rows="2" placeholder="Motivo de la salida, pozo, destino o justificación..."></textarea>
+                </div>
+
+                <!-- Botón de Registro -->
+                <button type="submit" class="btn btn-success btn-block" id="btn-submit-uso" style="margin-top: 16px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Confirmar Salida y Acumular Costo
+                </button>
+              </form>
+            </div>
+
+            <!-- Columna Derecha: Lista Dinámica de Salidas Registradas -->
+            <div class="uso-list-card">
+              <div class="uso-list-header">
+                <h2 class="card-box-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                  Productos Utilizados en el Reporte
+                </h2>
+                <span class="uso-items-counter" id="uso-counter-badge">0 registros</span>
+              </div>
+
+              <div class="uso-table-container">
+                <table class="inventory-table uso-table">
+                  <thead>
+                    <tr>
+                      <th>Código</th>
+                      <th>Producto</th>
+                      <th style="text-align: right;">Cantidad</th>
+                      <th style="text-align: right;">Precio Unit.</th>
+                      <th style="text-align: right;">Subtotal</th>
+                      <th>Observación</th>
+                      <th style="text-align: center;">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody id="uso-table-body">
+                    <tr>
+                      <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                        No hay salidas de productos registradas para el reporte de hoy.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Totalizador Inferior -->
+              <div class="uso-total-footer">
+                <span>Total Acumulado del Día:</span>
+                <span class="uso-grand-total" id="uso-grand-total-amount">$0.00</span>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: CREACIÓN / MODIFICACIÓN DE PRODUCTOS (SEGÚN DIAGRAMA)           -->
+  <!-- ======================================================================= -->
+  <div class="modal-backdrop" id="product-modal">
+    <div class="modal-card modal-diagram-style">
+      <div class="modal-header">
+        <h2 class="modal-title" id="product-modal-title">Creacion de Productos</h2>
+        <button class="modal-close-btn" id="btn-close-product-modal">&times;</button>
+      </div>
+
+      <form id="form-product-crud">
+        <input type="hidden" id="modal-product-id">
+
+        <div class="modal-body">
+          <!-- Campo: Codigo -->
+          <div class="form-group-modal">
+            <label class="modal-label" for="modal-codigo">Codigo</label>
+            <div class="input-with-action">
+              <input type="text" id="modal-codigo" class="form-control" placeholder="AOS-XXXX" required>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-modal-regen-sku" title="Generar código automático">Auto</button>
+            </div>
+          </div>
+
+          <!-- Campo: Descripcion -->
+          <div class="form-group-modal">
+            <label class="modal-label" for="modal-descripcion">Descripcion</label>
+            <input type="text" id="modal-descripcion" class="form-control" placeholder="Nombre completo del producto químico" required>
+          </div>
+
+          <!-- Campo: Unidad del producto -->
+          <div class="form-group-modal">
+            <label class="modal-label" for="modal-unidad">Unidad del producto</label>
+            <input type="text" id="modal-unidad" class="form-control" placeholder="Ej: TAMBOR 55 GLS, SACOS 55 LBS, TOTEMS" required>
+          </div>
+
+          <!-- Campo: Libraje -->
+          <div class="form-group-modal">
+            <label class="modal-label" for="modal-libraje">Libraje</label>
+            <input type="text" id="modal-libraje" class="form-control" placeholder="Ej: 55 LBS, 100 LBS, N/A">
+          </div>
+
+          <!-- Campo: Gravedad Especifica -->
+          <div class="form-group-modal">
+            <label class="modal-label" for="modal-gravedad">Gravedad Especifica</label>
+            <input type="text" id="modal-gravedad" class="form-control" placeholder="Ej: 1.15, 2.60, N/A">
+          </div>
+
+          <!-- Campo: Cantidad -->
+          <div class="form-group-modal">
+            <label class="modal-label" for="modal-cantidad">Cantidad</label>
+            <input type="number" id="modal-cantidad" class="form-control" min="0" step="1" value="0" required>
+          </div>
+        </div>
+
+        <!-- Botones del Diagrama: Crear y Cancelar -->
+        <div class="modal-footer-diagram">
+          <button type="submit" class="btn btn-primary btn-diagram" id="btn-modal-submit">Crear</button>
+          <button type="button" class="btn btn-secondary btn-diagram" id="btn-modal-cancel">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: CONFIRMACIÓN DE ELIMINACIÓN                                      -->
+  <!-- ======================================================================= -->
+  <div class="modal-backdrop" id="confirm-modal">
+    <div class="modal-card modal-confirm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="confirm-modal-title">Confirmar Eliminación</h2>
+        <button class="modal-close-btn" id="btn-close-confirm-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-modal-msg" style="font-size: 14.5px; color: var(--text-main); line-height: 1.5;"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-delete">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirm-delete">Eliminar Definitivamente</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: VISTA PREVIA DE IMPRESIÓN DE LA PLANILLA OFICIAL AOS             -->
+  <!-- ======================================================================= -->
+  <div class="modal-backdrop" id="print-preview-modal">
+    <div class="modal-card modal-print-preview">
+      <div class="modal-header print-modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h2 class="modal-title">Planilla Oficial de Inventario Químico - All Oil Services</h2>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" id="btn-execute-print">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Imprimir Ahora
+          </button>
+          <button class="modal-close-btn" id="btn-close-print-preview">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body print-preview-scroll" id="print-preview-content">
+        <!-- Render dinámico de la planilla oficial -->
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: HISTORIAL DE REPORTES ANTERIORES                                -->
+  <!-- ======================================================================= -->
+  <div class="modal-backdrop" id="history-modal">
+    <div class="modal-card modal-history">
+      <div class="modal-header">
+        <h2 class="modal-title">Historial de Reportes Guardados</h2>
+        <button class="modal-close-btn" id="btn-close-history-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+          Seleccione un reporte de una fecha anterior para consultar sus detalles, movimientos y realizar modificaciones:
+        </p>
+        <div class="history-table-container">
+          <table class="inventory-table">
+            <thead>
+              <tr>
+                <th>N° Reporte</th>
+                <th>Fecha</th>
+                <th>Departamento</th>
+                <th>Encargado</th>
+                <th style="text-align: right;">Salidas</th>
+                <th style="text-align: right;">Costo Total</th>
+                <th style="text-align: center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 25px; color: var(--text-muted);">
+                  Cargando reportes anteriores...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-history">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Contenedor oculto en pantalla para la impresión nativa del navegador (@media print) -->
+  <div id="print-sheet-container" class="print-only" style="display: none;"></div>
+
+  <!-- Contenedor de Alertas Toast -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="{% static 'mychapala/js/app.js' %}"></script>
+</body>
+</html>
+
