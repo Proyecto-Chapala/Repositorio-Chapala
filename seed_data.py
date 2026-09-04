@@ -330,23 +330,245 @@ PRODUCTOS_AOS = [
     }
 ]
 
+PRODUCTOS_LIQUIDOS = [
+    {
+        "codigo": "AOS-LIQ-01",
+        "descripcion": "Salmuera de Cloruro de Calcio densidad 11 LPG",
+        "unidad": "BLS",
+        "libraje": "N/A",
+        "gravedad_especifica": "11.0 LPG",
+        "cantidad": 300,
+        "precio_unitario": 85.00
+    },
+    {
+        "codigo": "AOS-LIQ-02",
+        "descripcion": "Samuera de Cloruro de Sodio Nacl densidad 10.0 LPG",
+        "unidad": "BLS",
+        "libraje": "N/A",
+        "gravedad_especifica": "10.0 LPG",
+        "cantidad": 160,
+        "precio_unitario": 65.00
+    }
+]
+
+PRODUCTOS_WELLSITE = [
+    {
+        "codigo": "WELL-001",
+        "descripcion": "BENTONITE WYOMING",
+        "unidad": "100. LB BG",
+        "libraje": "100 LBS",
+        "gravedad_especifica": "2.60",
+        "cantidad": 55,
+        "stock_inicial": 55,
+        "precio_unitario": 28.72,
+        "cum_used": 445,
+        "daily_received": 0,
+        "cum_received": 500,
+        "daily_return": 0,
+        "cum_return": 0
+    },
+    {
+        "codigo": "WELL-002",
+        "descripcion": "CALCIUM CARBONATE #6",
+        "unidad": "50. LB BG",
+        "libraje": "50 LBS",
+        "gravedad_especifica": "2.71",
+        "cantidad": 112,
+        "stock_inicial": 112,
+        "precio_unitario": 18.45,
+        "cum_used": 0,
+        "daily_received": 0,
+        "cum_received": 112,
+        "daily_return": 0,
+        "cum_return": 0
+    },
+    {
+        "codigo": "WELL-003",
+        "descripcion": "CAUSTIC POTASH (POTASSIUM",
+        "unidad": "25. KG BG",
+        "libraje": "55 LBS",
+        "gravedad_especifica": "2.04",
+        "cantidad": 14,
+        "stock_inicial": 14,
+        "precio_unitario": 113.32,
+        "cum_used": 0,
+        "daily_received": 0,
+        "cum_received": 14,
+        "daily_return": 0,
+        "cum_return": 0
+    },
+    {
+        "codigo": "WELL-004",
+        "descripcion": "CAUSTIC SODA",
+        "unidad": "25. KG BG",
+        "libraje": "55 LBS",
+        "gravedad_especifica": "2.13",
+        "cantidad": 2,
+        "stock_inicial": 9,
+        "precio_unitario": 64.72,
+        "cum_used": 28,
+        "daily_received": 0,
+        "cum_received": 30,
+        "daily_return": 0,
+        "cum_return": 0
+    },
+    {
+        "codigo": "WELL-005",
+        "descripcion": "CELL-U-SEAL FINE",
+        "unidad": "30. LB BG",
+        "libraje": "30 LBS",
+        "gravedad_especifica": "1.30",
+        "cantidad": 114,
+        "stock_inicial": 114,
+        "precio_unitario": 69.67,
+        "cum_used": 0,
+        "daily_received": 0,
+        "cum_received": 114,
+        "daily_return": 0,
+        "cum_return": 0
+    },
+    {
+        "codigo": "WELL-006",
+        "descripcion": "DEFOAM X",
+        "unidad": "5. GA CN",
+        "libraje": "N/A",
+        "gravedad_especifica": "0.95",
+        "cantidad": 21,
+        "stock_inicial": 21,
+        "precio_unitario": 387.61,
+        "cum_used": 9,
+        "daily_received": 0,
+        "cum_received": 30,
+        "daily_return": 0,
+        "cum_return": 0
+    },
+    {
+        "codigo": "WELL-007",
+        "descripcion": "DRIL-KLEEN",
+        "unidad": "5. GA CN",
+        "libraje": "N/A",
+        "gravedad_especifica": "1.02",
+        "cantidad": 20,
+        "stock_inicial": 20,
+        "precio_unitario": 322.21,
+        "cum_used": 2,
+        "daily_received": 0,
+        "cum_received": 45,
+        "daily_return": 23,
+        "cum_return": 0
+    },
+    {
+        "codigo": "WELL-008",
+        "descripcion": "DUO-VIS",
+        "unidad": "25. KG BG",
+        "libraje": "55 LBS",
+        "gravedad_especifica": "1.50",
+        "cantidad": 32,
+        "stock_inicial": 10,
+        "precio_unitario": 550.12,
+        "cum_used": 56,
+        "daily_received": 30,
+        "cum_received": 88,
+        "daily_return": 0,
+        "cum_return": 0
+    },
+    {
+        "codigo": "WELL-009",
+        "descripcion": "ENGINEERING SERVICE",
+        "unidad": "1. EA",
+        "libraje": "N/A",
+        "gravedad_especifica": "N/A",
+        "cantidad": 0,
+        "stock_inicial": 0,
+        "precio_unitario": 1485.00,
+        "cum_used": 27,
+        "daily_received": 0,
+        "cum_received": 0,
+        "daily_return": 0,
+        "cum_return": 0
+    },
+    {
+        "codigo": "WELL-010",
+        "descripcion": "G-SEAL PLUS",
+        "unidad": "25. KG BG",
+        "libraje": "55 LBS",
+        "gravedad_especifica": "1.70",
+        "cantidad": 35,
+        "stock_inicial": 35,
+        "precio_unitario": 178.41,
+        "cum_used": 0,
+        "daily_received": 0,
+        "cum_received": 35,
+        "daily_return": 0,
+        "cum_return": 0
+    },
+    {
+        "codigo": "WELL-011",
+        "descripcion": "LIME",
+        "unidad": "20. KG BG",
+        "libraje": "44 LBS",
+        "gravedad_especifica": "2.24",
+        "cantidad": 89,
+        "stock_inicial": 89,
+        "precio_unitario": 37.43,
+        "cum_used": 0,
+        "daily_received": 0,
+        "cum_received": 89,
+        "daily_return": 0,
+        "cum_return": 0
+    },
+    {
+        "codigo": "WELL-012",
+        "descripcion": "LOWA TECH 70/75",
+        "unidad": "50. LB BG",
+        "libraje": "50 LBS",
+        "gravedad_especifica": "2.60",
+        "cantidad": 112,
+        "stock_inicial": 112,
+        "precio_unitario": 18.45,
+        "cum_used": 0,
+        "daily_received": 0,
+        "cum_received": 224,
+        "daily_return": 0,
+        "cum_return": 112
+    },
+    {
+        "codigo": "WELL-013",
+        "descripcion": "M-I BAR BULK",
+        "unidad": "100. LB BG",
+        "libraje": "100 LBS",
+        "gravedad_especifica": "4.20",
+        "cantidad": 1903,
+        "stock_inicial": 1903,
+        "precio_unitario": 20.25,
+        "cum_used": 2456,
+        "daily_received": 0,
+        "cum_received": 4359,
+        "daily_return": 0,
+        "cum_return": 0
+    }
+]
+
 
 def seed_database():
-    """Ejecuta la carga inicial de los 38 reactivos en la base de datos."""
+    """Ejecuta la carga inicial de productos en la base de datos divididos por categorías."""
     print("Iniciando inyección de datos para Proyecto Chapala...")
     creados = 0
     actualizados = 0
 
+    # 1. Productos Químicos AOS
     for item in PRODUCTOS_AOS:
         prod, created = Producto.objects.update_or_create(
             codigo=item["codigo"],
             defaults={
                 "descripcion": item["descripcion"],
                 "unidad": item["unidad"],
-                "libraje": item["libraje"],
-                "gravedad_especifica": item["gravedad_especifica"],
+                "libraje": item.get("libraje", "N/A"),
+                "gravedad_especifica": item.get("gravedad_especifica", "N/A"),
                 "cantidad": item["cantidad"],
                 "stock_inicial": item["cantidad"],
+                "categoria": "quimico",
+                "precio_unitario": item.get("precio_unitario", 45.00),
                 "activo": True
             }
         )
@@ -355,15 +577,71 @@ def seed_database():
         else:
             actualizados += 1
 
-    # Asegura reporte diario inicial
-    reporte, _ = ReporteDiario.objects.get_or_create(
+    # 2. Productos Líquidos AOS (Imagen 1)
+    for item in PRODUCTOS_LIQUIDOS:
+        prod, created = Producto.objects.update_or_create(
+            codigo=item["codigo"],
+            defaults={
+                "descripcion": item["descripcion"],
+                "unidad": item["unidad"],
+                "libraje": item.get("libraje", "N/A"),
+                "gravedad_especifica": item.get("gravedad_especifica", "N/A"),
+                "cantidad": item["cantidad"],
+                "stock_inicial": item["cantidad"],
+                "categoria": "liquido",
+                "precio_unitario": item.get("precio_unitario", 65.00),
+                "activo": True
+            }
+        )
+        if created:
+            creados += 1
+        else:
+            actualizados += 1
+
+    # 3. Wellsite Chemical Inventory (Imagen 2)
+    for item in PRODUCTOS_WELLSITE:
+        prod, created = Producto.objects.update_or_create(
+            codigo=item["codigo"],
+            defaults={
+                "descripcion": item["descripcion"],
+                "unidad": item["unidad"],
+                "libraje": item.get("libraje", "N/A"),
+                "gravedad_especifica": item.get("gravedad_especifica", "N/A"),
+                "cantidad": item["cantidad"],
+                "stock_inicial": item.get("stock_inicial", item["cantidad"]),
+                "categoria": "wellsite",
+                "precio_unitario": item.get("precio_unitario", 0.00),
+                "cum_used": item.get("cum_used", 0),
+                "daily_received": item.get("daily_received", 0),
+                "cum_received": item.get("cum_received", 0),
+                "daily_return": item.get("daily_return", 0),
+                "cum_return": item.get("cum_return", 0),
+                "activo": True
+            }
+        )
+        if created:
+            creados += 1
+        else:
+            actualizados += 1
+
+    # Asegura reporte diario inicial con metadatos Wellsite
+    reporte = ReporteDiario.objects.filter(
         departamento="ALMACÉN",
-        encargado="LUIS BRICEÑO",
-        elaborado_por_nombre="Lusneila Franceschi",
-        elaborado_por_cargo="Administración",
-        revisado_por_nombre="Luis Briceño",
-        revisado_por_cargo="Encargado de Almacen"
-    )
+        encargado="LUIS BRICEÑO"
+    ).first()
+    if not reporte:
+        reporte = ReporteDiario.objects.create(
+            departamento="ALMACÉN",
+            encargado="LUIS BRICEÑO",
+            elaborado_por_nombre="Lusneila Franceschi",
+            elaborado_por_cargo="Administración",
+            revisado_por_nombre="Luis Briceño",
+            revisado_por_cargo="Encargado de Almacen",
+            operador="Cardon IV",
+            pozo="Perla-1X",
+            locacion="Offshore",
+            reporte_no_wellsite="16"
+        )
 
     print(f"Éxito: {creados} productos creados, {actualizados} actualizados.")
     print(f"Total de productos en base de datos: {Producto.objects.count()}")
@@ -371,4 +649,5 @@ def seed_database():
 
 if __name__ == "__main__":
     seed_database()
+
 

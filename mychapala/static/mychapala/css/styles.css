@@ -847,6 +847,141 @@ body {
   color: #0284c7;
 }
 
+/* ==========================================================================
+   COMBOBOX / BUSCADOR FUSIONADO CON LISTA DESPLEGABLE
+   ========================================================================== */
+.custom-combobox-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.combobox-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.combobox-search-icon {
+  position: absolute;
+  left: 11px;
+  color: var(--text-muted);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.combobox-input {
+  padding-left: 34px !important;
+  padding-right: 62px !important;
+  cursor: text;
+}
+
+.combobox-toggle-btn, .combobox-clear-btn {
+  position: absolute;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.combobox-toggle-btn {
+  right: 8px;
+  transition: transform 0.2s ease;
+}
+
+.combobox-toggle-btn.open {
+  transform: rotate(180deg);
+}
+
+.combobox-clear-btn {
+  right: 32px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.combobox-clear-btn:hover, .combobox-toggle-btn:hover {
+  color: var(--text-main);
+  background-color: #f1f5f9;
+}
+
+.combobox-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.combobox-list {
+  list-style: none;
+  padding: 4px 0;
+  margin: 0;
+}
+
+.combobox-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.12s;
+  border-bottom: 1px solid #f8fafc;
+}
+
+.combobox-item:hover, .combobox-item.active {
+  background-color: #eff6ff;
+}
+
+.combobox-item.selected {
+  background-color: #e0f2fe;
+  font-weight: 600;
+}
+
+.combobox-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.combobox-item-code {
+  font-weight: 700;
+  color: var(--primary-navy);
+  font-size: 12px;
+}
+
+.combobox-item-desc {
+  color: var(--text-main);
+  font-size: 13px;
+}
+
+.combobox-item-stock {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  background: #f1f5f9;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.combobox-empty {
+  padding: 14px 12px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
 .uso-list-header {
   display: flex;
   align-items: center;
@@ -1258,6 +1393,264 @@ body {
   display: none !important;
 }
 
+/* ============================================================================== */
+/* ESTILOS PARA SELECTORES DE CATEGORÍA DE INVENTARIO Y REPORTES                  */
+/* ============================================================================== */
+
+.category-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  background: #f1f5f9;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  width: fit-content;
+}
+
+.btn-category-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn-category-tab:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.btn-category-tab.active {
+  background: #ffffff;
+  color: var(--primary-navy);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.category-count-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 12px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.btn-category-tab.active .category-count-badge {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+/* Barra de selección de formato en Modal de Impresión */
+.print-category-selector-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.print-selector-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.print-category-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.print-cat-btn {
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.print-cat-btn:hover {
+  background: #f1f5f9;
+  color: var(--text-main);
+}
+
+.print-cat-btn.active {
+  background: var(--primary-navy);
+  color: #ffffff;
+  border-color: var(--primary-navy);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================================================== */
+/* TABLA WELLSITE EN PANTALLA                                                     */
+/* ============================================================================== */
+
+.table-wellsite th, .table-wellsite td {
+  font-size: 12.5px;
+  padding: 8px 10px;
+}
+
+.table-wellsite .col-num {
+  text-align: right;
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+.table-wellsite .col-cost {
+  color: #166534;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* ============================================================================== */
+/* FORMATO DE IMPRESIÓN: WELLSITE CHEMICAL INVENTORY (M-I SWACO)                  */
+/* ============================================================================== */
+
+.wellsite-sheet {
+  width: 960px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  font-family: Arial, Helvetica, sans-serif;
+  color: #000000;
+}
+
+.wellsite-header {
+  border-bottom: 2px solid #000;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.wellsite-brand-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.wellsite-main-title {
+  text-align: center;
+  flex-grow: 1;
+}
+
+.wellsite-main-title h1 {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.wellsite-main-title h2 {
+  font-size: 13px;
+  font-weight: bold;
+  margin: 2px 0 0 0;
+  color: #333;
+}
+
+.wellsite-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 20px;
+  font-size: 11px;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: #fdfdfd;
+  border: 1px solid #ddd;
+}
+
+.wellsite-meta-item {
+  display: flex;
+  gap: 6px;
+}
+
+.wellsite-meta-label {
+  font-weight: bold;
+  min-width: 85px;
+}
+
+.wellsite-cost-summary {
+  margin: 10px 0;
+  border: 1.5px solid #000;
+  background: #fcfcfc;
+}
+
+.wellsite-cost-title {
+  background: #f0f4f8;
+  font-weight: bold;
+  font-size: 11.5px;
+  padding: 4px 8px;
+  text-align: center;
+  border-bottom: 1px solid #000;
+}
+
+.wellsite-cost-row {
+  display: flex;
+  justify-content: space-around;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+.wellsite-cost-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.wellsite-cost-cell .amt {
+  font-weight: bold;
+  color: #0b4a24;
+}
+
+.wellsite-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  margin-top: 6px;
+}
+
+.wellsite-table th, .wellsite-table td {
+  border: 1px solid #000;
+  padding: 4px 5px;
+}
+
+.wellsite-table thead th {
+  background: #e2e8f0;
+  font-weight: bold;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.wellsite-table td.text-right {
+  text-align: right;
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+.wellsite-table td.cost-highlight {
+  font-weight: bold;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.wellsite-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
 /* IMPRESIÓN NATIVA */
 @media print {
   body * {
@@ -1276,11 +1669,12 @@ body {
     padding: 0;
     background: #fff;
   }
-  .aos-official-sheet {
+  .aos-official-sheet, .wellsite-sheet {
     box-shadow: none;
     padding: 0;
     width: 100%;
   }
 }
+
 
 

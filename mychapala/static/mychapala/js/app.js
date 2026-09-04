@@ -16,6 +16,10 @@
 class ChapalaApp {
   constructor() {
     this.currentTab = 'inventario';
+    this.currentCategory = 'quimico'; // 'quimico' | 'liquido' | 'wellsite'
+    this.currentPrintCategory = 'quimico'; // 'quimico' | 'liquido' | 'wellsite'
+    this.categoryCounts = { quimico: 0, liquido: 0, wellsite: 0 };
+    this.allProducts = [];
     this.products = [];
     this.selectedIds = new Set();
     this.searchTerm = '';
@@ -49,6 +53,16 @@ class ChapalaApp {
     this.btnQuickPrint = document.getElementById('btn-quick-print');
     this.btnOpenHistoryHeader = document.getElementById('btn-open-history-header');
 
+    // Botones de Categoría de Inventario
+    this.btnCatQuimico = document.getElementById('btn-cat-quimico');
+    this.btnCatLiquido = document.getElementById('btn-cat-liquido');
+    this.btnCatWellsite = document.getElementById('btn-cat-wellsite');
+    this.badgeCountQuimico = document.getElementById('badge-count-quimico');
+    this.badgeCountLiquido = document.getElementById('badge-count-liquido');
+    this.badgeCountWellsite = document.getElementById('badge-count-wellsite');
+    this.categoryTabButtons = document.querySelectorAll('.btn-category-tab');
+    this.inventoryTableHead = document.getElementById('inventory-table-head');
+
     // Sección General
     this.genCostoTotal = document.getElementById('general-costo-total');
     this.genCodigoBadge = document.getElementById('general-codigo-badge');
@@ -80,9 +94,15 @@ class ChapalaApp {
     this.statLow = document.getElementById('stat-low');
     this.statOut = document.getElementById('stat-out');
 
-    // Sección Uso
+    // Sección Uso (Combobox Integrado y Formulario)
     this.usoCostoTotalHeader = document.getElementById('uso-costo-total-header');
     this.formRegistroUso = document.getElementById('form-registro-uso');
+    this.usoComboboxWrapper = document.getElementById('uso-combobox-wrapper');
+    this.usoProductSearchInput = document.getElementById('uso-product-search-input');
+    this.usoComboboxToggleBtn = document.getElementById('uso-combobox-toggle-btn');
+    this.usoComboboxClearBtn = document.getElementById('uso-combobox-clear-btn');
+    this.usoComboboxDropdown = document.getElementById('uso-combobox-dropdown');
+    this.usoComboboxList = document.getElementById('uso-combobox-list');
     this.usoSelectProducto = document.getElementById('uso-select-producto');
     this.usoStockDisponibleHint = document.getElementById('uso-stock-disponible-hint');
     this.usoInputCantidad = document.getElementById('uso-input-cantidad');
@@ -105,6 +125,8 @@ class ChapalaApp {
     this.modalLibraje = document.getElementById('modal-libraje');
     this.modalGravedad = document.getElementById('modal-gravedad');
     this.modalCantidad = document.getElementById('modal-cantidad');
+    this.modalCategoria = document.getElementById('modal-categoria');
+    this.modalPrecioUnitario = document.getElementById('modal-precio-unitario');
     this.btnModalSubmit = document.getElementById('btn-modal-submit');
     this.btnModalCancel = document.getElementById('btn-modal-cancel');
     this.btnCloseProductModal = document.getElementById('btn-close-product-modal');
@@ -123,12 +145,13 @@ class ChapalaApp {
     this.btnCloseHistoryModal = document.getElementById('btn-close-history-modal');
     this.btnCancelHistory = document.getElementById('btn-cancel-history');
 
-    // Modal Impresión Oficial
+    // Modal Impresión Oficial y selector de formatos
     this.printPreviewModal = document.getElementById('print-preview-modal');
     this.printPreviewContent = document.getElementById('print-preview-content');
     this.btnClosePrintPreview = document.getElementById('btn-close-print-preview');
     this.btnExecutePrint = document.getElementById('btn-execute-print');
     this.printSheetContainer = document.getElementById('print-sheet-container');
+    this.printCatButtons = document.querySelectorAll('.print-cat-btn');
 
     // Toast Container
     this.toastContainer = document.getElementById('toast-container');
@@ -163,16 +186,18 @@ class ChapalaApp {
     });
 
     // Checkbox Seleccionar Todos
-    this.selectAllCheckbox.addEventListener('change', (e) => {
-      const isChecked = e.target.checked;
-      if (isChecked) {
-        this.products.forEach(p => this.selectedIds.add(p.id));
-      } else {
-        this.selectedIds.clear();
-      }
-      this.renderInventoryTable();
-      this.updateDeleteButtonState();
-    });
+    if (this.selectAllCheckbox) {
+      this.selectAllCheckbox.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        if (isChecked) {
+          this.products.forEach(p => this.selectedIds.add(p.id));
+        } else {
+          this.selectedIds.clear();
+        }
+        this.renderInventoryTable();
+        this.updateDeleteButtonState();
+      });
+    }
 
     // Acciones de Botones Principales
     this.btnOpenCreateModal.addEventListener('click', () => this.openCreateProductModal());
@@ -180,6 +205,37 @@ class ChapalaApp {
     this.btnOpenPrintPreview.addEventListener('click', () => this.openPrintPreview());
     this.btnQuickPrint.addEventListener('click', () => this.openPrintPreview());
     this.btnSaveGeneral.addEventListener('click', () => this.saveGeneralReport());
+
+    // Conmutador de Categorías en Inventario (Químico, Líquido, Wellsite)
+    if (this.categoryTabButtons) {
+      this.categoryTabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const cat = btn.dataset.cat;
+          this.switchCategory(cat);
+        });
+      });
+    }
+
+    // Selector de Formato de Impresión por Categoría
+    if (this.printCatButtons) {
+      this.printCatButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          this.printCatButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.currentPrintCategory = btn.dataset.printCat;
+          this.openPrintPreview();
+        });
+      });
+    }
+
+    // Cambio de categoría en modal regenera prefijo de código automático
+    if (this.modalCategoria) {
+      this.modalCategoria.addEventListener('change', () => {
+        if (!this.editingProductId) {
+          this.modalCodigo.value = this.generateRandomSku();
+        }
+      });
+    }
 
     // Botones de Historial de Reportes
     if (this.btnOpenHistoryHeader) {
@@ -203,8 +259,80 @@ class ChapalaApp {
       this.handleSaveProduct();
     });
 
-    // Formulario de Uso y Cálculos en tiempo real
-    this.usoSelectProducto.addEventListener('change', () => this.onProductSelectionChange());
+    // Formulario de Uso: Combobox Interactivo (Búsqueda + Selección Fusión)
+    if (this.usoProductSearchInput) {
+      this.usoProductSearchInput.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openComboboxDropdown();
+      });
+
+      this.usoProductSearchInput.addEventListener('focus', (e) => {
+        e.stopPropagation();
+        this.openComboboxDropdown();
+      });
+
+      this.usoProductSearchInput.addEventListener('input', (e) => {
+        const query = e.target.value;
+        if (this.usoComboboxClearBtn) {
+          this.usoComboboxClearBtn.style.display = query.trim() ? 'flex' : 'none';
+        }
+        // Si el usuario escribe y cambia el texto, invalidar selección previa hasta que vuelva a elegir
+        if (this.usoSelectProducto.value) {
+          const selProd = this.products.find(p => p.id === parseInt(this.usoSelectProducto.value));
+          if (!selProd || `${selProd.codigo} - ${selProd.descripcion}` !== query) {
+            this.usoSelectProducto.value = '';
+            this.onProductSelectionChange();
+          }
+        }
+        this.openComboboxDropdown();
+        this.renderComboboxList(query);
+      });
+
+      this.usoProductSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          this.closeComboboxDropdown();
+        } else if (e.key === 'Enter') {
+          // Si presiona enter en el input y hay opciones en el dropdown, seleccionar la primera
+          const firstItem = this.usoComboboxList ? this.usoComboboxList.querySelector('.combobox-item') : null;
+          if (firstItem && this.usoComboboxDropdown.style.display !== 'none') {
+            e.preventDefault();
+            const id = parseInt(firstItem.dataset.id);
+            const p = this.products.find(prod => prod.id === id);
+            if (p) {
+              this.selectProductInCombobox(p);
+            }
+          }
+        }
+      });
+    }
+
+    if (this.usoComboboxToggleBtn) {
+      this.usoComboboxToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.usoComboboxDropdown.style.display === 'block') {
+          this.closeComboboxDropdown();
+        } else {
+          this.openComboboxDropdown();
+          this.usoProductSearchInput.focus();
+        }
+      });
+    }
+
+    if (this.usoComboboxClearBtn) {
+      this.usoComboboxClearBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.clearComboboxSelection();
+        this.usoProductSearchInput.focus();
+      });
+    }
+
+    // Cerrar el combobox dropdown al hacer clic fuera
+    document.addEventListener('click', (e) => {
+      if (this.usoComboboxWrapper && !this.usoComboboxWrapper.contains(e.target)) {
+        this.closeComboboxDropdown();
+      }
+    });
+
     this.usoInputCantidad.addEventListener('input', () => this.updateLiveCalculation());
     this.usoInputPrecio.addEventListener('input', () => this.updateLiveCalculation());
 
@@ -301,7 +429,8 @@ class ChapalaApp {
     this.headerCurrentTab.textContent = tabTitles[tabName] || tabName;
 
     if (tabName === 'uso') {
-      this.populateProductSelect();
+      this.closeComboboxDropdown();
+      this.renderComboboxList(this.usoProductSearchInput ? this.usoProductSearchInput.value : '');
     } else if (tabName === 'general') {
       this.fetchDailyReport();
     }
@@ -492,31 +621,142 @@ class ChapalaApp {
   }
 
   // ============================================================================
-  // 6. MÓDULO INVENTARIO (TABLA, CRUD, BÚSQUEDA)
+  // 6. MÓDULO INVENTARIO (TABLA, CRUD, BÚSQUEDA Y CATEGORÍAS)
   // ============================================================================
+  switchCategory(cat) {
+    if (!['quimico', 'liquido', 'wellsite'].includes(cat)) return;
+    this.currentCategory = cat;
+    this.currentPage = 1;
+    this.selectedIds.clear();
+
+    if (this.categoryTabButtons) {
+      this.categoryTabButtons.forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    this.filterAndRenderInventory();
+  }
+
   async fetchProducts() {
     try {
-      const url = `/api/productos/?q=${encodeURIComponent(this.searchTerm)}`;
-      const response = await fetch(url);
+      const response = await fetch('/api/productos/');
       const data = await response.json();
 
       if (data.success) {
-        this.products = data.productos;
-        this.statTotal.textContent = `Total Productos: ${data.total}`;
-        this.statLow.textContent = `Bajo Stock (≤15): ${data.bajo_stock}`;
-        this.statOut.textContent = `Sin Stock: ${data.sin_stock}`;
-        this.renderInventoryTable();
+        this.allProducts = data.productos;
+
+        // Actualiza conteos de insignias por categoría
+        this.categoryCounts.quimico = this.allProducts.filter(p => p.categoria === 'quimico').length;
+        this.categoryCounts.liquido = this.allProducts.filter(p => p.categoria === 'liquido').length;
+        this.categoryCounts.wellsite = this.allProducts.filter(p => p.categoria === 'wellsite').length;
+
+        if (this.badgeCountQuimico) this.badgeCountQuimico.textContent = this.categoryCounts.quimico;
+        if (this.badgeCountLiquido) this.badgeCountLiquido.textContent = this.categoryCounts.liquido;
+        if (this.badgeCountWellsite) this.badgeCountWellsite.textContent = this.categoryCounts.wellsite;
+
+        this.filterAndRenderInventory();
         this.populateProductSelect();
       }
     } catch (err) {
       console.error('Error al cargar productos:', err);
       this.inventoryTableBody.innerHTML = `
-        <tr><td colspan="9" style="text-align:center; padding:30px; color:#dc2626;">Error al cargar el inventario desde el servidor.</td></tr>
+        <tr><td colspan="14" style="text-align:center; padding:30px; color:#dc2626;">Error al cargar el inventario desde el servidor.</td></tr>
       `;
     }
   }
 
+  filterAndRenderInventory() {
+    let list = this.allProducts.filter(p => p.categoria === this.currentCategory);
+
+    if (this.searchTerm) {
+      const q = this.searchTerm.toLowerCase();
+      list = list.filter(p =>
+        (p.codigo || '').toLowerCase().includes(q) ||
+        (p.descripcion || '').toLowerCase().includes(q) ||
+        (p.unidad || '').toLowerCase().includes(q) ||
+        (p.libraje || '').toLowerCase().includes(q) ||
+        (p.gravedad_especifica || '').toLowerCase().includes(q)
+      );
+    }
+
+    this.products = list;
+
+    const bajoStock = this.products.filter(p => p.cantidad <= 15 && p.cantidad > 0).length;
+    const sinStock = this.products.filter(p => p.cantidad <= 0).length;
+
+    this.statTotal.textContent = `Total Productos: ${this.products.length}`;
+    this.statLow.textContent = `Bajo Stock (≤15): ${bajoStock}`;
+    this.statOut.textContent = `Sin Stock: ${sinStock}`;
+
+    this.renderInventoryTable();
+  }
+
+  renderInventoryTableHead() {
+    if (!this.inventoryTableHead) return;
+
+    if (this.currentCategory === 'wellsite') {
+      this.inventoryTableHead.innerHTML = `
+        <tr>
+          <th style="width: 36px; text-align: center;">
+            <input type="checkbox" id="select-all-products" class="custom-checkbox">
+          </th>
+          <th style="min-width: 170px;">Product</th>
+          <th style="width: 110px;">Unit Size</th>
+          <th style="width: 95px; text-align: right;">Unit Price</th>
+          <th style="width: 80px; text-align: right;">Start Amt.</th>
+          <th style="width: 80px; text-align: right;">Daily Used</th>
+          <th style="width: 80px; text-align: right;">Cum Used</th>
+          <th style="width: 80px; text-align: right;">Daily Rec'd</th>
+          <th style="width: 80px; text-align: right;">Cum Rec'd</th>
+          <th style="width: 80px; text-align: right;">Daily Return</th>
+          <th style="width: 80px; text-align: right;">Cum. Return</th>
+          <th style="width: 85px; text-align: right;">Final Stock</th>
+          <th style="width: 95px; text-align: right;">Daily Cost</th>
+          <th style="width: 80px; text-align: center;">Acciones</th>
+        </tr>
+      `;
+    } else {
+      this.inventoryTableHead.innerHTML = `
+        <tr>
+          <th style="width: 38px; text-align: center;">
+            <input type="checkbox" id="select-all-products" class="custom-checkbox">
+          </th>
+          <th style="width: 110px;">Codigo</th>
+          <th>Descripcion</th>
+          <th style="width: 150px;">Unidad / Presentación</th>
+          <th style="width: 100px;">Libraje</th>
+          <th style="width: 100px;">Gravedad E</th>
+          <th style="width: 100px; text-align: right;">Costo Base</th>
+          <th style="width: 90px; text-align: right;">Cantidad</th>
+          <th style="width: 105px; text-align: center;">Estado</th>
+          <th style="width: 90px; text-align: center;">Acciones</th>
+        </tr>
+      `;
+    }
+
+    this.selectAllCheckbox = document.getElementById('select-all-products');
+    if (this.selectAllCheckbox) {
+      this.selectAllCheckbox.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        if (isChecked) {
+          this.products.forEach(p => this.selectedIds.add(p.id));
+        } else {
+          this.selectedIds.clear();
+        }
+        this.renderInventoryTable();
+        this.updateDeleteButtonState();
+      });
+    }
+  }
+
   renderInventoryTable() {
+    this.renderInventoryTableHead();
+
     const totalItems = this.products.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / this.itemsPerPage));
 
@@ -529,12 +769,14 @@ class ChapalaApp {
 
     this.inventoryTableBody.innerHTML = '';
 
+    const colCount = this.currentCategory === 'wellsite' ? 14 : 10;
+
     if (paginated.length === 0) {
       this.inventoryTableBody.innerHTML = `
         <tr>
-          <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
-            <div style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">No se encontraron productos</div>
-            <div style="font-size: 13px;">No hay resultados para la búsqueda "${this.escapeHtml(this.searchTerm)}".</div>
+          <td colspan="${colCount}" style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <div style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">No se encontraron productos en esta categoría</div>
+            <div style="font-size: 13px;">No hay resultados para "${this.escapeHtml(this.searchTerm)}".</div>
           </td>
         </tr>
       `;
@@ -544,30 +786,69 @@ class ChapalaApp {
         const tr = document.createElement('tr');
         if (isSelected) tr.classList.add('row-selected');
 
-        tr.innerHTML = `
-          <td style="text-align: center;">
-            <input type="checkbox" class="custom-checkbox row-product-checkbox" data-id="${product.id}" ${isSelected ? 'checked' : ''}>
-          </td>
-          <td class="col-sku">${this.escapeHtml(product.codigo)}</td>
-          <td class="col-desc">${this.escapeHtml(product.descripcion)}</td>
-          <td>${this.escapeHtml(product.unidad)}</td>
-          <td>${this.escapeHtml(product.libraje || 'N/A')}</td>
-          <td>${this.escapeHtml(product.gravedad_especifica || 'N/A')}</td>
-          <td class="col-num">${product.cantidad.toLocaleString('es-ES')}</td>
-          <td style="text-align: center;">
-            <span class="status-badge ${product.estado.badge_class}">${product.estado.label}</span>
-          </td>
-          <td style="text-align: center;">
-            <div class="action-buttons-group">
-              <button class="btn-table-action btn-edit-product" data-id="${product.id}" title="Editar producto">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-              </button>
-              <button class="btn-table-action btn-delete-row" data-id="${product.id}" title="Eliminar producto">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-              </button>
-            </div>
-          </td>
-        `;
+        // Calcular salidas registradas hoy para este producto
+        const dailyUsos = this.usageList.filter(u => u.producto_id === product.id);
+        const dailyUsed = dailyUsos.reduce((sum, u) => sum + u.cantidad, 0);
+
+        if (this.currentCategory === 'wellsite') {
+          const cumUsed = product.cum_used + dailyUsed;
+          const dailyCost = dailyUsed * (product.precio_unitario || 0);
+
+          tr.innerHTML = `
+            <td style="text-align: center;">
+              <input type="checkbox" class="custom-checkbox row-product-checkbox" data-id="${product.id}" ${isSelected ? 'checked' : ''}>
+            </td>
+            <td style="font-weight: 700; color: #0f172a;">${this.escapeHtml(product.descripcion)}</td>
+            <td>${this.escapeHtml(product.unidad)}</td>
+            <td class="col-num" style="font-weight: 600;">$${(product.precio_unitario || 0).toFixed(2)}</td>
+            <td class="col-num">${product.stock_inicial}</td>
+            <td class="col-num" style="${dailyUsed > 0 ? 'font-weight: bold; color: #2563eb;' : ''}">${dailyUsed > 0 ? dailyUsed : '-'}</td>
+            <td class="col-num">${cumUsed > 0 ? cumUsed : '-'}</td>
+            <td class="col-num">${product.daily_received > 0 ? product.daily_received : '-'}</td>
+            <td class="col-num">${product.cum_received > 0 ? product.cum_received : '-'}</td>
+            <td class="col-num">${product.daily_return > 0 ? product.daily_return : '-'}</td>
+            <td class="col-num">${product.cum_return > 0 ? product.cum_return : '-'}</td>
+            <td class="col-num" style="font-weight: 700; color: #0f172a;">${product.cantidad}</td>
+            <td class="col-num col-cost">${dailyCost > 0 ? `$${dailyCost.toFixed(2)}` : '-'}</td>
+            <td style="text-align: center;">
+              <div class="action-buttons-group">
+                <button class="btn-table-action btn-edit-product" data-id="${product.id}" title="Editar producto">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                </button>
+                <button class="btn-table-action btn-delete-row" data-id="${product.id}" title="Eliminar producto">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </div>
+            </td>
+          `;
+        } else {
+          // Químicos o Líquidos
+          tr.innerHTML = `
+            <td style="text-align: center;">
+              <input type="checkbox" class="custom-checkbox row-product-checkbox" data-id="${product.id}" ${isSelected ? 'checked' : ''}>
+            </td>
+            <td class="col-sku">${this.escapeHtml(product.codigo)}</td>
+            <td class="col-desc">${this.escapeHtml(product.descripcion)}</td>
+            <td>${this.escapeHtml(product.unidad)}</td>
+            <td>${this.escapeHtml(product.libraje || 'N/A')}</td>
+            <td>${this.escapeHtml(product.gravedad_especifica || 'N/A')}</td>
+            <td class="col-num" style="font-weight: 600; color: #166534;">$${(product.precio_unitario || 0).toFixed(2)}</td>
+            <td class="col-num">${product.cantidad.toLocaleString('es-ES')}</td>
+            <td style="text-align: center;">
+              <span class="status-badge ${product.estado.badge_class}">${product.estado.label}</span>
+            </td>
+            <td style="text-align: center;">
+              <div class="action-buttons-group">
+                <button class="btn-table-action btn-edit-product" data-id="${product.id}" title="Editar producto">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                </button>
+                <button class="btn-table-action btn-delete-row" data-id="${product.id}" title="Eliminar producto">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </div>
+            </td>
+          `;
+        }
         this.inventoryTableBody.appendChild(tr);
       });
     }
@@ -680,15 +961,17 @@ class ChapalaApp {
     this.btnModalSubmit.textContent = 'Crear';
     this.formProductCrud.reset();
     this.modalProductId.value = '';
+    this.modalCategoria.value = this.currentCategory;
     this.modalCodigo.value = this.generateRandomSku();
     this.modalCantidad.value = 0;
+    this.modalPrecioUnitario.value = '0.00';
     this.modalLibraje.value = 'N/A';
     this.modalGravedad.value = 'N/A';
     this.productModal.classList.add('active');
   }
 
   openEditProductModal(id) {
-    const product = this.products.find(p => p.id === id);
+    const product = (this.allProducts && this.allProducts.find(p => p.id === id)) || this.products.find(p => p.id === id);
     if (!product) return;
 
     this.editingProductId = id;
@@ -699,9 +982,11 @@ class ChapalaApp {
     this.modalCodigo.value = product.codigo;
     this.modalDescripcion.value = product.descripcion;
     this.modalUnidad.value = product.unidad;
-    this.modalLibraje.value = product.libraje;
-    this.modalGravedad.value = product.gravedad_especifica;
+    this.modalLibraje.value = product.libraje || 'N/A';
+    this.modalGravedad.value = product.gravedad_especifica || 'N/A';
     this.modalCantidad.value = product.cantidad;
+    this.modalCategoria.value = product.categoria || 'quimico';
+    this.modalPrecioUnitario.value = (product.precio_unitario || 0).toFixed(2);
 
     this.productModal.classList.add('active');
   }
@@ -718,6 +1003,8 @@ class ChapalaApp {
     const libraje = this.modalLibraje.value.trim() || 'N/A';
     const gravedad = this.modalGravedad.value.trim() || 'N/A';
     const cantidad = parseInt(this.modalCantidad.value) || 0;
+    const categoria = this.modalCategoria.value;
+    const precio_unitario = parseFloat(this.modalPrecioUnitario.value) || 0;
 
     if (!descripcion) {
       this.showToast('La descripción del producto es obligatoria', 'error');
@@ -730,7 +1017,9 @@ class ChapalaApp {
       unidad,
       libraje,
       gravedad_especifica: gravedad,
-      cantidad
+      cantidad,
+      categoria,
+      precio_unitario
     };
 
     try {
@@ -809,35 +1098,133 @@ class ChapalaApp {
   }
 
   // ============================================================================
-  // 7. MÓDULO USO (SELECCIÓN, PRECIO VARIABLE, CÁLCULO DE COSTO Y SUBTOTALES)
+  // 7. MÓDULO USO (COMBOBOX FUSIONADO, CÁLCULO DE COSTO Y SUBTOTALES)
   // ============================================================================
-  populateProductSelect() {
-    const prevVal = this.usoSelectProducto.value;
-    this.usoSelectProducto.innerHTML = '<option value="">-- Seleccione un producto del catálogo --</option>';
+  populateProductSelect(filterText = '') {
+    this.renderComboboxList(filterText);
+  }
 
-    this.products.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.textContent = `${p.codigo} - ${p.descripcion} (Disp: ${p.cantidad} ${p.unidad})`;
-      opt.dataset.stock = p.cantidad;
-      opt.dataset.unit = p.unidad;
-      this.usoSelectProducto.appendChild(opt);
+  renderComboboxList(filterText = '') {
+    if (!this.usoComboboxList) return;
+    this.usoComboboxList.innerHTML = '';
+
+    const filter = (filterText || '').trim().toLowerCase();
+    const sourceProducts = (this.allProducts && this.allProducts.length > 0) ? this.allProducts : this.products;
+    let filtered = sourceProducts;
+
+    if (filter) {
+      filtered = sourceProducts.filter(p => {
+        const codigo = (p.codigo || '').toLowerCase();
+        const desc = (p.descripcion || '').toLowerCase();
+        const cat = (p.categoria || '').toLowerCase();
+        return codigo.includes(filter) || desc.includes(filter) || cat.includes(filter);
+      });
+    }
+
+    if (filtered.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'combobox-empty';
+      li.textContent = `No se encontraron productos con "${filterText}"`;
+      this.usoComboboxList.appendChild(li);
+      return;
+    }
+
+    const currentId = parseInt(this.usoSelectProducto.value) || null;
+
+    filtered.forEach(p => {
+      const li = document.createElement('li');
+      li.className = `combobox-item ${p.id === currentId ? 'selected' : ''}`;
+      li.dataset.id = p.id;
+      const catBadge = p.categoria === 'liquido' ? '<span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 5px; border-radius:3px; margin-left:6px;">💧 Líquido</span>' : (p.categoria === 'wellsite' ? '<span style="font-size:10px; background:#fef3c7; color:#92400e; padding:2px 5px; border-radius:3px; margin-left:6px;">🛢️ Wellsite</span>' : '<span style="font-size:10px; background:#ecfdf5; color:#047857; padding:2px 5px; border-radius:3px; margin-left:6px;">🧪 Químico</span>');
+      li.innerHTML = `
+        <div class="combobox-item-main">
+          <span class="combobox-item-code">${this.escapeHtml(p.codigo)}</span>
+          <span class="combobox-item-desc">${this.escapeHtml(p.descripcion)} ${catBadge}</span>
+        </div>
+        <div style="text-align: right;">
+          <span class="combobox-item-stock">Stock: ${p.cantidad} ${this.escapeHtml(p.unidad)}</span>
+          ${p.precio_unitario > 0 ? `<div style="font-size:11px; color:#166534; font-weight:600;">$${p.precio_unitario.toFixed(2)}</div>` : ''}
+        </div>
+      `;
+      const selectAction = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        this.selectProductInCombobox(p);
+      };
+      li.addEventListener('mousedown', selectAction);
+      li.addEventListener('click', selectAction);
+      this.usoComboboxList.appendChild(li);
     });
+  }
 
-    if (prevVal) {
-      this.usoSelectProducto.value = prevVal;
+  openComboboxDropdown() {
+    if (!this.usoComboboxDropdown) return;
+    this.usoComboboxDropdown.style.display = 'block';
+    if (this.usoComboboxToggleBtn) {
+      this.usoComboboxToggleBtn.classList.add('open');
+    }
+    const currentId = parseInt(this.usoSelectProducto.value);
+    const pool = (this.allProducts && this.allProducts.length > 0) ? this.allProducts : this.products;
+    const currentProd = pool.find(p => p.id === currentId);
+    if (!this.usoProductSearchInput || !this.usoProductSearchInput.value || (currentProd && this.usoProductSearchInput.value === `${currentProd.codigo} - ${currentProd.descripcion}`)) {
+      this.renderComboboxList('');
+    } else {
+      this.renderComboboxList(this.usoProductSearchInput ? this.usoProductSearchInput.value : '');
     }
   }
 
+  closeComboboxDropdown() {
+    if (!this.usoComboboxDropdown) return;
+    this.usoComboboxDropdown.style.display = 'none';
+    if (this.usoComboboxToggleBtn) {
+      this.usoComboboxToggleBtn.classList.remove('open');
+    }
+  }
+
+  selectProductInCombobox(product) {
+    if (!product) return;
+    this.usoSelectProducto.value = product.id;
+    this.usoProductSearchInput.value = `${product.codigo} - ${product.descripcion}`;
+    if (this.usoComboboxClearBtn) {
+      this.usoComboboxClearBtn.style.display = 'flex';
+    }
+    this.closeComboboxDropdown();
+    this.onProductSelectionChange();
+  }
+
+  clearComboboxSelection() {
+    this.usoSelectProducto.value = '';
+    if (this.usoProductSearchInput) {
+      this.usoProductSearchInput.value = '';
+    }
+    if (this.usoComboboxClearBtn) {
+      this.usoComboboxClearBtn.style.display = 'none';
+    }
+    this.onProductSelectionChange();
+    this.renderComboboxList('');
+  }
+
   onProductSelectionChange() {
-    const selectedOption = this.usoSelectProducto.selectedOptions[0];
-    if (selectedOption && selectedOption.value) {
-      const stock = parseInt(selectedOption.dataset.stock) || 0;
-      const unit = selectedOption.dataset.unit || '';
-      this.usoStockDisponibleHint.textContent = `Stock disponible actual: ${stock} ${unit}`;
+    const productId = parseInt(this.usoSelectProducto.value);
+    const pool = (this.allProducts && this.allProducts.length > 0) ? this.allProducts : this.products;
+    const product = pool.find(p => p.id === productId);
+
+    if (product) {
+      const stock = product.cantidad || 0;
+      const unit = product.unidad || '';
+      const catLabel = product.categoria === 'liquido' ? '💧 Líquido' : (product.categoria === 'wellsite' ? '🛢️ Wellsite' : '🧪 Químico');
+      this.usoStockDisponibleHint.textContent = `[${catLabel}] Stock disponible: ${stock} ${unit}`;
       this.usoStockDisponibleHint.style.color = stock > 0 ? 'var(--text-muted)' : '#dc2626';
+
+      // Auto-completar precio si el producto ya tiene un costo configurado
+      if (product.precio_unitario && product.precio_unitario > 0) {
+        this.usoInputPrecio.value = product.precio_unitario.toFixed(2);
+      }
     } else {
       this.usoStockDisponibleHint.textContent = 'Stock disponible: -';
+      this.usoStockDisponibleHint.style.color = 'var(--text-muted)';
     }
     this.updateLiveCalculation();
   }
@@ -944,8 +1331,8 @@ class ChapalaApp {
       if (data.success) {
         this.showToast(data.mensaje || 'Salida registrada correctamente', 'success');
         this.formRegistroUso.reset();
+        this.clearComboboxSelection();
         this.usoLiveSubtotal.textContent = '$0.00';
-        this.usoStockDisponibleHint.textContent = 'Stock disponible: -';
         
         // Refresca catálogo y datos de uso
         await this.fetchProducts();
@@ -984,11 +1371,31 @@ class ChapalaApp {
   // ============================================================================
   async openPrintPreview() {
     try {
-      const url = this.selectedReportDate ? `/api/reporte-oficial/?fecha=${this.selectedReportDate}` : '/api/reporte-oficial/';
+      const url = this.selectedReportDate
+        ? `/api/reporte-oficial/?fecha=${this.selectedReportDate}&categoria=${this.currentPrintCategory}`
+        : `/api/reporte-oficial/?categoria=${this.currentPrintCategory}`;
       const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
-        const sheetHtml = this.buildAosOfficialSheetHtml(data.reporte, data.filas, data.desglose_costos, data.costo_total_acumulado);
+        let sheetHtml = '';
+        if (this.currentPrintCategory === 'wellsite') {
+          sheetHtml = this.buildWellsiteDailyReportSheetHtml(
+            data.reporte,
+            data.wellsite_filas || [],
+            data.desglose_costos || [],
+            data.total_wellsite_daily_cost || 0,
+            data.total_wellsite_cum_cost || 0
+          );
+        } else {
+          const isLiquid = (this.currentPrintCategory === 'liquido');
+          sheetHtml = this.buildAosOfficialSheetHtml(
+            data.reporte,
+            data.filas || [],
+            data.desglose_costos || [],
+            data.costo_categoria !== undefined ? data.costo_categoria : data.costo_total_acumulado,
+            isLiquid
+          );
+        }
         this.printPreviewContent.innerHTML = sheetHtml;
         this.printSheetContainer.innerHTML = sheetHtml;
         this.printPreviewModal.classList.add('active');
@@ -1003,7 +1410,7 @@ class ChapalaApp {
     this.printPreviewModal.classList.remove('active');
   }
 
-  buildAosOfficialSheetHtml(reporte, filas, desglose_costos = [], costo_total = 0) {
+  buildAosOfficialSheetHtml(reporte, filas, desglose_costos = [], costo_total = 0, isLiquid = false) {
     let rowsHtml = '';
     filas.forEach(f => {
       const hasExcelMarker = (f.item === 35);
@@ -1045,6 +1452,7 @@ class ChapalaApp {
     }
 
     const codigoRep = reporte.codigo_reporte || `REP-${reporte.id}`;
+    const reportTitle = isLiquid ? 'INVENTARIO DE PRODUCTOS LÍQUIDOS' : 'INVENTARIO DE PRODUCTOS QUÍMICOS';
 
     return `
       <div class="aos-official-sheet">
@@ -1070,7 +1478,7 @@ class ChapalaApp {
               </div>
             </td>
             <td class="aos-title-cell">
-              <div>INVENTARIO DE PRODUCTOS QUÍMICOS</div>
+              <div>${reportTitle}</div>
               <div style="font-size: 11px; font-weight: bold; color: #0044aa; margin-top: 4px;">N° REPORTE: ${this.escapeHtml(codigoRep)}</div>
             </td>
           </tr>
@@ -1128,7 +1536,7 @@ class ChapalaApp {
             <tbody>
               ${costosRows}
               <tr class="aos-costs-total-row">
-                <td colspan="4" style="text-align: right; padding: 5px;">COSTO TOTAL ACUMULADO DEL REPORTE:</td>
+                <td colspan="4" style="text-align: right; padding: 5px;">COSTO TOTAL DE SALIDAS:</td>
                 <td style="text-align: right; padding: 5px; color: #166534; font-size: 11px;">$${costo_total.toFixed(2)}</td>
                 <td></td>
               </tr>
@@ -1166,16 +1574,141 @@ class ChapalaApp {
     `;
   }
 
+  buildWellsiteDailyReportSheetHtml(reporte, wellsite_filas = [], desglose_costos = [], daily_cost = 0, cum_cost = 0) {
+    let rowsHtml = '';
+    wellsite_filas.forEach(f => {
+      rowsHtml += `
+        <tr>
+          <td style="font-weight: bold;">${this.escapeHtml(f.product)}</td>
+          <td style="text-align: center;">${this.escapeHtml(f.unit_size)}</td>
+          <td class="text-right">${f.unit_price > 0 ? f.unit_price.toFixed(2) : ''}</td>
+          <td class="text-right">${f.start_amt > 0 ? f.start_amt : ''}</td>
+          <td class="text-right" style="${f.daily_used > 0 ? 'font-weight:bold; color:#0284c7;' : ''}">${f.daily_used > 0 ? f.daily_used : ''}</td>
+          <td class="text-right">${f.cum_used > 0 ? f.cum_used : ''}</td>
+          <td class="text-right">${f.daily_received > 0 ? f.daily_received : ''}</td>
+          <td class="text-right">${f.cum_received > 0 ? f.cum_received : ''}</td>
+          <td class="text-right">${f.daily_return > 0 ? f.daily_return : ''}</td>
+          <td class="text-right">${f.cum_return > 0 ? f.cum_return : ''}</td>
+          <td class="text-right" style="font-weight: bold;">${f.final_stock}</td>
+          <td class="text-right ${f.daily_cost > 0 ? 'cost-highlight' : ''}">${f.daily_cost > 0 ? f.daily_cost.toFixed(2) : ''}</td>
+        </tr>
+      `;
+    });
+
+    const reportNo = reporte.reporte_no_wellsite || '16';
+    const operator = reporte.operador || 'Cardon IV';
+    const wellName = reporte.pozo || 'Perla-1X';
+    const location = reporte.locacion || 'Offshore';
+
+    return `
+      <div class="wellsite-sheet">
+        <!-- Encabezado Estilo M-I SWACO -->
+        <div class="wellsite-header">
+          <div class="wellsite-brand-row">
+            <div style="font-family: Arial, Helvetica, sans-serif; font-size: 24px; font-weight: 900; letter-spacing: -1px; color: #000;">
+              M<span style="color:#d97706;">i</span> SWACO
+              <div style="height: 3px; background: linear-gradient(90deg, #d97706 0%, #b45309 60%, transparent 100%); margin-top: 2px;"></div>
+            </div>
+            <div class="wellsite-main-title">
+              <h1>WELLSITE CHEMICAL INVENTORY</h1>
+              <h2>Daily Report</h2>
+            </div>
+            <div style="width: 120px; text-align: right; font-size: 11px; color: #555;">
+              A Schlumberger Co.
+            </div>
+          </div>
+
+          <div class="wellsite-meta-grid">
+            <div class="wellsite-meta-item">
+              <span class="wellsite-meta-label">Operator:</span>
+              <span>${this.escapeHtml(operator)}</span>
+            </div>
+            <div class="wellsite-meta-item">
+              <span class="wellsite-meta-label">Date:</span>
+              <span>${this.escapeHtml(reporte.fecha_formato)}</span>
+            </div>
+            <div class="wellsite-meta-item">
+              <span class="wellsite-meta-label">Well Name:</span>
+              <span>${this.escapeHtml(wellName)}</span>
+            </div>
+            <div class="wellsite-meta-item">
+              <span class="wellsite-meta-label">Report No:</span>
+              <span>${this.escapeHtml(reportNo)}</span>
+            </div>
+            <div class="wellsite-meta-item">
+              <span class="wellsite-meta-label">Location:</span>
+              <span>${this.escapeHtml(location)}</span>
+            </div>
+            <div class="wellsite-meta-item">
+              <span class="wellsite-meta-label">Page:</span>
+              <span>1</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cost Summary Box -->
+        <div class="wellsite-cost-summary">
+          <div class="wellsite-cost-title">Cost Summary</div>
+          <div class="wellsite-cost-row">
+            <div class="wellsite-cost-cell">
+              <span>Total Daily Cost:</span>
+              <span class="amt">$${daily_cost.toFixed(2)}</span>
+            </div>
+            <div class="wellsite-cost-cell">
+              <span>Total Daily Tax:</span>
+              <span>$0.00</span>
+            </div>
+            <div class="wellsite-cost-cell">
+              <span>Cumulative Cost:</span>
+              <span class="amt">$${cum_cost.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla Wellsite -->
+        <table class="wellsite-table">
+          <thead>
+            <tr>
+              <th rowspan="2" style="width: 210px;">Product</th>
+              <th rowspan="2" style="width: 85px;">Unit<br>Size</th>
+              <th rowspan="2" style="width: 75px;">Unit<br>Price</th>
+              <th rowspan="2" style="width: 65px;">Start<br>Amt.</th>
+              <th rowspan="2" style="width: 65px;">Daily<br>Used</th>
+              <th rowspan="2" style="width: 65px;">Cum<br>Used</th>
+              <th rowspan="2" style="width: 65px;">Daily<br>Rec'd</th>
+              <th rowspan="2" style="width: 65px;">Cum<br>Rec'd</th>
+              <th rowspan="2" style="width: 65px;">Daily<br>Return</th>
+              <th rowspan="2" style="width: 65px;">Cum.<br>Return</th>
+              <th rowspan="2" style="width: 70px;">Final<br>Stock</th>
+              <th rowspan="2" style="width: 80px;">Daily<br>Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
   // ============================================================================
   // 9. HELPERS Y UTILIDADES
   // ============================================================================
   generateRandomSku() {
-    const existingSkus = this.products.map(p => p.codigo);
+    let prefix = 'AOS';
+    const cat = (this.modalCategoria ? this.modalCategoria.value : this.currentCategory);
+    if (cat === 'liquido') {
+      prefix = 'AOS-LIQ';
+    } else if (cat === 'wellsite') {
+      prefix = 'WELL';
+    }
+    const pool = (this.allProducts && this.allProducts.length > 0) ? this.allProducts : this.products;
+    const existingSkus = pool.map(p => p.codigo);
     let sku;
     let attempts = 0;
     do {
       const randomNum = Math.floor(1000 + Math.random() * 9000);
-      sku = `AOS-${randomNum}`;
+      sku = `${prefix}-${randomNum}`;
       attempts++;
     } while (existingSkus.includes(sku) && attempts < 1000);
     return sku;

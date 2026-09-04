@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Inventario y Reportes Diarios - Proyecto Chapala</title>
   {% load static %}
-  <link rel="stylesheet" href="{% static 'mychapala/css/styles.css' %}">
+  <link rel="stylesheet" href="{% static 'mychapala/css/styles.css' %}?v=3.1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -269,6 +269,25 @@
             </div>
           </div>
 
+          <!-- BOTONES DE CATEGORÍA DE INVENTARIO -->
+          <div class="category-tabs-bar">
+            <button type="button" class="btn-category-tab active" data-cat="quimico" id="btn-cat-quimico">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.31L4.54 20.3a2 2 0 0 0 1.76 2.7h15.4a2 2 0 0 0 1.76-2.7L18 9.31V2"></path><line x1="9" y1="2" x2="15" y2="2"></line><line x1="8.5" y1="14" x2="15.5" y2="14"></line></svg>
+              <span>Productos Químicos</span>
+              <span class="category-count-badge" id="badge-count-quimico">0</span>
+            </button>
+            <button type="button" class="btn-category-tab" data-cat="liquido" id="btn-cat-liquido">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+              <span>Productos Líquidos</span>
+              <span class="category-count-badge" id="badge-count-liquido">0</span>
+            </button>
+            <button type="button" class="btn-category-tab" data-cat="wellsite" id="btn-cat-wellsite">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+              <span>Wellsite Chemical Inventory</span>
+              <span class="category-count-badge" id="badge-count-wellsite">0</span>
+            </button>
+          </div>
+
           <!-- Métricas Rápidas de Inventario -->
           <div class="inventory-stats-bar">
             <div class="stat-pill"><span class="stat-bullet bg-navy"></span> <span id="stat-total">Total Productos: 0</span></div>
@@ -287,27 +306,15 @@
             </div>
           </div>
 
-          <!-- Tabla Principal de Inventario (Estructura del Diagrama) -->
-          <div class="table-container">
-            <table class="inventory-table">
-              <thead>
-                <tr>
-                  <th style="width: 38px; text-align: center;">
-                    <input type="checkbox" id="select-all-products" class="custom-checkbox">
-                  </th>
-                  <th style="width: 110px;">Codigo</th>
-                  <th>Descripcion</th>
-                  <th style="width: 160px;">Unidad</th>
-                  <th style="width: 110px;">Libraje</th>
-                  <th style="width: 120px;">Gravedad E</th>
-                  <th style="width: 100px; text-align: right;">Cantidad</th>
-                  <th style="width: 110px; text-align: center;">Estado</th>
-                  <th style="width: 110px; text-align: center;">Acciones</th>
-                </tr>
+          <!-- Tabla Principal de Inventario (Adaptable Químicos, Líquidos y Wellsite) -->
+          <div class="table-container" id="inventory-table-container">
+            <table class="inventory-table" id="main-inventory-table">
+              <thead id="inventory-table-head">
+                <!-- Encabezados dinámicos generados por JavaScript según la categoría -->
               </thead>
               <tbody id="inventory-table-body">
                 <tr>
-                  <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  <td colspan="12" style="text-align: center; padding: 40px; color: var(--text-muted);">
                     Cargando catálogo de productos...
                   </td>
                 </tr>
@@ -351,12 +358,33 @@
 
               <form id="form-registro-uso">
                 
-                <!-- Selector del Producto Químico -->
+                <!-- Selector Fusión: Buscador con Lista Desplegable Integrada (Combobox) -->
                 <div class="form-group">
-                  <label class="form-label" for="uso-select-producto">Seleccionar Producto *</label>
-                  <select id="uso-select-producto" class="form-control" required>
-                    <option value="">-- Seleccione un producto del catálogo --</option>
-                  </select>
+                  <label class="form-label" for="uso-product-search-input">Seleccionar Producto Químico *</label>
+                  
+                  <div class="custom-combobox-wrapper" id="uso-combobox-wrapper">
+                    <!-- Campo interactivo unificado (Buscador + Selector) -->
+                    <div class="combobox-input-container">
+                      <span class="combobox-search-icon">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                      </span>
+                      <input type="text" id="uso-product-search-input" class="form-control combobox-input" placeholder="🔍 Escribe código o nombre para seleccionar químico..." autocomplete="off">
+                      <button type="button" id="uso-combobox-clear-btn" class="combobox-clear-btn" title="Limpiar selección" style="display: none;">&times;</button>
+                      <button type="button" id="uso-combobox-toggle-btn" class="combobox-toggle-btn" title="Abrir/Cerrar lista">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      </button>
+                    </div>
+
+                    <!-- Lista desplegable flotante con filtro en tiempo real -->
+                    <div class="combobox-dropdown" id="uso-combobox-dropdown" style="display: none;">
+                      <ul class="combobox-list" id="uso-combobox-list">
+                        <!-- Opciones dinámicas -->
+                      </ul>
+                    </div>
+
+                    <!-- Input oculto para compatibilidad con el formulario (guarda el id del producto) -->
+                    <input type="hidden" id="uso-select-producto" name="producto_id">
+                  </div>
                   <div class="form-hint" id="uso-stock-disponible-hint">Stock disponible: -</div>
                 </div>
 
@@ -495,9 +523,26 @@
             <input type="text" id="modal-gravedad" class="form-control" placeholder="Ej: 1.15, 2.60, N/A">
           </div>
 
+          <!-- Campo: Categoría -->
+          <div class="form-group-modal">
+            <label class="modal-label" for="modal-categoria">Categoría del Producto *</label>
+            <select id="modal-categoria" class="form-control" required>
+              <option value="quimico">🧪 Producto Químico (AOS)</option>
+              <option value="liquido">💧 Producto Líquido (AOS)</option>
+              <option value="wellsite">🛢️ Wellsite Chemical Inventory</option>
+            </select>
+          </div>
+
+          <!-- Campo: Costo / Precio Unitario -->
+          <div class="form-group-modal">
+            <label class="modal-label" for="modal-precio-unitario">Costo / Precio Unitario ($) *</label>
+            <input type="number" id="modal-precio-unitario" class="form-control" min="0" step="0.01" placeholder="0.00" value="0.00" required>
+            <span class="form-hint" style="font-size: 11px; color: var(--text-muted);">Costo base requerido para el control de inventario y cálculo de salidas</span>
+          </div>
+
           <!-- Campo: Cantidad -->
           <div class="form-group-modal">
-            <label class="modal-label" for="modal-cantidad">Cantidad</label>
+            <label class="modal-label" for="modal-cantidad">Cantidad (Stock)</label>
             <input type="number" id="modal-cantidad" class="form-control" min="0" step="1" value="0" required>
           </div>
         </div>
@@ -549,6 +594,23 @@
           <button class="modal-close-btn" id="btn-close-print-preview">&times;</button>
         </div>
       </div>
+
+      <!-- Selector de Formato de Impresión Oficial por Categoría -->
+      <div class="print-category-selector-bar">
+        <span class="print-selector-label">Formato de Reporte:</span>
+        <div class="print-category-pills">
+          <button type="button" class="print-cat-btn active" data-print-cat="quimico" id="print-cat-quimico">
+            🧪 Químicos AOS
+          </button>
+          <button type="button" class="print-cat-btn" data-print-cat="liquido" id="print-cat-liquido">
+            💧 Líquidos AOS
+          </button>
+          <button type="button" class="print-cat-btn" data-print-cat="wellsite" id="print-cat-wellsite">
+            🛢️ Wellsite Daily Report (M-I SWACO)
+          </button>
+        </div>
+      </div>
+
       <div class="modal-body print-preview-scroll" id="print-preview-content">
         <!-- Render dinámico de la planilla oficial -->
       </div>
@@ -606,7 +668,7 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="{% static 'mychapala/js/app.js' %}"></script>
+  <script src="{% static 'mychapala/js/app.js' %}?v=3.2"></script>
 </body>
 </html>
 

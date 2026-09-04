@@ -66,6 +66,52 @@ class Producto(models.Model):
         verbose_name="Stock Inicial",
         help_text="Existencia al inicio del período o creación"
     )
+    CATEGORIA_CHOICES = [
+        ('quimico', 'Producto Químico'),
+        ('liquido', 'Producto Líquido'),
+        ('wellsite', 'Wellsite Chemical Inventory'),
+    ]
+
+    categoria = models.CharField(
+        max_length=50,
+        choices=CATEGORIA_CHOICES,
+        default='quimico',
+        db_index=True,
+        verbose_name="Categoría",
+        help_text="Clasificación del producto (Químico, Líquido o Wellsite)"
+    )
+    precio_unitario = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Precio / Costo Unitario ($)",
+        help_text="Costo o precio base unitario del producto"
+    )
+    cum_used = models.IntegerField(
+        default=0,
+        verbose_name="Acumulado Usado (Cum Used)",
+        help_text="Cantidad acumulada utilizada (Wellsite)"
+    )
+    daily_received = models.IntegerField(
+        default=0,
+        verbose_name="Recibido Diario (Daily Rec'd)",
+        help_text="Cantidad recibida en el día"
+    )
+    cum_received = models.IntegerField(
+        default=0,
+        verbose_name="Acumulado Recibido (Cum Rec'd)",
+        help_text="Total acumulado recibido"
+    )
+    daily_return = models.IntegerField(
+        default=0,
+        verbose_name="Devuelto Diario (Daily Return)",
+        help_text="Cantidad devuelta en el día"
+    )
+    cum_return = models.IntegerField(
+        default=0,
+        verbose_name="Acumulado Devuelto (Cum Return)",
+        help_text="Total acumulado devuelto"
+    )
     activo = models.BooleanField(
         default=True,
         verbose_name="Activo",
@@ -111,6 +157,13 @@ class Producto(models.Model):
             "gravedad_especifica": self.gravedad_especifica,
             "cantidad": self.cantidad,
             "stock_inicial": self.stock_inicial,
+            "categoria": self.categoria,
+            "precio_unitario": float(self.precio_unitario),
+            "cum_used": self.cum_used,
+            "daily_received": self.daily_received,
+            "cum_received": self.cum_received,
+            "daily_return": self.daily_return,
+            "cum_return": self.cum_return,
             "estado": self.estado_stock,
             "activo": self.activo,
             "fecha_creacion": self.fecha_creacion.strftime("%d/%m/%Y %H:%M") if self.fecha_creacion else "",
@@ -180,6 +233,30 @@ class ReporteDiario(models.Model):
         verbose_name="Observaciones / Comentarios Generales",
         help_text="Notas o comentarios generales del reporte del día"
     )
+    operador = models.CharField(
+        max_length=150,
+        default="Cardon IV",
+        blank=True,
+        verbose_name="Operador (Wellsite)"
+    )
+    pozo = models.CharField(
+        max_length=150,
+        default="Perla-1X",
+        blank=True,
+        verbose_name="Pozo / Well Name"
+    )
+    locacion = models.CharField(
+        max_length=150,
+        default="Offshore",
+        blank=True,
+        verbose_name="Locación"
+    )
+    reporte_no_wellsite = models.CharField(
+        max_length=50,
+        default="16",
+        blank=True,
+        verbose_name="Report No (Wellsite)"
+    )
     costo_total = models.DecimalField(
         max_digits=14,
         decimal_places=2,
@@ -231,6 +308,10 @@ class ReporteDiario(models.Model):
             "revisado_por_nombre": self.revisado_por_nombre,
             "revisado_por_cargo": self.revisado_por_cargo,
             "observaciones": self.observaciones,
+            "operador": self.operador,
+            "pozo": self.pozo,
+            "locacion": self.locacion,
+            "reporte_no_wellsite": self.reporte_no_wellsite,
             "costo_total": float(self.costo_total),
             "total_items_usados": self.usos.count(),
         }
