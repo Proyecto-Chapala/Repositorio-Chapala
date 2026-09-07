@@ -505,7 +505,40 @@
             <input type="text" id="modal-descripcion" class="form-control" placeholder="Nombre completo del producto químico" required>
           </div>
 
-          <!-- Campo: Unidad del producto -->
+          <!-- Campos: Unit Size estructurado (cantidad + unidad de medida + tipo de empaque) -->
+          <div class="form-row-2">
+            <div class="form-group-modal">
+              <label class="modal-label" for="modal-cantidad-unitaria">Cantidad Unitaria *</label>
+              <input type="number" id="modal-cantidad-unitaria" class="form-control" min="0" step="0.01" placeholder="Ej: 100, 50, 25, 5" required>
+            </div>
+            <div class="form-group-modal">
+              <label class="modal-label" for="modal-unidad-medida">Unidad de Medida *</label>
+              <select id="modal-unidad-medida" class="form-control" required>
+                <option value="">Seleccionar...</option>
+                <option value="LB">LB — Libras</option>
+                <option value="KG">KG — Kilogramos</option>
+                <option value="GA">GA — Galones</option>
+                <option value="LT">LT — Litros</option>
+                <option value="BBL">BBL — Barriles</option>
+                <option value="EA">EA — Unidad (sin peso)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group-modal">
+            <label class="modal-label" for="modal-tipo-empaque">Tipo de Empaque *</label>
+            <select id="modal-tipo-empaque" class="form-control" required>
+              <option value="">Seleccionar...</option>
+              <option value="BG">BG — Saco / Bolsa</option>
+              <option value="CN">CN — Lata / Cuñete</option>
+              <option value="DM">DM — Tambor</option>
+              <option value="TOTE">TOTE — Tote</option>
+              <option value="BLS">BLS — Barril</option>
+              <option value="EA">EA — Sin empaque físico (servicios)</option>
+            </select>
+            <span class="form-hint" style="font-size: 11px; color: var(--text-muted);">Estos 3 campos calculan el libraje automáticamente y arman el texto de "Unidad del producto" de abajo.</span>
+          </div>
+
+          <!-- Campo: Unidad del producto (se autocompleta desde los 3 campos de arriba, pero se puede ajustar a mano) -->
           <div class="form-group-modal">
             <label class="modal-label" for="modal-unidad">Unidad del producto</label>
             <input type="text" id="modal-unidad" class="form-control" placeholder="Ej: TAMBOR 55 GLS, SACOS 55 LBS, TOTEMS" required>
@@ -513,7 +546,7 @@
 
           <!-- Campo: Libraje -->
           <div class="form-group-modal">
-            <label class="modal-label" for="modal-libraje">Libraje</label>
+            <label class="modal-label" for="modal-libraje">Libraje (texto libre, legado)</label>
             <input type="text" id="modal-libraje" class="form-control" placeholder="Ej: 55 LBS, 100 LBS, N/A">
           </div>
 

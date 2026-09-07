@@ -40,14 +40,17 @@ class Producto(models.Model):
     unidad = models.CharField(
         max_length=100,
         verbose_name="Unidad / Presentación",
-        help_text="Ej: TAMBOR 55 GLS, SACOS 55 LBS, TOTEMS 1000 LT"
+        help_text="Ej: TAMBOR 55 GLS, SACOS 55 LBS, TOTEMS 1000 LT. Se conserva como texto libre "
+                   "para no romper la búsqueda y las planillas existentes; el dato estructurado "
+                   "vive ahora en cantidad_unitaria/unidad_medida/tipo_empaque."
     )
     libraje = models.CharField(
         max_length=100,
         blank=True,
         default="N/A",
-        verbose_name="Libraje",
-        help_text="Libraje o peso neto (ej. 55 LBS, 100 LBS)"
+        verbose_name="Libraje (texto, legado)",
+        help_text="Libraje o peso neto en texto libre (ej. 55 LBS, 100 LBS). Se conserva por "
+                   "compatibilidad; para calcular usar el método libraje_final()."
     )
     gravedad_especifica = models.CharField(
         max_length=50,
@@ -55,6 +58,39 @@ class Producto(models.Model):
         default="N/A",
         verbose_name="Gravedad Específica",
         help_text="Gravedad específica o densidad técnica"
+    )
+
+    class UnidadMedida(models.TextChoices):
+        LB = "LB", "Libras (LB)"
+        KG = "KG", "Kilogramos (KG)"
+        GA = "GA", "Galones (GA)"
+        LT = "LT", "Litros (LT)"
+        BBL = "BBL", "Barriles (BBL)"
+        EA = "EA", "Unidad (EA) — sin conversión de peso"
+
+    class TipoEmpaque(models.TextChoices):
+        BG = "BG", "Saco / Bolsa (BG)"
+        CN = "CN", "Lata / Cuñete (CN)"
+        DM = "DM", "Tambor (DM)"
+        TOTE = "TOTE", "Tote"
+        BLS = "BLS", "Barril (BLS)"
+        EA = "EA", "Unidad (EA) — sin empaque físico, ej. servicios"
+
+    cantidad_unitaria = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        verbose_name="Cantidad unitaria",
+        help_text="Cantidad por unidad de empaque (ej. 100, 50, 25, 5, 1000). "
+                   "Dato estructurado equivalente al primer número del antiguo 'Unit Size'.",
+    )
+    unidad_medida = models.CharField(
+        max_length=3, choices=UnidadMedida.choices, blank=True,
+        verbose_name="Unidad de medida",
+        help_text="Unidad de esa cantidad (LB, KG, GA, LT, BBL, EA).",
+    )
+    tipo_empaque = models.CharField(
+        max_length=4, choices=TipoEmpaque.choices, blank=True,
+        verbose_name="Tipo de empaque",
+        help_text="Empaque en que viene esa cantidad (BG, CN, DM, TOTE, BLS, EA).",
     )
     cantidad = models.IntegerField(
         default=0,
@@ -146,6 +182,19 @@ class Producto(models.Model):
         else:
             return {"label": "Stock Alto", "badge_class": "status-high", "tipo": "success"}
 
+    def libraje_de(self, cantidad_empaques):
+        """Libraje = cantidad_unitaria × cantidad_empaques (fórmula 7.1 del contexto del
+        proyecto). Devuelve None si el producto todavía no tiene cantidad_unitaria cargada
+        (productos migrados desde el texto libre que no se pudieron parsear con certeza)."""
+        if self.cantidad_unitaria is None:
+            return None
+        return self.cantidad_unitaria * Decimal(str(cantidad_empaques))
+
+    @property
+    def libraje_stock(self):
+        """Libraje del stock actual (self.cantidad empaques)."""
+        return self.libraje_de(self.cantidad)
+
     def to_dict(self):
         """Serializa el objeto a diccionario para respuestas API JSON."""
         return {
@@ -155,6 +204,10 @@ class Producto(models.Model):
             "unidad": self.unidad,
             "libraje": self.libraje,
             "gravedad_especifica": self.gravedad_especifica,
+            "cantidad_unitaria": float(self.cantidad_unitaria) if self.cantidad_unitaria is not None else None,
+            "unidad_medida": self.unidad_medida,
+            "tipo_empaque": self.tipo_empaque,
+            "libraje_stock": float(self.libraje_stock) if self.libraje_stock is not None else None,
             "cantidad": self.cantidad,
             "stock_inicial": self.stock_inicial,
             "categoria": self.categoria,
@@ -390,8 +443,15 @@ class RegistroUso(models.Model):
         super().delete(*args, **kwargs)
         reporte_ref.recalcular_costo_total()
 
+    @property
+    def libraje_usado(self):
+        """Libraje de esta salida = cantidad_unitaria del producto × cantidad usada
+        (sección 7.1 del contexto). None si el producto no tiene cantidad_unitaria cargada."""
+        return self.producto.libraje_de(self.cantidad)
+
     def to_dict(self):
         """Serializa el registro de uso para la API JSON."""
+        libraje_usado = self.libraje_usado
         return {
             "id": self.id,
             "reporte_id": self.reporte_id,
@@ -400,6 +460,7 @@ class RegistroUso(models.Model):
             "producto_descripcion": self.producto.descripcion,
             "producto_unidad": self.producto.unidad,
             "cantidad": self.cantidad,
+            "libraje_usado": float(libraje_usado) if libraje_usado is not None else None,
             "precio_unitario": float(self.precio_unitario),
             "costo_total": float(self.costo_total),
             "observacion": self.observacion,

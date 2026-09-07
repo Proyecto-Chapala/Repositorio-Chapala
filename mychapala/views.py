@@ -97,8 +97,24 @@ def api_productos(request):
             daily_return = int(body.get("daily_return", 0))
             cum_return = int(body.get("cum_return", 0))
 
+            cantidad_unitaria_raw = body.get("cantidad_unitaria")
+            unidad_medida = body.get("unidad_medida", "").strip().upper()
+            tipo_empaque = body.get("tipo_empaque", "").strip().upper()
+
             if not descripcion:
                 return JsonResponse({"success": False, "error": "La descripción del producto es obligatoria."}, status=400)
+
+            if cantidad_unitaria_raw in (None, ""):
+                return JsonResponse({"success": False, "error": "Cantidad Unitaria es obligatoria."}, status=400)
+            try:
+                cantidad_unitaria = Decimal(str(cantidad_unitaria_raw))
+            except Exception:
+                return JsonResponse({"success": False, "error": "Cantidad Unitaria debe ser un número."}, status=400)
+
+            if unidad_medida not in Producto.UnidadMedida.values:
+                return JsonResponse({"success": False, "error": f"Unidad de Medida inválida: {unidad_medida}"}, status=400)
+            if tipo_empaque not in Producto.TipoEmpaque.values:
+                return JsonResponse({"success": False, "error": f"Tipo de Empaque inválido: {tipo_empaque}"}, status=400)
 
             # Genera un código automático si no se proporcionó
             if not codigo:
@@ -115,6 +131,9 @@ def api_productos(request):
                 unidad=unidad or "TAMBOR 55 GLS",
                 libraje=libraje or "N/A",
                 gravedad_especifica=gravedad_especifica or "N/A",
+                cantidad_unitaria=cantidad_unitaria,
+                unidad_medida=unidad_medida,
+                tipo_empaque=tipo_empaque,
                 cantidad=max(0, cantidad),
                 stock_inicial=max(0, cantidad),
                 categoria=categoria if categoria in ['quimico', 'liquido', 'wellsite'] else 'quimico',
@@ -163,6 +182,26 @@ def api_producto_detalle(request, pk):
             producto.unidad = body.get("unidad", producto.unidad).strip().upper()
             producto.libraje = body.get("libraje", producto.libraje).strip()
             producto.gravedad_especifica = body.get("gravedad_especifica", producto.gravedad_especifica).strip()
+
+            if "cantidad_unitaria" in body:
+                if body["cantidad_unitaria"] in (None, ""):
+                    return JsonResponse({"success": False, "error": "Cantidad Unitaria es obligatoria."}, status=400)
+                try:
+                    producto.cantidad_unitaria = Decimal(str(body["cantidad_unitaria"]))
+                except Exception:
+                    return JsonResponse({"success": False, "error": "Cantidad Unitaria debe ser un número."}, status=400)
+
+            if "unidad_medida" in body:
+                unidad_medida = body["unidad_medida"].strip().upper()
+                if unidad_medida not in Producto.UnidadMedida.values:
+                    return JsonResponse({"success": False, "error": f"Unidad de Medida inválida: {unidad_medida}"}, status=400)
+                producto.unidad_medida = unidad_medida
+
+            if "tipo_empaque" in body:
+                tipo_empaque = body["tipo_empaque"].strip().upper()
+                if tipo_empaque not in Producto.TipoEmpaque.values:
+                    return JsonResponse({"success": False, "error": f"Tipo de Empaque inválido: {tipo_empaque}"}, status=400)
+                producto.tipo_empaque = tipo_empaque
 
             if "categoria" in body and body["categoria"] in ['quimico', 'liquido', 'wellsite']:
                 producto.categoria = body["categoria"]
