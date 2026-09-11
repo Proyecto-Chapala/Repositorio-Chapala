@@ -1,0 +1,512 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reportes de Fluidos de Perforación</title>
+  <link rel="stylesheet" href="{% static 'reportes/css/style.css' %}" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Reportes de Fluidos</h1>
+        <p>Esquema ONE-TRAX</p>
+      </div>
+      <nav class="tabs" id="tabs">
+        <button class="tab-btn active" data-tab="pozos">Pozos</button>
+        <button class="tab-btn" data-tab="sistemas">Sistemas de Fluido</button>
+        <button class="tab-btn" data-tab="intervalos">Intervalos</button>
+        <button class="tab-btn" data-tab="fosas-perdidas">Fosas y Pérdidas</button>
+        <button class="tab-btn" data-tab="productos">Productos</button>
+        <button class="tab-btn" data-tab="equipos">Equipos</button>
+        <button class="tab-btn" data-tab="reportes">Reportes Diarios</button>
+        <button class="tab-btn" data-tab="geometria">Geometría del Pozo <span class="tab-tag">demo</span></button>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="/admin/" target="_blank" rel="noopener">Ir al admin de Django ↗</a>
+        <a href="/" >← Volver a Inventario CHAPALA</a>
+      </div>
+    </aside>
+
+    <main class="content">
+
+      <!-- ======================= PESTAÑA: POZOS ======================= -->
+      <section class="panel active" id="panel-pozos">
+        <header class="panel-header">
+          <h2>Pozos</h2>
+          <button class="btn btn-primary" id="btn-nuevo-pozo">+ Nuevo Pozo</button>
+        </header>
+
+        <div class="card form-card hidden" id="form-pozo-card">
+          <h3>Nuevo Pozo</h3>
+          <form id="form-pozo">
+            <h4 class="form-section-title">Identificación</h4>
+            <div class="grid-2">
+              <label>Log-It Number<input type="text" name="numero_logit" /></label>
+              <label>Nombre<input type="text" name="nombre" required /></label>
+              <label>Operador<input type="text" name="operador" required /></label>
+              <label>Ubicación<input type="text" name="ubicacion" /></label>
+              <label>Campo / Área (Field/Block)<input type="text" name="campo_area" /></label>
+              <label>Taladro (Rig Name)<input type="text" name="nombre_taladro" /></label>
+              <label>Contratista (Contractor)<input type="text" name="contratista" /></label>
+              <label>Fecha de Spud<input type="date" name="fecha_spud" /></label>
+            </div>
+
+            <h4 class="form-section-title">Parámetros térmicos (API 5th Edition)</h4>
+            <div class="grid-2">
+              <label>Surface Temp (°F)<input type="number" step="0.01" name="surface_temp" /></label>
+              <label>Temp Gradient (°F/100ft)<input type="number" step="0.01" name="temp_gradient" /></label>
+            </div>
+
+            <h4 class="form-section-title">
+              Configuración base
+              <span class="hint">— Unit Set / Is Offshore? / Uses Riser quedan bloqueados permanentemente en cuanto el pozo tiene su primer reporte diario</span>
+            </h4>
+            <div class="grid-2">
+              <label>Unit Set
+                <select name="unit_set">
+                  <option value="oilfield" selected>Standard Oilfield (ft, in, bbl, lb/gal)</option>
+                  <option value="metric">Metric</option>
+                </select>
+              </label>
+              <label class="checkbox-field"><input type="checkbox" name="es_offshore" /> ¿Es offshore?</label>
+              <label class="checkbox-field"><input type="checkbox" name="usa_riser" /> Usa riser</label>
+            </div>
+            <div class="grid-2">
+              <label>Air Gap (ft)<input type="number" step="0.01" name="air_gap" /></label>
+              <label>Water Depth (ft)<input type="number" step="0.01" name="water_depth" /></label>
+              <label>Sea Floor Temp (°F)<input type="number" step="0.01" name="sea_floor_temp" /></label>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Guardar Pozo</button>
+              <button type="button" class="btn btn-secondary" id="btn-cancelar-pozo">Cancelar</button>
+            </div>
+            <p class="form-error" id="error-pozo"></p>
+          </form>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Log-It #</th><th>Nombre</th><th>Operador</th><th>Ubicación</th><th>Campo/Área</th>
+                <th>Taladro</th><th>Fecha Spud</th><th>Unit Set</th><th>Offshore</th><th>Intervalos</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="tabla-pozos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= PESTAÑA: SISTEMAS DE FLUIDO ================= -->
+      <section class="panel" id="panel-sistemas">
+        <header class="panel-header">
+          <h2>Sistemas de Fluido <span class="hint">(gama de fluidos — catálogo editable)</span></h2>
+          <button class="btn btn-primary" id="btn-nuevo-sistema">+ Nuevo Sistema</button>
+        </header>
+
+        <div class="card form-card hidden" id="form-sistema-card">
+          <h3>Nuevo Sistema de Fluido</h3>
+          <form id="form-sistema">
+            <div class="grid-2">
+              <label>Nombre<input type="text" name="nombre" required placeholder='Ej. "Lodo Polimérico KCl"' /></label>
+              <label>Categoría
+                <select name="categoria" required>
+                  <option value="">-- Selecciona --</option>
+                  <option value="agua">Base Agua</option>
+                  <option value="polimerico">Polimérico</option>
+                  <option value="aceite">Base Aceite</option>
+                  <option value="sintetico">Sintético (SBM)</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </label>
+            </div>
+            <label class="full">Descripción<textarea name="descripcion" rows="2"></textarea></label>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Guardar Sistema</button>
+              <button type="button" class="btn btn-secondary" id="btn-cancelar-sistema">Cancelar</button>
+            </div>
+            <p class="form-error" id="error-sistema"></p>
+          </form>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Categoría</th><th>Descripción</th><th></th></tr></thead>
+            <tbody id="tabla-sistemas"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ======================= PESTAÑA: INTERVALOS ======================= -->
+      <section class="panel" id="panel-intervalos">
+        <header class="panel-header">
+          <h2>Intervalos</h2>
+        </header>
+
+        <div class="card">
+          <label>Pozo
+            <select id="select-pozo-intervalos"><option value="">-- Selecciona un pozo --</option></select>
+          </label>
+        </div>
+
+        <div id="intervalos-contenido" class="hidden">
+          <div class="panel-header">
+            <h3>Intervalos del pozo</h3>
+            <button class="btn btn-primary" id="btn-nuevo-intervalo">+ Nuevo Intervalo</button>
+          </div>
+
+          <div class="card form-card hidden" id="form-intervalo-card">
+            <h3>Nuevo Intervalo</h3>
+            <form id="form-intervalo">
+              <div class="grid-2">
+                <label>Número<input type="number" name="numero" min="1" required /></label>
+                <label>Sistema de Fluido
+                  <select name="sistema_fluido_id" required></select>
+                </label>
+                <label>Modo Operativo
+                  <select name="modo_operativo">
+                    <option value="drilling" selected>Drilling</option>
+                    <option value="completion">Completion</option>
+                  </select>
+                </label>
+                <label>Tipo
+                  <select name="tipo" id="intervalo-tipo-select">
+                    <option value="open_hole" selected>Open Hole</option>
+                    <option value="casing">Casing</option>
+                    <option value="liner">Liner</option>
+                  </select>
+                </label>
+                <label>Profundidad Inicial (ft)<input type="number" step="0.01" name="profundidad_inicial" required /></label>
+                <label>Diámetro (in)<input type="number" step="0.001" name="diametro" required /></label>
+                <label class="checkbox-field"><input type="checkbox" name="es_sidetrack" id="intervalo-sidetrack-check" /> Es Side Track</label>
+                <label id="intervalo-tope-label" class="hidden">
+                  Top Of Liner / Sidetrack (ft)
+                  <input type="number" step="0.01" name="profundidad_tope_liner_sidetrack" />
+                </label>
+              </div>
+              <p class="hint">Si el tipo es Liner o es un Side Track, "Top Of Liner / Sidetrack" es obligatorio. Al marcar Side Track, la Profundidad Inicial se fija automáticamente en ese valor (Reset Start Depth for Sidetrack).</p>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Guardar Intervalo</button>
+                <button type="button" class="btn btn-secondary" id="btn-cancelar-intervalo">Cancelar</button>
+              </div>
+              <p class="form-error" id="error-intervalo"></p>
+            </form>
+          </div>
+
+          <div id="lista-intervalos"></div>
+        </div>
+      </section>
+
+      <!-- ================= PESTAÑA: FOSAS Y PÉRDIDAS (Paso 3) ================= -->
+      <section class="panel" id="panel-fosas-perdidas">
+        <header class="panel-header">
+          <h2>Fosas y Pérdidas <span class="hint">(catálogos maestros por pozo — Pit Setup &amp; Loss Setup)</span></h2>
+        </header>
+
+        <div class="card">
+          <label>Pozo
+            <select id="select-pozo-fosas"><option value="">-- Selecciona un pozo --</option></select>
+          </label>
+        </div>
+
+        <div id="fosas-perdidas-contenido" class="hidden">
+
+          <!-- --- Fosas / Tanques (Pit Setup) --- -->
+          <div class="panel-header">
+            <h3>Fosas / Tanques (Pit Setup)</h3>
+            <button class="btn btn-primary" id="btn-nuevo-pit">+ Nueva Fosa</button>
+          </div>
+
+          <div class="card form-card hidden" id="form-pit-card">
+            <h3>Nueva Fosa / Tanque</h3>
+            <form id="form-pit">
+              <div class="grid-2">
+                <label>Descripción<input type="text" name="descripcion" required placeholder='Ej. "Active 1"' /></label>
+                <label>Capacidad (bbl)<input type="number" step="0.01" name="capacidad" required /></label>
+                <label>Pit Type
+                  <select name="tipo">
+                    <option value="active" selected>Active</option>
+                    <option value="reserve">Reserve</option>
+                    <option value="premix">Premix</option>
+                    <option value="spacer">Spacer</option>
+                    <option value="storage">Storage</option>
+                    <option value="dead_volume">Dead Volume</option>
+                  </select>
+                </label>
+                <label class="checkbox-field"><input type="checkbox" name="es_transaccional" checked /> Fosa transaccional</label>
+              </div>
+              <p class="hint">Desmarca "Fosa transaccional" para una fosa no transaccional (almacenamiento aislado, ej. Base Oil Storage): no participa del balance diario de lodo activo.</p>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Guardar Fosa</button>
+                <button type="button" class="btn btn-secondary" id="btn-cancelar-pit">Cancelar</button>
+              </div>
+              <p class="form-error" id="error-pit"></p>
+            </form>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Descripción</th><th>Tipo</th><th>Capacidad (bbl)</th><th>Transaccional</th><th></th></tr></thead>
+              <tbody id="tabla-pits"></tbody>
+            </table>
+          </div>
+
+          <!-- --- Categorías de Pérdida (Loss Setup) --- -->
+          <div class="panel-header">
+            <h3>Categorías de Pérdida (Loss Setup)</h3>
+            <button class="btn btn-primary" id="btn-nueva-categoria-perdida">+ Nueva Categoría</button>
+          </div>
+
+          <div class="card form-card hidden" id="form-categoria-perdida-card">
+            <h3>Nueva Categoría de Pérdida</h3>
+            <form id="form-categoria-perdida">
+              <div class="grid-2">
+                <label>Nombre<input type="text" name="nombre" required placeholder='Ej. "Shakers", "Left in Hole"' /></label>
+                <label>Modo Operativo
+                  <select name="modo_operativo" required>
+                    <option value="drilling" selected>Drilling</option>
+                    <option value="completion">Completion</option>
+                  </select>
+                </label>
+                <label>Dominio
+                  <select name="dominio" required>
+                    <option value="superficial" selected>Superficial</option>
+                    <option value="subsuperficial">Subsuperficial</option>
+                  </select>
+                </label>
+              </div>
+              <label class="full">Descripción<textarea name="descripcion" rows="2"></textarea></label>
+              <p class="hint">Las categorías no se comparten entre modos operativos: se configuran por separado para Drilling y para Completion.</p>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Guardar Categoría</button>
+                <button type="button" class="btn btn-secondary" id="btn-cancelar-categoria-perdida">Cancelar</button>
+              </div>
+              <p class="form-error" id="error-categoria-perdida"></p>
+            </form>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nombre</th><th>Modo Operativo</th><th>Dominio</th><th>Descripción</th><th></th></tr></thead>
+              <tbody id="tabla-categorias-perdida"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= PESTAÑA: PRODUCTOS ======================= -->
+      <section class="panel" id="panel-productos">
+        <header class="panel-header">
+          <h2>Productos</h2>
+          <button class="btn btn-primary" id="btn-nuevo-producto">+ Nuevo Producto</button>
+        </header>
+
+        <div class="card form-card hidden" id="form-producto-card">
+          <h3>Nuevo Producto</h3>
+          <form id="form-producto">
+            <div class="grid-2">
+              <label>Nombre<input type="text" name="nombre" required /></label>
+              <label>Código<input type="text" name="codigo" required /></label>
+              <label>Cantidad Unitaria<input type="number" step="0.01" name="cantidad_unitaria" required /></label>
+              <label>Unidad de Medida
+                <select name="unidad_medida" required>
+                  <option value="">--</option>
+                  <option value="LB">Libras (LB)</option>
+                  <option value="KG">Kilogramos (KG)</option>
+                  <option value="GA">Galones (GA)</option>
+                  <option value="EA">Unidad (EA)</option>
+                </select>
+              </label>
+              <label>Tipo de Empaque
+                <select name="tipo_empaque" required>
+                  <option value="">--</option>
+                  <option value="BG">Saco / Bolsa (BG)</option>
+                  <option value="CN">Lata / Cuñete (CN)</option>
+                  <option value="DM">Tambor (DM)</option>
+                  <option value="TOTE">Tote</option>
+                  <option value="BLS">Barril (BLS)</option>
+                  <option value="EA">Unidad (EA)</option>
+                </select>
+              </label>
+              <label>Precio Unitario ($)<input type="number" step="0.01" name="precio_unitario" required /></label>
+              <label>Gravedad Específica<input type="number" step="0.001" name="gravedad_especifica" required /></label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Guardar Producto</button>
+              <button type="button" class="btn btn-secondary" id="btn-cancelar-producto">Cancelar</button>
+            </div>
+            <p class="form-error" id="error-producto"></p>
+          </form>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th><th>Nombre</th><th>Presentación</th>
+                <th>Precio Unit.</th><th>Grav. Esp.</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="tabla-productos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ======================= PESTAÑA: EQUIPOS ======================= -->
+      <section class="panel" id="panel-equipos">
+        <header class="panel-header">
+          <h2>Equipos</h2>
+          <button class="btn btn-primary" id="btn-nuevo-equipo">+ Nuevo Equipo</button>
+        </header>
+
+        <div class="card form-card hidden" id="form-equipo-card">
+          <h3>Nuevo Equipo</h3>
+          <form id="form-equipo">
+            <div class="grid-2">
+              <label>Nombre<input type="text" name="nombre" required /></label>
+              <label>Código<input type="text" name="codigo" required /></label>
+              <label>Costo Diario ($)<input type="number" step="0.01" name="costo_diario" required /></label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Guardar Equipo</button>
+              <button type="button" class="btn btn-secondary" id="btn-cancelar-equipo">Cancelar</button>
+            </div>
+            <p class="form-error" id="error-equipo"></p>
+          </form>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Código</th><th>Nombre</th><th>Costo Diario</th><th></th></tr></thead>
+            <tbody id="tabla-equipos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ======================= PESTAÑA: REPORTES DIARIOS ======================= -->
+      <section class="panel" id="panel-reportes">
+        <header class="panel-header">
+          <h2>Reportes Diarios</h2>
+        </header>
+
+        <div class="card">
+          <div class="grid-2">
+            <label>Pozo
+              <select id="select-pozo-reportes"><option value="">-- Selecciona un pozo --</option></select>
+            </label>
+            <label>Intervalo
+              <select id="select-intervalo-reportes" disabled><option value="">-- Selecciona un intervalo --</option></select>
+            </label>
+          </div>
+        </div>
+
+        <div id="reportes-contenido" class="hidden">
+          <div class="panel-header">
+            <h3>Reportes del intervalo</h3>
+            <button class="btn btn-primary" id="btn-nuevo-reporte">+ Nuevo Reporte</button>
+          </div>
+
+          <div class="card form-card hidden" id="form-reporte-card">
+            <h3>Nuevo Reporte Diario</h3>
+            <form id="form-reporte">
+              <div class="grid-2">
+                <label>Fecha<input type="date" name="fecha" required /></label>
+                <label>Peso del Lodo (lb/gal)<input type="number" step="0.01" name="peso_lodo" /></label>
+              </div>
+              <label class="full">Actividad<input type="text" name="actividad" /></label>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Guardar Reporte</button>
+                <button type="button" class="btn btn-secondary" id="btn-cancelar-reporte">Cancelar</button>
+              </div>
+              <p class="form-error" id="error-reporte"></p>
+            </form>
+          </div>
+
+          <div id="lista-reportes"></div>
+          <div id="detalle-reporte"></div>
+        </div>
+      </section>
+
+      <!-- ============== PESTAÑA: GEOMETRÍA DEL POZO (DEMO INTERACTIVO) ============== -->
+      <section class="panel" id="panel-geometria">
+        <header class="panel-header">
+          <h2>Geometría del Pozo <span class="hint">(demo interactivo — no es la lógica final)</span></h2>
+        </header>
+
+        <div class="card">
+          <p class="hint">
+            Ajusta los valores y el esquema se recalcula y redibuja en vivo. El <strong>diámetro externo (OD)</strong>
+            de cada tramo es el que define el borde del hoyo/revestidor (lo que se perforó o se metió de hierro);
+            el <strong>diámetro interno (ID)</strong> de la sarta de perforación es el del taladro/tubería que va
+            adentro, y es el que se usa para calcular capacidad y volumen anular.
+          </p>
+        </div>
+
+        <div class="geometria-layout">
+          <div class="card geometria-controles">
+            <h3>Datos del pozo</h3>
+            <label>Profundidad total (ft)
+              <input type="range" id="geo-prof-total" min="500" max="15000" step="50" value="2900" />
+              <input type="number" id="geo-prof-total-num" min="0" step="1" value="2900" />
+            </label>
+            <label>Profundidad de zapata del revestidor (ft)
+              <input type="range" id="geo-prof-zapata" min="0" max="15000" step="50" value="1200" />
+              <input type="number" id="geo-prof-zapata-num" min="0" step="1" value="1200" />
+            </label>
+
+            <h3>Hoyo / Revestidor <span class="hint">(diámetro externo — lo perforado / lo metido)</span></h3>
+            <label>Diámetro de hoyo abierto — OD (in)
+              <input type="range" id="geo-od-hoyo" min="4" max="26" step="0.125" value="7" />
+              <input type="number" id="geo-od-hoyo-num" min="0" step="0.001" value="7" />
+            </label>
+            <label>Diámetro externo del revestidor — OD (in)
+              <input type="range" id="geo-od-revestidor" min="4" max="26" step="0.125" value="9.625" />
+              <input type="number" id="geo-od-revestidor-num" min="0" step="0.001" value="9.625" />
+            </label>
+            <label>Diámetro interno del revestidor — ID (in)
+              <input type="range" id="geo-id-revestidor" min="3" max="25" step="0.125" value="8.921" />
+              <input type="number" id="geo-id-revestidor-num" min="0" step="0.001" value="8.921" />
+            </label>
+
+            <h3>Sarta de perforación <span class="hint">(el taladro/tubería que va adentro)</span></h3>
+            <label>Diámetro externo de tubería — OD (in)
+              <input type="range" id="geo-od-tuberia" min="1" max="10" step="0.05" value="5" />
+              <input type="number" id="geo-od-tuberia-num" min="0" step="0.001" value="5" />
+            </label>
+            <label>Diámetro interno de tubería — ID (in)
+              <input type="range" id="geo-id-tuberia" min="0.5" max="9" step="0.05" value="4.276" />
+              <input type="number" id="geo-id-tuberia-num" min="0" step="0.001" value="4.276" />
+            </label>
+          </div>
+
+          <div class="card geometria-dibujo">
+            <h3>Esquema (no a escala real de campo — proporcional a los valores ingresados)</h3>
+            <div id="geo-svg-wrap"></div>
+          </div>
+
+          <div class="card geometria-resultados">
+            <h3>Cálculos en vivo</h3>
+            <table class="mini-table" id="geo-tabla-resultados">
+              <tbody></tbody>
+            </table>
+            <p class="hint">
+              Capacidad interna = (ID tubería² / 1029.4) × longitud · Volumen anular = ((ID hoyo o revestidor)² − (OD tubería)²) / 1029.4 × longitud
+            </p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    window.REPORTES_API_BASE = "{% url 'reportes_index' %}api/";
+  </script>
+  <script src="{% static 'reportes/js/app.js' %}"></script>
+  <script src="{% static 'reportes/js/geometria.js' %}"></script>
+</body>
+</html>

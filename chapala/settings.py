@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Aplicación principal del sistema de inventario
     'mychapala.apps.MychapalaConfig',
+    # Sistema de reportes de fluidos de perforación (esquema ONE-TRAX)
+    'reportes.apps.ReportesConfig',
 ]
 
 MIDDLEWARE = [
