@@ -51,6 +51,16 @@ urlpatterns = [
     path("api/tramos-sarta/", views.api_tramos_sarta, name="api_tramos_sarta"),
     path("api/tramos-sarta/<uuid:pk>/", views.api_tramo_sarta_detalle, name="api_tramo_sarta_detalle"),
 
+    # Volume Accounting (Paso 6) — transacciones de fosa y lecturas manuales
+    path("api/transacciones-fosa/", views.api_transacciones_fosa, name="api_transacciones_fosa"),
+    path("api/transacciones-fosa/<uuid:pk>/", views.api_transaccion_fosa_detalle, name="api_transaccion_fosa_detalle"),
+    path("api/lecturas-fosa/", views.api_lecturas_fosa, name="api_lecturas_fosa"),
+    path("api/lecturas-fosa/<uuid:pk>/", views.api_lectura_fosa_detalle, name="api_lectura_fosa_detalle"),
+
+    # Time Distribution (Paso 4.1) — por reporte diario
+    path("api/distribucion-tiempo/", views.api_distribucion_tiempo, name="api_distribucion_tiempo"),
+    path("api/distribucion-tiempo/<uuid:pk>/", views.api_distribucion_tiempo_detalle, name="api_distribucion_tiempo_detalle"),
+
     # Matriz de propiedades selectivas (Misión 4)
     path("api/propiedades-catalogo/", views.api_propiedades_catalogo, name="api_propiedades_catalogo"),
     path("api/muestras/", views.api_muestras, name="api_muestras"),

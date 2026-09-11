@@ -31,9 +31,11 @@ from .models import (
     CategoriaPerdida,
     CierreVolumetrico,
     Comentario,
+    DistribucionTiempo,
     Equipo,
     Intervalo,
     InventarioItem,
+    LecturaFosa,
     MuestraFluido,
     Pit,
     Pozo,
@@ -44,6 +46,7 @@ from .models import (
     ReporteDiario,
     SistemaFluido,
     TramoSarta,
+    TransaccionFosa,
     TuberiaInstalada,
     UsoEquipo,
     UsoMaterial,
@@ -295,6 +298,7 @@ def api_intervalos(request):
             diametro=_decimal(body.get("diametro"), "Diámetro"),
             es_sidetrack=es_sidetrack,
             profundidad_tope_liner_sidetrack=profundidad_tope,
+            volumen_inicial=_decimal_opcional(body.get("volumen_inicial"), "Volumen inicial (Start Volume)"),
         )
         intervalo.full_clean()
         intervalo.save()
@@ -349,6 +353,8 @@ def api_intervalo_detalle(request, pk):
             intervalo.profundidad_tope_liner_sidetrack = _decimal_opcional(
                 body["profundidad_tope_liner_sidetrack"], "Top Of Liner / Sidetrack"
             )
+        if "volumen_inicial" in body:
+            intervalo.volumen_inicial = _decimal_opcional(body["volumen_inicial"], "Volumen inicial (Start Volume)")
         intervalo.full_clean()
         intervalo.save()
         return JsonResponse({"success": True, "intervalo": intervalo.to_dict()})
@@ -412,10 +418,22 @@ def api_tuberia_detalle(request, pk):
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_cerrar_intervalo(request, pk):
-    """Registra el CierreVolumetrico de un intervalo. Al guardarlo, el modelo
-    mismo (CierreVolumetrico.save()) marca el Intervalo como 'cerrado' —
-    esta vista solo valida la entrada y delega la regla de negocio al modelo."""
-    intervalo = get_object_or_404(Intervalo, pk=pk)
+    """Cierre volumétrico del intervalo (manual resumido, Paso 7).
+
+    Sigue la Conciliación de Sección 7.1 al pie de la letra:
+      1. Fija la profundidad final (si se envía).
+      2. La tubería instalada definitiva ya se registra por separado
+         (endpoint de tuberías), antes de llegar a este paso.
+      3. Si hay Volume Not Fluids (volumen atrapado), lo descarga
+         contablemente creando una TransaccionFosa real (tipo Loss,
+         categoría "Left in Hole") — no un monto libre.
+      4. Exige que el balance del intervalo (Not Accounted del último
+         reporte) cuadre en 0.00 antes de permitir el cierre.
+
+    Al final, CierreVolumetrico.save() marca el Intervalo como 'cerrado'
+    (7.2: Freeze). El Rollover del Start Volume del intervalo siguiente lo
+    hace Intervalo.save() automáticamente cuando se crea ese intervalo."""
+    intervalo = get_object_or_404(Intervalo.objects.select_related("pozo"), pk=pk)
     if intervalo.esta_cerrado:
         return _error("Este intervalo ya está cerrado.")
 
@@ -425,20 +443,70 @@ def api_cerrar_intervalo(request, pk):
         if not usuario:
             return _error("El usuario que registra el cierre es obligatorio.")
 
+        volumen_final = _decimal(body.get("volumen_final"), "Volumen final")
+        volumen_no_fluido = _decimal(body.get("volumen_no_fluido"), "Volumen no fluido")
+
+        ultimo_reporte = intervalo.reportes.order_by("-numero_reporte").first()
+        if ultimo_reporte is None:
+            return _error("No se puede cerrar un intervalo que no tiene reportes diarios.")
+
         with transaction.atomic():
-            cierre = CierreVolumetrico(
-                intervalo=intervalo,
-                volumen_final=_decimal(body.get("volumen_final"), "Volumen final"),
-                volumen_no_fluido=_decimal(body.get("volumen_no_fluido"), "Volumen no fluido"),
-                perdida_left_in_hole=_decimal(body.get("perdida_left_in_hole"), "Pérdida (Left in Hole)"),
-                usuario=usuario,
-            )
             if "profundidad_final" in body and body["profundidad_final"] not in (None, ""):
                 intervalo.profundidad_final = _decimal(body["profundidad_final"], "Profundidad final")
                 intervalo.full_clean()
                 intervalo.save()
-            cierre.full_clean()
-            cierre.save()
+
+            transaccion_left_in_hole = None
+            fosa_origen = None
+            categoria_perdida = None
+
+            if volumen_no_fluido > 0:
+                fosa_origen_id = body.get("fosa_origen_id")
+                if not fosa_origen_id:
+                    return _error(
+                        "Debes indicar de qué fosa se descuenta el volumen atrapado (Volume Not Fluids)."
+                    )
+                fosa_origen = get_object_or_404(Pit, pk=fosa_origen_id)
+                categoria_perdida = CategoriaPerdida.objects.filter(
+                    pozo_id=intervalo.pozo_id,
+                    modo_operativo=intervalo.modo_operativo,
+                    dominio=CategoriaPerdida.Dominio.SUBSUPERFICIAL,
+                    nombre__iexact="Left in Hole",
+                ).first()
+                if categoria_perdida is None:
+                    return _error(
+                        'No existe la categoría de pérdida "Left in Hole" (Subsuperficial) para este pozo y '
+                        'modo operativo. Créala primero en la pestaña "Fosas y Pérdidas".'
+                    )
+                transaccion_left_in_hole = TransaccionFosa(
+                    reporte=ultimo_reporte,
+                    tipo=TransaccionFosa.Tipo.LOSS,
+                    fosa_origen=fosa_origen,
+                    categoria_perdida=categoria_perdida,
+                    volumen=volumen_no_fluido,
+                    notas="Left in Hole — generado automáticamente al cerrar el intervalo (manual 7.1.3).",
+                )
+                transaccion_left_in_hole.save()  # full_clean() corre dentro de save()
+
+            # Punto 4 del manual: el balance debe cuadrar en cero antes de cerrar.
+            ultimo_reporte_actualizado = ReporteDiario.objects.get(pk=ultimo_reporte.pk)
+            if ultimo_reporte_actualizado.volumen_no_contabilizado != Decimal("0.00"):
+                raise ValidationError(
+                    "El balance del intervalo no cuadra (Not Accounted = "
+                    f"{ultimo_reporte_actualizado.volumen_no_contabilizado} bbl). Ajusta las lecturas de "
+                    "fosa o el Volume Not Fluids antes de cerrar."
+                )
+
+            cierre = CierreVolumetrico(
+                intervalo=intervalo,
+                volumen_final=volumen_final,
+                volumen_no_fluido=volumen_no_fluido,
+                fosa_origen=fosa_origen,
+                categoria_perdida=categoria_perdida,
+                transaccion_left_in_hole=transaccion_left_in_hole,
+                usuario=usuario,
+            )
+            cierre.save()  # full_clean() corre dentro de save()
 
         intervalo.refresh_from_db()
         return JsonResponse(
@@ -767,6 +835,11 @@ def api_reporte_diario_detalle(request, pk):
             reporte.bit_size = _decimal_opcional(body["bit_size"], "Bit Size")
         if "porcentaje_washout" in body:
             reporte.porcentaje_washout = _decimal_opcional(body["porcentaje_washout"], "% Washout") or Decimal("0")
+        # Paso 6: Volume Accounting (Total Hole Volume / Volume Not Fluids).
+        if "volumen_debajo_mecha" in body:
+            reporte.volumen_debajo_mecha = _decimal_opcional(body["volumen_debajo_mecha"], "Vol. Debajo de la Mecha") or Decimal("0")
+        if "volumen_no_fluido" in body:
+            reporte.volumen_no_fluido = _decimal_opcional(body["volumen_no_fluido"], "Volume Not Fluids") or Decimal("0")
         reporte.save()
 
         # Si cambió bit_depth, el tramo principal de la sarta (si existe) debe
@@ -872,6 +945,211 @@ def api_tramo_sarta_detalle(request, pk):
             tramo.orden = int(body["orden"])
         tramo.save()
         return JsonResponse({"success": True, "tramo": tramo.to_dict()})
+    except ValidationError as exc:
+        return _error("; ".join(exc.messages))
+    except ValueError as exc:
+        return _error(str(exc))
+    except Exception as exc:  # noqa: BLE001
+        return _error(str(exc))
+
+
+# ==============================================================================
+# 5-TER. VOLUME ACCOUNTING — manual resumido, Paso 6 (Daily -> Volume Accounting)
+# ==============================================================================
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def api_transacciones_fosa(request):
+    if request.method == "GET":
+        transacciones = TransaccionFosa.objects.select_related(
+            "fosa_origen", "fosa_destino", "producto", "categoria_perdida"
+        ).all()
+        reporte_id = request.GET.get("reporte")
+        if reporte_id:
+            transacciones = transacciones.filter(reporte_id=reporte_id)
+        pozo_id = request.GET.get("pozo")
+        if pozo_id:
+            transacciones = transacciones.filter(intervalo__pozo_id=pozo_id)
+        return JsonResponse({"success": True, "transacciones": [t.to_dict() for t in transacciones]})
+
+    try:
+        body = _parse_body(request)
+        reporte = get_object_or_404(ReporteDiario, pk=body.get("reporte_id"))
+        if reporte.intervalo.esta_cerrado:
+            return _error("El intervalo está cerrado: no se puede registrar una transacción de fosa.")
+
+        tipo = body.get("tipo")
+        if tipo not in TransaccionFosa.Tipo.values:
+            return _error(f"Tipo de transacción inválido: {tipo}")
+
+        fosa_origen_id = body.get("fosa_origen_id") or None
+        fosa_destino_id = body.get("fosa_destino_id") or None
+        producto_id = body.get("producto_id") or None
+        categoria_perdida_id = body.get("categoria_perdida_id") or None
+
+        transaccion = TransaccionFosa(
+            reporte=reporte,
+            tipo=tipo,
+            fosa_origen=get_object_or_404(Pit, pk=fosa_origen_id) if fosa_origen_id else None,
+            fosa_destino=get_object_or_404(Pit, pk=fosa_destino_id) if fosa_destino_id else None,
+            producto=get_object_or_404(Producto, pk=producto_id) if producto_id else None,
+            cantidad_usada=_decimal_opcional(body.get("cantidad_usada"), "Cantidad usada"),
+            es_dilucion=_bool(body.get("es_dilucion")),
+            categoria_perdida=(
+                get_object_or_404(CategoriaPerdida, pk=categoria_perdida_id) if categoria_perdida_id else None
+            ),
+            # Para Add Chemicals, save() recalcula el volumen y este valor se ignora;
+            # para Loss/Transfer es el dato medido/manual.
+            volumen=_decimal_opcional(body.get("volumen"), "Volumen") or Decimal("0"),
+            notas=(body.get("notas") or "").strip(),
+        )
+        transaccion.save()  # full_clean() corre dentro de save()
+        return JsonResponse({"success": True, "transaccion": transaccion.to_dict()}, status=201)
+    except ValidationError as exc:
+        return _error("; ".join(exc.messages))
+    except ValueError as exc:
+        return _error(str(exc))
+    except Exception as exc:  # noqa: BLE001
+        return _error(str(exc))
+
+
+@csrf_exempt
+@require_http_methods(["GET", "DELETE"])
+def api_transaccion_fosa_detalle(request, pk):
+    """Sin PUT: las transacciones de fosa son inmutables una vez creadas
+    (manual 6.3) — solo se pueden consultar o eliminar (para corregir un
+    error de captura) mientras el intervalo siga abierto."""
+    transaccion = get_object_or_404(
+        TransaccionFosa.objects.select_related("reporte__intervalo"), pk=pk
+    )
+
+    if request.method == "GET":
+        return JsonResponse({"success": True, "transaccion": transaccion.to_dict()})
+
+    if transaccion.reporte.intervalo.esta_cerrado:
+        return _error("El intervalo está cerrado: no se puede eliminar esta transacción.")
+    transaccion.delete()
+    return JsonResponse({"success": True})
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def api_lecturas_fosa(request):
+    if request.method == "GET":
+        lecturas = LecturaFosa.objects.select_related("fosa").all()
+        reporte_id = request.GET.get("reporte")
+        if reporte_id:
+            lecturas = lecturas.filter(reporte_id=reporte_id)
+        return JsonResponse({"success": True, "lecturas": [lec.to_dict() for lec in lecturas]})
+
+    try:
+        body = _parse_body(request)
+        reporte = get_object_or_404(ReporteDiario, pk=body.get("reporte_id"))
+        if reporte.intervalo.esta_cerrado:
+            return _error("El intervalo está cerrado: no se puede registrar una lectura de fosa.")
+        fosa = get_object_or_404(Pit, pk=body.get("fosa_id"))
+
+        lectura, creada = LecturaFosa.objects.update_or_create(
+            reporte=reporte,
+            fosa=fosa,
+            defaults={"volumen_medido": _decimal(body.get("volumen_medido"), "Volumen medido")},
+        )
+        return JsonResponse({"success": True, "lectura": lectura.to_dict()}, status=201 if creada else 200)
+    except ValidationError as exc:
+        return _error("; ".join(exc.messages))
+    except ValueError as exc:
+        return _error(str(exc))
+    except Exception as exc:  # noqa: BLE001
+        return _error(str(exc))
+
+
+@csrf_exempt
+@require_http_methods(["GET", "DELETE"])
+def api_lectura_fosa_detalle(request, pk):
+    lectura = get_object_or_404(LecturaFosa.objects.select_related("reporte__intervalo"), pk=pk)
+
+    if request.method == "GET":
+        return JsonResponse({"success": True, "lectura": lectura.to_dict()})
+
+    if lectura.reporte.intervalo.esta_cerrado:
+        return _error("El intervalo está cerrado: no se puede eliminar esta lectura.")
+    lectura.delete()
+    return JsonResponse({"success": True})
+
+
+# ==============================================================================
+# 5-QUATER. TIME DISTRIBUTION — manual resumido, Paso 4.1 (Daily -> General)
+# ==============================================================================
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def api_distribucion_tiempo(request):
+    if request.method == "GET":
+        filas = DistribucionTiempo.objects.select_related("reporte").all()
+        reporte_id = request.GET.get("reporte")
+        if reporte_id:
+            filas = filas.filter(reporte_id=reporte_id)
+        return JsonResponse({"success": True, "distribucion": [f.to_dict() for f in filas]})
+
+    try:
+        body = _parse_body(request)
+        reporte = get_object_or_404(ReporteDiario, pk=body.get("reporte_id"))
+        if reporte.intervalo.esta_cerrado:
+            return _error("El intervalo está cerrado: no se puede registrar distribución de tiempo.")
+
+        actividad = (body.get("actividad") or "").strip()
+        if not actividad:
+            return _error("La actividad es obligatoria.")
+
+        fila = DistribucionTiempo(
+            reporte=reporte,
+            actividad=actividad,
+            horas=_decimal(body.get("horas"), "Horas"),
+            notas=(body.get("notas") or "").strip(),
+            orden=int(body.get("orden") or 0),
+        )
+        fila.save()  # full_clean() corre dentro de save()
+        return JsonResponse({"success": True, "fila": fila.to_dict()}, status=201)
+    except ValidationError as exc:
+        return _error("; ".join(exc.messages))
+    except ValueError as exc:
+        return _error(str(exc))
+    except Exception as exc:  # noqa: BLE001
+        return _error(str(exc))
+
+
+@csrf_exempt
+@require_http_methods(["GET", "PUT", "DELETE"])
+def api_distribucion_tiempo_detalle(request, pk):
+    fila = get_object_or_404(DistribucionTiempo.objects.select_related("reporte__intervalo"), pk=pk)
+
+    if request.method == "GET":
+        return JsonResponse({"success": True, "fila": fila.to_dict()})
+
+    if request.method == "DELETE":
+        if fila.reporte.intervalo.esta_cerrado:
+            return _error("El intervalo está cerrado: no se puede eliminar esta fila.")
+        fila.delete()
+        return JsonResponse({"success": True})
+
+    if fila.reporte.intervalo.esta_cerrado:
+        return _error("El intervalo está cerrado: no es editable.")
+
+    try:
+        body = _parse_body(request)
+        if "actividad" in body:
+            actividad = (body["actividad"] or "").strip()
+            if not actividad:
+                return _error("La actividad es obligatoria.")
+            fila.actividad = actividad
+        if "horas" in body:
+            fila.horas = _decimal(body["horas"], "Horas")
+        if "notas" in body:
+            fila.notas = (body["notas"] or "").strip()
+        if "orden" in body:
+            fila.orden = int(body["orden"])
+        fila.save()
+        return JsonResponse({"success": True, "fila": fila.to_dict()})
     except ValidationError as exc:
         return _error("; ".join(exc.messages))
     except ValueError as exc:

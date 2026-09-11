@@ -182,13 +182,14 @@
                 </label>
                 <label>Profundidad Inicial (ft)<input type="number" step="0.01" name="profundidad_inicial" required /></label>
                 <label>Diámetro (in)<input type="number" step="0.001" name="diametro" required /></label>
+                <label>Volumen Inicial / Start Volume (bbl)<input type="number" step="0.01" name="volumen_inicial" placeholder="Automático si hay intervalo anterior cerrado" /></label>
                 <label class="checkbox-field"><input type="checkbox" name="es_sidetrack" id="intervalo-sidetrack-check" /> Es Side Track</label>
                 <label id="intervalo-tope-label" class="hidden">
                   Top Of Liner / Sidetrack (ft)
                   <input type="number" step="0.01" name="profundidad_tope_liner_sidetrack" />
                 </label>
               </div>
-              <p class="hint">Si el tipo es Liner o es un Side Track, "Top Of Liner / Sidetrack" es obligatorio. Al marcar Side Track, la Profundidad Inicial se fija automáticamente en ese valor (Reset Start Depth for Sidetrack).</p>
+              <p class="hint">Si el tipo es Liner o es un Side Track, "Top Of Liner / Sidetrack" es obligatorio. Al marcar Side Track, la Profundidad Inicial se fija automáticamente en ese valor (Reset Start Depth for Sidetrack). El Volumen Inicial se puede dejar en blanco: si el intervalo anterior de este pozo ya está cerrado, se toma automáticamente su Volumen Final (Rollover).</p>
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Guardar Intervalo</button>
                 <button type="button" class="btn btn-secondary" id="btn-cancelar-intervalo">Cancelar</button>
@@ -439,7 +440,8 @@
 
         <div class="card">
           <p class="hint">
-            Ajusta los valores y el esquema se recalcula y redibuja en vivo. El <strong>diámetro externo (OD)</strong>
+            Escribe los valores medidos y el esquema se recalcula y redibuja en vivo. Todos los campos son de
+            <strong>entrada manual</strong> (sin límites artificiales de rango): el <strong>diámetro externo (OD)</strong>
             de cada tramo es el que define el borde del hoyo/revestidor (lo que se perforó o se metió de hierro);
             el <strong>diámetro interno (ID)</strong> de la sarta de perforación es el del taladro/tubería que va
             adentro, y es el que se usa para calcular capacidad y volumen anular.
@@ -450,36 +452,29 @@
           <div class="card geometria-controles">
             <h3>Datos del pozo</h3>
             <label>Profundidad total (ft)
-              <input type="range" id="geo-prof-total" min="500" max="15000" step="50" value="2900" />
-              <input type="number" id="geo-prof-total-num" min="0" step="1" value="2900" />
+              <input type="number" id="geo-prof-total" min="0" step="1" value="2900" />
             </label>
             <label>Profundidad de zapata del revestidor (ft)
-              <input type="range" id="geo-prof-zapata" min="0" max="15000" step="50" value="1200" />
-              <input type="number" id="geo-prof-zapata-num" min="0" step="1" value="1200" />
+              <input type="number" id="geo-prof-zapata" min="0" step="1" value="1200" />
             </label>
 
             <h3>Hoyo / Revestidor <span class="hint">(diámetro externo — lo perforado / lo metido)</span></h3>
             <label>Diámetro de hoyo abierto — OD (in)
-              <input type="range" id="geo-od-hoyo" min="4" max="26" step="0.125" value="7" />
-              <input type="number" id="geo-od-hoyo-num" min="0" step="0.001" value="7" />
+              <input type="number" id="geo-od-hoyo" min="0" step="0.001" value="7" />
             </label>
             <label>Diámetro externo del revestidor — OD (in)
-              <input type="range" id="geo-od-revestidor" min="4" max="26" step="0.125" value="9.625" />
-              <input type="number" id="geo-od-revestidor-num" min="0" step="0.001" value="9.625" />
+              <input type="number" id="geo-od-revestidor" min="0" step="0.001" value="9.625" />
             </label>
             <label>Diámetro interno del revestidor — ID (in)
-              <input type="range" id="geo-id-revestidor" min="3" max="25" step="0.125" value="8.921" />
-              <input type="number" id="geo-id-revestidor-num" min="0" step="0.001" value="8.921" />
+              <input type="number" id="geo-id-revestidor" min="0" step="0.001" value="8.921" />
             </label>
 
             <h3>Sarta de perforación <span class="hint">(el taladro/tubería que va adentro)</span></h3>
             <label>Diámetro externo de tubería — OD (in)
-              <input type="range" id="geo-od-tuberia" min="1" max="10" step="0.05" value="5" />
-              <input type="number" id="geo-od-tuberia-num" min="0" step="0.001" value="5" />
+              <input type="number" id="geo-od-tuberia" min="0" step="0.001" value="5" />
             </label>
             <label>Diámetro interno de tubería — ID (in)
-              <input type="range" id="geo-id-tuberia" min="0.5" max="9" step="0.05" value="4.276" />
-              <input type="number" id="geo-id-tuberia-num" min="0" step="0.001" value="4.276" />
+              <input type="number" id="geo-id-tuberia" min="0" step="0.001" value="4.276" />
             </label>
           </div>
 
