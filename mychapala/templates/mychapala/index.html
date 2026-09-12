@@ -64,6 +64,32 @@
           <span>Uso y Costos</span>
           <span class="nav-badge" id="badge-uso-count">0</span>
         </button>
+
+        <!-- Divisor y Sección ONE-TRAX -->
+        <div class="nav-section-title" style="margin-top: 14px;">FLUIDOS &amp; POZO (ONE-TRAX)</div>
+
+        <!-- Pestaña 4: Geometría & Volumen -->
+        <button class="nav-item" data-tab="geometria" id="tab-btn-geometria">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          <span>Geometría &amp; Volumen</span>
+        </button>
+
+        <!-- Pestaña 5: Reportes Diarios -->
+        <button class="nav-item" data-tab="reportes" id="tab-btn-reportes">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span>Reportes Diarios</span>
+          <span class="nav-badge" style="background-color: #38bdf8; color: #0f172a; font-size: 10px; font-weight: 800;">ONE-TRAX</span>
+        </button>
       </nav>
 
       <!-- Pie del Sidebar -->
@@ -471,6 +497,56 @@
           </div>
         </section>
 
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 4: GEOMETRÍA Y CONTABILIDAD DE VOLUMEN (ONE-TRAX)        -->
+        <!-- ================================================================= -->
+        <section id="tab-geometria" class="tab-panel embedded-panel" style="display: none;">
+          <div class="panel-header embedded-header">
+            <div>
+              <h1 class="panel-title">GEOMETRÍA DEL HOYO Y CONTABILIDAD DE VOLUMEN</h1>
+              <p class="panel-subtitle">Modelo estructural del pozo, sartas de perforación, capacidades anulares y auditoría de volumen en fosas.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-secondary" id="btn-reload-geometria" title="Recargar vista">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                Recargar
+              </button>
+              <a href="/geometria-volumen/" target="_blank" class="btn btn-primary" title="Abrir en pestaña independiente">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                Pantalla Completa ↗
+              </a>
+            </div>
+          </div>
+          <div class="embedded-iframe-container">
+            <iframe id="iframe-geometria" src="/geometria-volumen/" class="embedded-app-frame" title="Geometría y Contabilidad de Volumen"></iframe>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- PESTAÑA 5: REPORTES DE FLUIDOS DE PERFORACIÓN (ONE-TRAX)          -->
+        <!-- ================================================================= -->
+        <section id="tab-reportes" class="tab-panel embedded-panel" style="display: none;">
+          <div class="panel-header embedded-header">
+            <div>
+              <h1 class="panel-title">REPORTES DIARIOS DE FLUIDOS (SISTEMA ONE-TRAX)</h1>
+              <p class="panel-subtitle">Gestión integral de pozos, sistemas de fluido, propiedades reológicas, equipos de control de sólidos y distribución de tiempos.</p>
+            </div>
+            <div class="panel-actions">
+              <button type="button" class="btn btn-secondary" id="btn-reload-reportes" title="Recargar vista">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                Recargar
+              </button>
+              <a href="/reportes/" target="_blank" class="btn btn-primary" title="Abrir en pestaña independiente">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                Pantalla Completa ↗
+              </a>
+            </div>
+          </div>
+          <div class="embedded-iframe-container">
+            <iframe id="iframe-reportes" src="/reportes/" class="embedded-app-frame" title="Reportes Diarios de Fluidos"></iframe>
+          </div>
+        </section>
+
       </div>
     </main>
   </div>
@@ -505,40 +581,7 @@
             <input type="text" id="modal-descripcion" class="form-control" placeholder="Nombre completo del producto químico" required>
           </div>
 
-          <!-- Campos: Unit Size estructurado (cantidad + unidad de medida + tipo de empaque) -->
-          <div class="form-row-2">
-            <div class="form-group-modal">
-              <label class="modal-label" for="modal-cantidad-unitaria">Cantidad Unitaria *</label>
-              <input type="number" id="modal-cantidad-unitaria" class="form-control" min="0" step="0.01" placeholder="Ej: 100, 50, 25, 5" required>
-            </div>
-            <div class="form-group-modal">
-              <label class="modal-label" for="modal-unidad-medida">Unidad de Medida *</label>
-              <select id="modal-unidad-medida" class="form-control" required>
-                <option value="">Seleccionar...</option>
-                <option value="LB">LB — Libras</option>
-                <option value="KG">KG — Kilogramos</option>
-                <option value="GA">GA — Galones</option>
-                <option value="LT">LT — Litros</option>
-                <option value="BBL">BBL — Barriles</option>
-                <option value="EA">EA — Unidad (sin peso)</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group-modal">
-            <label class="modal-label" for="modal-tipo-empaque">Tipo de Empaque *</label>
-            <select id="modal-tipo-empaque" class="form-control" required>
-              <option value="">Seleccionar...</option>
-              <option value="BG">BG — Saco / Bolsa</option>
-              <option value="CN">CN — Lata / Cuñete</option>
-              <option value="DM">DM — Tambor</option>
-              <option value="TOTE">TOTE — Tote</option>
-              <option value="BLS">BLS — Barril</option>
-              <option value="EA">EA — Sin empaque físico (servicios)</option>
-            </select>
-            <span class="form-hint" style="font-size: 11px; color: var(--text-muted);">Estos 3 campos calculan el libraje automáticamente y arman el texto de "Unidad del producto" de abajo.</span>
-          </div>
-
-          <!-- Campo: Unidad del producto (se autocompleta desde los 3 campos de arriba, pero se puede ajustar a mano) -->
+          <!-- Campo: Unidad del producto -->
           <div class="form-group-modal">
             <label class="modal-label" for="modal-unidad">Unidad del producto</label>
             <input type="text" id="modal-unidad" class="form-control" placeholder="Ej: TAMBOR 55 GLS, SACOS 55 LBS, TOTEMS" required>
@@ -546,7 +589,7 @@
 
           <!-- Campo: Libraje -->
           <div class="form-group-modal">
-            <label class="modal-label" for="modal-libraje">Libraje (texto libre, legado)</label>
+            <label class="modal-label" for="modal-libraje">Libraje</label>
             <input type="text" id="modal-libraje" class="form-control" placeholder="Ej: 55 LBS, 100 LBS, N/A">
           </div>
 

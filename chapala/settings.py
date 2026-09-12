@@ -39,8 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Aplicación principal del sistema de inventario
     'mychapala.apps.MychapalaConfig',
-    # Sistema de reportes de fluidos de perforación (esquema ONE-TRAX: Pozo/Intervalo/
-    # SistemaFluido/ReporteDiario/matriz de propiedades) — Misión 0 de PASOS_ANTIGRAVITY.md.
+    # Sistema de reportes de fluidos de perforación (esquema ONE-TRAX)
     'reportes.apps.ReportesConfig',
 ]
 
@@ -56,10 +55,16 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'chapala.urls'
 
+# Permitir visualización en iframe dentro del mismo origen (Dashboard principal)
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [
+            BASE_DIR / 'templates',
+            BASE_DIR / 'chapala' / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

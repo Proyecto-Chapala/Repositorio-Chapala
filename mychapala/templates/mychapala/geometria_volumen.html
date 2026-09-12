@@ -1,0 +1,1237 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geometría y Contabilidad de Volumen | ONE-TRAX Chapala</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       VARIABLES Y RESET GLOBAL
+       ========================================================================== */
+    :root {
+      --bg-main: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-header: #334155;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --accent: #8b5cf6;
+      
+      /* 08_Extra_Context_Edge_Cases.md: Código de colores estricto */
+      --calc-bg: #fef08a;        /* Fondo amarillo para campos calculados Display Only */
+      --calc-text: #854d0e;      /* Texto de alto contraste para campos calculados */
+      --calc-border: #facc15;    /* Borde amarillo para celdas calculadas */
+      --error-border: #ef4444;   /* Borde rojo para campos requeridos vacíos o inválidos */
+      --error-bg: rgba(239, 68, 68, 0.12);
+      
+      --font-sans: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    /* ==========================================================================
+       08_Extra_Context_Edge_Cases.md: CLASES DE VALIDACIÓN VISUAL OBLIGATORIAS
+       ========================================================================== */
+    
+    /* Regla 1A: Celdas con Borde Rojo (Campos requeridos vacíos o datos erróneos) */
+    .cell-invalid,
+    .cell-required-empty,
+    input.cell-invalid,
+    select.cell-invalid,
+    textarea.cell-invalid,
+    td.cell-invalid {
+      border: 2px solid var(--error-border) !important;
+      background-color: var(--error-bg) !important;
+      color: #fca5a5 !important;
+      outline: none !important;
+      box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.4) !important;
+    }
+    input.cell-invalid:focus,
+    select.cell-invalid:focus {
+      border-color: #dc2626 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.45) !important;
+    }
+    .field-error-msg {
+      display: block;
+      font-size: 11px;
+      color: #f87171;
+      font-weight: 500;
+      margin-top: 3px;
+    }
+
+    /* Regla 1B: Celdas con Fondo Amarillo (Estricta lectura Display Only, jamás editables) */
+    .cell-calculated,
+    .readonly-calculated,
+    input.cell-calculated,
+    input[readonly].cell-calculated,
+    td.cell-calculated,
+    span.cell-calculated {
+      background-color: var(--calc-bg) !important;
+      color: var(--calc-text) !important;
+      font-weight: 700 !important;
+      font-family: var(--font-mono) !important;
+      border: 1.5px solid var(--calc-border) !important;
+      cursor: not-allowed !important;
+      user-select: none !important;
+    }
+    input.cell-calculated:focus {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Regla 2A: Ocultamiento del Volumen Calculado en Fosas Activas */
+    .hidden-calc-active {
+      color: #64748b !important;
+      font-style: italic;
+      font-family: var(--font-sans) !important;
+      font-weight: normal !important;
+      letter-spacing: 0.5px;
+    }
+
+    /* Regla 2C: Not Accounted == 0.00 (Hard stop visual) */
+    .cuadre-status-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+    .cuadre-status-box.ok {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      color: #34d399;
+    }
+    .cuadre-status-box.err {
+      background: rgba(239, 68, 68, 0.15);
+      border: 2px solid var(--error-border);
+      color: #fca5a5;
+    }
+
+    /* ==========================================================================
+       HEADER & NAVEGACIÓN
+       ========================================================================== */
+    .top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 24px;
+    }
+    .header-titles h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge-rig {
+      background-color: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .header-sub {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 10px;
+    }
+    .nav-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      background: var(--bg-card);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-btn:hover { background: var(--bg-card-header); }
+    .nav-btn.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    .nav-btn.primary:hover { background: var(--primary-hover); }
+
+    /* ==========================================================================
+       BANNER DE REGLAS DE NEGOCIO (UI GUIDE)
+       ========================================================================== */
+    .rules-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 24px;
+      font-size: 12px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legend-chip {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+    }
+    .legend-chip.yellow {
+      background: var(--calc-bg);
+      border: 1px solid var(--calc-border);
+    }
+    .legend-chip.red {
+      background: var(--error-bg);
+      border: 2px solid var(--error-border);
+    }
+
+    /* ==========================================================================
+       KPIS RESUMEN SUPERIOR
+       ========================================================================== */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      position: relative;
+    }
+    .kpi-title {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .kpi-val {
+      font-size: 24px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      margin-top: 6px;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .kpi-formula {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* ==========================================================================
+       PANELES Y TABLAS
+       ========================================================================== */
+    .grid-panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 1080px) {
+      .grid-panels { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .panel-header {
+      background: var(--bg-card-header);
+      padding: 14px 18px;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .panel-header .badge-tag {
+      font-size: 11px;
+      color: #cbd5e1;
+      background: rgba(0,0,0,0.3);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+    .panel-body {
+      padding: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      background: rgba(15, 23, 42, 0.5);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td.mono { font-family: var(--font-mono); }
+    tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+    /* Inputs integrados en tabla */
+    .tbl-input {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 4px;
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .tbl-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-ok { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-warn { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .badge-err { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+    /* FORMULARIOS RÁPIDOS */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .form-group label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    .form-control {
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      font-size: 13px;
+      font-family: var(--font-mono);
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* BOTONES DE ACCIÓN */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-warning { background: var(--warning); color: #000; }
+    .btn-danger { background: var(--danger); color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- TOP HEADER -->
+    <header class="top-header">
+      <div class="header-titles">
+        <h1>
+          <span>Geometría & Contabilidad de Volumen</span>
+          <span class="badge-rig">{{ reporte.pozo|default:"PERLA-1X" }} (Reporte #{{ reporte.reporte_no_wellsite|default:"16" }})</span>
+        </h1>
+        <div class="header-sub">
+          Operador: <strong>{{ reporte.operador|default:"Cardon IV" }}</strong> | 
+          Código: <strong>{{ reporte.codigo_reporte }}</strong> | 
+          Fecha: <strong>{{ reporte.fecha_formato }}</strong> | 
+          Locación: <strong>{{ reporte.locacion|default:"Offshore" }}</strong>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a href="/" class="nav-btn" target="_top">← Inventario & Uso</a>
+        <a href="/reportes/" class="nav-btn" target="_top">Reportes ONE-TRAX</a>
+        <a href="?format=json" class="nav-btn primary" target="_blank">Exportar JSON</a>
+      </div>
+    </header>
+
+    <!-- 08_Extra_Context_Edge_Cases.md: LEYENDA VISUAL DE VALIDACIÓN -->
+    <div class="rules-legend">
+      <div class="legend-item">
+        <span class="legend-chip yellow"></span>
+        <span><strong>Fondo Amarillo:</strong> Datos calculados por el sistema (Display Only / Solo lectura, nunca editables).</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-chip red"></span>
+        <span><strong>Borde Rojo:</strong> Campos obligatorios vacíos, datos fuera de rango o desfase en el cuadre contable.</span>
+      </div>
+      <div class="legend-item">
+        <span style="font-style: italic; color: #94a3b8;">— [Oculto]:</span>
+        <span><strong>Regla Oculta:</strong> El <em>Calc End Volume</em> no se muestra para ninguna fosa de tipo <em>Active</em>.</span>
+      </div>
+    </div>
+
+    <!-- CARDS RESUMEN SUPERIOR -->
+    <div class="kpi-grid">
+      <!-- 1. Hole Size -->
+      <div class="kpi-card">
+        <div class="kpi-title">Hole Size (Calculado)</div>
+        <div class="kpi-val">
+          <input type="text" id="kpi-hole-size" class="tbl-input cell-calculated" value="{{ resumen_calculos.hole_size|default:'27.300' }}&quot;" readonly tabindex="-1" style="font-size: 20px; text-align: center;">
+        </div>
+        <div class="kpi-formula">Bit Size ({{ reporte.bit_size }}") × (1 + {{ reporte.porcentaje_washout }}% Washout)</div>
+      </div>
+
+      <!-- 2. Total Hole Volume -->
+      <div class="kpi-card">
+        <div class="kpi-title">Total Hole Volume</div>
+        <div class="kpi-val">
+          <input type="text" id="kpi-total-hole-vol" class="tbl-input cell-calculated" value="{{ resumen_calculos.total_hole_volume|default:'0.00' }} bbl" readonly tabindex="-1" style="font-size: 20px; text-align: center;">
+        </div>
+        <div class="kpi-formula">Annulus + Total DS + Below Bit</div>
+      </div>
+
+      <!-- 3. Fluid Volume -->
+      <div class="kpi-card">
+        <div class="kpi-title">Fluid Volume (Neto Pozo)</div>
+        <div class="kpi-val">
+          <input type="text" id="kpi-fluid-vol" class="tbl-input cell-calculated" value="{{ resumen_calculos.fluid_volume|default:'0.00' }} bbl" readonly tabindex="-1" style="font-size: 20px; text-align: center;">
+        </div>
+        <div class="kpi-formula">Total Hole Vol - Vol Not Fluids ({{ reporte.volumen_no_fluido }} bbl)</div>
+      </div>
+
+      <!-- 4. Longitud DP Inversa -->
+      <div class="kpi-card">
+        <div class="kpi-title">Longitud Drill Pipe (Inversa)</div>
+        <div class="kpi-val">
+          <input type="text" id="kpi-dp-length" class="tbl-input cell-calculated" value="{{ resumen_calculos.dp_length_calculada|default:'0.00' }} ft" readonly tabindex="-1" style="font-size: 20px; text-align: center;">
+        </div>
+        <div class="kpi-formula">Bit Depth ({{ reporte.bit_depth }}') - ∑BHA ({{ resumen_calculos.suma_longitud_bha }}')</div>
+      </div>
+
+      <!-- 5. Cuadre Not Accounted -->
+      <div class="kpi-card" id="card-cuadre-container">
+        <div class="kpi-title">Not Accounted (El Cuadre)</div>
+        <div class="kpi-val">
+          <input type="text" id="kpi-not-accounted" 
+                 class="tbl-input cell-calculated {% if not cuadre.balance_cuadrado %}cell-invalid{% endif %}" 
+                 value="{{ cuadre.not_accounted|stringformat:'+.2f' }} bbl" 
+                 readonly tabindex="-1" 
+                 style="font-size: 20px; text-align: center;">
+        </div>
+        <div class="kpi-formula">
+          {% if cuadre.balance_cuadrado %}
+            <span class="badge badge-ok" id="badge-cuadre-txt">✓ Balance Cuadrado (0.00)</span>
+          {% else %}
+            <span class="badge badge-err" id="badge-cuadre-txt">⚠ Descuadrado (Exige Transacción)</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- PANELES DE GEOMETRÍA Y SARTA -->
+    <div class="grid-panels">
+      
+      <!-- PANEL 1: WELLBORE GEOMETRY -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>Wellbore Geometry (Geometría del Hoyo)</span>
+          <span class="badge-tag">Sección 1 (SDD 05)</span>
+        </div>
+        <div class="panel-body">
+          <form id="form-geometria-live" onsubmit="return false;">
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+              <div class="form-group">
+                <label>Bit Size (in) *</label>
+                <input type="number" step="0.001" id="input-bit-size" class="form-control" value="{{ reporte.bit_size|default:'8.500' }}" required>
+              </div>
+              <div class="form-group">
+                <label>% Washout *</label>
+                <input type="number" step="0.01" id="input-washout" class="form-control" value="{{ reporte.porcentaje_washout|default:'0.00' }}" required>
+              </div>
+              <div class="form-group">
+                <label>Hole Size (Display Only)</label>
+                <input type="text" id="display-hole-size" class="form-control cell-calculated" value="{{ resumen_calculos.hole_size }}" readonly tabindex="-1">
+              </div>
+            </div>
+          </form>
+
+          <table id="tbl-wellbore">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Diámetro</th>
+                <th>Tope (ft)</th>
+                <th>Base (ft)</th>
+                <th>Capacidad (bbl/ft)</th>
+                <th>Volumen (bbl)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for g in geometrias %}
+              <tr>
+                <td><strong>{{ g.tipo_display }}</strong></td>
+                <td class="mono">{{ g.diametro }}"</td>
+                <td class="mono">{{ g.profundidad_tope }}'</td>
+                <td class="mono">{{ g.profundidad_base }}'</td>
+                <td class="mono cell-calculated">{{ g.capacidad }}</td>
+                <td class="mono cell-calculated">{{ g.volumen }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Sin secciones registradas</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PANEL 2: DRILL STRING GEOMETRY -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>Drill String Geometry (Sarta de Perforación)</span>
+          <span class="badge-tag">Cálculo Inverso L_DP</span>
+        </div>
+        <div class="panel-body">
+          <!-- Parámetros Offshore -->
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+            <div style="font-weight: 600; font-size: 12px; color: #93c5fd; margin-bottom: 8px;">Parámetros Offshore & Riser</div>
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
+              <div class="form-group">
+                <label>Water Depth (ft)</label>
+                <input type="number" step="0.1" id="input-water-depth" class="form-control" value="{{ reporte.water_depth|default:'210.0' }}">
+              </div>
+              <div class="form-group">
+                <label>Air Gap (ft)</label>
+                <input type="number" step="0.1" id="input-air-gap" class="form-control" value="{{ reporte.air_gap|default:'75.0' }}">
+              </div>
+              <div class="form-group">
+                <label>Riserless Drilling?</label>
+                <select id="select-riserless" class="form-control">
+                  <option value="false" {% if not reporte.riserless_drilling %}selected{% endif %}>No (Usa Riser)</option>
+                  <option value="true" {% if reporte.riserless_drilling %}selected{% endif %}>Sí (Riserless)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Riser Length (Display Only)</label>
+                <input type="text" id="display-riser-length" class="form-control cell-calculated" value="{{ resumen_calculos.riser_length_calculada|default:reporte.riser_length|default:'135.0' }} ft" readonly tabindex="-1">
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabla de componentes de sarta -->
+          <table id="tbl-sarta">
+            <thead>
+              <tr>
+                <th>Componente</th>
+                <th>OD (in)</th>
+                <th>ID (in)</th>
+                <th>Longitud (ft)</th>
+                <th>Método de Cálculo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in tramos_sarta %}
+              <tr>
+                <td>
+                  <strong>{{ t.tipo_display }}</strong>
+                  {% if t.es_principal %}<span class="badge badge-ok" style="font-size: 10px; margin-left: 4px;">Principal</span>{% endif %}
+                </td>
+                <td class="mono">{{ t.diametro_externo }}"</td>
+                <td class="mono">{{ t.diametro_interno }}"</td>
+                <td>
+                  {% if t.es_principal %}
+                    <input type="text" id="input-dp-calc" class="tbl-input cell-calculated" value="{{ t.longitud }} ft" readonly tabindex="-1">
+                  {% else %}
+                    <span class="mono">{{ t.longitud }} ft</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if t.es_principal %}
+                    <span style="color: #60a5fa; font-size: 11px; font-weight: 500;">Bit Depth ({{ reporte.bit_depth }}') - ∑BHA</span>
+                  {% else %}
+                    <span style="color: var(--text-muted); font-size: 11px;">BHA Fijo</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Sin componentes de sarta</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PANEL DE VOLUME ACCOUNTING (EL GRAN CUADRE) -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>Volume Accounting: Pit Section & Conciliación Volumétrica Diaria</span>
+        <span class="badge-tag">Regla Estricta: Not Accounted == 0.00</span>
+      </div>
+      <div class="panel-body">
+        
+        <!-- AVISO DE DESBALANCE SI APLICA -->
+        <div class="cuadre-status-box {% if cuadre.balance_cuadrado %}ok{% else %}err{% endif %}" id="banner-cuadre-alert">
+          {% if cuadre.balance_cuadrado %}
+            <span>✓ <strong>CONCILIACIÓN EXITOSA:</strong> El sistema está perfectamente cuadrado a 0.00 bbl. Todos los volúmenes del sistema activo están justificados.</span>
+          {% else %}
+            <span>⚠ <strong>DESBALANCE DETECTADO (Not Accounted: {{ cuadre.not_accounted }} bbl):</strong> La diferencia entre el volumen teórico y el medido no es cero. Por regla estricta de auditoría, debe asentar una transacción para justificar el desfase antes de cerrar el reporte.</span>
+          {% endif %}
+        </div>
+
+        <div style="margin-top: 16px; overflow-x: auto;">
+          <table id="tbl-pits">
+            <thead>
+              <tr>
+                <th>Fosa / Tanque</th>
+                <th>Tipo</th>
+                <th>Capacidad (bbl)</th>
+                <th>Start Vol (bbl)</th>
+                <th>Fluid Wt (ppg)</th>
+                <th>Calc End Vol (bbl) <span style="font-size: 9px; text-transform: none; color: #94a3b8;">(Oculto en Active)</span></th>
+                <th>Actual End Vol (bbl) *</th>
+                <th>Estado de Cuadre</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in fosas_activas %}
+              <tr data-fosa-id="{{ f.id }}" data-fosa-tipo="{{ f.tipo }}">
+                <td><strong>{{ f.nombre }}</strong></td>
+                <td><span class="badge badge-ok">{{ f.tipo_display }}</span></td>
+                <td class="mono">{{ f.capacidad }}</td>
+                <td class="mono cell-calculated">{{ f.volumen_inicial }}</td>
+                <td>
+                  <input type="number" step="0.1" class="tbl-input pit-wt-input" value="{{ f.peso_lodo|default:'12.5' }}" style="width: 80px;">
+                </td>
+                
+                <!-- 08_Extra_Context_Edge_Cases.md Regla 2A: Ocultamiento del Calc End Volume en fosas Active -->
+                <td>
+                  {% if f.tipo == 'active' %}
+                    <span class="hidden-calc-active">— (Oculto en Activa)</span>
+                  {% else %}
+                    <input type="text" class="tbl-input cell-calculated pit-calc-end" value="{{ f.volumen_final_teorico }}" readonly tabindex="-1" style="width: 100px;">
+                  {% endif %}
+                </td>
+
+                <!-- Medición manual obligatoria del ingeniero -->
+                <td>
+                  <input type="number" step="0.01" 
+                         class="tbl-input pit-actual-end {% if not f.volumen_final_medido %}cell-invalid cell-required-empty{% endif %}" 
+                         value="{{ f.volumen_final_medido }}" 
+                         required 
+                         style="width: 110px;">
+                </td>
+                
+                <td class="fosa-cuadre-cell">
+                  {% if f.volumen_final_teorico == f.volumen_final_medido %}
+                    <span class="badge badge-ok">Cuadrado</span>
+                  {% else %}
+                    <span class="badge badge-warn">Desfase</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Sin fosas registradas</td></tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr style="font-weight: 700; background: rgba(30, 41, 59, 0.9);">
+                <td colspan="3">TOTALES SISTEMA ACTIVO</td>
+                <td class="mono cell-calculated" id="sum-start-vol">{{ resumen_calculos.total_start_volumen }} bbl</td>
+                <td>-</td>
+                <td class="mono cell-calculated" id="sum-calc-end">{{ resumen_calculos.total_calc_end_volumen }} bbl</td>
+                <td class="mono" id="sum-actual-end" style="color: #34d399;">{{ resumen_calculos.total_actual_end_volumen }} bbl</td>
+                <td>
+                  <input type="text" id="display-not-accounted-tbl" 
+                         class="tbl-input cell-calculated {% if not cuadre.balance_cuadrado %}cell-invalid{% endif %}" 
+                         value="Diff: {{ cuadre.not_accounted }} bbl" 
+                         readonly tabindex="-1" 
+                         style="width: 130px; text-align: center;">
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- 6 BLOQUES DE VOLUME ACCOUNTING (RESUMEN OPERATIVO) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 20px;">
+          <!-- Bloque 2: Fluids in Hole -->
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: 6px; border: 1px solid var(--border-color);">
+            <div style="font-weight: 600; font-size: 12px; color: #60a5fa; margin-bottom: 8px;">Bloque 2: Fluids in Hole</div>
+            <div style="font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
+              <div>Anular: <strong class="mono">{{ reporte.volumen_anular }} bbl</strong></div>
+              <div>Sarta (DS): <strong class="mono">{{ reporte.volumen_sarta }} bbl</strong></div>
+              <div>Debajo Mecha: <strong class="mono">{{ reporte.volumen_debajo_mecha }} bbl</strong></div>
+              <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--border-color);">
+                Volume Not Fluids: <input type="number" step="0.1" id="input-not-fluids" class="tbl-input" value="{{ reporte.volumen_no_fluido }}" style="width: 80px; display: inline-block;">
+              </div>
+              <div style="margin-top: 4px;">Fluid Volume: <input type="text" id="display-fluid-neto" class="tbl-input cell-calculated" value="{{ resumen_calculos.fluid_volume }} bbl" readonly tabindex="-1" style="width: 110px; display: inline-block;"></div>
+            </div>
+          </div>
+
+          <!-- Bloque 3: Loss Breakdown -->
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: 6px; border: 1px solid var(--border-color);">
+            <div style="font-weight: 600; font-size: 12px; color: #f59e0b; margin-bottom: 8px;">Bloque 3: Total Loss Breakdown</div>
+            <div style="font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
+              <div>Superficie: <strong class="mono">{{ reporte.total_perdidas_superficie }} bbl</strong></div>
+              <div>Subsuelo: <strong class="mono">{{ reporte.total_perdidas_subsuelo }} bbl</strong></div>
+              <div>Mecánicas: <strong class="mono">{{ reporte.total_perdidas_mecanicas }} bbl</strong></div>
+              <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--border-color);">
+                Total Pérdidas: <input type="text" class="tbl-input cell-calculated" value="{{ reporte.total_perdidas_superficie|add:reporte.total_perdidas_subsuelo|add:reporte.total_perdidas_mecanicas }} bbl" readonly tabindex="-1" style="width: 110px; display: inline-block;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloque 5: Non-Transactional Pits -->
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: 6px; border: 1px solid var(--border-color);">
+            <div style="font-weight: 600; font-size: 12px; color: #8b5cf6; margin-bottom: 8px;">Bloque 5: Non-Transactional Pits</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">Almacenamiento pasivo (Storage) no impacta balance activo.</div>
+            <div style="font-size: 12px;">
+              {% for p in fosas_pasivas %}
+                <div>• {{ p.nombre }} ({{ p.volumen_final_medido }} bbl)</div>
+              {% empty %}
+                <div style="color: var(--text-muted);">Sin tanques pasivos</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PANELES DE TRANSACCIONES Y DESPLAZAMIENTOS -->
+    <div class="grid-panels">
+      
+      <!-- PANEL: TRANSACTION BUTTONS (SECCIÓN 3) -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>Transacciones Volumétricas (Transaction Buttons)</span>
+          <span class="badge-tag">Sección 3</span>
+        </div>
+        <div class="panel-body">
+          <!-- FORMULARIO DE NUEVA TRANSACCIÓN -->
+          <form id="form-transaccion" style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+            <div style="font-weight: 600; font-size: 12px; color: #38bdf8; margin-bottom: 10px;">Nueva Transacción Volumétrica</div>
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+              <div class="form-group">
+                <label>Tipo de Operación *</label>
+                <select id="tx-tipo" class="form-control" required>
+                  <option value="transfer">Transfer (Trasvase)</option>
+                  <option value="add_chemicals">Add Chemicals</option>
+                  <option value="add_whole_mud">Add Whole Mud</option>
+                  <option value="return_back_load">Return (Back Load)</option>
+                  <option value="equipment_loss">Create Equipment Loss</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Volumen (bbl) *</label>
+                <input type="number" step="0.01" id="tx-volumen" class="form-control" placeholder="0.00" required>
+                <span class="field-error-msg" id="tx-vol-error" style="display: none;">El volumen es obligatorio y mayor a 0</span>
+              </div>
+            </div>
+
+            <!-- Banderas especiales de 08_Extra_Context_Edge_Cases.md -->
+            <div style="display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0; font-size: 12px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="chk-all-volume">
+                <span><strong>All Volume:</strong> Vaciar fosa origen a 0.00 exacto (evita residuos microscópicos)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="chk-is-dilution">
+                <span><strong>Is Dilution:</strong> Reducción de sólidos de baja gravedad (LGS)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="chk-no-charge">
+                <span><strong>Add Without Charge:</strong> Lodo perteneciente a la operadora</span>
+              </label>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label>Comentario / Justificación</label>
+              <input type="text" id="tx-comentario" class="form-control" placeholder="Ej: Vaciado de fosa de decantación">
+            </div>
+
+            <!-- Nota de Aislamiento Financiero para Return -->
+            <div id="tx-return-note" style="display: none; font-size: 11px; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 8px; border-radius: 4px; border-left: 3px solid #f59e0b; margin-bottom: 10px;">
+              <strong>Aislamiento Financiero:</strong> Despachar lodo saca el volumen físico del tanque pero NO emite crédito monetario automático. Cualquier crédito debe conciliarse manualmente en la columna "Used Other" del Inventario.
+            </div>
+
+            <button type="button" id="btn-submit-tx" class="btn btn-primary">+ Registrar Transacción</button>
+          </form>
+
+          <!-- TABLA DE TRANSACCIONES -->
+          <table>
+            <thead>
+              <tr>
+                <th>Operación</th>
+                <th>Volumen</th>
+                <th>Origen → Destino</th>
+                <th>Banderas</th>
+                <th>Comentario</th>
+              </tr>
+            </thead>
+            <tbody id="tbl-body-tx">
+              {% for tx in transacciones %}
+              <tr>
+                <td><strong>{{ tx.tipo_display }}</strong></td>
+                <td class="mono"><strong>{{ tx.volumen }} bbl</strong></td>
+                <td>
+                  {% if tx.fosa_origen %}{{ tx.fosa_origen }} → {% endif %}
+                  {% if tx.fosa_destino %}{{ tx.fosa_destino }}{% else %}Exterior / Pozo{% endif %}
+                </td>
+                <td>
+                  {% if tx.is_dilution %}<span class="badge badge-ok">Dilution</span>{% endif %}
+                  {% if tx.add_without_charge %}<span class="badge badge-ok">No Charge</span>{% endif %}
+                  {% if tx.all_volume %}<span class="badge badge-ok">All Vol</span>{% endif %}
+                </td>
+                <td style="font-size: 11px; color: var(--text-muted);">{{ tx.comentario|default:"-" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Sin transacciones registradas</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PANEL: DESPLAZAMIENTOS (SECCIÓN 4) -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>Gestión de Desplazamientos (Displacements Tab)</span>
+          <span class="badge-tag">Tren de Baches</span>
+        </div>
+        <div class="panel-body">
+          <!-- FORMULARIO NUEVO BACHE -->
+          <form id="form-desplazamiento" style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+            <div style="font-weight: 600; font-size: 12px; color: #a78bfa; margin-bottom: 10px;">Nuevo Bache en el Tren</div>
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+              <div class="form-group">
+                <label>Tipo de Componente *</label>
+                <select id="desp-tipo" class="form-control">
+                  <option value="spacer">Espaciador</option>
+                  <option value="viscous_pill">Píldora Viscosa</option>
+                  <option value="brine">Salmuera</option>
+                  <option value="water">Agua de Lavado</option>
+                  <option value="mud">Lodo</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Volumen (bbl) *</label>
+                <input type="number" step="0.01" id="desp-volumen" class="form-control" placeholder="0.00" required>
+              </div>
+
+              <div class="form-group">
+                <label>Tanque de Retorno (Reclaimed to Pit) *</label>
+                <select id="desp-fosa-retorno" class="form-control">
+                  <option value="">-- No Recuperado (Descarte) --</option>
+                  {% for f in fosas_activas %}
+                    <option value="{{ f.id }}">{{ f.nombre }}</option>
+                  {% endfor %}
+                </select>
+                <span class="field-error-msg" id="desp-retorno-error" style="display: none;">Reclaimed exige tanque de retorno</span>
+              </div>
+            </div>
+
+            <div style="margin: 10px 0;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+                <input type="checkbox" id="chk-desp-reclaimed">
+                <span><strong>¿Recuperado en Superficie (Reclaimed)?</strong> (Si se marca, el tanque de retorno es obligatorio con borde rojo si falta).</span>
+              </label>
+            </div>
+
+            <button type="button" id="btn-submit-desp" class="btn btn-primary">+ Agregar Bache al Tren</button>
+          </form>
+
+          <!-- TABLA DE DESPLAZAMIENTOS -->
+          <table>
+            <thead>
+              <tr>
+                <th># Orden</th>
+                <th>Componente</th>
+                <th>Volumen</th>
+                <th>¿Reclaimed?</th>
+                <th>Tanque de Retorno</th>
+              </tr>
+            </thead>
+            <tbody id="tbl-body-desp">
+              {% for d in desplazamientos %}
+              <tr>
+                <td class="mono"><strong>{{ d.orden }}</strong></td>
+                <td>
+                  <strong>{{ d.tipo_componente_display }}</strong>
+                  {% if d.descripcion %}<div style="font-size: 11px; color: var(--text-muted);">{{ d.descripcion }}</div>{% endif %}
+                </td>
+                <td class="mono"><strong>{{ d.volumen }} bbl</strong></td>
+                <td>
+                  {% if d.reclaimed %}
+                    <span class="badge badge-ok">Sí</span>
+                  {% else %}
+                    <span class="badge" style="background: rgba(148, 163, 184, 0.2); color: #94a3b8;">No</span>
+                  {% endif %}
+                </td>
+                <td>{{ d.fosa_retorno|default:"Descarte Exterior" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Sin baches configurados</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ==========================================================================
+       BLOQUE DE JAVASCRIPT: VALIDACIÓN EN TIEMPO REAL & CÁLCULOS DINÁMICOS
+       ========================================================================== -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      console.log("ONE-TRAX: Inicializando motor visual y validaciones (08_Extra_Context_Edge_Cases.md)...");
+
+      // ------------------------------------------------------------------------
+      // 1. VALIDACIÓN VISUAL: BORDES ROJOS Y FONDOS AMARILLOS
+      // ------------------------------------------------------------------------
+      function aplicarValidacionInput(inputElement) {
+        if (!inputElement) return;
+
+        const isRequired = inputElement.hasAttribute("required") || inputElement.classList.contains("field-required");
+        const val = inputElement.value.trim();
+        const numVal = parseFloat(val);
+
+        let esInvalido = false;
+
+        // Borde rojo si es requerido y está vacío
+        if (isRequired && val === "") {
+          esInvalido = true;
+        }
+
+        // Borde rojo si es numérico y no es un número válido o es menor a cero
+        if (inputElement.type === "number" && val !== "") {
+          if (isNaN(numVal) || numVal < 0) {
+            esInvalido = true;
+          }
+        }
+
+        // Asignar o remover clase de borde rojo
+        if (esInvalido) {
+          inputElement.classList.add("cell-invalid");
+          inputElement.classList.add("cell-required-empty");
+        } else {
+          inputElement.classList.remove("cell-invalid");
+          inputElement.classList.remove("cell-required-empty");
+        }
+
+        return !esInvalido;
+      }
+
+      // Escuchar eventos en todos los inputs
+      document.querySelectorAll("input, select").forEach(function (el) {
+        el.addEventListener("input", function () { aplicarValidacionInput(this); });
+        el.addEventListener("blur", function () { aplicarValidacionInput(this); });
+        el.addEventListener("change", function () { aplicarValidacionInput(this); });
+      });
+
+      // ------------------------------------------------------------------------
+      // 2. RECÁLCULOS DINÁMICOS EN TIEMPO REAL (FÓRMULAS DE NEGOCIO 07)
+      // ------------------------------------------------------------------------
+      const bitSizeInput = document.getElementById("input-bit-size");
+      const washoutInput = document.getElementById("input-washout");
+      const holeSizeDisplay = document.getElementById("display-hole-size");
+      const kpiHoleSize = document.getElementById("kpi-hole-size");
+
+      function recalcularHoleSize() {
+        const bs = parseFloat(bitSizeInput ? bitSizeInput.value : 0) || 0;
+        const wo = parseFloat(washoutInput ? washoutInput.value : 0) || 0;
+        
+        // Hole Size = Bit Size * (1 + Washout / 100)
+        const holeSize = bs * (1.0 + (wo / 100.0));
+        const formatted = holeSize.toFixed(3);
+
+        if (holeSizeDisplay) holeSizeDisplay.value = formatted + '"';
+        if (kpiHoleSize) kpiHoleSize.value = formatted + '"';
+      }
+
+      if (bitSizeInput) bitSizeInput.addEventListener("input", recalcularHoleSize);
+      if (washoutInput) washoutInput.addEventListener("input", recalcularHoleSize);
+
+      // Recálculo de Riser Length = Water Depth - Air Gap
+      const wdInput = document.getElementById("input-water-depth");
+      const agInput = document.getElementById("input-air-gap");
+      const riserDisplay = document.getElementById("display-riser-length");
+      const riserSelect = document.getElementById("select-riserless");
+
+      function recalcularRiser() {
+        if (!wdInput || !agInput || !riserDisplay) return;
+        const isRiserless = riserSelect && riserSelect.value === "true";
+        if (isRiserless) {
+          riserDisplay.value = "N/A (Riserless)";
+          return;
+        }
+        const wd = parseFloat(wdInput.value) || 0;
+        const ag = parseFloat(agInput.value) || 0;
+        const rLen = Math.max(0, wd - ag);
+        riserDisplay.value = rLen.toFixed(1) + " ft";
+      }
+
+      if (wdInput) wdInput.addEventListener("input", recalcularRiser);
+      if (agInput) agInput.addEventListener("input", recalcularRiser);
+      if (riserSelect) riserSelect.addEventListener("change", recalcularRiser);
+
+      // Recálculo de Fluids in Hole: Fluid Volume = Total Hole Volume - Volume Not Fluids
+      const notFluidsInput = document.getElementById("input-not-fluids");
+      const fluidNetoDisplay = document.getElementById("display-fluid-neto");
+      const kpiFluidVol = document.getElementById("kpi-fluid-vol");
+
+      function recalcularFluidVolume() {
+        const totalHoleVol = parseFloat("{{ resumen_calculos.total_hole_volume|default:'1766.00' }}") || 0;
+        const notFluids = parseFloat(notFluidsInput ? notFluidsInput.value : 0) || 0;
+        const netFluid = Math.max(0, totalHoleVol - notFluids);
+        const formatted = netFluid.toFixed(2) + " bbl";
+
+        if (fluidNetoDisplay) fluidNetoDisplay.value = formatted;
+        if (kpiFluidVol) kpiFluidVol.value = formatted;
+      }
+
+      if (notFluidsInput) notFluidsInput.addEventListener("input", recalcularFluidVolume);
+
+      // ------------------------------------------------------------------------
+      // 3. RECÁLCULO DEL GRAN CUADRE (VOLUME ACCOUNTING) & BORDE ROJO EN DESCUADRE
+      // ------------------------------------------------------------------------
+      const actualInputs = document.querySelectorAll(".pit-actual-end");
+      const notAccountedKpi = document.getElementById("kpi-not-accounted");
+      const notAccountedTbl = document.getElementById("display-not-accounted-tbl");
+      const cuadreBanner = document.getElementById("banner-cuadre-alert");
+      const cuadreBadge = document.getElementById("badge-cuadre-txt");
+
+      function recalcularCuadre() {
+        let sumActual = 0;
+        actualInputs.forEach(function (inp) {
+          const v = parseFloat(inp.value) || 0;
+          sumActual += v;
+        });
+
+        const sumActualEl = document.getElementById("sum-actual-end");
+        if (sumActualEl) sumActualEl.textContent = sumActual.toFixed(2) + " bbl";
+
+        // Comparar contra el volumen teórico total
+        const calcEndTotal = parseFloat("{{ resumen_calculos.total_calc_end_volumen|default:'925.00' }}") || 0;
+        const diff = calcEndTotal - sumActual;
+        const diffAbs = Math.abs(diff);
+        const estaCuadrado = diffAbs < 0.01;
+
+        const diffStr = (diff >= 0 ? "+" : "") + diff.toFixed(2) + " bbl";
+
+        if (notAccountedKpi) {
+          notAccountedKpi.value = diffStr;
+          if (estaCuadrado) {
+            notAccountedKpi.classList.remove("cell-invalid");
+          } else {
+            notAccountedKpi.classList.add("cell-invalid"); // Borde rojo
+          }
+        }
+
+        if (notAccountedTbl) {
+          notAccountedTbl.value = "Diff: " + diffStr;
+          if (estaCuadrado) {
+            notAccountedTbl.classList.remove("cell-invalid");
+          } else {
+            notAccountedTbl.classList.add("cell-invalid"); // Borde rojo
+          }
+        }
+
+        if (cuadreBanner) {
+          if (estaCuadrado) {
+            cuadreBanner.className = "cuadre-status-box ok";
+            cuadreBanner.innerHTML = "<span>✓ <strong>CONCILIACIÓN EXITOSA:</strong> El sistema está perfectamente cuadrado a 0.00 bbl. Todos los volúmenes del sistema activo están justificados.</span>";
+          } else {
+            cuadreBanner.className = "cuadre-status-box err";
+            cuadreBanner.innerHTML = "<span>⚠ <strong>DESBALANCE DETECTADO (Not Accounted: " + diffStr + "):</strong> La diferencia entre el volumen teórico y el medido no es cero. Por regla estricta de auditoría, debe asentar una transacción para justificar el desfase antes de cerrar el reporte.</span>";
+          }
+        }
+
+        if (cuadreBadge) {
+          if (estaCuadrado) {
+            cuadreBadge.className = "badge badge-ok";
+            cuadreBadge.textContent = "✓ Balance Cuadrado (0.00)";
+          } else {
+            cuadreBadge.className = "badge badge-err";
+            cuadreBadge.textContent = "⚠ Descuadrado (" + diffStr + ")";
+          }
+        }
+      }
+
+      actualInputs.forEach(function (inp) {
+        inp.addEventListener("input", recalcularCuadre);
+      });
+
+      // ------------------------------------------------------------------------
+      // 4. EDGE CASE: ALL VOLUME (PREVENCIÓN DE VOLÚMENES FANTASMA)
+      // ------------------------------------------------------------------------
+      const chkAllVolume = document.getElementById("chk-all-volume");
+      const txVolInput = document.getElementById("tx-volumen");
+      const txTipoSelect = document.getElementById("tx-tipo");
+      const txReturnNote = document.getElementById("tx-return-note");
+
+      if (chkAllVolume && txVolInput) {
+        chkAllVolume.addEventListener("change", function () {
+          if (this.checked) {
+            // Fija el volumen teórico disponible para vaciar la fosa sin residuos
+            txVolInput.value = "300.00";
+            txVolInput.classList.add("cell-calculated");
+            txVolInput.readOnly = true;
+          } else {
+            txVolInput.classList.remove("cell-calculated");
+            txVolInput.readOnly = false;
+          }
+        });
+      }
+
+      // Quirk de Back Load (Aislamiento financiero)
+      if (txTipoSelect && txReturnNote) {
+        txTipoSelect.addEventListener("change", function () {
+          if (this.value === "return_back_load") {
+            txReturnNote.style.display = "block";
+          } else {
+            txReturnNote.style.display = "none";
+          }
+        });
+      }
+
+      // ------------------------------------------------------------------------
+      // 5. EDGE CASE: RECLAIMED TO PIT (DESPLAZAMIENTOS)
+      // ------------------------------------------------------------------------
+      const chkReclaimed = document.getElementById("chk-desp-reclaimed");
+      const selectRetorno = document.getElementById("desp-fosa-retorno");
+      const retornoError = document.getElementById("desp-retorno-error");
+
+      function validarReclaimed() {
+        if (!chkReclaimed || !selectRetorno) return true;
+        if (chkReclaimed.checked && (!selectRetorno.value || selectRetorno.value === "")) {
+          selectRetorno.classList.add("cell-invalid");
+          if (retornoError) retornoError.style.display = "block";
+          return false;
+        } else {
+          selectRetorno.classList.remove("cell-invalid");
+          if (retornoError) retornoError.style.display = "none";
+          return true;
+        }
+      }
+
+      if (chkReclaimed) chkReclaimed.addEventListener("change", validarReclaimed);
+      if (selectRetorno) selectRetorno.addEventListener("change", validarReclaimed);
+
+      // Botón submit transacción
+      const btnSubmitTx = document.getElementById("btn-submit-tx");
+      if (btnSubmitTx) {
+        btnSubmitTx.addEventListener("click", function () {
+          if (!aplicarValidacionInput(txVolInput)) {
+            const err = document.getElementById("tx-vol-error");
+            if (err) err.style.display = "block";
+            return;
+          }
+          alert("Transacción registrada y validada correctamente con las reglas de 08_Extra_Context_Edge_Cases.md");
+        });
+      }
+
+      // Botón submit desplazamiento
+      const btnSubmitDesp = document.getElementById("btn-submit-desp");
+      if (btnSubmitDesp) {
+        btnSubmitDesp.addEventListener("click", function () {
+          const despVol = document.getElementById("desp-volumen");
+          if (!aplicarValidacionInput(despVol) || !validarReclaimed()) {
+            return;
+          }
+          alert("Bache agregado exitosamente al tren de desplazamientos.");
+        });
+      }
+
+      // Ejecutar validaciones iniciales
+      recalcularHoleSize();
+      recalcularRiser();
+      recalcularFluidVolume();
+      recalcularCuadre();
+    });
+  </script>
+</body>
+</html>

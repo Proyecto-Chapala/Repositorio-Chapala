@@ -30,16 +30,69 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models import Max
+from django.db.models import Case, F, Max, Sum, Value, When
+from django.utils import timezone
 
 
 class Pozo(models.Model):
+    """Configuración inicial del pozo (manual resumido, Paso 1: Project -> General).
+
+    Un grupo de campos queda congelado permanentemente en cuanto el pozo tiene
+    su primer ReporteDiario (`tiene_reportes`): `unit_set`, `es_offshore` y
+    `usa_riser`. El resto (incluidos los numéricos offshore) se puede seguir
+    actualizando durante todo el proyecto — así lo indica el manual ("Estos
+    campos numéricos sí pueden actualizarse durante el proyecto").
+    """
+
+    class UnitSet(models.TextChoices):
+        OILFIELD = "oilfield", "Standard Oilfield (ft, in, bbl, lb/gal)"
+        METRIC = "metric", "Metric"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # --- 1.1 Entradas de identificación ---
+    numero_logit = models.CharField(
+        max_length=60, unique=True, null=True, blank=True,
+        help_text="Log-It Number: identificador único de seguimiento corporativo.",
+    )
     nombre = models.CharField(max_length=120)
     operador = models.CharField(max_length=120)
     ubicacion = models.CharField(max_length=120)
-    campo_area = models.CharField(max_length=120, blank=True)
+    campo_area = models.CharField(max_length=120, blank=True, null=True, help_text="Field Name/Block.")
+    nombre_taladro = models.CharField(max_length=120, blank=True, null=True, help_text="Rig Name.")
+    contratista = models.CharField(max_length=120, blank=True, null=True, help_text="Contractor.")
     fecha_spud = models.DateField(null=True, blank=True)
+
+    # Parámetros térmicos (API 5th Edition)
+    surface_temp = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True, help_text="Surface Temp, en °F.",
+    )
+    temp_gradient = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True, help_text="Temp Gradient, en °F/100ft.",
+    )
+
+    # --- 1.2 Regla de congelamiento base ---
+    unit_set = models.CharField(
+        max_length=10, choices=UnitSet.choices, default=UnitSet.OILFIELD,
+        help_text="Se bloquea permanentemente al crear el primer reporte diario.",
+    )
+    es_offshore = models.BooleanField(
+        default=False, verbose_name="¿Es offshore?",
+        help_text="Se bloquea permanentemente al crear el primer reporte diario.",
+    )
+    usa_riser = models.BooleanField(
+        default=False, verbose_name="Usa riser",
+        help_text="Se bloquea permanentemente al crear el primer reporte diario.",
+    )
+
+    # Configuración marina (numéricos — sí editables durante el proyecto)
+    air_gap = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Air Gap, en ft.")
+    water_depth = models.DecimalField(
+        max_digits=8, decimal_places=2, null=True, blank=True, help_text="Water Depth, en ft.",
+    )
+    sea_floor_temp = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True, help_text="Sea Floor Temp, en °F.",
+    )
 
     class Meta:
         ordering = ["nombre"]
@@ -47,14 +100,53 @@ class Pozo(models.Model):
     def __str__(self):
         return self.nombre
 
+    @property
+    def tiene_reportes(self):
+        """True en cuanto el pozo tiene al menos un ReporteDiario (en cualquiera
+        de sus intervalos) — dispara el bloqueo permanente de la sección 1.2."""
+        return ReporteDiario.objects.filter(intervalo__pozo_id=self.id).exists()
+
+    def clean(self):
+        if self.pk and self.tiene_reportes:
+            anterior = Pozo.objects.filter(pk=self.pk).values(
+                "unit_set", "es_offshore", "usa_riser"
+            ).first()
+            if anterior:
+                bloqueados = []
+                if anterior["unit_set"] != self.unit_set:
+                    bloqueados.append("Unit Set")
+                if anterior["es_offshore"] != self.es_offshore:
+                    bloqueados.append("Is Offshore?")
+                if anterior["usa_riser"] != self.usa_riser:
+                    bloqueados.append("Uses Riser")
+                if bloqueados:
+                    raise ValidationError(
+                        "No se puede modificar "
+                        + ", ".join(bloqueados)
+                        + ": quedan bloqueados permanentemente desde el primer reporte diario del pozo."
+                    )
+
     def to_dict(self):
         return {
             "id": str(self.id),
+            "numero_logit": self.numero_logit,
             "nombre": self.nombre,
             "operador": self.operador,
             "ubicacion": self.ubicacion,
             "campo_area": self.campo_area,
+            "nombre_taladro": self.nombre_taladro,
+            "contratista": self.contratista,
             "fecha_spud": self.fecha_spud.isoformat() if self.fecha_spud else None,
+            "surface_temp": str(self.surface_temp) if self.surface_temp is not None else None,
+            "temp_gradient": str(self.temp_gradient) if self.temp_gradient is not None else None,
+            "unit_set": self.unit_set,
+            "unit_set_display": self.get_unit_set_display(),
+            "es_offshore": self.es_offshore,
+            "usa_riser": self.usa_riser,
+            "air_gap": str(self.air_gap) if self.air_gap is not None else None,
+            "water_depth": str(self.water_depth) if self.water_depth is not None else None,
+            "sea_floor_temp": str(self.sea_floor_temp) if self.sea_floor_temp is not None else None,
+            "tiene_reportes": self.tiene_reportes,
             "total_intervalos": self.intervalos.count(),
         }
 
@@ -105,13 +197,40 @@ class SistemaFluido(models.Model):
 
 
 class Intervalo(models.Model):
+    """Manual resumido, Paso 2: Project -> Intervals.
+
+    `tipo` clasifica la sección (Casing / Liner / Open Hole). `profundidad_
+    tope_liner_sidetrack` (Top Of Liner / Sidetrack) es obligatorio solo si
+    `tipo == LINER` o si `es_sidetrack` está marcado. Cuando `es_sidetrack`
+    está marcado, se activa "Reset Start Depth for Sidetrack": la
+    profundidad inicial del intervalo se fija automáticamente en esa cota
+    (el tope del tapón de cemento), no la ingresa el usuario a mano.
+    """
+
     class Estado(models.TextChoices):
         ABIERTO = "abierto", "Abierto"
         CERRADO = "cerrado", "Cerrado"
 
+    class ModoOperativo(models.TextChoices):
+        DRILLING = "drilling", "Drilling"
+        COMPLETION = "completion", "Completion"
+
+    class Tipo(models.TextChoices):
+        CASING = "casing", "Casing"
+        LINER = "liner", "Liner"
+        OPEN_HOLE = "open_hole", "Open Hole"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     pozo = models.ForeignKey(Pozo, on_delete=models.PROTECT, related_name="intervalos")
     numero = models.PositiveIntegerField()
+    modo_operativo = models.CharField(
+        max_length=12, choices=ModoOperativo.choices, default=ModoOperativo.DRILLING,
+        help_text="Operational Mode: Drilling o Completion.",
+    )
+    tipo = models.CharField(
+        max_length=10, choices=Tipo.choices, default=Tipo.OPEN_HOLE,
+        help_text="Type: Casing, Liner u Open Hole.",
+    )
     sistema_fluido = models.ForeignKey(
         SistemaFluido, on_delete=models.PROTECT, related_name="intervalos",
         help_text="Sistema de fluido asignado a este intervalo. Fijo mientras el intervalo está abierto.",
@@ -121,9 +240,27 @@ class Intervalo(models.Model):
     diametro = models.DecimalField(
         max_digits=6, decimal_places=3, help_text="Diámetro de hoyo o revestidor, en pulgadas."
     )
+    es_sidetrack = models.BooleanField(
+        default=False,
+        help_text="Si este intervalo se abre por un desvío (side track) del hoyo.",
+    )
+    profundidad_tope_liner_sidetrack = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Top Of Liner / Sidetrack (ft). Obligatorio si tipo=Liner o es_sidetrack=True.",
+    )
     estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.ABIERTO)
     fecha_apertura = models.DateField(auto_now_add=True)
     fecha_cierre = models.DateField(null=True, blank=True)
+
+    # --- Paso 7.2: Congelamiento y Traspaso (Freeze & Rollover) ---
+    volumen_inicial = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text=(
+            "Start Volume (bbl). Se puebla automáticamente al crear el intervalo con el "
+            "Final Volume del cierre del intervalo anterior del mismo pozo (Rollover, manual "
+            "7.2). Para el primer intervalo del pozo se ingresa a mano."
+        ),
+    )
 
     class Meta:
         ordering = ["pozo", "numero"]
@@ -142,6 +279,33 @@ class Intervalo(models.Model):
         if self.profundidad_final is not None and self.profundidad_final < self.profundidad_inicial:
             raise ValidationError("La profundidad final no puede ser menor que la profundidad inicial.")
 
+        requiere_tope = self.tipo == self.Tipo.LINER or self.es_sidetrack
+        if requiere_tope and self.profundidad_tope_liner_sidetrack is None:
+            raise ValidationError(
+                "Top Of Liner / Sidetrack (ft) es obligatorio cuando el tipo es Liner o el "
+                "intervalo es un side track."
+            )
+
+    def save(self, *args, **kwargs):
+        # Regla de Sidetrack: "Reset Start Depth for Sidetrack" — la profundidad
+        # de arranque se fija en el tope del tapón de cemento, no la decide el
+        # usuario a mano.
+        if self.es_sidetrack and self.profundidad_tope_liner_sidetrack is not None:
+            self.profundidad_inicial = self.profundidad_tope_liner_sidetrack
+
+        # Rollover (manual 7.2): si no se indicó Start Volume a mano, se
+        # puebla con el Final Volume del cierre del intervalo anterior del
+        # mismo pozo (numero - 1), si ese intervalo ya está cerrado.
+        if self._state.adding and self.volumen_inicial is None:
+            anterior = Intervalo.objects.filter(pozo_id=self.pozo_id, numero=self.numero - 1).first()
+            if anterior is not None:
+                try:
+                    self.volumen_inicial = anterior.cierre.volumen_final
+                except CierreVolumetrico.DoesNotExist:
+                    pass
+
+        super().save(*args, **kwargs)
+
     def to_dict(self):
         try:
             cierre = self.cierre
@@ -154,6 +318,10 @@ class Intervalo(models.Model):
             "pozo_id": str(self.pozo_id),
             "pozo_nombre": self.pozo.nombre,
             "numero": self.numero,
+            "modo_operativo": self.modo_operativo,
+            "modo_operativo_display": self.get_modo_operativo_display(),
+            "tipo": self.tipo,
+            "tipo_display": self.get_tipo_display(),
             "sistema_fluido_id": str(self.sistema_fluido_id),
             "sistema_fluido_nombre": self.sistema_fluido.nombre,
             "categoria_sistema": self.sistema_fluido.categoria,
@@ -161,11 +329,17 @@ class Intervalo(models.Model):
             "profundidad_inicial": str(self.profundidad_inicial),
             "profundidad_final": str(self.profundidad_final) if self.profundidad_final is not None else None,
             "diametro": str(self.diametro),
+            "es_sidetrack": self.es_sidetrack,
+            "profundidad_tope_liner_sidetrack": (
+                str(self.profundidad_tope_liner_sidetrack)
+                if self.profundidad_tope_liner_sidetrack is not None else None
+            ),
             "estado": self.estado,
             "estado_display": self.get_estado_display(),
             "esta_cerrado": self.esta_cerrado,
             "fecha_apertura": self.fecha_apertura.isoformat() if self.fecha_apertura else None,
             "fecha_cierre": self.fecha_cierre.isoformat() if self.fecha_cierre else None,
+            "volumen_inicial": str(self.volumen_inicial) if self.volumen_inicial is not None else None,
             "total_tuberias": self.tuberias.count(),
             "cierre": cierre_dict,
         }
@@ -175,6 +349,10 @@ class TuberiaInstalada(models.Model):
     """Lo que se metió de hierro en un intervalo (revestidor, liner, etc.).
 
     Uno a muchos con Intervalo: un mismo intervalo puede tener varios tramos.
+    Corresponde a una fila de la tabla "Wellbore Geometry" del manual resumido
+    (Paso 5.1: Type, Casing OD, Casing ID, Depth, TVD) — `longitud` es la
+    columna "Depth" (profundidad medida/MD de la zapata) y
+    `profundidad_tvd` es "TVD" (profundidad vertical verdadera del mismo punto).
     """
 
     class Tipo(models.TextChoices):
@@ -185,9 +363,13 @@ class TuberiaInstalada(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     intervalo = models.ForeignKey(Intervalo, on_delete=models.CASCADE, related_name="tuberias")
     tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.REVESTIDOR)
-    longitud = models.DecimalField(max_digits=10, decimal_places=2, help_text="Longitud en pies.")
-    diametro_externo = models.DecimalField(max_digits=6, decimal_places=3, help_text="OD en pulgadas.")
-    diametro_interno = models.DecimalField(max_digits=6, decimal_places=3, help_text="ID en pulgadas.")
+    longitud = models.DecimalField(max_digits=10, decimal_places=2, help_text="Longitud/Depth (MD) en pies.")
+    diametro_externo = models.DecimalField(max_digits=6, decimal_places=3, help_text="Casing OD, en pulgadas.")
+    diametro_interno = models.DecimalField(max_digits=6, decimal_places=3, help_text="Casing ID, en pulgadas.")
+    profundidad_tvd = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="TVD (profundidad vertical verdadera) de la zapata, en pies. Opcional en pozos verticales.",
+    )
 
     class Meta:
         ordering = ["intervalo", "id"]
@@ -208,24 +390,45 @@ class TuberiaInstalada(models.Model):
             "longitud": str(self.longitud),
             "diametro_externo": str(self.diametro_externo),
             "diametro_interno": str(self.diametro_interno),
+            "profundidad_tvd": str(self.profundidad_tvd) if self.profundidad_tvd is not None else None,
         }
 
 
 class CierreVolumetrico(models.Model):
-    """Cierre volumétrico de un intervalo. Uno a uno: solo existe cuando el
-    intervalo ya se cerró. Al crearse, marca el Intervalo como cerrado.
+    """Cierre volumétrico de un intervalo (manual resumido, Paso 7). Uno a
+    uno: solo existe cuando el intervalo ya se cerró. Al crearse, marca el
+    Intervalo como cerrado (7.2: Freeze).
+
+    Antes de este paso, `perdida_left_in_hole` era un monto libre sin
+    conexión con el catálogo de pérdidas. Ahora, siguiendo el punto 7.1.3
+    del manual ("todo volumen que quede atrapado... se descarga
+    contablemente a la categoría de pérdida Left in Hole"), ese volumen se
+    registra como una `TransaccionFosa` real (tipo Loss, categoría "Left in
+    Hole") — `fosa_origen`, `categoria_perdida` y `transaccion_left_in_hole`
+    guardan de qué fosa salió y qué transacción lo ejecutó, para trazabilidad.
+    `perdida_left_in_hole` se conserva como propiedad de solo lectura
+    (siempre igual a `volumen_no_fluido`) para no romper a quien ya
+    consumía ese campo.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     intervalo = models.OneToOneField(Intervalo, on_delete=models.PROTECT, related_name="cierre")
-    volumen_final = models.DecimalField(max_digits=10, decimal_places=2, help_text="Volumen final, en bbl.")
+    volumen_final = models.DecimalField(max_digits=10, decimal_places=2, help_text="Final Volume, en bbl.")
     volumen_no_fluido = models.DecimalField(
         max_digits=10, decimal_places=2,
         help_text="Volumen que queda atrapado bajo la profundidad de cierre (Volume Not Fluids), en bbl.",
     )
-    perdida_left_in_hole = models.DecimalField(
-        max_digits=10, decimal_places=2,
-        help_text="Pérdida registrada para que el balance del intervalo cuadre en cero, en bbl.",
+    fosa_origen = models.ForeignKey(
+        "Fosa", on_delete=models.PROTECT, null=True, blank=True, related_name="cierres_left_in_hole",
+        help_text="Fosa de la que se descuenta el volumen atrapado. Obligatoria si volumen_no_fluido > 0.",
+    )
+    categoria_perdida = models.ForeignKey(
+        "CategoriaPerdida", on_delete=models.PROTECT, null=True, blank=True,
+        help_text='Categoría de pérdida usada para el descargo (debe ser "Left in Hole").',
+    )
+    transaccion_left_in_hole = models.OneToOneField(
+        "TransaccionFosa", on_delete=models.PROTECT, null=True, blank=True, related_name="cierre_origen",
+        help_text="La TransaccionFosa (tipo Loss) que realmente ejecutó el descargo, para trazabilidad.",
     )
     usuario = models.CharField(max_length=120)
     fecha_cierre = models.DateTimeField(auto_now_add=True)
@@ -236,7 +439,25 @@ class CierreVolumetrico(models.Model):
     def __str__(self):
         return f"Cierre de {self.intervalo}"
 
+    def clean(self):
+        if self.volumen_no_fluido and self.volumen_no_fluido > 0:
+            if not self.fosa_origen_id or not self.categoria_perdida_id or not self.transaccion_left_in_hole_id:
+                raise ValidationError(
+                    "Si hay Volume Not Fluids, se debe registrar la fosa, la categoría de pérdida "
+                    '("Left in Hole") y la transacción que descargó ese volumen.'
+                )
+        else:
+            if self.fosa_origen_id or self.categoria_perdida_id or self.transaccion_left_in_hole_id:
+                raise ValidationError("No debe haber fosa/categoría/transacción de descargo si Volume Not Fluids es 0.")
+
+    @property
+    def perdida_left_in_hole(self):
+        """Alias de compatibilidad: la pérdida Left in Hole es, por definición
+        (manual 7.1.3), el mismo Volume Not Fluids atrapado al cerrar."""
+        return self.volumen_no_fluido
+
     def save(self, *args, **kwargs):
+        self.full_clean()
         with transaction.atomic():
             super().save(*args, **kwargs)
             Intervalo.objects.filter(pk=self.intervalo_id).update(
@@ -251,8 +472,154 @@ class CierreVolumetrico(models.Model):
             "volumen_final": str(self.volumen_final),
             "volumen_no_fluido": str(self.volumen_no_fluido),
             "perdida_left_in_hole": str(self.perdida_left_in_hole),
+            "fosa_origen_id": str(self.fosa_origen_id) if self.fosa_origen_id else None,
+            "fosa_origen_nombre": self.fosa_origen.descripcion if self.fosa_origen_id else None,
+            "categoria_perdida_id": str(self.categoria_perdida_id) if self.categoria_perdida_id else None,
+            "categoria_perdida_nombre": self.categoria_perdida.nombre if self.categoria_perdida_id else None,
+            "transaccion_left_in_hole_id": str(self.transaccion_left_in_hole_id) if self.transaccion_left_in_hole_id else None,
             "usuario": self.usuario,
             "fecha_cierre": self.fecha_cierre.isoformat() if self.fecha_cierre else None,
+        }
+
+
+# ==============================================================================
+# MANUAL RESUMIDO, PASO 3 — CATÁLOGOS MAESTROS DE FOSAS Y PÉRDIDAS
+# ==============================================================================
+#
+# Catálogos de proyecto (por Pozo, igual que Well Survey / Lithology / Fluid
+# Systems en "Setup del Proyecto.md" — Módulo 3: View Project Information).
+# Todavía NO se conectan a la contabilidad volumétrica diaria (eso es el
+# Paso 6: Volume Accounting, pendiente): por ahora son catálogos maestros que
+# el usuario configura una vez por pozo, listos para que Volume Accounting los
+# consuma más adelante. Esto resuelve el pendiente de "Próximos pasos a
+# seguir.md" #3: formalizar el catálogo de categorías de pérdida (hoy
+# `CierreVolumetrico.perdida_left_in_hole` sigue siendo un monto libre, no una
+# categoría del catálogo — se conectará cuando se implemente Volume
+# Accounting completo).
+
+
+class Fosa(models.Model):
+    """Fosa o tanque del taladro (Pit Setup Tab). Manual resumido 3.1.
+
+    `tipo` usa las categorías operativas fijas del manual (Active, Reserve,
+    Premix, Spacer, Storage, Dead Volume) — el manual real distingue además
+    valores "predefinidos" (fondo gris, inmutables) de "definidos por el
+    usuario" (fondo blanco, editables) dentro de ese catálogo; esa capa
+    adicional de catálogo-de-tipos no se implementa todavía, se deja como
+    choices fijos por simplicidad.
+
+    `es_transaccional=False` marca una fosa no transaccional (ej. "Base Oil
+    Storage"): almacenamiento aislado que no participa del balance diario de
+    lodo activo ni acepta Transfer/Dump/Add Chemical transaccional.
+    """
+
+    class TipoFosa(models.TextChoices):
+        ACTIVE = "active", "Active"
+        RESERVE = "reserve", "Reserve"
+        PREMIX = "premix", "Premix"
+        SPACER = "spacer", "Spacer"
+        STORAGE = "storage", "Storage"
+        DEAD_VOLUME = "dead_volume", "Dead Volume"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    pozo = models.ForeignKey(Pozo, on_delete=models.PROTECT, related_name="fosas")
+    descripcion = models.CharField(
+        max_length=80, help_text='Nombre único de la fosa, ej. "Active 1", "Reserve 1", "Premix 1".',
+    )
+    capacidad = models.DecimalField(max_digits=10, decimal_places=2, help_text="Capacidad volumétrica máxima, en bbl.")
+    tipo = models.CharField(max_length=20, choices=TipoFosa.choices, default=TipoFosa.ACTIVE)
+    es_transaccional = models.BooleanField(
+        default=True,
+        help_text=(
+            "Si es False, es una fosa/tanque no transaccional (almacenamiento aislado, "
+            "ej. Base Oil Storage): no participa del balance diario de lodo activo."
+        ),
+    )
+
+    class Meta:
+        ordering = ["pozo", "descripcion"]
+        constraints = [
+            models.UniqueConstraint(fields=["pozo", "descripcion"], name="unica_descripcion_fosa_por_pozo"),
+        ]
+        verbose_name = "Fosa / Tanque"
+        verbose_name_plural = "Fosas / Tanques"
+
+    def __str__(self):
+        return f"{self.descripcion} ({self.pozo})"
+
+    def clean(self):
+        if self.pozo_id and self.descripcion:
+            duplicado = Fosa.objects.filter(pozo_id=self.pozo_id, descripcion__iexact=self.descripcion.strip())
+            if self.pk:
+                duplicado = duplicado.exclude(pk=self.pk)
+            if duplicado.exists():
+                raise ValidationError(f'Ya existe una fosa llamada "{self.descripcion}" en este pozo.')
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "pozo_id": str(self.pozo_id),
+            "descripcion": self.descripcion,
+            "capacidad": str(self.capacidad),
+            "tipo": self.tipo,
+            "tipo_display": self.get_tipo_display(),
+            "es_transaccional": self.es_transaccional,
+        }
+
+
+Pit = Fosa
+
+
+class CategoriaPerdida(models.Model):
+    """Catálogo cerrado de motivos de pérdida (Loss Setup Tab). Manual
+    resumido 3.2.
+
+    Aislamiento de dominios: las categorías NO se comparten entre modos
+    operativos — se configuran por separado para Drilling y Completion
+    (`modo_operativo` es parte de la restricción de unicidad, no un simple
+    filtro). `dominio` distingue las pérdidas superficiales (Shakers,
+    Centrifuges, Surface/Dumped, Evaporation) de las subsuperficiales
+    (Losses to Formation, Left in Hole), tal como las agrupa el manual.
+    """
+
+    class ModoOperativo(models.TextChoices):
+        DRILLING = "drilling", "Drilling"
+        COMPLETION = "completion", "Completion"
+
+    class Dominio(models.TextChoices):
+        SUPERFICIAL = "superficial", "Superficial"
+        SUBSUPERFICIAL = "subsuperficial", "Subsuperficial"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    pozo = models.ForeignKey(Pozo, on_delete=models.PROTECT, related_name="categorias_perdida")
+    modo_operativo = models.CharField(max_length=12, choices=ModoOperativo.choices)
+    nombre = models.CharField(max_length=80, help_text='Ej. "Shakers", "Evaporation", "Left in Hole".')
+    dominio = models.CharField(max_length=20, choices=Dominio.choices)
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["pozo", "modo_operativo", "dominio", "nombre"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["pozo", "modo_operativo", "nombre"], name="unica_categoria_perdida_por_pozo_y_modo"
+            ),
+        ]
+        verbose_name = "Categoría de pérdida"
+        verbose_name_plural = "Categorías de pérdida (Loss Setup)"
+
+    def __str__(self):
+        return f"{self.nombre} ({self.get_modo_operativo_display()}) - {self.pozo}"
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "pozo_id": str(self.pozo_id),
+            "modo_operativo": self.modo_operativo,
+            "modo_operativo_display": self.get_modo_operativo_display(),
+            "nombre": self.nombre,
+            "dominio": self.dominio,
+            "dominio_display": self.get_dominio_display(),
+            "descripcion": self.descripcion,
         }
 
 
@@ -346,6 +713,12 @@ class ReporteDiario(models.Model):
     """El encabezado del reporte del día. Cuelga de Intervalo, no de Pozo
     directamente, para heredar su contexto (incluyendo sistema_fluido) y
     respetar el bloqueo de cierre.
+
+    Los 3 campos de geometría (`bit_depth`, `bit_size`, `porcentaje_washout`)
+    corresponden al manual resumido, Paso 5 ("Daily -> Geometry"): son
+    valores del día (la broca avanza y el % de ensanchamiento se reevalúa
+    reporte a reporte), a diferencia de la tubería instalada (revestidor/
+    liner), que es del Intervalo porque no cambia día a día.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -356,6 +729,57 @@ class ReporteDiario(models.Model):
     )
     actividad = models.CharField(max_length=150, blank=True)
     peso_lodo = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+
+    # --- Paso 4.3.1: Profundidades y Horas del Día (General Tab) ---
+    total_depth = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Total Depth (MD): profundidad total medida del pozo, en ft.",
+    )
+    tvd = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="True Vertical Depth: profundidad vertical verdadera, en ft.",
+    )
+    midnight_depth = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Midnight Depth: profundidad al inicio de la jornada (00:00 hrs), en ft.",
+    )
+    rotating_hours = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, default=Decimal("0.00"),
+        help_text="Horas rotando / perforando en las últimas 24 hrs.",
+    )
+    circulating_hours = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, default=Decimal("0.00"),
+        help_text="Horas circulando lodo en las últimas 24 hrs.",
+    )
+
+    # --- Paso 5.1: Wellbore Geometry (Hole Size) ---
+    bit_depth = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Bit Depth: profundidad actual de la mecha, en ft.",
+    )
+    bit_size = models.DecimalField(
+        max_digits=6, decimal_places=3, null=True, blank=True,
+        help_text="Bit Size: diámetro nominal de la mecha, en pulgadas.",
+    )
+    porcentaje_washout = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, default=0,
+        help_text="% Washout (ensanchamiento del hoyo). 0 = hoyo en calibre (gauge hole).",
+    )
+
+    # --- Paso 6.1: Volume Accounting (Volume Not Fluids) ---
+    volumen_debajo_mecha = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        help_text="Vol. Debajo de la Mecha (bbl): hoyo abierto por debajo de la broca, no cubierto por la sarta.",
+    )
+    volumen_no_fluido = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        help_text=(
+            "Volume Not Fluids (bbl): volumen dentro del hoyo que no pertenece al fluido "
+            "circulante activo (ej. agua salada de perforación inicial, lodo previo en "
+            "proceso de desplazamiento). Se resta del Total Hole Volume para obtener el "
+            "Fluid Volume."
+        ),
+    )
 
     class Meta:
         ordering = ["intervalo__pozo", "numero_reporte"]
@@ -388,16 +812,607 @@ class ReporteDiario(models.Model):
         else:
             super().save(*args, **kwargs)
 
+    @property
+    def progreso_diario(self):
+        """Progreso perforado en las últimas 24 hrs: Total Depth - Midnight Depth."""
+        if self.total_depth is not None and self.midnight_depth is not None:
+            return (self.total_depth - self.midnight_depth).quantize(Decimal("0.01"))
+        return None
+
+    @property
+    def hole_size(self):
+        """Hole Size (paso 5.1): diámetro real del hoyo ajustado por el
+        ensanchamiento. Si %Washout es 0 (o no se ha registrado), el hoyo
+        está "en calibre" y Hole Size = Bit Size."""
+        if self.bit_size is None:
+            return None
+        washout = self.porcentaje_washout or Decimal("0")
+        return (self.bit_size * (Decimal("1") + washout / Decimal("100"))).quantize(Decimal("0.001"))
+
+    @property
+    def diametro_confinamiento(self):
+        """El "ID_hoyo_o_revestidor" que usan las fórmulas de volumen de la
+        sarta (paso 5.2): si el intervalo ya tiene tubería instalada (Casing/
+        Liner), usa el ID de la más reciente; si no, usa el Hole Size del
+        día (hoyo abierto); si tampoco hay Bit Size cargado, cae al
+        `Intervalo.diametro` genérico como último recurso."""
+        ultima_tuberia = self.intervalo.tuberias.order_by("-id").first()
+        if self.intervalo.tipo != Intervalo.Tipo.OPEN_HOLE and ultima_tuberia:
+            return ultima_tuberia.diametro_interno
+        if self.hole_size is not None:
+            return self.hole_size
+        return self.intervalo.diametro
+
+    # --- Paso 6.1: Volume Accounting ---
+    @property
+    def volumen_anular_total(self):
+        """Vol. Anular: suma del volumen anular de todos los tramos de sarta del día."""
+        total = Decimal("0")
+        for tramo in self.tramos_sarta.all():
+            v = tramo.volumen_anular_bbl
+            if v is not None:
+                total += v
+        return total.quantize(Decimal("0.0001"))
+
+    @property
+    def volumen_sarta_total(self):
+        """Vol. Sarta: suma de la capacidad interna de todos los tramos de sarta del día."""
+        total = Decimal("0")
+        for tramo in self.tramos_sarta.all():
+            v = tramo.capacidad_interna_bbl
+            if v is not None:
+                total += v
+        return total.quantize(Decimal("0.0001"))
+
+    @property
+    def volumen_total_hoyo(self):
+        """Total Hole Volume = Vol. Anular + Vol. Sarta + Vol. Debajo de la Mecha (manual 6.1)."""
+        return (
+            self.volumen_anular_total + self.volumen_sarta_total + (self.volumen_debajo_mecha or Decimal("0"))
+        ).quantize(Decimal("0.0001"))
+
+    @property
+    def volumen_fluido(self):
+        """Fluid Volume = Total Hole Volume − Volume Not Fluids (manual 6.1)."""
+        return (self.volumen_total_hoyo - (self.volumen_no_fluido or Decimal("0"))).quantize(Decimal("0.0001"))
+
+    @property
+    def volumen_teorico_fosas(self):
+        """Volumen teórico acumulado en fosas transaccionales del pozo, desde el
+        primer reporte hasta este (inclusive) — manual 6.4 ("Volumen Teórico
+        Calculado"). Solo suma Add Chemicals (+) y Loss (−): Transfer se excluye
+        a propósito porque el manual aclara que "mueve volumen entre dos fosas
+        sin alterar el balance global de la locación" (6.2).
+
+        Simplificación deliberada: no existe todavía un "Start Volume" inicial
+        por fosa (volumen de llenado antes de la primera transacción); este
+        cálculo es un delta acumulado desde cero. Si en el futuro se agrega un
+        volumen inicial por fosa, debe sumarse aquí.
+        """
+        agregado = TransaccionFosa.objects.filter(
+            reporte__intervalo__pozo_id=self.intervalo.pozo_id,
+            reporte__numero_reporte__lte=self.numero_reporte,
+        ).aggregate(
+            total=Sum(
+                Case(
+                    When(tipo=TransaccionFosa.Tipo.ADD_CHEMICALS, then=F("volumen")),
+                    When(tipo=TransaccionFosa.Tipo.LOSS, then=-F("volumen")),
+                    default=Value(0),
+                    output_field=models.DecimalField(max_digits=14, decimal_places=4),
+                )
+            )
+        )["total"]
+        return (agregado or Decimal("0")).quantize(Decimal("0.0001"))
+
+    @property
+    def volumen_medido_fosas(self):
+        """Volumen Medido en Fosas (manual 6.4): suma de las lecturas manuales
+        (dip/strap) de las fosas transaccionales, registradas para este reporte."""
+        total = self.lecturas_fosa.aggregate(t=Sum("volumen_medido"))["t"]
+        return (total or Decimal("0")).quantize(Decimal("0.0001"))
+
+    @property
+    def volumen_no_contabilizado(self):
+        """Not Accounted = Volumen Teórico Calculado − Volumen Medido en Fosas
+        (manual 6.4). Regla dura del manual: el día no puede cerrarse si esto
+        es distinto de 0.00 — la aplicación de esa regla queda pendiente hasta
+        que exista un cierre formal de día (Paso 4, todavía no implementado);
+        por ahora este valor se expone para que el usuario lo revise."""
+        return (self.volumen_teorico_fosas - self.volumen_medido_fosas).quantize(Decimal("0.01"))
+
+    @property
+    def balance_cuadrado(self):
+        return self.volumen_no_contabilizado == Decimal("0.00")
+
+    # --- Paso 4.1: Apertura del Día Operativo (Daily -> General) ---
+    @property
+    def horas_totales_distribucion(self):
+        """Suma de horas de la Time Distribution del día (manual 4.1)."""
+        total = self.distribucion_tiempo.aggregate(t=Sum("horas"))["t"]
+        return (total or Decimal("0")).quantize(Decimal("0.01"))
+
+    @property
+    def tiempo_cuadrado(self):
+        """True si la Time Distribution suma exactamente 24.00 hrs (manual
+        4.1: "el total debe sumar exactamente 24.00 hrs para no disparar
+        alerta roja"). Al igual que `balance_cuadrado` (Paso 6.4), esto es
+        solo informativo hasta que exista un cierre formal de día (Paso 4
+        no incluye ese cierre en el manual resumido; se deja para cuando se
+        implemente)."""
+        return self.horas_totales_distribucion == Decimal("24.00")
+
     def to_dict(self):
         return {
             "id": str(self.id),
             "intervalo_id": str(self.intervalo_id),
             "pozo_nombre": self.intervalo.pozo.nombre,
+            # Default Interval / Default Fluid System (manual 4.1): en este
+            # esquema cada ReporteDiario ya cuelga de un único Intervalo fijo
+            # (no existe un selector de "intervalo por defecto" separado), así
+            # que estos dos campos del manual se exponen aquí como
+            # información de cabecera de solo lectura, tomada directamente
+            # del intervalo del reporte.
+            "intervalo_numero": self.intervalo.numero,
+            "sistema_fluido_nombre": self.intervalo.sistema_fluido.nombre,
             "fecha": self.fecha.isoformat() if self.fecha else None,
             "numero_reporte": self.numero_reporte,
             "actividad": self.actividad,
             "peso_lodo": str(self.peso_lodo) if self.peso_lodo is not None else None,
+            "total_depth": str(self.total_depth) if self.total_depth is not None else None,
+            "tvd": str(self.tvd) if self.tvd is not None else None,
+            "midnight_depth": str(self.midnight_depth) if self.midnight_depth is not None else None,
+            "progreso_diario": str(self.progreso_diario) if self.progreso_diario is not None else None,
+            "rotating_hours": str(self.rotating_hours) if self.rotating_hours is not None else "0.00",
+            "circulating_hours": str(self.circulating_hours) if self.circulating_hours is not None else "0.00",
+            "bit_depth": str(self.bit_depth) if self.bit_depth is not None else None,
+            "bit_size": str(self.bit_size) if self.bit_size is not None else None,
+            "porcentaje_washout": str(self.porcentaje_washout) if self.porcentaje_washout is not None else None,
+            "hole_size": str(self.hole_size) if self.hole_size is not None else None,
+            "diametro_confinamiento": str(self.diametro_confinamiento),
+            "volumen_debajo_mecha": str(self.volumen_debajo_mecha),
+            "volumen_no_fluido": str(self.volumen_no_fluido),
+            "volumen_anular_total": str(self.volumen_anular_total),
+            "volumen_sarta_total": str(self.volumen_sarta_total),
+            "volumen_total_hoyo": str(self.volumen_total_hoyo),
+            "volumen_fluido": str(self.volumen_fluido),
+            "volumen_teorico_fosas": str(self.volumen_teorico_fosas),
+            "volumen_medido_fosas": str(self.volumen_medido_fosas),
+            "volumen_no_contabilizado": str(self.volumen_no_contabilizado),
+            "balance_cuadrado": self.balance_cuadrado,
+            "horas_totales_distribucion": str(self.horas_totales_distribucion),
+            "tiempo_cuadrado": self.tiempo_cuadrado,
             "total_muestras": self.muestras.count(),
+            "total_tramos_sarta": self.tramos_sarta.count(),
+        }
+
+
+class TramoSarta(models.Model):
+    """Fila de la tabla "Drill String Geometry" del manual resumido (Paso
+    5.2): modela tubular por tubular lo que cuelga dentro del pozo ese día
+    (Drill Pipe, Heavy Weight, Drill Collar, Sub).
+
+    Regla de la "celda amarilla" (fórmula de longitud automática): el tramo
+    marcado `es_principal` (el Drill Pipe superior) NO recibe su longitud
+    por input — se calcula siempre como
+    `Bit Depth − Σ longitud de los demás tramos` (el resto de la sarta,
+    BHA) y se recalcula en cada `save()`. Solo puede haber un tramo
+    `es_principal=True` por reporte.
+    """
+
+    class Tipo(models.TextChoices):
+        DRILL_PIPE = "drill_pipe", "Drill Pipe"
+        HEAVY_WEIGHT = "heavy_weight", "Heavy Weight"
+        DRILL_COLLAR = "drill_collar", "Drill Collar"
+        SUB = "sub", "Sub"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    reporte = models.ForeignKey(ReporteDiario, on_delete=models.CASCADE, related_name="tramos_sarta")
+    tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.DRILL_PIPE)
+    es_principal = models.BooleanField(
+        default=False,
+        help_text="Tramo con longitud autocalculada (Bit Depth − resto de la sarta). Como máximo uno por reporte.",
+    )
+    longitud = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Longitud (ft). Si es_principal=True se recalcula siempre al guardar; el valor enviado se ignora.",
+    )
+    diametro_externo = models.DecimalField(max_digits=6, decimal_places=3, default=Decimal("0.000"), help_text="Pipe OD, en pulgadas.")
+    diametro_interno = models.DecimalField(max_digits=6, decimal_places=3, default=Decimal("0.000"), help_text="Pipe ID, en pulgadas.")
+    tool_joint_od = models.DecimalField(
+        max_digits=6, decimal_places=3, null=True, blank=True, help_text="Tool Jt OD, en pulgadas.",
+    )
+    tool_joint_id = models.DecimalField(
+        max_digits=6, decimal_places=3, null=True, blank=True, help_text="Tool Jt ID, en pulgadas.",
+    )
+    longitud_tool_joint = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True, help_text="TJ Length, en pulgadas.",
+    )
+    orden = models.PositiveIntegerField(default=0, help_text="Orden de la tabla, de arriba (superficie) hacia abajo.")
+
+    class Meta:
+        ordering = ["reporte", "orden"]
+        verbose_name = "Tramo de sarta"
+        verbose_name_plural = "Tramos de sarta (Drill String Geometry)"
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.reporte}"
+
+    def clean(self):
+        if self.diametro_interno >= self.diametro_externo:
+            raise ValidationError("Pipe ID debe ser menor que Pipe OD.")
+        if self.reporte_id and self.reporte.intervalo.esta_cerrado:
+            raise ValidationError("No se puede registrar geometría de sarta en un intervalo cerrado.")
+        if self.es_principal:
+            ya_existe = TramoSarta.objects.filter(reporte_id=self.reporte_id, es_principal=True)
+            if self.pk:
+                ya_existe = ya_existe.exclude(pk=self.pk)
+            if ya_existe.exists():
+                raise ValidationError("Ya existe un tramo principal (Drill Pipe autocalculado) en este reporte.")
+        elif self.longitud is None:
+            raise ValidationError("La longitud es obligatoria para un tramo que no es el principal (BHA).")
+
+    def _longitud_calculada(self):
+        """Bit Depth − Σ longitud de los demás tramos del mismo reporte (BHA)."""
+        if self.reporte.bit_depth is None:
+            return None
+        suma_bha = (
+            TramoSarta.objects.filter(reporte_id=self.reporte_id)
+            .exclude(pk=self.pk)
+            .exclude(es_principal=True)
+            .aggregate(total=models.Sum("longitud"))["total"]
+            or Decimal("0")
+        )
+        return self.reporte.bit_depth - suma_bha
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        if self.es_principal:
+            self.longitud = self._longitud_calculada()
+        super().save(*args, **kwargs)
+
+    @property
+    def capacidad_interna_bbl(self):
+        """Capacidad interior de sarta: (Pipe ID² / 1029.4) × Length."""
+        if self.longitud is None:
+            return None
+        return ((self.diametro_interno ** 2) / Decimal("1029.4") * self.longitud).quantize(Decimal("0.0001"))
+
+    @property
+    def volumen_anular_bbl(self):
+        """Capacidad anular: ((ID_hoyo_o_revestidor² − Pipe OD²) / 1029.4) × Length.
+
+        Usa `ReporteDiario.diametro_confinamiento` como el ID de hoyo o
+        revestidor vigente para este reporte (ver esa propiedad para el
+        criterio de selección)."""
+        if self.longitud is None:
+            return None
+        id_confinamiento = self.reporte.diametro_confinamiento
+        if id_confinamiento is None:
+            return None
+        diferencia = (id_confinamiento ** 2) - (self.diametro_externo ** 2)
+        if diferencia <= 0:
+            return None
+        return (diferencia / Decimal("1029.4") * self.longitud).quantize(Decimal("0.0001"))
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "reporte_id": str(self.reporte_id),
+            "tipo": self.tipo,
+            "tipo_display": self.get_tipo_display(),
+            "es_principal": self.es_principal,
+            "longitud": str(self.longitud) if self.longitud is not None else None,
+            "diametro_externo": str(self.diametro_externo),
+            "diametro_interno": str(self.diametro_interno),
+            "tool_joint_od": str(self.tool_joint_od) if self.tool_joint_od is not None else None,
+            "tool_joint_id": str(self.tool_joint_id) if self.tool_joint_id is not None else None,
+            "longitud_tool_joint": str(self.longitud_tool_joint) if self.longitud_tool_joint is not None else None,
+            "orden": self.orden,
+            "capacidad_interna_bbl": str(self.capacidad_interna_bbl) if self.capacidad_interna_bbl is not None else None,
+            "volumen_anular_bbl": str(self.volumen_anular_bbl) if self.volumen_anular_bbl is not None else None,
+        }
+
+
+class TransaccionFosa(models.Model):
+    """Transacción de fosa (manual resumido, Paso 6.2 — Daily -> Volume
+    Accounting). Registra los 3 tipos de movimiento que el manual define:
+
+      - Add Chemicals: agrega un producto a una fosa destino. El volumen
+        desplazado se calcula siempre (nunca se recibe del usuario) con
+        Volumen(bbl) = (Cantidad Usada × Cantidad Unitaria en lb) /
+        (Gravedad Específica × 350) — manual 6.2. `es_dilucion` marca que el
+        producto agregado es agua/base líquida usada para diluir (afecta la
+        concentración de la fosa; el seguimiento de concentración química por
+        fosa no está implementado todavía, se deja como simplificación
+        documentada — el volumen desplazado sí se contabiliza igual).
+      - Loss: sale físicamente fluido de una fosa origen, obligatoriamente
+        con una categoría del catálogo cerrado de pérdidas (Paso 3).
+      - Transfer: mueve volumen entre dos fosas transaccionales sin alterar
+        el balance global de la locación (por eso se excluye de
+        `ReporteDiario.volumen_teorico_fosas`).
+
+    Regla de Inmutabilidad Transaccional (manual 6.3): `intervalo` se fija en
+    el primer guardado a partir de `reporte.intervalo` y nunca se recalcula
+    después, aunque en el futuro el reporte tenga un "Default Interval"
+    editable (Paso 4, todavía no implementado).
+    """
+
+    class Tipo(models.TextChoices):
+        ADD_CHEMICALS = "add_chemicals", "Add Chemicals"
+        LOSS = "loss", "Loss"
+        TRANSFER = "transfer", "Transfer"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    reporte = models.ForeignKey(ReporteDiario, on_delete=models.CASCADE, related_name="transacciones_fosa")
+    intervalo = models.ForeignKey(
+        Intervalo, on_delete=models.PROTECT, null=True, blank=True, related_name="transacciones_fosa", editable=False,
+        help_text="Snapshot inmutable de reporte.intervalo al momento de crear la transacción (manual 6.3).",
+    )
+    tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.ADD_CHEMICALS)
+
+    fosa_origen = models.ForeignKey(
+        Fosa, on_delete=models.PROTECT, null=True, blank=True, related_name="transacciones_salida",
+        help_text="Fosa de la que sale el volumen (Loss, Transfer).",
+    )
+    fosa_destino = models.ForeignKey(
+        Fosa, on_delete=models.PROTECT, null=True, blank=True, related_name="transacciones_entrada",
+        help_text="Fosa a la que entra el volumen (Add Chemicals, Transfer).",
+    )
+
+    producto = models.ForeignKey(
+        Producto, on_delete=models.PROTECT, null=True, blank=True,
+        help_text="Solo para Add Chemicals.",
+    )
+    cantidad_usada = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Cantidad de empaques usados (sacos/tambores/etc.). Solo para Add Chemicals.",
+    )
+    es_dilucion = models.BooleanField(
+        default=False,
+        help_text='Is Dilution: el producto agregado es agua/base líquida usada para diluir la fosa destino.',
+    )
+
+    categoria_perdida = models.ForeignKey(
+        CategoriaPerdida, on_delete=models.PROTECT, null=True, blank=True,
+        help_text="Obligatoria para Loss; debe pertenecer al mismo pozo y modo operativo del intervalo.",
+    )
+
+    volumen = models.DecimalField(
+        max_digits=12, decimal_places=4, default=Decimal("0.0000"),
+        help_text=(
+            "Volumen desplazado, en bbl. Para Add Chemicals se recalcula siempre al "
+            "guardar (el valor enviado se ignora); para Loss y Transfer es un dato "
+            "medido/manual."
+        ),
+    )
+    notas = models.TextField(blank=True)
+    hora_registro = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["reporte", "hora_registro"]
+        verbose_name = "Transacción de fosa"
+        verbose_name_plural = "Transacciones de fosa (Volume Accounting)"
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.reporte}"
+
+    def clean(self):
+        if self.reporte_id and self.reporte.intervalo.esta_cerrado:
+            raise ValidationError("No se puede registrar una transacción de fosa en un intervalo cerrado.")
+
+        if self.tipo == self.Tipo.ADD_CHEMICALS:
+            if not self.fosa_destino_id:
+                raise ValidationError("Add Chemicals requiere una fosa destino.")
+            if self.fosa_origen_id:
+                raise ValidationError("Add Chemicals no debe tener fosa origen.")
+            if not self.producto_id or self.cantidad_usada is None:
+                raise ValidationError("Add Chemicals requiere producto y cantidad usada.")
+            if self.cantidad_usada <= 0:
+                raise ValidationError("La cantidad usada debe ser mayor a cero.")
+            if self.categoria_perdida_id:
+                raise ValidationError("Add Chemicals no debe tener categoría de pérdida.")
+            if self.fosa_destino_id and not self.fosa_destino.es_transaccional:
+                raise ValidationError("La fosa destino debe ser transaccional.")
+
+        elif self.tipo == self.Tipo.LOSS:
+            if not self.fosa_origen_id:
+                raise ValidationError("Loss requiere una fosa origen.")
+            if self.fosa_destino_id:
+                raise ValidationError("Loss no debe tener fosa destino.")
+            if self.producto_id or self.cantidad_usada is not None:
+                raise ValidationError("Loss no debe tener producto ni cantidad usada.")
+            if not self.categoria_perdida_id:
+                raise ValidationError("Loss requiere una categoría del catálogo de pérdidas.")
+            if self.volumen is None or self.volumen <= 0:
+                raise ValidationError("El volumen de la pérdida debe ser mayor a cero.")
+            if self.fosa_origen_id and not self.fosa_origen.es_transaccional:
+                raise ValidationError("La fosa origen debe ser transaccional.")
+            if (
+                self.categoria_perdida_id
+                and self.reporte_id
+                and self.categoria_perdida.modo_operativo != self.reporte.intervalo.modo_operativo
+            ):
+                raise ValidationError(
+                    "La categoría de pérdida debe ser del mismo modo operativo (Drilling/Completion) del intervalo."
+                )
+            if (
+                self.categoria_perdida_id
+                and self.fosa_origen_id
+                and self.categoria_perdida.pozo_id != self.fosa_origen.pozo_id
+            ):
+                raise ValidationError("La categoría de pérdida debe pertenecer al mismo pozo que la fosa.")
+
+        elif self.tipo == self.Tipo.TRANSFER:
+            if not self.fosa_origen_id or not self.fosa_destino_id:
+                raise ValidationError("Transfer requiere fosa origen y fosa destino.")
+            if self.fosa_origen_id == self.fosa_destino_id:
+                raise ValidationError("Transfer requiere dos fosas distintas.")
+            if self.producto_id or self.cantidad_usada is not None or self.categoria_perdida_id:
+                raise ValidationError("Transfer no debe tener producto, cantidad usada ni categoría de pérdida.")
+            if self.volumen is None or self.volumen <= 0:
+                raise ValidationError("El volumen del transfer debe ser mayor a cero.")
+            if self.fosa_origen_id and not self.fosa_origen.es_transaccional:
+                raise ValidationError("La fosa origen debe ser transaccional.")
+            if self.fosa_destino_id and not self.fosa_destino.es_transaccional:
+                raise ValidationError("La fosa destino debe ser transaccional.")
+
+    def _volumen_calculado(self):
+        """Add Chemicals — manual 6.2: Volumen(bbl) = (Cantidad Usada × Cantidad
+        Unitaria en lb) / (Gravedad Específica × 350).
+
+        `Producto.cantidad_unitaria` puede venir en LB, KG, GA o EA
+        (`unidad_medida`); la fórmula del manual asume peso en libras, así
+        que aquí se convierte KG a LB. Para productos en GA (líquidos, ya
+        volumétricos) se usa la conversión directa 1 bbl = 42 gal en vez de
+        la fórmula de peso/gravedad específica. Un producto en EA (sin peso
+        ni volumen físico, ej. un servicio) no tiene volumen desplazable y
+        se rechaza.
+        """
+        producto = self.producto
+        cantidad = self.cantidad_usada
+        if producto.unidad_medida == Producto.UnidadMedida.EA:
+            raise ValidationError(
+                'No se puede calcular el volumen desplazado para un producto en unidad "EA" '
+                "(sin peso ni volumen físico)."
+            )
+        if producto.unidad_medida == Producto.UnidadMedida.GA:
+            return (cantidad * producto.cantidad_unitaria / Decimal("42")).quantize(Decimal("0.0001"))
+        peso_lb = cantidad * producto.cantidad_unitaria
+        if producto.unidad_medida == Producto.UnidadMedida.KG:
+            peso_lb = peso_lb * Decimal("2.20462")
+        return (peso_lb / (producto.gravedad_especifica * Decimal("350"))).quantize(Decimal("0.0001"))
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and self.reporte_id:
+            self.intervalo = self.reporte.intervalo
+        if self.tipo == self.Tipo.ADD_CHEMICALS and self.producto_id and self.cantidad_usada is not None:
+            self.volumen = self._volumen_calculado()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "reporte_id": str(self.reporte_id),
+            "intervalo_id": str(self.intervalo_id),
+            "tipo": self.tipo,
+            "tipo_display": self.get_tipo_display(),
+            "fosa_origen_id": str(self.fosa_origen_id) if self.fosa_origen_id else None,
+            "fosa_origen_nombre": self.fosa_origen.descripcion if self.fosa_origen_id else None,
+            "fosa_destino_id": str(self.fosa_destino_id) if self.fosa_destino_id else None,
+            "fosa_destino_nombre": self.fosa_destino.descripcion if self.fosa_destino_id else None,
+            "producto_id": str(self.producto_id) if self.producto_id else None,
+            "producto_nombre": self.producto.nombre if self.producto_id else None,
+            "cantidad_usada": str(self.cantidad_usada) if self.cantidad_usada is not None else None,
+            "es_dilucion": self.es_dilucion,
+            "categoria_perdida_id": str(self.categoria_perdida_id) if self.categoria_perdida_id else None,
+            "categoria_perdida_nombre": self.categoria_perdida.nombre if self.categoria_perdida_id else None,
+            "volumen": str(self.volumen),
+            "notas": self.notas,
+            "hora_registro": self.hora_registro.isoformat() if self.hora_registro else None,
+        }
+
+
+class LecturaFosa(models.Model):
+    """Lectura manual (dip/strap) del volumen físico de una fosa transaccional
+    para un reporte diario dado — es el "Volumen Medido en Fosas" del manual
+    6.4, que se compara contra el volumen teórico de libros
+    (`ReporteDiario.volumen_teorico_fosas`) para obtener "Not Accounted".
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    reporte = models.ForeignKey(ReporteDiario, on_delete=models.CASCADE, related_name="lecturas_fosa")
+    fosa = models.ForeignKey(Fosa, on_delete=models.PROTECT, related_name="lecturas")
+    volumen_medido = models.DecimalField(max_digits=12, decimal_places=4, help_text="Lectura física de la fosa, en bbl.")
+
+    class Meta:
+        ordering = ["reporte", "fosa"]
+        constraints = [
+            models.UniqueConstraint(fields=["reporte", "fosa"], name="unica_lectura_por_reporte_y_fosa"),
+        ]
+        verbose_name = "Lectura de fosa"
+        verbose_name_plural = "Lecturas de fosa (Volumen Medido)"
+
+    def __str__(self):
+        return f"{self.fosa} = {self.volumen_medido} bbl ({self.reporte})"
+
+    def clean(self):
+        if self.reporte_id and self.reporte.intervalo.esta_cerrado:
+            raise ValidationError("No se puede registrar una lectura de fosa en un intervalo cerrado.")
+        if self.fosa_id and not self.fosa.es_transaccional:
+            raise ValidationError("Solo se pueden leer fosas transaccionales.")
+        if self.fosa_id and self.reporte_id and self.fosa.pozo_id != self.reporte.intervalo.pozo_id:
+            raise ValidationError("La fosa debe pertenecer al mismo pozo del reporte.")
+        if self.volumen_medido is not None and self.volumen_medido < 0:
+            raise ValidationError("El volumen medido no puede ser negativo.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "reporte_id": str(self.reporte_id),
+            "fosa_id": str(self.fosa_id),
+            "fosa_nombre": self.fosa.descripcion,
+            "volumen_medido": str(self.volumen_medido),
+        }
+
+
+class DistribucionTiempo(models.Model):
+    """Time Distribution del día operativo (manual resumido, Paso 4.1 —
+    Daily -> General). Desglose de las 24 horas del día en actividades del
+    taladro.
+
+    El manual resumido no fija un catálogo cerrado de actividades para esta
+    tabla (a diferencia del catálogo cerrado de pérdidas del Paso 3), así
+    que `actividad` es texto libre, igual que `ReporteDiario.actividad`.
+
+    Regla del manual: el total de horas del día debe sumar exactamente
+    24.00 para no disparar "alerta roja". Igual que con el balance de fosas
+    (Paso 6.4), esto se expone como indicador
+    (`ReporteDiario.horas_totales_distribucion` / `tiempo_cuadrado`) y no
+    bloquea el guardado de cada fila individual — el cierre formal del día
+    que haría exigible esa regla no existe todavía en la aplicación (el
+    manual resumido no lo describe como parte de este paso).
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    reporte = models.ForeignKey(ReporteDiario, on_delete=models.CASCADE, related_name="distribucion_tiempo")
+    actividad = models.CharField(max_length=100, help_text='Ej. "Rotary Drilling", "Circulating", "Tripping In".')
+    horas = models.DecimalField(max_digits=4, decimal_places=2, help_text="Horas dedicadas a esta actividad (mayor a 0, hasta 24).")
+    notas = models.TextField(blank=True)
+    orden = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["reporte", "orden"]
+        verbose_name = "Distribución de tiempo"
+        verbose_name_plural = "Distribución de tiempo (Time Distribution)"
+
+    def __str__(self):
+        return f"{self.actividad} ({self.horas}h) - {self.reporte}"
+
+    def clean(self):
+        if self.reporte_id and self.reporte.intervalo.esta_cerrado:
+            raise ValidationError("No se puede registrar distribución de tiempo en un intervalo cerrado.")
+        if self.horas is None or self.horas <= 0:
+            raise ValidationError("Las horas deben ser mayores a cero.")
+        if self.horas > Decimal("24"):
+            raise ValidationError("Las horas de una sola actividad no pueden superar 24.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "reporte_id": str(self.reporte_id),
+            "actividad": self.actividad,
+            "horas": str(self.horas),
+            "notas": self.notas,
+            "orden": self.orden,
         }
 
 
@@ -467,6 +1482,8 @@ class UsoMaterial(MovimientoProducto):
     estas transacciones a lo largo del día (mañana, tarde, etc.)."""
 
     cantidad_usada = models.DecimalField(max_digits=10, decimal_places=2)
+    on_order = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    used_other = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     hora_registro = models.TimeField(auto_now_add=True)
 
     class Meta(MovimientoProducto.Meta):
@@ -785,3 +1802,118 @@ class Comentario(models.Model):
             "autor": self.autor,
             "fecha_hora": self.fecha_hora.isoformat() if self.fecha_hora else None,
         }
+
+
+# ==============================================================================
+# MODELOS ADICIONALES ONE-TRAX (PERSONAL, MALLAS, TICKETS, FILTRACIÓN)
+# ==============================================================================
+
+class ModeloMalla(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    fabricante = models.CharField(max_length=100)
+    api_mesh = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=150)
+
+    class Meta:
+        verbose_name = "Modelo de Malla"
+        verbose_name_plural = "Modelos de Malla (Screens Setup)"
+
+    def __str__(self):
+        return f"{self.fabricante} {self.api_mesh} - {self.descripcion}"
+
+
+class UsoMalla(models.Model):
+    class Estado(models.TextChoices):
+        INSTALLED = "installed", "Installed"
+        REUSED = "reused", "Reused"
+        DISPOSED = "disposed", "Disposed"
+        UNDO = "undo", "Undo"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    reporte = models.ForeignKey(ReporteDiario, on_delete=models.CASCADE, related_name="mallas")
+    malla = models.ForeignKey(ModeloMalla, on_delete=models.PROTECT)
+    equipo = models.ForeignKey(Equipo, on_delete=models.PROTECT)
+    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.INSTALLED)
+    horas_uso = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name = "Uso de Malla"
+        verbose_name_plural = "Uso de Mallas (Daily Screens)"
+
+    def __str__(self):
+        return f"{self.malla} en {self.equipo} ({self.get_estado_display()})"
+
+
+class Personal(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    pozo = models.ForeignKey(Pozo, on_delete=models.CASCADE, related_name="personal")
+    nombre = models.CharField(max_length=150)
+    ldap_id = models.CharField(max_length=50)
+    email = models.EmailField(max_length=254, blank=True)
+    linea_servicio = models.CharField(max_length=100, blank=True)
+    codigo_cobro = models.CharField(max_length=50, blank=True)
+    tarifa_diaria = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name = "Personal"
+        verbose_name_plural = "Personal (Personnel Setup)"
+
+    def __str__(self):
+        return f"{self.nombre} ({self.ldap_id})"
+
+
+class TicketTransferencia(models.Model):
+    class TipoRuta(models.TextChoices):
+        RECEIVE_WAREHOUSE = "receive_warehouse", "Receive from Warehouse"
+        RECEIVE_WELL = "receive_well", "Receive from Other Well"
+        RETURN_WAREHOUSE = "return_warehouse", "Return to Warehouse"
+        RETURN_WELL = "return_well", "Return to Other Well"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    pozo = models.ForeignKey(Pozo, on_delete=models.CASCADE, related_name="tickets")
+    fecha = models.DateField()
+    numero_ticket = models.CharField(max_length=50)
+    tipo_ruta = models.CharField(max_length=30, choices=TipoRuta.choices)
+    origen_destino = models.CharField(max_length=150, blank=True)
+
+    class Meta:
+        verbose_name = "Ticket de Transferencia"
+        verbose_name_plural = "Tickets de Transferencia"
+
+    def __str__(self):
+        return f"Ticket {self.numero_ticket} ({self.get_tipo_ruta_display()})"
+
+
+class DetalleTicket(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    ticket = models.ForeignKey(TicketTransferencia, on_delete=models.CASCADE, related_name="detalles")
+    producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        verbose_name = "Detalle de Ticket"
+        verbose_name_plural = "Detalles de Tickets"
+
+    def __str__(self):
+        return f"{self.producto.nombre}: {self.cantidad}"
+
+
+class OperacionFiltracion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    reporte = models.ForeignKey(ReporteDiario, on_delete=models.CASCADE, related_name="filtraciones")
+    hora = models.TimeField()
+    suction_ntu = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    discharge_ntu = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    porcentaje_solidos = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    cartridges_used = models.PositiveIntegerField(default=0)
+    de_sacks_used = models.PositiveIntegerField(default=0)
+    downtime_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    downtime_reason = models.CharField(max_length=150, blank=True)
+
+    class Meta:
+        verbose_name = "Operación de Filtración"
+        verbose_name_plural = "Operaciones de Filtración (Filtration Tab)"
+
+    def __str__(self):
+        return f"Filtración {self.hora} - {self.reporte}"
+

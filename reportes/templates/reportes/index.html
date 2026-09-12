@@ -18,6 +18,7 @@
         <button class="tab-btn active" data-tab="pozos">Pozos</button>
         <button class="tab-btn" data-tab="sistemas">Sistemas de Fluido</button>
         <button class="tab-btn" data-tab="intervalos">Intervalos</button>
+        <button class="tab-btn" data-tab="fosas-perdidas">Fosas y Pérdidas</button>
         <button class="tab-btn" data-tab="productos">Productos</button>
         <button class="tab-btn" data-tab="equipos">Equipos</button>
         <button class="tab-btn" data-tab="reportes">Reportes Diarios</button>
@@ -25,7 +26,7 @@
       </nav>
       <div class="sidebar-footer">
         <a href="/admin/" target="_blank" rel="noopener">Ir al admin de Django ↗</a>
-        <a href="/" >← Volver a Inventario CHAPALA</a>
+        <a href="/" target="_top">← Volver a Inventario CHAPALA</a>
       </div>
     </aside>
 
@@ -41,13 +42,44 @@
         <div class="card form-card hidden" id="form-pozo-card">
           <h3>Nuevo Pozo</h3>
           <form id="form-pozo">
+            <h4 class="form-section-title">Identificación</h4>
             <div class="grid-2">
+              <label>Log-It Number<input type="text" name="numero_logit" /></label>
               <label>Nombre<input type="text" name="nombre" required /></label>
               <label>Operador<input type="text" name="operador" required /></label>
               <label>Ubicación<input type="text" name="ubicacion" /></label>
-              <label>Campo / Área<input type="text" name="campo_area" /></label>
+              <label>Campo / Área (Field/Block)<input type="text" name="campo_area" /></label>
+              <label>Taladro (Rig Name)<input type="text" name="nombre_taladro" /></label>
+              <label>Contratista (Contractor)<input type="text" name="contratista" /></label>
               <label>Fecha de Spud<input type="date" name="fecha_spud" /></label>
             </div>
+
+            <h4 class="form-section-title">Parámetros térmicos (API 5th Edition)</h4>
+            <div class="grid-2">
+              <label>Surface Temp (°F)<input type="number" step="0.01" name="surface_temp" /></label>
+              <label>Temp Gradient (°F/100ft)<input type="number" step="0.01" name="temp_gradient" /></label>
+            </div>
+
+            <h4 class="form-section-title">
+              Configuración base
+              <span class="hint">— Unit Set / Is Offshore? / Uses Riser quedan bloqueados permanentemente en cuanto el pozo tiene su primer reporte diario</span>
+            </h4>
+            <div class="grid-2">
+              <label>Unit Set
+                <select name="unit_set">
+                  <option value="oilfield" selected>Standard Oilfield (ft, in, bbl, lb/gal)</option>
+                  <option value="metric">Metric</option>
+                </select>
+              </label>
+              <label class="checkbox-field"><input type="checkbox" name="es_offshore" /> ¿Es offshore?</label>
+              <label class="checkbox-field"><input type="checkbox" name="usa_riser" /> Usa riser</label>
+            </div>
+            <div class="grid-2">
+              <label>Air Gap (ft)<input type="number" step="0.01" name="air_gap" /></label>
+              <label>Water Depth (ft)<input type="number" step="0.01" name="water_depth" /></label>
+              <label>Sea Floor Temp (°F)<input type="number" step="0.01" name="sea_floor_temp" /></label>
+            </div>
+
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">Guardar Pozo</button>
               <button type="button" class="btn btn-secondary" id="btn-cancelar-pozo">Cancelar</button>
@@ -60,8 +92,8 @@
           <table>
             <thead>
               <tr>
-                <th>Nombre</th><th>Operador</th><th>Ubicación</th><th>Campo/Área</th>
-                <th>Fecha Spud</th><th>Intervalos</th><th></th>
+                <th>Log-It #</th><th>Nombre</th><th>Operador</th><th>Ubicación</th><th>Campo/Área</th>
+                <th>Taladro</th><th>Fecha Spud</th><th>Unit Set</th><th>Offshore</th><th>Intervalos</th><th></th>
               </tr>
             </thead>
             <tbody id="tabla-pozos"></tbody>
@@ -135,9 +167,29 @@
                 <label>Sistema de Fluido
                   <select name="sistema_fluido_id" required></select>
                 </label>
+                <label>Modo Operativo
+                  <select name="modo_operativo">
+                    <option value="drilling" selected>Drilling</option>
+                    <option value="completion">Completion</option>
+                  </select>
+                </label>
+                <label>Tipo
+                  <select name="tipo" id="intervalo-tipo-select">
+                    <option value="open_hole" selected>Open Hole</option>
+                    <option value="casing">Casing</option>
+                    <option value="liner">Liner</option>
+                  </select>
+                </label>
                 <label>Profundidad Inicial (ft)<input type="number" step="0.01" name="profundidad_inicial" required /></label>
                 <label>Diámetro (in)<input type="number" step="0.001" name="diametro" required /></label>
+                <label>Volumen Inicial / Start Volume (bbl)<input type="number" step="0.01" name="volumen_inicial" placeholder="Automático si hay intervalo anterior cerrado" /></label>
+                <label class="checkbox-field"><input type="checkbox" name="es_sidetrack" id="intervalo-sidetrack-check" /> Es Side Track</label>
+                <label id="intervalo-tope-label" class="hidden">
+                  Top Of Liner / Sidetrack (ft)
+                  <input type="number" step="0.01" name="profundidad_tope_liner_sidetrack" />
+                </label>
               </div>
+              <p class="hint">Si el tipo es Liner o es un Side Track, "Top Of Liner / Sidetrack" es obligatorio. Al marcar Side Track, la Profundidad Inicial se fija automáticamente en ese valor (Reset Start Depth for Sidetrack). El Volumen Inicial se puede dejar en blanco: si el intervalo anterior de este pozo ya está cerrado, se toma automáticamente su Volumen Final (Rollover).</p>
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Guardar Intervalo</button>
                 <button type="button" class="btn btn-secondary" id="btn-cancelar-intervalo">Cancelar</button>
@@ -147,6 +199,103 @@
           </div>
 
           <div id="lista-intervalos"></div>
+        </div>
+      </section>
+
+      <!-- ================= PESTAÑA: FOSAS Y PÉRDIDAS (Paso 3) ================= -->
+      <section class="panel" id="panel-fosas-perdidas">
+        <header class="panel-header">
+          <h2>Fosas y Pérdidas <span class="hint">(catálogos maestros por pozo — Pit Setup &amp; Loss Setup)</span></h2>
+        </header>
+
+        <div class="card">
+          <label>Pozo
+            <select id="select-pozo-fosas"><option value="">-- Selecciona un pozo --</option></select>
+          </label>
+        </div>
+
+        <div id="fosas-perdidas-contenido" class="hidden">
+
+          <!-- --- Fosas / Tanques (Pit Setup) --- -->
+          <div class="panel-header">
+            <h3>Fosas / Tanques (Pit Setup)</h3>
+            <button class="btn btn-primary" id="btn-nuevo-pit">+ Nueva Fosa</button>
+          </div>
+
+          <div class="card form-card hidden" id="form-pit-card">
+            <h3>Nueva Fosa / Tanque</h3>
+            <form id="form-pit">
+              <div class="grid-2">
+                <label>Descripción<input type="text" name="descripcion" required placeholder='Ej. "Active 1"' /></label>
+                <label>Capacidad (bbl)<input type="number" step="0.01" name="capacidad" required /></label>
+                <label>Pit Type
+                  <select name="tipo">
+                    <option value="active" selected>Active</option>
+                    <option value="reserve">Reserve</option>
+                    <option value="premix">Premix</option>
+                    <option value="spacer">Spacer</option>
+                    <option value="storage">Storage</option>
+                    <option value="dead_volume">Dead Volume</option>
+                  </select>
+                </label>
+                <label class="checkbox-field"><input type="checkbox" name="es_transaccional" checked /> Fosa transaccional</label>
+              </div>
+              <p class="hint">Desmarca "Fosa transaccional" para una fosa no transaccional (almacenamiento aislado, ej. Base Oil Storage): no participa del balance diario de lodo activo.</p>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Guardar Fosa</button>
+                <button type="button" class="btn btn-secondary" id="btn-cancelar-pit">Cancelar</button>
+              </div>
+              <p class="form-error" id="error-pit"></p>
+            </form>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Descripción</th><th>Tipo</th><th>Capacidad (bbl)</th><th>Transaccional</th><th></th></tr></thead>
+              <tbody id="tabla-pits"></tbody>
+            </table>
+          </div>
+
+          <!-- --- Categorías de Pérdida (Loss Setup) --- -->
+          <div class="panel-header">
+            <h3>Categorías de Pérdida (Loss Setup)</h3>
+            <button class="btn btn-primary" id="btn-nueva-categoria-perdida">+ Nueva Categoría</button>
+          </div>
+
+          <div class="card form-card hidden" id="form-categoria-perdida-card">
+            <h3>Nueva Categoría de Pérdida</h3>
+            <form id="form-categoria-perdida">
+              <div class="grid-2">
+                <label>Nombre<input type="text" name="nombre" required placeholder='Ej. "Shakers", "Left in Hole"' /></label>
+                <label>Modo Operativo
+                  <select name="modo_operativo" required>
+                    <option value="drilling" selected>Drilling</option>
+                    <option value="completion">Completion</option>
+                  </select>
+                </label>
+                <label>Dominio
+                  <select name="dominio" required>
+                    <option value="superficial" selected>Superficial</option>
+                    <option value="subsuperficial">Subsuperficial</option>
+                  </select>
+                </label>
+              </div>
+              <label class="full">Descripción<textarea name="descripcion" rows="2"></textarea></label>
+              <p class="hint">Las categorías no se comparten entre modos operativos: se configuran por separado para Drilling y para Completion.</p>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Guardar Categoría</button>
+                <button type="button" class="btn btn-secondary" id="btn-cancelar-categoria-perdida">Cancelar</button>
+              </div>
+              <p class="form-error" id="error-categoria-perdida"></p>
+            </form>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nombre</th><th>Modo Operativo</th><th>Dominio</th><th>Descripción</th><th></th></tr></thead>
+              <tbody id="tabla-categorias-perdida"></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -291,7 +440,8 @@
 
         <div class="card">
           <p class="hint">
-            Ajusta los valores y el esquema se recalcula y redibuja en vivo. El <strong>diámetro externo (OD)</strong>
+            Escribe los valores medidos y el esquema se recalcula y redibuja en vivo. Todos los campos son de
+            <strong>entrada manual</strong> (sin límites artificiales de rango): el <strong>diámetro externo (OD)</strong>
             de cada tramo es el que define el borde del hoyo/revestidor (lo que se perforó o se metió de hierro);
             el <strong>diámetro interno (ID)</strong> de la sarta de perforación es el del taladro/tubería que va
             adentro, y es el que se usa para calcular capacidad y volumen anular.
@@ -302,36 +452,29 @@
           <div class="card geometria-controles">
             <h3>Datos del pozo</h3>
             <label>Profundidad total (ft)
-              <input type="range" id="geo-prof-total" min="500" max="15000" step="50" value="2900" />
-              <input type="number" id="geo-prof-total-num" min="0" step="1" value="2900" />
+              <input type="number" id="geo-prof-total" min="0" step="1" value="2900" />
             </label>
             <label>Profundidad de zapata del revestidor (ft)
-              <input type="range" id="geo-prof-zapata" min="0" max="15000" step="50" value="1200" />
-              <input type="number" id="geo-prof-zapata-num" min="0" step="1" value="1200" />
+              <input type="number" id="geo-prof-zapata" min="0" step="1" value="1200" />
             </label>
 
             <h3>Hoyo / Revestidor <span class="hint">(diámetro externo — lo perforado / lo metido)</span></h3>
             <label>Diámetro de hoyo abierto — OD (in)
-              <input type="range" id="geo-od-hoyo" min="4" max="26" step="0.125" value="7" />
-              <input type="number" id="geo-od-hoyo-num" min="0" step="0.001" value="7" />
+              <input type="number" id="geo-od-hoyo" min="0" step="0.001" value="7" />
             </label>
             <label>Diámetro externo del revestidor — OD (in)
-              <input type="range" id="geo-od-revestidor" min="4" max="26" step="0.125" value="9.625" />
-              <input type="number" id="geo-od-revestidor-num" min="0" step="0.001" value="9.625" />
+              <input type="number" id="geo-od-revestidor" min="0" step="0.001" value="9.625" />
             </label>
             <label>Diámetro interno del revestidor — ID (in)
-              <input type="range" id="geo-id-revestidor" min="3" max="25" step="0.125" value="8.921" />
-              <input type="number" id="geo-id-revestidor-num" min="0" step="0.001" value="8.921" />
+              <input type="number" id="geo-id-revestidor" min="0" step="0.001" value="8.921" />
             </label>
 
             <h3>Sarta de perforación <span class="hint">(el taladro/tubería que va adentro)</span></h3>
             <label>Diámetro externo de tubería — OD (in)
-              <input type="range" id="geo-od-tuberia" min="1" max="10" step="0.05" value="5" />
-              <input type="number" id="geo-od-tuberia-num" min="0" step="0.001" value="5" />
+              <input type="number" id="geo-od-tuberia" min="0" step="0.001" value="5" />
             </label>
             <label>Diámetro interno de tubería — ID (in)
-              <input type="range" id="geo-id-tuberia" min="0.5" max="9" step="0.05" value="4.276" />
-              <input type="number" id="geo-id-tuberia-num" min="0" step="0.001" value="4.276" />
+              <input type="number" id="geo-id-tuberia" min="0" step="0.001" value="4.276" />
             </label>
           </div>
 

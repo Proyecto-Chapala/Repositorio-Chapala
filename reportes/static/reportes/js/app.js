@@ -61,6 +61,11 @@ adelante, según la estrategia del proyecto).
     const fd = new FormData(form);
     const obj = {};
     fd.forEach((value, key) => { obj[key] = value; });
+    // Los checkboxes desmarcados no aparecen en FormData: se recorren aparte
+    // para que siempre viajen explícitos como booleano (el backend los espera).
+    form.querySelectorAll('input[type="checkbox"]').forEach((el) => {
+      if (el.name) obj[el.name] = el.checked;
+    });
     return obj;
   }
 
@@ -116,6 +121,7 @@ adelante, según la estrategia del proyecto).
         toggle(document.getElementById("form-pozo-card"), false);
         await this.cargar();
         await IntervalosModule.cargarPozos();
+        await FosasPerdidasModule.cargarPozos();
         await ReportesModule.cargarPozos();
       });
       await this.cargar();
@@ -129,16 +135,20 @@ adelante, según la estrategia del proyecto).
         return;
       }
       if (resp.pozos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7">Sin pozos registrados todavía.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11">Sin pozos registrados todavía.</td></tr>`;
         return;
       }
       tbody.innerHTML = resp.pozos.map((p) => `
         <tr>
+          <td>${escapeHtml(fmt(p.numero_logit))}</td>
           <td>${escapeHtml(p.nombre)}</td>
           <td>${escapeHtml(p.operador)}</td>
           <td>${escapeHtml(fmt(p.ubicacion))}</td>
           <td>${escapeHtml(fmt(p.campo_area))}</td>
+          <td>${escapeHtml(fmt(p.nombre_taladro))}</td>
           <td>${escapeHtml(fmt(p.fecha_spud))}</td>
+          <td>${escapeHtml(p.unit_set_display)}${p.tiene_reportes ? ' <span class="badge badge-closed" title="Bloqueado: el pozo ya tiene reportes diarios">🔒</span>' : ""}</td>
+          <td>${p.es_offshore ? "Sí" + (p.usa_riser ? " (riser)" : "") : "No"}</td>
           <td>${p.total_intervalos}</td>
           <td><button class="btn btn-danger btn-small" data-eliminar-pozo="${p.id}">Eliminar</button></td>
         </tr>
@@ -154,6 +164,7 @@ adelante, según la estrategia del proyecto).
           }
           await this.cargar();
           await IntervalosModule.cargarPozos();
+          await FosasPerdidasModule.cargarPozos();
           await ReportesModule.cargarPozos();
         });
       });
@@ -234,6 +245,7 @@ adelante, según la estrategia del proyecto).
 
   const IntervalosModule = {
     pozoActual: null,
+    pitsPozoActual: [],
 
     async init() {
       const selectPozo = document.getElementById("select-pozo-intervalos");
@@ -247,6 +259,19 @@ adelante, según la estrategia del proyecto).
       document.getElementById("btn-nuevo-intervalo").addEventListener("click", () => {
         toggle(document.getElementById("form-intervalo-card"), true);
       });
+
+      // Top Of Liner / Sidetrack solo es obligatorio (y se muestra) si el tipo
+      // es Liner o si se marca "Es Side Track" — igual que en el manual.
+      const tipoSelect = document.getElementById("intervalo-tipo-select");
+      const sidetrackCheck = document.getElementById("intervalo-sidetrack-check");
+      const topeLabel = document.getElementById("intervalo-tope-label");
+      const actualizarVisibilidadTope = () => {
+        const requiereTope = tipoSelect.value === "liner" || sidetrackCheck.checked;
+        toggle(topeLabel, requiereTope);
+        topeLabel.querySelector("input").required = requiereTope;
+      };
+      tipoSelect.addEventListener("change", actualizarVisibilidadTope);
+      sidetrackCheck.addEventListener("change", actualizarVisibilidadTope);
       document.getElementById("btn-cancelar-intervalo").addEventListener("click", () => {
         toggle(document.getElementById("form-intervalo-card"), false);
         document.getElementById("form-intervalo").reset();
@@ -300,8 +325,16 @@ adelante, según la estrategia del proyecto).
         contenedor.innerHTML = `<p>Este pozo todavía no tiene intervalos.</p>`;
         return;
       }
+      const respPits = await apiGet("pits/?pozo=" + this.pozoActual);
+      this.pitsPozoActual = (respPits.success ? respPits.pits : []).filter((p) => p.es_transaccional);
+
       contenedor.innerHTML = resp.intervalos.map((i) => this.renderIntervaloCard(i)).join("");
       resp.intervalos.forEach((i) => this.wireIntervaloCard(i));
+    },
+
+    opcionesPitsCierre() {
+      return '<option value="">-- Ninguna (si Vol. no fluido = 0) --</option>' +
+        (this.pitsPozoActual || []).map((p) => `<option value="${p.id}">${escapeHtml(p.descripcion)}</option>`).join("");
     },
 
     renderIntervaloCard(i) {
@@ -312,8 +345,9 @@ adelante, según la estrategia del proyecto).
       const cierreInfo = i.cierre ? `
         <div class="intervalo-meta">
           <strong>Cierre volumétrico:</strong>
-          Vol. final ${i.cierre.volumen_final} bbl · Vol. no fluido ${i.cierre.volumen_no_fluido} bbl ·
-          Pérdida (Left in Hole) ${i.cierre.perdida_left_in_hole} bbl · por ${escapeHtml(i.cierre.usuario)}
+          Vol. final ${i.cierre.volumen_final} bbl · Vol. no fluido (Left in Hole) ${i.cierre.perdida_left_in_hole} bbl
+          ${i.cierre.fosa_origen_nombre ? ` desde ${escapeHtml(i.cierre.fosa_origen_nombre)}` : ""} ·
+          por ${escapeHtml(i.cierre.usuario)}
         </div>
       ` : "";
 
@@ -321,11 +355,12 @@ adelante, según la estrategia del proyecto).
         <div class="inline-form" data-form-cierre="${i.id}">
           <label>Prof. final (ft)<input type="number" step="0.01" name="profundidad_final" /></label>
           <label>Vol. final (bbl)<input type="number" step="0.01" name="volumen_final" required /></label>
-          <label>Vol. no fluido (bbl)<input type="number" step="0.01" name="volumen_no_fluido" required /></label>
-          <label>Pérdida - Left in Hole (bbl)<input type="number" step="0.01" name="perdida_left_in_hole" required /></label>
+          <label>Vol. no fluido / Left in Hole (bbl)<input type="number" step="0.01" name="volumen_no_fluido" value="0" required /></label>
+          <label>Fosa origen (si hay Vol. no fluido)<select name="fosa_origen_id">${this.opcionesPitsCierre()}</select></label>
           <label>Usuario<input type="text" name="usuario" required /></label>
           <button class="btn btn-primary btn-small" data-cerrar-intervalo="${i.id}">Cerrar Intervalo</button>
         </div>
+        <p class="hint">Si Vol. no fluido &gt; 0, se descarga automáticamente como pérdida "Left in Hole" desde la fosa indicada, y el balance del último reporte (Not Accounted) debe quedar en 0.00 para poder cerrar.</p>
         <p class="form-error" id="error-cierre-${i.id}"></p>
       ` : "";
 
@@ -338,13 +373,16 @@ adelante, según la estrategia del proyecto).
               <option value="otro">Otro</option>
             </select>
           </label>
-          <label>Longitud (ft)<input type="number" step="0.01" name="longitud" required /></label>
-          <label>OD (in)<input type="number" step="0.001" name="diametro_externo" required /></label>
-          <label>ID (in)<input type="number" step="0.001" name="diametro_interno" required /></label>
+          <label>Longitud / Depth (ft)<input type="number" step="0.01" name="longitud" required /></label>
+          <label>TVD (ft)<input type="number" step="0.01" name="profundidad_tvd" placeholder="opcional" /></label>
+          <label>Casing OD (in)<input type="number" step="0.001" name="diametro_externo" required /></label>
+          <label>Casing ID (in)<input type="number" step="0.001" name="diametro_interno" required /></label>
           <button class="btn btn-secondary btn-small" data-agregar-tuberia="${i.id}">+ Agregar Tramo</button>
         </div>
         <p class="form-error" id="error-tuberia-${i.id}"></p>
       ` : "";
+
+      const sidetrackTag = i.es_sidetrack ? ` · <span class="tab-tag">Side Track</span>` : "";
 
       return `
         <div class="intervalo-card" data-intervalo-id="${i.id}">
@@ -353,15 +391,19 @@ adelante, según la estrategia del proyecto).
             ${badge}
           </div>
           <div class="intervalo-meta">
+            ${escapeHtml(i.modo_operativo_display)} · ${escapeHtml(i.tipo_display)}${sidetrackTag}
+          </div>
+          <div class="intervalo-meta">
             Prof. inicial: ${i.profundidad_inicial} ft · Prof. final: ${fmt(i.profundidad_final)} ft ·
-            Diámetro: ${i.diametro} in
+            Diámetro: ${i.diametro} in · Start Volume: ${fmt(i.volumen_inicial)} bbl
+            ${i.profundidad_tope_liner_sidetrack !== null ? ` · Top Of Liner/Sidetrack: ${i.profundidad_tope_liner_sidetrack} ft` : ""}
           </div>
           ${cierreInfo}
           <div class="subsection">
             <strong>Tubería instalada (${i.total_tuberias})</strong>
             <table class="mini-table" data-tabla-tuberias="${i.id}">
-              <thead><tr><th>Tipo</th><th>Longitud</th><th>OD</th><th>ID</th><th></th></tr></thead>
-              <tbody><tr><td colspan="5">Cargando…</td></tr></tbody>
+              <thead><tr><th>Tipo</th><th>Depth (MD)</th><th>TVD</th><th>Casing OD</th><th>Casing ID</th><th></th></tr></thead>
+              <tbody><tr><td colspan="6">Cargando…</td></tr></tbody>
             </table>
             ${formTuberia}
           </div>
@@ -399,7 +441,7 @@ adelante, según la estrategia del proyecto).
         formCierre.querySelector("[data-cerrar-intervalo]").addEventListener("click", async () => {
           showError("error-cierre-" + intervalo.id, "");
           const payload = {};
-          formCierre.querySelectorAll("input").forEach((el) => { payload[el.name] = el.value; });
+          formCierre.querySelectorAll("input, select").forEach((el) => { payload[el.name] = el.value; });
           if (!confirm("¿Cerrar este intervalo? Esta acción no se puede deshacer y quedará bloqueado para edición.")) return;
           const resp = await apiSend("intervalos/" + intervalo.id + "/cerrar/", "POST", payload);
           if (!resp.success) {
@@ -416,13 +458,14 @@ adelante, según la estrategia del proyecto).
       const tabla = document.querySelector(`[data-tabla-tuberias="${intervaloId}"] tbody`);
       if (!tabla) return;
       if (!resp.success || resp.tuberias.length === 0) {
-        tabla.innerHTML = `<tr><td colspan="5">Sin tramos registrados.</td></tr>`;
+        tabla.innerHTML = `<tr><td colspan="6">Sin tramos registrados.</td></tr>`;
         return;
       }
       tabla.innerHTML = resp.tuberias.map((t) => `
         <tr>
           <td>${escapeHtml(t.tipo_display)}</td>
           <td>${t.longitud} ft</td>
+          <td>${fmt(t.profundidad_tvd, "—")}${t.profundidad_tvd !== null ? " ft" : ""}</td>
           <td>${t.diametro_externo} in</td>
           <td>${t.diametro_interno} in</td>
           <td><button class="btn btn-danger btn-small" data-eliminar-tuberia="${t.id}">Eliminar</button></td>
@@ -437,6 +480,150 @@ adelante, según la estrategia del proyecto).
             return;
           }
           await this.cargarTuberias(intervaloId);
+        });
+      });
+    },
+  };
+
+  // ============================================================================
+  // MÓDULO: FOSAS Y PÉRDIDAS (Pit Setup & Loss Setup — manual resumido, Paso 3)
+  // ============================================================================
+  // Catálogos maestros por pozo. Todavía no se conectan a ninguna transacción
+  // diaria (eso es Volume Accounting, Paso 6, pendiente).
+
+  const FosasPerdidasModule = {
+    pozoActual: null,
+
+    async init() {
+      const selectPozo = document.getElementById("select-pozo-fosas");
+      await this.cargarPozos();
+      selectPozo.addEventListener("change", async () => {
+        this.pozoActual = selectPozo.value || null;
+        toggle(document.getElementById("fosas-perdidas-contenido"), !!this.pozoActual);
+        if (this.pozoActual) {
+          await this.cargarPits();
+          await this.cargarCategoriasPerdida();
+        }
+      });
+
+      document.getElementById("btn-nuevo-pit").addEventListener("click", () => {
+        toggle(document.getElementById("form-pit-card"), true);
+      });
+      document.getElementById("btn-cancelar-pit").addEventListener("click", () => {
+        toggle(document.getElementById("form-pit-card"), false);
+        document.getElementById("form-pit").reset();
+      });
+      document.getElementById("form-pit").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        showError("error-pit", "");
+        const data = formDataToObject(ev.target);
+        data.pozo_id = this.pozoActual;
+        const resp = await apiSend("pits/", "POST", data);
+        if (!resp.success) {
+          showError("error-pit", resp.error || "No se pudo guardar la fosa.");
+          return;
+        }
+        ev.target.reset();
+        toggle(document.getElementById("form-pit-card"), false);
+        await this.cargarPits();
+      });
+
+      document.getElementById("btn-nueva-categoria-perdida").addEventListener("click", () => {
+        toggle(document.getElementById("form-categoria-perdida-card"), true);
+      });
+      document.getElementById("btn-cancelar-categoria-perdida").addEventListener("click", () => {
+        toggle(document.getElementById("form-categoria-perdida-card"), false);
+        document.getElementById("form-categoria-perdida").reset();
+      });
+      document.getElementById("form-categoria-perdida").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        showError("error-categoria-perdida", "");
+        const data = formDataToObject(ev.target);
+        data.pozo_id = this.pozoActual;
+        const resp = await apiSend("categorias-perdida/", "POST", data);
+        if (!resp.success) {
+          showError("error-categoria-perdida", resp.error || "No se pudo guardar la categoría.");
+          return;
+        }
+        ev.target.reset();
+        toggle(document.getElementById("form-categoria-perdida-card"), false);
+        await this.cargarCategoriasPerdida();
+      });
+    },
+
+    async cargarPozos() {
+      const resp = await apiGet("pozos/");
+      const select = document.getElementById("select-pozo-fosas");
+      const valorActual = select.value;
+      select.innerHTML = '<option value="">-- Selecciona un pozo --</option>' +
+        (resp.success ? resp.pozos : []).map((p) => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join("");
+      if (valorActual) select.value = valorActual;
+    },
+
+    async cargarPits() {
+      const resp = await apiGet("pits/?pozo=" + this.pozoActual);
+      const tbody = document.getElementById("tabla-pits");
+      if (!resp.success) {
+        tbody.innerHTML = `<tr><td colspan="5">Error al cargar fosas.</td></tr>`;
+        return;
+      }
+      if (resp.pits.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5">Este pozo todavía no tiene fosas registradas.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = resp.pits.map((p) => `
+        <tr>
+          <td>${escapeHtml(p.descripcion)}</td>
+          <td>${escapeHtml(p.tipo_display)}</td>
+          <td>${p.capacidad}</td>
+          <td>${p.es_transaccional ? "Sí" : "No (no transaccional)"}</td>
+          <td><button class="btn btn-danger btn-small" data-eliminar-pit="${p.id}">Eliminar</button></td>
+        </tr>
+      `).join("");
+
+      tbody.querySelectorAll("[data-eliminar-pit]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("¿Eliminar esta fosa?")) return;
+          const resp = await apiSend("pits/" + btn.dataset.eliminarPit + "/", "DELETE");
+          if (!resp.success) {
+            alert(resp.error || "No se pudo eliminar la fosa.");
+            return;
+          }
+          await this.cargarPits();
+        });
+      });
+    },
+
+    async cargarCategoriasPerdida() {
+      const resp = await apiGet("categorias-perdida/?pozo=" + this.pozoActual);
+      const tbody = document.getElementById("tabla-categorias-perdida");
+      if (!resp.success) {
+        tbody.innerHTML = `<tr><td colspan="5">Error al cargar categorías de pérdida.</td></tr>`;
+        return;
+      }
+      if (resp.categorias.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5">Este pozo todavía no tiene categorías de pérdida registradas.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = resp.categorias.map((c) => `
+        <tr>
+          <td>${escapeHtml(c.nombre)}</td>
+          <td>${escapeHtml(c.modo_operativo_display)}</td>
+          <td>${escapeHtml(c.dominio_display)}</td>
+          <td>${escapeHtml(fmt(c.descripcion))}</td>
+          <td><button class="btn btn-danger btn-small" data-eliminar-categoria-perdida="${c.id}">Eliminar</button></td>
+        </tr>
+      `).join("");
+
+      tbody.querySelectorAll("[data-eliminar-categoria-perdida]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("¿Eliminar esta categoría de pérdida?")) return;
+          const resp = await apiSend("categorias-perdida/" + btn.dataset.eliminarCategoriaPerdida + "/", "DELETE");
+          if (!resp.success) {
+            alert(resp.error || "No se pudo eliminar la categoría.");
+            return;
+          }
+          await this.cargarCategoriasPerdida();
         });
       });
     },
@@ -586,6 +773,7 @@ adelante, según la estrategia del proyecto).
     intervaloActual: null,
     productos: [],
     equipos: [],
+    tuberiasIntervaloActual: [],
 
     async init() {
       const selectPozo = document.getElementById("select-pozo-reportes");
@@ -702,10 +890,156 @@ adelante, según la estrategia del proyecto).
       const respPropiedades = await apiGet("propiedades-catalogo/?categoria=" + categoria);
       const propiedades = respPropiedades.success ? respPropiedades.propiedades : [];
 
+      const respPits = await apiGet("pits/?pozo=" + this.pozoActual);
+      const pits = (respPits.success ? respPits.pits : []).filter((p) => p.es_transaccional);
+
+      const modoOperativo = intervalo ? intervalo.modo_operativo : "";
+      const respCategorias = await apiGet("categorias-perdida/?pozo=" + this.pozoActual + "&modo_operativo=" + modoOperativo);
+      const categoriasPerdida = respCategorias.success ? respCategorias.categorias : [];
+
+      const respTuberias = await apiGet("tuberias/?intervalo=" + this.intervaloActual);
+      this.tuberiasIntervaloActual = respTuberias.success ? respTuberias.tuberias : [];
+
+      const opcionesPits = (permitirVacio = true) =>
+        (permitirVacio ? '<option value="">-- Selecciona --</option>' : "") +
+        pits.map((p) => `<option value="${p.id}">${escapeHtml(p.descripcion)}</option>`).join("");
+
+      const opcionesCategoriasPerdida = () =>
+        '<option value="">-- Selecciona --</option>' +
+        categoriasPerdida.map((c) => `<option value="${c.id}">${escapeHtml(c.nombre)} (${escapeHtml(c.dominio_display)})</option>`).join("");
+
       const contenedor = document.getElementById("detalle-reporte");
       contenedor.innerHTML = `
         <div class="card">
           <h3>Reporte ${reporte.numero_reporte} — ${escapeHtml(reporte.fecha)}</h3>
+          <div class="intervalo-meta">
+            Default Interval: Intervalo ${reporte.intervalo_numero} · Default Fluid System: ${escapeHtml(reporte.sistema_fluido_nombre)}
+          </div>
+
+          <div class="subsection">
+            <strong>Distribución de Tiempo <span class="hint">(Daily -&gt; General — Time Distribution)</span></strong>
+            <table class="mini-table" id="tabla-distribucion-tiempo">
+              <thead><tr><th>Actividad</th><th>Horas</th><th></th></tr></thead>
+              <tbody><tr><td colspan="3">Cargando…</td></tr></tbody>
+            </table>
+            <div class="inline-form">
+              <label style="flex:1 1 220px">Actividad<input type="text" id="dt-actividad" placeholder='Ej. "Rotary Drilling"' /></label>
+              <label>Horas<input type="number" step="0.25" min="0.01" max="24" id="dt-horas" /></label>
+              <button class="btn btn-secondary btn-small" id="btn-agregar-distribucion-tiempo">+ Agregar</button>
+            </div>
+            <div class="intervalo-meta" id="dt-resumen">
+              Total: ${fmt(reporte.horas_totales_distribucion)} hrs de 24.00
+              <strong class="${reporte.tiempo_cuadrado ? "tag-ok" : "tag-alerta"}">${reporte.tiempo_cuadrado ? "✓ Cuadrado" : "⚠ No cuadra"}</strong>
+            </div>
+            <p class="form-error" id="error-distribucion-tiempo"></p>
+          </div>
+
+          <div class="subsection">
+            <strong>Geometría de Hoyo y Sarta <span class="hint">(Daily -&gt; Geometry)</span></strong>
+            <div class="geometria-real-layout">
+              <div class="geometria-real-datos">
+                <div class="inline-form" id="geometria-hoyo-form">
+                  <label>Bit Depth (ft)<input type="number" step="0.01" id="geo-bit-depth" value="${reporte.bit_depth ?? ""}" /></label>
+                  <label>Bit Size (in)<input type="number" step="0.001" id="geo-bit-size" value="${reporte.bit_size ?? ""}" /></label>
+                  <label>% Washout<input type="number" step="0.01" id="geo-washout" value="${reporte.porcentaje_washout ?? "0"}" /></label>
+                  <button class="btn btn-secondary btn-small" id="btn-guardar-geometria-hoyo">Guardar</button>
+                </div>
+                <div class="intervalo-meta" id="geo-hole-size-info">
+                  Hole Size: ${fmt(reporte.hole_size, "—")}${reporte.hole_size !== null ? " in" : ""} ·
+                  Diámetro de confinamiento vigente: ${reporte.diametro_confinamiento} in
+                </div>
+                <p class="form-error" id="error-geometria-hoyo"></p>
+
+                <strong>Sarta de Perforación (Drill String Geometry)</strong>
+                <table class="mini-table" id="tabla-sarta">
+                  <thead><tr><th>Tipo</th><th>Longitud (ft)</th><th>Pipe OD</th><th>Pipe ID</th><th>Cap. interna (bbl)</th><th>Vol. anular (bbl)</th><th></th></tr></thead>
+                  <tbody><tr><td colspan="7">Cargando…</td></tr></tbody>
+                </table>
+                <div class="inline-form">
+                  <label>Tipo
+                    <select id="sarta-tipo">
+                      <option value="drill_pipe">Drill Pipe (principal, longitud automática)</option>
+                      <option value="heavy_weight">Heavy Weight</option>
+                      <option value="drill_collar">Drill Collar</option>
+                      <option value="sub">Sub</option>
+                    </select>
+                  </label>
+                  <label id="sarta-longitud-label">Longitud (ft)<input type="number" step="0.01" id="sarta-longitud" /></label>
+                  <label>Pipe OD (in)<input type="number" step="0.001" id="sarta-od" /></label>
+                  <label>Pipe ID (in)<input type="number" step="0.001" id="sarta-id" /></label>
+                  <button class="btn btn-secondary btn-small" id="btn-agregar-tramo-sarta">+ Agregar Tramo</button>
+                </div>
+                <p class="hint">El tramo "Drill Pipe" principal no lleva longitud manual: se calcula como Bit Depth − suma de los demás tramos (BHA). Como máximo un tramo puede ser el principal. El orden de la tabla (arriba = superficie) es el que usa el esquema para apilar los tramos.</p>
+                <p class="form-error" id="error-sarta"></p>
+              </div>
+
+              <div class="card geometria-real-dibujo">
+                <h4>Esquema (dinámico, según los datos ingresados)</h4>
+                <div id="geo-svg-real-wrap"><p class="hint">Ingresa Bit Depth y al menos un tramo de sarta para ver el esquema.</p></div>
+                <p class="hint geometria-real-leyenda">
+                  <span class="leyenda-swatch" style="background:#e7d4b5;border-color:#b8985f"></span> Hoyo abierto
+                  <span class="leyenda-swatch" style="background:#9ca3af;border-color:#4b5563"></span> Revestidor
+                  <span class="leyenda-swatch" style="background:#374151;border-color:#111827"></span> Sarta
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <strong>Contabilidad Volumétrica <span class="hint">(Daily -&gt; Volume Accounting)</span></strong>
+
+            <div class="inline-form" id="volume-accounting-form">
+              <label>Vol. Debajo de la Mecha (bbl)<input type="number" step="0.01" id="va-volumen-debajo-mecha" value="${reporte.volumen_debajo_mecha ?? "0"}" /></label>
+              <label>Volume Not Fluids (bbl)<input type="number" step="0.01" id="va-volumen-no-fluido" value="${reporte.volumen_no_fluido ?? "0"}" /></label>
+              <button class="btn btn-secondary btn-small" id="btn-guardar-volume-accounting">Guardar</button>
+            </div>
+            <p class="form-error" id="error-volume-accounting"></p>
+            <div class="intervalo-meta" id="va-resumen-hoyo">
+              Vol. Anular: ${fmt(reporte.volumen_anular_total)} bbl · Vol. Sarta: ${fmt(reporte.volumen_sarta_total)} bbl ·
+              <strong>Total Hole Volume: ${fmt(reporte.volumen_total_hoyo)} bbl</strong> · Fluid Volume: ${fmt(reporte.volumen_fluido)} bbl
+            </div>
+            <div class="intervalo-meta" id="va-reconciliacion">
+              Volumen Teórico (fosas): ${fmt(reporte.volumen_teorico_fosas)} bbl · Volumen Medido (fosas): ${fmt(reporte.volumen_medido_fosas)} bbl ·
+              <strong class="${reporte.balance_cuadrado ? "tag-ok" : "tag-alerta"}">Not Accounted: ${fmt(reporte.volumen_no_contabilizado)} bbl${reporte.balance_cuadrado ? " ✓" : ""}</strong>
+            </div>
+
+            <strong>Lecturas de Fosa (Volumen Medido)</strong>
+            <table class="mini-table" id="tabla-lecturas-fosa">
+              <thead><tr><th>Fosa</th><th>Volumen medido (bbl)</th><th></th></tr></thead>
+              <tbody><tr><td colspan="3">Cargando…</td></tr></tbody>
+            </table>
+            <div class="inline-form">
+              <label>Fosa<select id="lectura-fosa-select">${opcionesPits()}</select></label>
+              <label>Volumen medido (bbl)<input type="number" step="0.0001" id="lectura-volumen" /></label>
+              <button class="btn btn-secondary btn-small" id="btn-guardar-lectura-fosa">Guardar Lectura</button>
+            </div>
+            <p class="form-error" id="error-lectura-fosa"></p>
+
+            <strong>Transacciones de Fosa</strong>
+            <table class="mini-table" id="tabla-transacciones-fosa">
+              <thead><tr><th>Tipo</th><th>Origen</th><th>Destino</th><th>Producto / Categoría</th><th>Volumen (bbl)</th><th>Hora</th><th></th></tr></thead>
+              <tbody><tr><td colspan="7">Cargando…</td></tr></tbody>
+            </table>
+            <div class="inline-form">
+              <label>Tipo
+                <select id="trx-tipo">
+                  <option value="add_chemicals">Add Chemicals</option>
+                  <option value="loss">Loss</option>
+                  <option value="transfer">Transfer</option>
+                </select>
+              </label>
+              <label id="trx-origen-label">Fosa origen<select id="trx-fosa-origen">${opcionesPits()}</select></label>
+              <label id="trx-destino-label">Fosa destino<select id="trx-fosa-destino">${opcionesPits()}</select></label>
+              <label id="trx-producto-label">Producto<select id="trx-producto">${this.opcionesProductos()}</select></label>
+              <label id="trx-cantidad-label">Cant. usada (empaques)<input type="number" step="0.01" id="trx-cantidad" /></label>
+              <label id="trx-dilucion-label"><input type="checkbox" id="trx-dilucion" /> Is Dilution</label>
+              <label id="trx-categoria-label">Categoría de pérdida<select id="trx-categoria">${opcionesCategoriasPerdida()}</select></label>
+              <label id="trx-volumen-label">Volumen (bbl)<input type="number" step="0.0001" id="trx-volumen" /></label>
+              <button class="btn btn-secondary btn-small" id="btn-agregar-transaccion">+ Registrar Transacción</button>
+            </div>
+            <p class="hint">En Add Chemicals el volumen se calcula automáticamente a partir del producto (cantidad × gravedad específica) — no se ingresa a mano.</p>
+            <p class="form-error" id="error-transaccion"></p>
+          </div>
 
           <div class="subsection">
             <strong>Muestras de fluido</strong>
@@ -858,11 +1192,413 @@ adelante, según la estrategia del proyecto).
         await this.cargarComentarios(reporteId);
       });
 
+      // --- Geometría de Hoyo y Sarta (Paso 5) ---
+      const sartaTipoSelect = document.getElementById("sarta-tipo");
+      const sartaLongitudLabel = document.getElementById("sarta-longitud-label");
+      const actualizarVisibilidadLongitudSarta = () => {
+        const esPrincipal = sartaTipoSelect.value === "drill_pipe";
+        toggle(sartaLongitudLabel, !esPrincipal);
+        sartaLongitudLabel.querySelector("input").required = !esPrincipal;
+      };
+      sartaTipoSelect.addEventListener("change", actualizarVisibilidadLongitudSarta);
+      actualizarVisibilidadLongitudSarta();
+
+      document.getElementById("btn-guardar-geometria-hoyo").addEventListener("click", async () => {
+        showError("error-geometria-hoyo", "");
+        const payload = {
+          bit_depth: document.getElementById("geo-bit-depth").value,
+          bit_size: document.getElementById("geo-bit-size").value,
+          porcentaje_washout: document.getElementById("geo-washout").value || "0",
+        };
+        const resp = await apiSend("reportes-diarios/" + reporteId + "/", "PUT", payload);
+        if (!resp.success) {
+          showError("error-geometria-hoyo", resp.error || "No se pudo guardar la geometría del hoyo.");
+          return;
+        }
+        const info = document.getElementById("geo-hole-size-info");
+        info.textContent =
+          "Hole Size: " + fmt(resp.reporte.hole_size, "—") + (resp.reporte.hole_size !== null ? " in" : "") +
+          " · Diámetro de confinamiento vigente: " + resp.reporte.diametro_confinamiento + " in";
+        await this.cargarSarta(reporteId);
+        await this.actualizarResumenVolumen(reporteId);
+      });
+
+      document.getElementById("btn-agregar-tramo-sarta").addEventListener("click", async () => {
+        showError("error-sarta", "");
+        const esPrincipal = sartaTipoSelect.value === "drill_pipe";
+        const payload = {
+          reporte_id: reporteId,
+          tipo: sartaTipoSelect.value,
+          es_principal: esPrincipal,
+          diametro_externo: document.getElementById("sarta-od").value,
+          diametro_interno: document.getElementById("sarta-id").value,
+        };
+        if (!esPrincipal) payload.longitud = document.getElementById("sarta-longitud").value;
+        const resp = await apiSend("tramos-sarta/", "POST", payload);
+        if (!resp.success) {
+          showError("error-sarta", resp.error || "No se pudo agregar el tramo de sarta.");
+          return;
+        }
+        document.getElementById("sarta-longitud").value = "";
+        document.getElementById("sarta-od").value = "";
+        document.getElementById("sarta-id").value = "";
+        await this.cargarSarta(reporteId);
+        await this.actualizarResumenVolumen(reporteId);
+      });
+
+      // --- Contabilidad Volumétrica (Paso 6) ---
+      document.getElementById("btn-guardar-volume-accounting").addEventListener("click", async () => {
+        showError("error-volume-accounting", "");
+        const payload = {
+          volumen_debajo_mecha: document.getElementById("va-volumen-debajo-mecha").value || "0",
+          volumen_no_fluido: document.getElementById("va-volumen-no-fluido").value || "0",
+        };
+        const resp = await apiSend("reportes-diarios/" + reporteId + "/", "PUT", payload);
+        if (!resp.success) {
+          showError("error-volume-accounting", resp.error || "No se pudo guardar la contabilidad volumétrica.");
+          return;
+        }
+        this.pintarResumenVolumen(resp.reporte);
+      });
+
+      const trxTipoSelect = document.getElementById("trx-tipo");
+      const actualizarVisibilidadTransaccion = () => {
+        const tipo = trxTipoSelect.value;
+        toggle(document.getElementById("trx-origen-label"), tipo === "loss" || tipo === "transfer");
+        toggle(document.getElementById("trx-destino-label"), tipo === "add_chemicals" || tipo === "transfer");
+        toggle(document.getElementById("trx-producto-label"), tipo === "add_chemicals");
+        toggle(document.getElementById("trx-cantidad-label"), tipo === "add_chemicals");
+        toggle(document.getElementById("trx-dilucion-label"), tipo === "add_chemicals");
+        toggle(document.getElementById("trx-categoria-label"), tipo === "loss");
+        toggle(document.getElementById("trx-volumen-label"), tipo === "loss" || tipo === "transfer");
+      };
+      trxTipoSelect.addEventListener("change", actualizarVisibilidadTransaccion);
+      actualizarVisibilidadTransaccion();
+
+      document.getElementById("btn-agregar-transaccion").addEventListener("click", async () => {
+        showError("error-transaccion", "");
+        const tipo = trxTipoSelect.value;
+        const payload = { reporte_id: reporteId, tipo };
+        if (tipo === "add_chemicals") {
+          payload.fosa_destino_id = document.getElementById("trx-fosa-destino").value;
+          payload.producto_id = document.getElementById("trx-producto").value;
+          payload.cantidad_usada = document.getElementById("trx-cantidad").value;
+          payload.es_dilucion = document.getElementById("trx-dilucion").checked;
+        } else if (tipo === "loss") {
+          payload.fosa_origen_id = document.getElementById("trx-fosa-origen").value;
+          payload.categoria_perdida_id = document.getElementById("trx-categoria").value;
+          payload.volumen = document.getElementById("trx-volumen").value;
+        } else {
+          payload.fosa_origen_id = document.getElementById("trx-fosa-origen").value;
+          payload.fosa_destino_id = document.getElementById("trx-fosa-destino").value;
+          payload.volumen = document.getElementById("trx-volumen").value;
+        }
+        const resp = await apiSend("transacciones-fosa/", "POST", payload);
+        if (!resp.success) {
+          showError("error-transaccion", resp.error || "No se pudo registrar la transacción.");
+          return;
+        }
+        document.getElementById("trx-cantidad").value = "";
+        document.getElementById("trx-volumen").value = "";
+        document.getElementById("trx-dilucion").checked = false;
+        await this.cargarTransaccionesFosa(reporteId);
+        await this.actualizarResumenVolumen(reporteId);
+      });
+
+      document.getElementById("btn-guardar-lectura-fosa").addEventListener("click", async () => {
+        showError("error-lectura-fosa", "");
+        const fosaId = document.getElementById("lectura-fosa-select").value;
+        if (!fosaId) {
+          showError("error-lectura-fosa", "Selecciona una fosa.");
+          return;
+        }
+        const payload = {
+          reporte_id: reporteId,
+          fosa_id: fosaId,
+          volumen_medido: document.getElementById("lectura-volumen").value,
+        };
+        const resp = await apiSend("lecturas-fosa/", "POST", payload);
+        if (!resp.success) {
+          showError("error-lectura-fosa", resp.error || "No se pudo guardar la lectura.");
+          return;
+        }
+        document.getElementById("lectura-volumen").value = "";
+        await this.cargarLecturasFosa(reporteId);
+        await this.actualizarResumenVolumen(reporteId);
+      });
+
+      // --- Distribución de Tiempo (Paso 4) ---
+      document.getElementById("btn-agregar-distribucion-tiempo").addEventListener("click", async () => {
+        showError("error-distribucion-tiempo", "");
+        const actividad = document.getElementById("dt-actividad").value.trim();
+        if (!actividad) {
+          showError("error-distribucion-tiempo", "Escribe una actividad.");
+          return;
+        }
+        const payload = {
+          reporte_id: reporteId,
+          actividad,
+          horas: document.getElementById("dt-horas").value,
+        };
+        const resp = await apiSend("distribucion-tiempo/", "POST", payload);
+        if (!resp.success) {
+          showError("error-distribucion-tiempo", resp.error || "No se pudo agregar la actividad.");
+          return;
+        }
+        document.getElementById("dt-actividad").value = "";
+        document.getElementById("dt-horas").value = "";
+        await this.cargarDistribucionTiempo(reporteId);
+      });
+
+      await this.cargarSarta(reporteId);
+      await this.cargarLecturasFosa(reporteId);
+      await this.cargarTransaccionesFosa(reporteId);
+      await this.cargarDistribucionTiempo(reporteId);
       await this.cargarMuestras(reporteId, propiedades);
       await this.cargarInventario(reporteId);
       await this.cargarUso(reporteId);
       await this.cargarUsoEquipo(reporteId);
       await this.cargarComentarios(reporteId);
+    },
+
+    async cargarSarta(reporteId) {
+      const resp = await apiGet("tramos-sarta/?reporte=" + reporteId);
+      const tabla = document.getElementById("tabla-sarta");
+      const tramos = resp.success ? resp.tramos : [];
+
+      if (tabla) {
+        const tbody = tabla.querySelector("tbody");
+        if (tramos.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7">Sin tramos de sarta registrados.</td></tr>`;
+        } else {
+          tbody.innerHTML = tramos.map((t) => `
+            <tr>
+              <td>${escapeHtml(t.tipo_display)}${t.es_principal ? ' <span class="tab-tag">auto</span>' : ""}</td>
+              <td>${fmt(t.longitud)}</td>
+              <td>${t.diametro_externo}</td>
+              <td>${t.diametro_interno}</td>
+              <td>${fmt(t.capacidad_interna_bbl)}</td>
+              <td>${fmt(t.volumen_anular_bbl)}</td>
+              <td><button class="btn btn-danger btn-small" data-eliminar-tramo-sarta="${t.id}">Eliminar</button></td>
+            </tr>
+          `).join("");
+
+          tbody.querySelectorAll("[data-eliminar-tramo-sarta]").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              const resp = await apiSend("tramos-sarta/" + btn.dataset.eliminarTramoSarta + "/", "DELETE");
+              if (!resp.success) {
+                alert(resp.error || "No se pudo eliminar el tramo.");
+                return;
+              }
+              await this.cargarSarta(reporteId);
+            });
+          });
+        }
+      }
+
+      const respReporte = await apiGet("reportes-diarios/" + reporteId + "/");
+      if (respReporte.success) {
+        this.renderEsquemaSarta(respReporte.reporte, this.tuberiasIntervaloActual, tramos);
+      }
+    },
+
+    renderEsquemaSarta(reporte, tuberias, tramos) {
+      const wrap = document.getElementById("geo-svg-real-wrap");
+      if (!wrap) return;
+
+      const bitDepth = parseFloat(reporte.bit_depth);
+      if (!bitDepth || bitDepth <= 0) {
+        wrap.innerHTML = `<p class="hint">Ingresa Bit Depth y al menos un tramo de sarta para ver el esquema.</p>`;
+        return;
+      }
+
+      // Mismo criterio simplificado que ReporteDiario.diametro_confinamiento en
+      // el backend: se usa una sola tubería de referencia (la más profunda), no
+      // un apilado de múltiples revestidores.
+      let ultimaTuberia = null;
+      (tuberias || []).forEach((t) => {
+        if (!ultimaTuberia || parseFloat(t.longitud) > parseFloat(ultimaTuberia.longitud)) ultimaTuberia = t;
+      });
+      const profZapata = ultimaTuberia ? Math.min(parseFloat(ultimaTuberia.longitud), bitDepth) : 0;
+      const holeSize = parseFloat(reporte.hole_size);
+      const odHoyo = !isNaN(holeSize) ? holeSize : (ultimaTuberia ? parseFloat(ultimaTuberia.diametro_interno) : 0);
+      const odRevestidor = ultimaTuberia ? parseFloat(ultimaTuberia.diametro_externo) : 0;
+      const idRevestidor = ultimaTuberia ? parseFloat(ultimaTuberia.diametro_interno) : 0;
+
+      // Tramos de sarta apilados de superficie hacia abajo, en el orden de la
+      // tabla (columna "orden"), acumulando longitud.
+      let acumulado = 0;
+      const segmentos = [...(tramos || [])]
+        .sort((a, b) => a.orden - b.orden)
+        .map((t) => {
+          const longitud = parseFloat(t.longitud) || 0;
+          const desde = acumulado;
+          acumulado += longitud;
+          return { desde, hasta: acumulado, od: parseFloat(t.diametro_externo) || 0, id: parseFloat(t.diametro_interno) || 0 };
+        });
+
+      const width = 260, height = 480, margenSuperior = 16, margenInferior = 16;
+      const altoDibujo = height - margenSuperior - margenInferior;
+      const centroX = width / 2;
+
+      const maxDiametro = Math.max(odHoyo, odRevestidor, ...segmentos.map((s) => s.od), 1);
+      const anchoMaxPx = width * 0.42;
+      const escalaDiametro = anchoMaxPx / (maxDiametro / 2);
+      const profTotalSegura = Math.max(bitDepth, 1);
+      const escalaProfundidad = altoDibujo / profTotalSegura;
+
+      const y = (depth) => margenSuperior + Math.min(Math.max(depth, 0), profTotalSegura) * escalaProfundidad;
+
+      const rect = (diametro, desde, hasta, fill, stroke) => {
+        if (!diametro || diametro <= 0) return "";
+        const anchoPx = diametro * escalaDiametro;
+        const x = centroX - anchoPx / 2;
+        const yTop = y(desde), yBottom = y(hasta);
+        const alto = Math.max(yBottom - yTop, 0);
+        return `<rect x="${x.toFixed(1)}" y="${yTop.toFixed(1)}" width="${anchoPx.toFixed(1)}" height="${alto.toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="1" />`;
+      };
+
+      let svg = "";
+      // Hoyo abierto: de la zapata (o de superficie si no hay tubería) al Bit Depth.
+      svg += rect(odHoyo, profZapata, bitDepth, "#e7d4b5", "#b8985f");
+      // Revestidor: de superficie a la zapata.
+      if (ultimaTuberia) {
+        svg += rect(odRevestidor, 0, profZapata, "#9ca3af", "#4b5563");
+        svg += rect(idRevestidor, 0, profZapata, "#f3f4f6", "#9ca3af");
+      }
+      // Sarta: cada tramo apilado, OD sólido con ID hueco.
+      segmentos.forEach((s) => {
+        svg += rect(s.od, s.desde, s.hasta, "#374151", "#111827");
+        svg += rect(s.id, s.desde, s.hasta, "#ffffff", "#6b7280");
+      });
+
+      if (ultimaTuberia) {
+        svg += `<line x1="6" y1="${y(profZapata).toFixed(1)}" x2="${width - 6}" y2="${y(profZapata).toFixed(1)}" stroke="#dc2626" stroke-width="1" stroke-dasharray="4 3" />`;
+        svg += `<text x="${width - 6}" y="${(y(profZapata) - 3).toFixed(1)}" font-size="9" text-anchor="end" fill="#dc2626">Zapata @ ${profZapata.toFixed(0)} ft</text>`;
+      }
+      svg += `<text x="${width - 6}" y="${(y(bitDepth) - 3).toFixed(1)}" font-size="9" text-anchor="end" fill="#374151">Bit Depth @ ${bitDepth.toFixed(0)} ft</text>`;
+      svg += `<line x1="${centroX}" y1="${margenSuperior}" x2="${centroX}" y2="${y(bitDepth)}" stroke="#d1d5db" stroke-width="1" stroke-dasharray="2 2" />`;
+
+      wrap.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+    },
+
+    pintarResumenVolumen(reporte) {
+      const resumen = document.getElementById("va-resumen-hoyo");
+      if (resumen) {
+        resumen.innerHTML =
+          `Vol. Anular: ${fmt(reporte.volumen_anular_total)} bbl · Vol. Sarta: ${fmt(reporte.volumen_sarta_total)} bbl · ` +
+          `<strong>Total Hole Volume: ${fmt(reporte.volumen_total_hoyo)} bbl</strong> · Fluid Volume: ${fmt(reporte.volumen_fluido)} bbl`;
+      }
+      const reconciliacion = document.getElementById("va-reconciliacion");
+      if (reconciliacion) {
+        reconciliacion.innerHTML =
+          `Volumen Teórico (fosas): ${fmt(reporte.volumen_teorico_fosas)} bbl · Volumen Medido (fosas): ${fmt(reporte.volumen_medido_fosas)} bbl · ` +
+          `<strong class="${reporte.balance_cuadrado ? "tag-ok" : "tag-alerta"}">Not Accounted: ${fmt(reporte.volumen_no_contabilizado)} bbl${reporte.balance_cuadrado ? " ✓" : ""}</strong>`;
+      }
+    },
+
+    async actualizarResumenVolumen(reporteId) {
+      const resp = await apiGet("reportes-diarios/" + reporteId + "/");
+      if (resp.success) this.pintarResumenVolumen(resp.reporte);
+    },
+
+    async cargarLecturasFosa(reporteId) {
+      const resp = await apiGet("lecturas-fosa/?reporte=" + reporteId);
+      const tabla = document.getElementById("tabla-lecturas-fosa");
+      if (!tabla) return;
+      const tbody = tabla.querySelector("tbody");
+      if (!resp.success || resp.lecturas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3">Sin lecturas registradas todavía.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = resp.lecturas.map((l) => `
+        <tr>
+          <td>${escapeHtml(l.fosa_nombre)}</td>
+          <td>${l.volumen_medido}</td>
+          <td><button class="btn btn-danger btn-small" data-eliminar-lectura="${l.id}">Eliminar</button></td>
+        </tr>
+      `).join("");
+      tbody.querySelectorAll("[data-eliminar-lectura]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const resp = await apiSend("lecturas-fosa/" + btn.dataset.eliminarLectura + "/", "DELETE");
+          if (!resp.success) {
+            alert(resp.error || "No se pudo eliminar la lectura.");
+            return;
+          }
+          await this.cargarLecturasFosa(reporteId);
+          await this.actualizarResumenVolumen(reporteId);
+        });
+      });
+    },
+
+    async cargarTransaccionesFosa(reporteId) {
+      const resp = await apiGet("transacciones-fosa/?reporte=" + reporteId);
+      const tabla = document.getElementById("tabla-transacciones-fosa");
+      if (!tabla) return;
+      const tbody = tabla.querySelector("tbody");
+      if (!resp.success || resp.transacciones.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7">Sin transacciones registradas todavía.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = resp.transacciones.map((t) => `
+        <tr>
+          <td>${escapeHtml(t.tipo_display)}${t.es_dilucion ? ' <span class="tab-tag">dilución</span>' : ""}</td>
+          <td>${t.fosa_origen_nombre ? escapeHtml(t.fosa_origen_nombre) : "—"}</td>
+          <td>${t.fosa_destino_nombre ? escapeHtml(t.fosa_destino_nombre) : "—"}</td>
+          <td>${t.producto_nombre ? escapeHtml(t.producto_nombre) : (t.categoria_perdida_nombre ? escapeHtml(t.categoria_perdida_nombre) : "—")}</td>
+          <td>${t.volumen}</td>
+          <td>${escapeHtml(fmt(t.hora_registro))}</td>
+          <td><button class="btn btn-danger btn-small" data-eliminar-transaccion="${t.id}">Eliminar</button></td>
+        </tr>
+      `).join("");
+      tbody.querySelectorAll("[data-eliminar-transaccion]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const resp = await apiSend("transacciones-fosa/" + btn.dataset.eliminarTransaccion + "/", "DELETE");
+          if (!resp.success) {
+            alert(resp.error || "No se pudo eliminar la transacción.");
+            return;
+          }
+          await this.cargarTransaccionesFosa(reporteId);
+          await this.actualizarResumenVolumen(reporteId);
+        });
+      });
+    },
+
+    async cargarDistribucionTiempo(reporteId) {
+      const resp = await apiGet("distribucion-tiempo/?reporte=" + reporteId);
+      const tabla = document.getElementById("tabla-distribucion-tiempo");
+      if (!tabla) return;
+      const tbody = tabla.querySelector("tbody");
+      if (!resp.success || resp.distribucion.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3">Sin actividades registradas todavía.</td></tr>`;
+      } else {
+        tbody.innerHTML = resp.distribucion.map((d) => `
+          <tr>
+            <td>${escapeHtml(d.actividad)}</td>
+            <td>${d.horas}</td>
+            <td><button class="btn btn-danger btn-small" data-eliminar-distribucion="${d.id}">Eliminar</button></td>
+          </tr>
+        `).join("");
+        tbody.querySelectorAll("[data-eliminar-distribucion]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const resp = await apiSend("distribucion-tiempo/" + btn.dataset.eliminarDistribucion + "/", "DELETE");
+            if (!resp.success) {
+              alert(resp.error || "No se pudo eliminar la actividad.");
+              return;
+            }
+            await this.cargarDistribucionTiempo(reporteId);
+          });
+        });
+      }
+
+      const respReporte = await apiGet("reportes-diarios/" + reporteId + "/");
+      const resumen = document.getElementById("dt-resumen");
+      if (respReporte.success && resumen) {
+        const r = respReporte.reporte;
+        resumen.innerHTML =
+          `Total: ${fmt(r.horas_totales_distribucion)} hrs de 24.00 ` +
+          `<strong class="${r.tiempo_cuadrado ? "tag-ok" : "tag-alerta"}">${r.tiempo_cuadrado ? "✓ Cuadrado" : "⚠ No cuadra"}</strong>`;
+      }
     },
 
     opcionesProductos() {
@@ -1090,6 +1826,7 @@ adelante, según la estrategia del proyecto).
     await PozosModule.init();
     await SistemasModule.init();
     await IntervalosModule.init();
+    await FosasPerdidasModule.init();
     await ProductosModule.init();
     await EquiposModule.init();
     await ReportesModule.init();

@@ -1676,5 +1676,36 @@ body {
   }
 }
 
+/* ==========================================================================
+   PANELES EMBEBIDOS (ONE-TRAX: GEOMETRÍA Y REPORTES DIARIOS)
+   ========================================================================== */
+.embedded-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.embedded-header {
+  margin-bottom: 14px;
+}
+
+.embedded-iframe-container {
+  width: 100%;
+  height: calc(100vh - 180px);
+  min-height: 750px;
+  background-color: #0f172a;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  position: relative;
+}
+
+.embedded-app-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
 
 

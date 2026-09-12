@@ -46,7 +46,13 @@ class ChapalaApp {
       general: document.getElementById('tab-general'),
       inventario: document.getElementById('tab-inventario'),
       uso: document.getElementById('tab-uso'),
+      geometria: document.getElementById('tab-geometria'),
+      reportes: document.getElementById('tab-reportes'),
     };
+    this.iframeGeometria = document.getElementById('iframe-geometria');
+    this.iframeReportes = document.getElementById('iframe-reportes');
+    this.btnReloadGeometria = document.getElementById('btn-reload-geometria');
+    this.btnReloadReportes = document.getElementById('btn-reload-reportes');
     this.headerCurrentTab = document.getElementById('header-current-tab');
     this.headerDateDisplay = document.getElementById('header-date-display');
     this.badgeUsoCount = document.getElementById('badge-uso-count');
@@ -121,9 +127,6 @@ class ChapalaApp {
     this.modalCodigo = document.getElementById('modal-codigo');
     this.btnModalRegenSku = document.getElementById('btn-modal-regen-sku');
     this.modalDescripcion = document.getElementById('modal-descripcion');
-    this.modalCantidadUnitaria = document.getElementById('modal-cantidad-unitaria');
-    this.modalUnidadMedida = document.getElementById('modal-unidad-medida');
-    this.modalTipoEmpaque = document.getElementById('modal-tipo-empaque');
     this.modalUnidad = document.getElementById('modal-unidad');
     this.modalLibraje = document.getElementById('modal-libraje');
     this.modalGravedad = document.getElementById('modal-gravedad');
@@ -171,6 +174,27 @@ class ChapalaApp {
         this.switchTab(tab);
       });
     });
+
+    // Recarga de vistas embebidas (ONE-TRAX)
+    if (this.btnReloadGeometria && this.iframeGeometria) {
+      this.btnReloadGeometria.addEventListener('click', () => {
+        try {
+          this.iframeGeometria.contentWindow.location.reload();
+        } catch (e) {
+          this.iframeGeometria.src = '/geometria-volumen/';
+        }
+      });
+    }
+
+    if (this.btnReloadReportes && this.iframeReportes) {
+      this.btnReloadReportes.addEventListener('click', () => {
+        try {
+          this.iframeReportes.contentWindow.location.reload();
+        } catch (e) {
+          this.iframeReportes.src = '/reportes/';
+        }
+      });
+    }
 
     // Barra de Búsqueda
     this.inventorySearchInput.addEventListener('input', (e) => {
@@ -239,11 +263,6 @@ class ChapalaApp {
         }
       });
     }
-
-    // Cantidad Unitaria / Unidad de Medida / Tipo de Empaque -> recalcula "Unidad del producto"
-    [this.modalCantidadUnitaria, this.modalUnidadMedida, this.modalTipoEmpaque].forEach((el) => {
-      if (el) el.addEventListener('input', () => this.updateUnidadPreview());
-    });
 
     // Botones de Historial de Reportes
     if (this.btnOpenHistoryHeader) {
@@ -432,7 +451,9 @@ class ChapalaApp {
     const tabTitles = {
       general: 'General / Reportes',
       inventario: 'Inventario de Productos',
-      uso: 'Uso y Cálculo de Costos'
+      uso: 'Uso y Cálculo de Costos',
+      geometria: 'Geometría del Hoyo y Contabilidad de Volumen',
+      reportes: 'Reportes Diarios de Fluidos (ONE-TRAX)'
     };
     this.headerCurrentTab.textContent = tabTitles[tabName] || tabName;
 
@@ -715,9 +736,6 @@ class ChapalaApp {
           </th>
           <th style="min-width: 170px;">Product</th>
           <th style="width: 110px;">Unit Size</th>
-          <th style="width: 75px; text-align: right;">Cant. Unit.</th>
-          <th style="width: 65px;">U. Medida</th>
-          <th style="width: 65px;">Empaque</th>
           <th style="width: 95px; text-align: right;">Unit Price</th>
           <th style="width: 80px; text-align: right;">Start Amt.</th>
           <th style="width: 80px; text-align: right;">Daily Used</th>
@@ -740,9 +758,6 @@ class ChapalaApp {
           <th style="width: 110px;">Codigo</th>
           <th>Descripcion</th>
           <th style="width: 150px;">Unidad / Presentación</th>
-          <th style="width: 90px; text-align: right;">Cant. Unit.</th>
-          <th style="width: 85px;">U. Medida</th>
-          <th style="width: 85px;">Empaque</th>
           <th style="width: 100px;">Libraje</th>
           <th style="width: 100px;">Gravedad E</th>
           <th style="width: 100px; text-align: right;">Costo Base</th>
@@ -783,7 +798,7 @@ class ChapalaApp {
 
     this.inventoryTableBody.innerHTML = '';
 
-    const colCount = this.currentCategory === 'wellsite' ? 17 : 13;
+    const colCount = this.currentCategory === 'wellsite' ? 14 : 10;
 
     if (paginated.length === 0) {
       this.inventoryTableBody.innerHTML = `
@@ -814,9 +829,6 @@ class ChapalaApp {
             </td>
             <td style="font-weight: 700; color: #0f172a;">${this.escapeHtml(product.descripcion)}</td>
             <td>${this.escapeHtml(product.unidad)}</td>
-            <td class="col-num">${product.cantidad_unitaria !== null && product.cantidad_unitaria !== undefined ? product.cantidad_unitaria : '-'}</td>
-            <td>${this.escapeHtml(product.unidad_medida || '-')}</td>
-            <td>${this.escapeHtml(product.tipo_empaque || '-')}</td>
             <td class="col-num" style="font-weight: 600;">$${(product.precio_unitario || 0).toFixed(2)}</td>
             <td class="col-num">${product.stock_inicial}</td>
             <td class="col-num" style="${dailyUsed > 0 ? 'font-weight: bold; color: #2563eb;' : ''}">${dailyUsed > 0 ? dailyUsed : '-'}</td>
@@ -847,9 +859,6 @@ class ChapalaApp {
             <td class="col-sku">${this.escapeHtml(product.codigo)}</td>
             <td class="col-desc">${this.escapeHtml(product.descripcion)}</td>
             <td>${this.escapeHtml(product.unidad)}</td>
-            <td class="col-num">${product.cantidad_unitaria !== null && product.cantidad_unitaria !== undefined ? product.cantidad_unitaria : '-'}</td>
-            <td>${this.escapeHtml(product.unidad_medida || '-')}</td>
-            <td>${this.escapeHtml(product.tipo_empaque || '-')}</td>
             <td>${this.escapeHtml(product.libraje || 'N/A')}</td>
             <td>${this.escapeHtml(product.gravedad_especifica || 'N/A')}</td>
             <td class="col-num" style="font-weight: 600; color: #166534;">$${(product.precio_unitario || 0).toFixed(2)}</td>
@@ -974,31 +983,6 @@ class ChapalaApp {
     }
   }
 
-  // Reconstruye "Unidad del producto" (ej. "100. LB BG") a partir de
-  // Cantidad Unitaria / Unidad de Medida / Tipo de Empaque. Caso especial
-  // "EA" (servicios): no repite la unidad dos veces (ej. "1.  EA").
-  formatUnitSize(cantidadUnitaria, unidadMedida, tipoEmpaque) {
-    if (cantidadUnitaria === '' || cantidadUnitaria === null || isNaN(cantidadUnitaria)) return '';
-    const cantidadStr = Number(cantidadUnitaria) % 1 === 0 ? String(Math.trunc(cantidadUnitaria)) : String(cantidadUnitaria);
-    if (!unidadMedida && !tipoEmpaque) return '';
-    if (unidadMedida === 'EA') {
-      return `${cantidadStr}.  ${tipoEmpaque || 'EA'}`;
-    }
-    return `${cantidadStr}. ${unidadMedida || ''} ${tipoEmpaque || ''}`.trim();
-  }
-
-  updateUnidadPreview() {
-    if (!this.modalCantidadUnitaria || !this.modalUnidadMedida || !this.modalTipoEmpaque || !this.modalUnidad) return;
-    const preview = this.formatUnitSize(
-      this.modalCantidadUnitaria.value,
-      this.modalUnidadMedida.value,
-      this.modalTipoEmpaque.value
-    );
-    if (preview) {
-      this.modalUnidad.value = preview;
-    }
-  }
-
   // Modales de Creación y Edición
   openCreateProductModal() {
     this.editingProductId = null;
@@ -1012,9 +996,6 @@ class ChapalaApp {
     this.modalPrecioUnitario.value = '0.00';
     this.modalLibraje.value = 'N/A';
     this.modalGravedad.value = 'N/A';
-    this.modalCantidadUnitaria.value = '';
-    this.modalUnidadMedida.value = '';
-    this.modalTipoEmpaque.value = '';
     this.productModal.classList.add('active');
   }
 
@@ -1029,9 +1010,6 @@ class ChapalaApp {
     this.modalProductId.value = product.id;
     this.modalCodigo.value = product.codigo;
     this.modalDescripcion.value = product.descripcion;
-    this.modalCantidadUnitaria.value = product.cantidad_unitaria !== null && product.cantidad_unitaria !== undefined ? product.cantidad_unitaria : '';
-    this.modalUnidadMedida.value = product.unidad_medida || '';
-    this.modalTipoEmpaque.value = product.tipo_empaque || '';
     this.modalUnidad.value = product.unidad;
     this.modalLibraje.value = product.libraje || 'N/A';
     this.modalGravedad.value = product.gravedad_especifica || 'N/A';
@@ -1050,9 +1028,6 @@ class ChapalaApp {
   async handleSaveProduct() {
     const codigo = this.modalCodigo.value.trim() || this.generateRandomSku();
     const descripcion = this.modalDescripcion.value.trim();
-    const cantidad_unitaria = this.modalCantidadUnitaria.value.trim();
-    const unidad_medida = this.modalUnidadMedida.value;
-    const tipo_empaque = this.modalTipoEmpaque.value;
     const unidad = this.modalUnidad.value.trim();
     const libraje = this.modalLibraje.value.trim() || 'N/A';
     const gravedad = this.modalGravedad.value.trim() || 'N/A';
@@ -1065,17 +1040,9 @@ class ChapalaApp {
       return;
     }
 
-    if (cantidad_unitaria === '' || !unidad_medida || !tipo_empaque) {
-      this.showToast('Cantidad Unitaria, Unidad de Medida y Tipo de Empaque son obligatorios', 'error');
-      return;
-    }
-
     const payload = {
       codigo,
       descripcion,
-      cantidad_unitaria,
-      unidad_medida,
-      tipo_empaque,
       unidad,
       libraje,
       gravedad_especifica: gravedad,

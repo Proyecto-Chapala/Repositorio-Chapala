@@ -1,3 +1,4 @@
+
 """
 ================================================================================
 RUTAS DE LA APP 'REPORTES' (ESQUEMA ONE-TRAX)
@@ -49,6 +50,7 @@ urlpatterns = [
 
     # Inventario y uso de material (por reporte diario)
     path("api/inventario-items/", views.api_inventario_items, name="api_inventario_items"),
+    path("api/inventario-items/<uuid:pk>/", views.api_eliminar_inventario_item, name="api_eliminar_inventario_item"),
     path("api/uso-material/", views.api_uso_material, name="api_uso_material"),
     path("api/uso-material/<uuid:pk>/", views.api_eliminar_uso, name="api_eliminar_uso_reportes"),
 
@@ -61,4 +63,17 @@ urlpatterns = [
     # Comentarios (por reporte diario)
     path("api/comentarios/", views.api_comentarios, name="api_comentarios"),
     path("api/comentarios/<uuid:pk>/", views.api_eliminar_comentario, name="api_eliminar_comentario"),
+# Fosas y Transacciones
+    path("api/fosas/", views.api_fosas, name="api_fosas"),
+    path("api/fosas/<uuid:pk>/", views.api_fosa_detalle, name="api_fosa_detalle"),
+    path("api/categorias-perdida/", views.api_categorias_perdida, name="api_categorias_perdida"),
+    path("api/lecturas-fosa/", views.api_lecturas_fosa, name="api_lecturas_fosa"),
+    path("api/lecturas-fosa/<uuid:pk>/", views.api_lectura_fosa_detalle, name="api_lectura_fosa_detalle"),
+    path("api/transacciones-fosa/", views.api_transacciones_fosa, name="api_transacciones_fosa"),
+    path("api/transacciones-fosa/<uuid:pk>/", views.api_transaccion_fosa_detalle, name="api_transaccion_fosa_detalle"),
+    
+    # Geometría
+    path("api/geometrias-hoyo/", views.api_geometrias_hoyo, name="api_geometrias_hoyo"),
+    path("api/geometrias-hoyo/<uuid:pk>/", views.api_geometria_hoyo_detalle, name="api_geometria_hoyo_detalle"),
 ]
+
