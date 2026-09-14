@@ -1,0 +1,90 @@
+<!-- SECCIÓN DERECHA: FORMULARIO EXACTO AL BOCETO -->
+<section class="right-column">
+  <div class="form-header-title">
+    <span id="formTitle">Detalle de Producto</span>
+    <span class="form-mode-tag" id="formModeTag">Solo Lectura</span>
+  </div>
+
+  <form id="productForm" class="product-form">
+    
+    <!-- Código -->
+    <div class="form-group">
+      <label for="inputCodigo">Código del Producto *</label>
+      <input type="text" id="inputCodigo" class="form-input" placeholder="Ej: AOS-1001" required disabled>
+    </div>
+
+    <!-- Descripción -->
+    <div class="form-group">
+      <label for="inputDescripcion">Descripción *</label>
+      <input type="text" id="inputDescripcion" class="form-input" placeholder="Ej: ACETATO DE POTASIO (SACOS DE 25 KG)" required disabled>
+    </div>
+
+    <!-- Fila 1: Unidad & Costo -->
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label for="inputUnidad">Unidad *</label>
+        <input type="text" id="inputUnidad" class="form-input" placeholder="Ej: SACOS 55 LBS" required disabled>
+      </div>
+      <div class="form-group">
+        <label for="inputCosto">Costo Unitario ($) *</label>
+        <input type="number" id="inputCosto" class="form-input" step="0.01" min="0" placeholder="0.00" required disabled>
+      </div>
+    </div>
+
+    <!-- Fila 2: Libraje & Cantidad -->
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label for="inputLibraje">Libraje (LBS) *</label>
+        <input type="number" id="inputLibraje" class="form-input" step="0.01" min="0" placeholder="55.00" required disabled>
+      </div>
+      <div class="form-group">
+        <label for="inputCantidad">Cantidad (Stock) *</label>
+        <input type="number" id="inputCantidad" class="form-input" step="0.01" min="0" placeholder="0.00" required disabled>
+      </div>
+    </div>
+
+    <!-- Fila 3: Gravedad & Categoría -->
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label for="inputGravedad">Gravedad Específica *</label>
+        <input type="number" id="inputGravedad" class="form-input" step="0.0001" min="0.0001" placeholder="1.0000" required disabled>
+      </div>
+      <div class="form-group">
+        <label for="selectCategoria">Categoría *</label>
+        <select id="selectCategoria" class="form-select" disabled>
+          <option value="SOLIDO">Sólido</option>
+          <option value="LIQUIDO">Líquido</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Fila 4: Estado Calculado Automáticamente (0-20 Bajo, 21-50 Medio, >50 Alto) -->
+    <div class="form-group">
+      <label>Estado del Stock <span style="font-size:0.75rem; color:var(--color-text-secondary); font-weight:normal;">(Calculado automáticamente según la cantidad)</span></label>
+      <div class="estado-auto-container">
+        <span class="estado-auto-text">Regla: 0-20 Bajo &bull; 21-50 Medio &bull; &gt;50 Alto</span>
+        <span id="badgeEstadoCalculado" class="badge-status alto">
+          <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:currentColor;"></span>
+          Stock Alto
+        </span>
+      </div>
+    </div>
+
+    <!-- Observación -->
+    <div class="form-group">
+      <label for="inputObservacion">Observación <span style="font-size:0.75rem; color:var(--color-text-secondary); font-weight:normal;">(Opcional)</span></label>
+      <textarea id="inputObservacion" class="form-textarea" placeholder="Observaciones o notas adicionales..." disabled></textarea>
+    </div>
+
+    <!-- BOTONERA INFERIOR DERECHA (GUARDAR / CANCELAR) -->
+    <div class="form-footer-actions" id="actionsFooter" style="display: none;">
+      <button type="button" class="btn btn-cancelar" id="btnCancelar">
+        Cancelar
+      </button>
+      <button type="submit" class="btn btn-guardar" id="btnGuardar">
+        💾 Guardar
+      </button>
+    </div>
+
+  </form>
+</section>

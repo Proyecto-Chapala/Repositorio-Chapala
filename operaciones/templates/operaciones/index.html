@@ -1,0 +1,56 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Inventario de Productos &bull; CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/inventario.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- BARRA SUPERIOR DE INVENTARIO -->
+<header class="topbar">
+  <div class="topbar-left">
+    <h1 class="page-title">Inventario de Productos</h1>
+    
+    <!-- Filtros por Categoría (Sólidos / Líquidos) -->
+    <div class="category-badges">
+      <button class="cat-badge active" id="badgeTodos">
+        Todos (<span id="countTotal">0</span>)
+      </button>
+      <button class="cat-badge" id="badgeSolidos">
+        Sólidos (<span id="countSolidos">0</span>)
+      </button>
+      <button class="cat-badge" id="badgeLiquidos">
+        Líquidos (<span id="countLiquidos">0</span>)
+      </button>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="Buscar por código, descripción...">
+    </div>
+  </div>
+</header>
+
+<!-- CONTENIDO PRINCIPAL: WIREFRAME DE 2 COLUMNAS -->
+<div class="content-area">
+  <div class="wireframe-card">
+    <div class="split-view">
+      
+      <!-- Componente Modular: Tabla y Botones de la Izquierda -->
+      {% include 'operaciones/inventario/_tabla_productos.html' %}
+
+      <!-- Componente Modular: Formulario de la Derecha -->
+      {% include 'operaciones/inventario/_formulario_producto.html' %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'operaciones/js/inventario.js' %}"></script>
+{% endblock %}
