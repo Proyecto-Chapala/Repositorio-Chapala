@@ -1,0 +1,96 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Fecha de Inicio &bull; {{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="wizard-overlay">
+  <section class="wizard-card">
+
+    <header class="wizard-header">
+      <div>
+        <div class="wizard-breadcrumb">{{ pozo.nombre }}</div>
+        <h1 class="wizard-title">Fecha de Inicio de Captura</h1>
+      </div>
+    </header>
+
+    {% if pozo.spud_date_completado %}
+      <div class="wizard-body">
+        <p class="summary-final-note">
+          Esta pantalla ya fue confirmada para este pozo y no se puede repetir.
+          La fecha y el tipo de fluido inicial son inmutables.
+        </p>
+        <div class="summary-block">
+          <dl class="summary-list">
+            <dt>Primera fecha de datos</dt><dd>{{ pozo.fecha_primera_captura|date:"d/m/Y" }}</dd>
+            <dt>Tipo de fluido inicial</dt><dd>{{ pozo.get_tipo_fluido_inicial_display }}</dd>
+            <dt>Con tratamiento y disposición</dt><dd>{{ pozo.con_tratamiento_disposicion|yesno:"Sí,No" }}</dd>
+            <dt>N° Control Log-It</dt><dd>{{ pozo.numero_control_logit|default:"—" }}</dd>
+          </dl>
+        </div>
+      </div>
+      <footer class="wizard-footer">
+        <span class="wizard-footer-hint"></span>
+        <div class="wizard-footer-actions">
+          <a href="{% url 'operaciones:pozo_main' pozo.pk %}" class="btn btn-guardar">Continuar</a>
+        </div>
+      </footer>
+    {% else %}
+      <div class="wizard-body">
+        <p class="field-hint" style="margin-bottom:18px;">
+          ONE-TRAX inicializará la base de datos del pozo con estos valores.
+          La fecha y el tipo de fluido <strong>no se podrán cambiar</strong> después de confirmar.
+        </p>
+
+        <div class="form-group">
+          <label for="inputFechaPrimeraCaptura">Primera Fecha de este Archivo *</label>
+          <input type="date" id="inputFechaPrimeraCaptura" class="form-input" required>
+          <span class="field-error" id="errorFecha"></span>
+        </div>
+
+        <div class="form-group">
+          <label>Tipo de Fluido para el Primer Chequeo *</label>
+          <div class="radio-list" id="fluidoRadioList">
+            <label class="radio-option"><input type="radio" name="tipoFluido" value="WATER_BASE" checked> Base Agua</label>
+            <label class="radio-option"><input type="radio" name="tipoFluido" value="WATER_BASE_CACL2"> Base Agua (CaCl2)</label>
+            <label class="radio-option"><input type="radio" name="tipoFluido" value="OIL_BASE"> Base Aceite</label>
+            <label class="radio-option"><input type="radio" name="tipoFluido" value="SYNTHETIC_BASE"> Base Sintética</label>
+            <label class="radio-option"><input type="radio" name="tipoFluido" value="COMPLETION_FLUIDS"> Fluidos de Completación</label>
+          </div>
+          <span class="field-error" id="errorFluido"></span>
+        </div>
+
+        <label class="checkbox-option">
+          <input type="checkbox" id="inputConTratamiento">
+          Con Tratamiento y Disposición de Desechos
+          <span class="field-hint">(se puede activar también más adelante)</span>
+        </label>
+
+        <div class="form-group" style="margin-top:14px;">
+          <label for="inputNumeroLogit">Número de Control de Proyecto Log-It <span class="field-hint">(opcional)</span></label>
+          <input type="text" id="inputNumeroLogit" class="form-input" placeholder="Ej: 23564">
+        </div>
+      </div>
+
+      <footer class="wizard-footer">
+        <span class="wizard-footer-hint">Este formulario aparece una sola vez</span>
+        <div class="wizard-footer-actions">
+          <button type="button" class="btn btn-guardar" id="btnConfirmarSpudDate">Confirmar</button>
+        </div>
+      </footer>
+    {% endif %}
+
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.POZO_ID = {{ pozo.id }};
+</script>
+<script src="{% static 'operaciones/js/spud_date.js' %}"></script>
+{% endblock %}

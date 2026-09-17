@@ -1,0 +1,150 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Configuración General &bull; {{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="subpage">
+
+  <div class="subpage-header">
+    <a class="subpage-back" href="{% url 'operaciones:pozo_main' pozo.pk %}" aria-label="Volver">&larr;</a>
+    <div>
+      <div class="subpage-breadcrumb">{{ pozo.nombre }}</div>
+      <h1 class="subpage-title">Configuración General</h1>
+    </div>
+  </div>
+
+  <div class="subpage-card">
+    <div class="tab-panel">
+
+      <div class="setup-chip-row">
+        <div class="setup-chip">
+          <div class="setup-chip-label">Símbolo de Moneda</div>
+          <div class="setup-chip-value" id="chipMonedaSimbolo">—</div>
+        </div>
+        <div class="setup-chip">
+          <div class="setup-chip-label">Decimales de Moneda</div>
+          <div class="setup-chip-value" id="chipMonedaDecimales">—</div>
+        </div>
+      </div>
+      <div class="field-hint" style="margin-bottom:18px;">La moneda y sus decimales quedan fijos una vez creado el pozo; para cambiarlos, ajústalos antes de confirmar el pozo en el asistente.</div>
+
+      <div class="fieldset-title" style="margin-top:0;">Setup</div>
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label for="inputTasaImpuesto">Tasa de Impuesto (%)</label>
+          <input type="number" step="0.01" id="inputTasaImpuesto" class="form-input">
+        </div>
+      </div>
+
+      <label class="checkbox-inline" style="margin-top:16px;">
+        <input type="checkbox" id="inputConTratamiento">
+        Con Tratamiento y Disposición de Desechos
+      </label>
+
+      <label class="checkbox-inline" style="margin-top:10px;">
+        <input type="checkbox" id="inputUsarApi5ta">
+        Usar API 5ta Edición para Cálculo Hidráulico
+      </label>
+      <div class="field-hint" style="margin-bottom:6px;">Determina si el cálculo hidráulico usa el método API 5ta edición o el método anterior (4ta edición).</div>
+
+      <div class="fieldset-title">Ecuaciones de Análisis de Sólidos</div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label for="selectEcuacionAgua">Lodo Base Agua</label>
+          <select id="selectEcuacionAgua" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label for="selectEcuacionAceite">Lodo Base Aceite / Sintético</label>
+          <select id="selectEcuacionAceite" class="form-select"></select>
+        </div>
+      </div>
+
+      <span class="field-error" id="errorGeneralSetup"></span>
+
+      <div class="wizard-footer-actions" style="margin-top:18px;">
+        <button type="button" class="btn btn-guardar" id="btnGuardarGeneralSetup">Guardar</button>
+      </div>
+
+      <div class="fieldset-title">Catálogos del Proyecto</div>
+      <div class="setup-launcher-row">
+        <button type="button" class="setup-launcher-btn" id="btnAbrirAlmacenes">🏬 Configuración de Códigos de Almacén</button>
+        <button type="button" class="setup-launcher-btn" id="btnAbrirDistribucion">⏱️ Configuración de Distribución de Tiempo</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== Modal: Warehouse Code Setup ===================== -->
+  <div class="modal-backdrop" id="modalAlmacenes" hidden>
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">Configuración de Códigos de Almacén</span>
+        <button type="button" class="wizard-close-btn" id="btnCerrarAlmacenes" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="data-table-wrap" style="padding:0;">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th style="width:120px;">Código</th>
+                <th>Nombre del Almacén</th>
+                <th style="width:40px;"></th>
+              </tr>
+            </thead>
+            <tbody id="almacenesBody"></tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn-nav" id="btnAgregarAlmacen" style="margin-top:10px;">+ Agregar Almacén</button>
+      </div>
+      <div class="modal-footer">
+        <span class="field-error" id="errorAlmacenes"></span>
+        <button type="button" class="btn btn-guardar" id="btnGuardarAlmacenes">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== Modal: Time Distribution Setup ===================== -->
+  <div class="modal-backdrop" id="modalDistribucion" hidden>
+    <div class="modal-box" style="max-width:720px;">
+      <div class="modal-header">
+        <span class="modal-title">Configuración de Distribución de Tiempo</span>
+        <button type="button" class="wizard-close-btn" id="btnCerrarDistribucion" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-hint" style="margin-bottom:10px;">Categorías que describen la actividad del taladro durante un período de 24h.</div>
+        <div class="data-table-wrap" style="padding:0;">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th style="width:90px;">Número</th>
+                <th>Descripción</th>
+                <th style="width:110px;">Tipo</th>
+                <th style="width:40px;"></th>
+              </tr>
+            </thead>
+            <tbody id="distribucionBody"></tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn-nav" id="btnAgregarDistribucion" style="margin-top:10px;">+ Agregar Categoría</button>
+      </div>
+      <div class="modal-footer">
+        <span class="field-error" id="errorDistribucion"></span>
+        <button type="button" class="btn btn-guardar" id="btnGuardarDistribucion">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.POZO_ID = {{ pozo.id }};
+</script>
+<script src="{% static 'operaciones/js/general_setup.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Pozo &bull; CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="wizard-overlay">
+  <section class="wizard-card">
+
+    <header class="wizard-header">
+      <div>
+        <div class="wizard-breadcrumb">Pozos e Intervalos</div>
+        <h1 class="wizard-title">Nuevo Pozo</h1>
+      </div>
+      <a href="{% url 'operaciones:index' %}" class="wizard-close-btn" aria-label="Cancelar y cerrar">&times;</a>
+    </header>
+
+    {% include 'operaciones/pozos/_stepper.html' %}
+
+    <div class="wizard-body" id="wizardBody">
+      {% include 'operaciones/pozos/_paso1_basicos.html' %}
+      {% include 'operaciones/pozos/_paso2_unidades.html' %}
+      {% include 'operaciones/pozos/_paso3_financiero.html' %}
+      {% include 'operaciones/pozos/_paso4_resumen.html' %}
+    </div>
+
+    <footer class="wizard-footer">
+      <span class="wizard-footer-hint" id="wizardFooterHint">Paso 1 de 4</span>
+      <div class="wizard-footer-actions">
+        <button type="button" class="btn btn-cancelar" id="btnAtras" hidden>Atrás</button>
+        <button type="button" class="btn btn-guardar" id="btnContinuar">Guardar y Continuar</button>
+        <button type="button" class="btn btn-guardar" id="btnCrearPozo" hidden>Crear Pozo</button>
+      </div>
+    </footer>
+
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.POZO_ID_INICIAL = {{ pozo_id|default:"null" }};
+</script>
+<script src="{% static 'operaciones/js/pozos.js' %}"></script>
+{% endblock %}

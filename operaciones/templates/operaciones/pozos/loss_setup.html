@@ -1,0 +1,56 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Configuración de Pérdidas &bull; {{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="subpage">
+
+  <div class="subpage-header">
+    <a class="subpage-back" href="{% url 'operaciones:pozo_main' pozo.pk %}" aria-label="Volver">&larr;</a>
+    <div>
+      <div class="subpage-breadcrumb">{{ pozo.nombre }}</div>
+      <h1 class="subpage-title">Configuración de Pérdidas</h1>
+    </div>
+  </div>
+
+  <div class="field-hint" style="margin-bottom:16px;">
+    Agrega o modifica las categorías usadas para registrar pérdidas de fluido (Superficie o Subsuelo). Estas categorías se usarán luego en los reportes diarios de fluidos de perforación.
+  </div>
+
+  <div class="subpage-card">
+    <div class="subpage-toolbar">
+      <span class="subpage-toolbar-title">Categorías de Pérdida</span>
+      <button type="button" class="btn btn-nav" id="btnAgregarCategoria">+ Agregar Categoría</button>
+    </div>
+    <div class="data-table-wrap">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th style="width:80px;">Código</th>
+            <th>Descripción</th>
+            <th style="width:180px;">Superficie / Subsuelo</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="categoriasBody"></tbody>
+      </table>
+    </div>
+    <div class="wizard-footer-actions" style="padding:0 24px 20px 24px;">
+      <button type="button" class="btn btn-guardar" id="btnGuardarCategorias">Guardar</button>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.POZO_ID = {{ pozo.id }};
+</script>
+<script src="{% static 'operaciones/js/loss_setup.js' %}"></script>
+{% endblock %}

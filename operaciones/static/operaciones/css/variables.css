@@ -3,12 +3,21 @@
      Colores Principales / Marca
      ========================================================================== */
   --color-navy: #14213d;           /* Encabezados, barra superior, nav y cabeceras */
-  --color-orange: #ff8500;         /* Acento principal, foco, acciones primarias */
-  --color-orange-hover: #e07400;
+  --color-orange: #f2994a;         /* Acento principal suave, foco, acciones primarias */
+  --color-orange-hover: #e2853a;
+  --color-orange-soft-bg: #fff4e8; /* Fondo suave para resaltados, hover y chips */
   --color-red: #d7263d;            /* Acciones destructivas (Eliminar, Salir) y errores */
   --color-red-hover: #b91c30;
   --color-bg: #ffffff;             /* Fondo general de tarjetas, modales y paneles */
-  --color-bg-app: #f4f6f9;         /* Fondo exterior general de la aplicación */
+  --color-bg-app: #faf8f6;         /* Fondo exterior general de la aplicación (blanco suave) */
+
+  /* Alias usados por pozos.css (wizard y pantallas de pozo) */
+  --color-surface: var(--color-bg);
+  --color-surface-muted: #f7f3ef;
+  --color-border-soft: #efe8e0;
+  --color-accent: var(--color-orange);
+  --color-accent-soft: var(--color-orange-soft-bg);
+  --color-danger: var(--color-red);
 
   /* ==========================================================================
      Texto y Neutros de Soporte
@@ -49,7 +58,7 @@
      Sombras Corporativas (basadas en tema_qt.py)
      ========================================================================== */
   --shadow-ventana: 0 10px 28px rgba(20, 33, 61, 0.10);
-  --shadow-tarjeta: 0 4px 14px rgba(20, 33, 61, 0.05);
+  --shadow-tarjeta: 0 6px 20px rgba(20, 33, 61, 0.08);
   --shadow-btn-nav: 0 6px 14px rgba(20, 33, 61, 0.20);
   --shadow-btn-outline: 0 2px 8px rgba(20, 33, 61, 0.06);
 

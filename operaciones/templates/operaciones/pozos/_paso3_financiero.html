@@ -1,0 +1,67 @@
+<section class="wizard-step" id="step3" data-step="3" hidden>
+
+  <div class="form-grid-2">
+    <div class="form-group">
+      <label for="inputMonedaSimbolo">Símbolo de Moneda *</label>
+      <input type="text" id="inputMonedaSimbolo" class="form-input" maxlength="6" placeholder="USD">
+    </div>
+    <div class="form-group">
+      <label for="inputMonedaDecimales">Decimales de Moneda *</label>
+      <input type="number" id="inputMonedaDecimales" class="form-input" min="0" max="4" value="2">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="inputTasaImpuesto">Tasa de Impuesto (%) <span class="field-hint">(editable después de crear el pozo)</span></label>
+    <input type="number" id="inputTasaImpuesto" class="form-input" min="0" max="100" step="0.01" value="0">
+  </div>
+
+  <div class="form-grid-2">
+    <div class="form-group">
+      <label for="selectEcuacionAgua">Ecuación de Sólidos — Base Agua *</label>
+      <select id="selectEcuacionAgua" class="form-select">
+        <option value="MI">M-I</option>
+        <option value="API">API</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="selectEcuacionAceite">Ecuación de Sólidos — Base Aceite/Sintética *</label>
+      <select id="selectEcuacionAceite" class="form-select">
+        <option value="MI">M-I</option>
+        <option value="API">API</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="selectCategoriaPerdida">Categorías de Pérdida *</label>
+    <select id="selectCategoriaPerdida" class="form-select">
+      <option value="MI">M-I</option>
+      <option value="UK">UK</option>
+      <option value="HYDRO">Hydro</option>
+      <option value="STATOIL">Statoil</option>
+      <option value="IFE">IFE</option>
+      <option value="COMPLETION_FLUIDS">Completion Fluids</option>
+      <option value="CUSTOM">Personalizado</option>
+    </select>
+  </div>
+
+  <div class="loss-categories-panel" id="lossCategoriesPanel" hidden>
+    <div class="loss-categories-header">
+      <span>Categorías personalizadas</span>
+      <button type="button" class="btn btn-nav" id="btnAgregarCategoria">+ Agregar fila</button>
+    </div>
+    <table class="custom-table loss-categories-table">
+      <thead>
+        <tr>
+          <th style="width:80px;">Código</th>
+          <th>Descripción</th>
+          <th style="width:150px;">Tipo</th>
+          <th style="width:40px;"></th>
+        </tr>
+      </thead>
+      <tbody id="lossCategoriesBody"></tbody>
+    </table>
+  </div>
+
+</section>

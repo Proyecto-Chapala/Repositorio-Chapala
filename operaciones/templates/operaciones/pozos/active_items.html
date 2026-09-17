@@ -1,0 +1,165 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Productos / Equipos / Mallas Activos &bull; {{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="subpage">
+
+  <div class="subpage-header">
+    <a class="subpage-back" href="{% url 'operaciones:pozo_main' pozo.pk %}" aria-label="Volver">&larr;</a>
+    <div>
+      <div class="subpage-breadcrumb">{{ pozo.nombre }}</div>
+      <h1 class="subpage-title">Productos / Equipos / Mallas Activos</h1>
+    </div>
+  </div>
+
+  <div class="field-hint" style="margin-bottom:16px;">
+    Selecciona del catálogo maestro los productos, equipos y mallas que se van a usar en este proyecto. Se pueden agregar nuevos en cualquier momento.
+    <span class="field-hint-warning" style="display:inline;">Revisa con cuidado el "Código de Costo Diario" de cada producto: se usa para la asignación de costos.</span>
+  </div>
+
+  <div class="subpage-card">
+    <nav class="tab-nav">
+      <button type="button" class="tab-nav-item is-active" data-tab="productos">1 - Configuración de Productos</button>
+      <button type="button" class="tab-nav-item" data-tab="equipos">2 - Configuración de Renta de Equipos</button>
+      <button type="button" class="tab-nav-item" data-tab="mallas">3 - Configuración de Mallas de Zaranda</button>
+    </nav>
+
+    <!-- ===================== PESTAÑA 1: Productos ===================== -->
+    <section class="tab-panel" id="tabPanelProductos" data-tab="productos">
+
+      <div class="fieldset-title" style="margin-top:0;">Catálogo Maestro de Productos</div>
+      <div class="master-search-row">
+        <input type="text" id="buscarProducto" class="form-input" placeholder="Buscar por código o nombre...">
+      </div>
+      <div class="master-list-wrap" id="masterProductosWrap">
+        <table class="custom-table">
+          <thead>
+            <tr><th>Código</th><th>Nombre</th><th>Unidad</th><th style="width:50px;"></th></tr>
+          </thead>
+          <tbody id="masterProductosBody"></tbody>
+        </table>
+      </div>
+
+      <div class="fieldset-title">Lista Activa de Productos</div>
+      <div class="data-table-wrap">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th style="width:100px;">Abrev.</th>
+              <th style="width:90px;">Tam. Unidad</th>
+              <th style="width:90px;">Unidad</th>
+              <th style="width:90px;">Empaque</th>
+              <th style="width:90px;">Precio</th>
+              <th style="width:80px;">S.G.</th>
+              <th style="width:60px;">¿Conc?</th>
+              <th style="width:60px;">¿M-I?</th>
+              <th style="width:70px;">Grupo</th>
+              <th style="width:90px;">Cód. Costo Diario</th>
+              <th style="width:60px;">¿WMgt?</th>
+              <th style="width:90px;">Cat. Costo WMgt</th>
+              <th style="width:90px;">Cat. Costo CF</th>
+              <th style="width:40px;"></th>
+            </tr>
+          </thead>
+          <tbody id="activosProductosBody"></tbody>
+        </table>
+      </div>
+      <div class="wizard-footer-actions" style="padding:0 24px 20px 24px;">
+        <button type="button" class="btn btn-guardar" id="btnGuardarProductos">Guardar</button>
+      </div>
+    </section>
+
+    <!-- ===================== PESTAÑA 2: Equipos ===================== -->
+    <section class="tab-panel" id="tabPanelEquipos" data-tab="equipos" hidden>
+
+      <div class="fieldset-title" style="margin-top:0;">Catálogo Maestro de Equipos</div>
+      <div class="master-search-row">
+        <input type="text" id="buscarEquipo" class="form-input" placeholder="Buscar por código o nombre...">
+      </div>
+      <div class="master-list-wrap" id="masterEquiposWrap">
+        <table class="custom-table">
+          <thead>
+            <tr><th>Código</th><th>Nombre Oficial</th><th style="width:50px;"></th></tr>
+          </thead>
+          <tbody id="masterEquiposBody"></tbody>
+        </table>
+      </div>
+
+      <div class="field-hint">Agrega todo el equipo que se debe llevar en el reporte, aunque no sea equipo de renta M-I SWACO.</div>
+      <div class="fieldset-title">Lista Activa de Equipos</div>
+      <div class="data-table-wrap">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th style="width:110px;">N° de Serie</th>
+              <th>Descripción</th>
+              <th style="width:100px;">Precio Renta</th>
+              <th style="width:100px;">Precio Stand-By</th>
+              <th style="width:40px;"></th>
+            </tr>
+          </thead>
+          <tbody id="activosEquiposBody"></tbody>
+        </table>
+      </div>
+      <div class="wizard-footer-actions" style="padding:0 24px 20px 24px;">
+        <button type="button" class="btn btn-guardar" id="btnGuardarEquipos">Guardar</button>
+      </div>
+    </section>
+
+    <!-- ===================== PESTAÑA 3: Mallas ===================== -->
+    <section class="tab-panel" id="tabPanelMallas" data-tab="mallas" hidden>
+
+      <div class="fieldset-title" style="margin-top:0;">Catálogo Maestro de Mallas de Zaranda</div>
+      <div class="master-search-row">
+        <input type="text" id="buscarMalla" class="form-input" placeholder="Buscar por código o descripción...">
+      </div>
+      <div class="master-list-wrap" id="masterMallasWrap">
+        <table class="custom-table">
+          <thead>
+            <tr><th>Código</th><th>Descripción</th><th style="width:70px;">Mesh</th><th style="width:50px;"></th></tr>
+          </thead>
+          <tbody id="masterMallasBody"></tbody>
+        </table>
+      </div>
+
+      <div class="field-hint">Agrega toda malla que se deba llevar en el reporte, aunque no sea malla M-I SWACO.</div>
+      <div class="fieldset-title">Lista Activa de Mallas</div>
+      <div class="data-table-wrap">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th style="width:70px;">Mesh</th>
+              <th style="width:100px;">Precio</th>
+              <th style="width:100px;">Descuento (%)</th>
+              <th style="width:40px;"></th>
+            </tr>
+          </thead>
+          <tbody id="activosMallasBody"></tbody>
+        </table>
+      </div>
+      <div class="wizard-footer-actions" style="padding:0 24px 20px 24px;">
+        <button type="button" class="btn btn-guardar" id="btnGuardarMallas">Guardar</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.POZO_ID = {{ pozo.id }};
+</script>
+<script src="{% static 'operaciones/js/active_items.js' %}"></script>
+{% endblock %}
