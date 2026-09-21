@@ -1,0 +1,120 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Intervalos de Revestimiento (Costo) &bull; {{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="subpage">
+
+  <div class="subpage-header">
+    <a class="subpage-back" href="{% url 'operaciones:pozo_main' pozo.pk %}" aria-label="Volver">&larr;</a>
+    <div>
+      <div class="subpage-breadcrumb">{{ pozo.nombre }}</div>
+      <h1 class="subpage-title">Intervalos de Revestimiento (Costo)</h1>
+    </div>
+  </div>
+
+  <div class="subpage-card">
+    <div class="subpage-toolbar">
+      <span class="subpage-toolbar-title">Resumen de Intervalos de Revestimiento</span>
+      <button type="button" class="btn btn-nav" id="btnNuevoIntervalo">+ Nuevo</button>
+    </div>
+
+    <div class="data-table-wrap">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>N° Intervalo</th>
+            <th>Tipo</th>
+            <th>Diám. Ext. Revest.</th>
+            <th>Diám. Int. Revest.</th>
+            <th>Profundidad</th>
+            <th>TVD</th>
+            <th>Tope de Liner</th>
+            <th>Diám. de Hoyo</th>
+            <th>Ángulo Máx.</th>
+            <th>Densidad Máx.</th>
+            <th>Grad. de Fractura</th>
+            <th>Fluido 1</th>
+            <th>Fluido 2</th>
+            <th>Costo del Intervalo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="intervalosBody"></tbody>
+      </table>
+      <div class="table-empty-hint" id="emptyHint" hidden>Aún no hay intervalos registrados. Usa "+ New" para crear el primero.</div>
+    </div>
+
+    <div class="interval-detail" id="detailPanel" hidden>
+      <div class="interval-detail-header">
+        <span class="interval-detail-title" id="detailTitle">Nuevo Intervalo</span>
+
+        <button type="button" class="wizard-close-btn" id="btnCerrarDetalle" aria-label="Cerrar">&times;</button>
+      </div>
+
+      <div class="form-grid-3">
+        <div class="form-group"><label for="dInterval">Número de Intervalo</label><input type="number" id="dInterval" class="form-input"></div>
+        <div class="form-group">
+          <label for="dTipo">Tipo</label>
+          <select id="dTipo" class="form-select">
+            <option value="">—</option>
+          </select>
+        </div>
+        <div class="form-group"><label for="dCasingOd">Diám. Ext. Revestimiento (in)</label><input type="number" step="0.001" id="dCasingOd" class="form-input"></div>
+
+        <div class="form-group"><label for="dCasingId">Diám. Int. Revestimiento (in)</label><input type="number" step="0.001" id="dCasingId" class="form-input"></div>
+        <div class="form-group"><label for="dHoleSize">Diámetro de Hoyo (in)</label><input type="number" step="0.001" id="dHoleSize" class="form-input"></div>
+        <div class="form-group"><label for="dDepth">Profundidad (ft)</label><input type="number" step="0.01" id="dDepth" class="form-input"></div>
+
+        <div class="form-group"><label for="dTvd">TVD (ft)</label><input type="number" step="0.01" id="dTvd" class="form-input"></div>
+        <div class="form-group"><label for="dTopLiner">Tope de Liner (ft)</label><input type="number" step="0.01" id="dTopLiner" class="form-input"></div>
+        <div class="form-group"><label for="dMaxDensity">Densidad Máxima (lb/gal)</label><input type="number" step="0.01" id="dMaxDensity" class="form-input"></div>
+
+        <div class="form-group"><label for="dMaxBht">BHT Máx. (°F)</label><input type="number" step="0.01" id="dMaxBht" class="form-input"></div>
+        <div class="form-group"><label for="dMaxAngle">Ángulo Máximo</label><input type="number" step="0.01" id="dMaxAngle" class="form-input"></div>
+        <div class="form-group"><label for="dIntervalDays">Días del Intervalo</label><input type="number" id="dIntervalDays" class="form-input"></div>
+
+        <div class="form-group"><label for="dPlannedDays">Días Planificados</label><input type="number" id="dPlannedDays" class="form-input"></div>
+        <div class="form-group"><label for="dPlannedLength">Longitud Planificada (ft)</label><input type="number" step="0.01" id="dPlannedLength" class="form-input"></div>
+        <div class="form-group"><label for="dIntervalCost">Costo del Intervalo ($)</label><input type="number" step="0.01" id="dIntervalCost" class="form-input"></div>
+
+        <div class="form-group"><label for="dPlannedCost">Costo Planificado ($)</label><input type="number" step="0.01" id="dPlannedCost" class="form-input"></div>
+        <div class="form-group"><label for="dFracGrad">Grad. de Fractura (lb/gal)</label><input type="number" step="0.01" id="dFracGrad" class="form-input"></div>
+        <div class="form-group"><label for="dFluid1">Código de Fluido 1</label><input type="text" id="dFluid1" class="form-input"></div>
+
+        <div class="form-group"><label for="dFluid2">Código de Fluido 2</label><input type="text" id="dFluid2" class="form-input"></div>
+      </div>
+
+      <div class="fieldset-title">Observaciones y Recomendaciones</div>
+      <div class="form-group">
+        <textarea id="dObservaciones" class="textarea-recap" style="min-height:70px;"></textarea>
+      </div>
+
+      <div class="fieldset-title">Comentarios del Intervalo para el Recap</div>
+      <div class="form-group">
+        <textarea id="dComentariosRecap" class="textarea-recap" maxlength="10000"></textarea>
+        <div class="char-counter"><span id="charCount">0</span> / 10,000</div>
+      </div>
+
+      <span class="field-error" id="errorDetalle"></span>
+
+      <div class="wizard-footer-actions" style="margin-top:10px;">
+        <button type="button" class="btn btn-cancelar" id="btnEliminarIntervalo" hidden>Eliminar</button>
+        <button type="button" class="btn btn-guardar" id="btnGuardarIntervalo">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.POZO_ID = {{ pozo.id }};
+</script>
+<script src="{% static 'operaciones/js/casing_intervals.js' %}"></script>
+{% endblock %}

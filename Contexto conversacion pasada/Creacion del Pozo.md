@@ -1,0 +1,31 @@
+Sí, entiendo la distinción y tiene mucho sentido — el árbol de 8 secciones (Imagen 1) no es navegación global de la app, es el contenido interno de un pozo específico. Un pozo se crea una sola vez (Imágenes 2-6), y una vez creado, esas 8 secciones son las pestañas/vistas donde se captura todo lo que ocurre durante la perforación de ese hoyo.
+
+Para confirmar que entiendo el detalle de campo por campo de cada ventana que compartiste:
+
+Creación del pozo (Imágenes 2-6) — pasos que ocurren UNA sola vez por pozo:
+
+Img 2: Al crear un pozo nuevo, pregunta si quieres clonarlo de uno existente. Si dices "Sí", te deja marcar con checkboxes qué tablas de configuración copiar: Benchmarks, Disposal Type & Price, Equipment List, Loss Setup & Type, Pit Type & Name, Product List & Choices, Shaker Screen Setup, Time Distribution Type, y varias de Warehouse (Cutting Injection Labels, Daily Input Choices, Import Source & Recovery Type, Tank Setup, Transportation & Disposal Price List).
+Img 3: Formulario inicial con: sistema de unidades (botón "Change"), categorías de pérdida de datos, ajustes financieros (decimales de moneda, símbolo, tasa de impuesto %), ecuaciones de análisis de sólidos por separado para lodo base agua y base aceite/sintético (dropdown, ej. "M-I"), y el nombre del archivo del pozo nuevo.
+Img 4: Selector de sistema de unidades con 10 presets (Standard Oilfield, Standard 1/2/3, SI Metric, Metric 1-5, Custom) que fija de un click ~15 propiedades: Depth, Hole/Pipe Size, Volume, Flow Rate, Bit-Nozzle Size, Velocity, Pressure, k-Factor, Fluid Weight, Plastic Viscosity, Yield Point and Gels, Jet Velocity, Product Concentration, Force, Temperature, Filter-Cake Thickness.
+Img 5: Si eliges "Custom Units", cada una de esas ~15 propiedades se vuelve un dropdown individual (ej. Flow Rate: gal/min, bbl/min, L/min, m³/min).
+Img 6: Advertencia de que esta configuración de unidades es inmutable una vez confirmada con OK — por eso este paso va antes de entrar al pozo, no como una pestaña más.
+
+Entonces la arquitectura correcta sería:
+
+Sidebar → lista simple: "Pozos", "Panel General", quizá "Reportes" — nada de las 8 secciones ahí.
+Wizard "Nuevo Pozo" (lo que ya mockeé) → captura unidades, plantilla, ajustes financieros. Se hace una vez, al crear.
+Al abrir un pozo existente → aparece un layout con tabs horizontales o un sub-menú contextual con las 8 secciones (General, Bombas/Brocas, Propiedades del Lodo, Geometría, Comentarios, Equipo de Sólidos, Distribución de Tiempo, Inventario/Hidráulica) — y ahí sí tu inventario actual sería la pestaña "Equipo de Sólidos → Inventario de Mallas".
+
+Indicador de progreso arriba (ej. "Paso 2 de 4 · Sistema de Unidades") con los 4 puntos/círculos, marcando en verde los completados — así el usuario nunca se pierde.
+Cada pantalla tiene "Guardar y Continuar" (avanza) y un enlace "Atrás" (regresa sin perder datos).
+Al llegar al último paso, el botón cambia a "Crear Pozo" en vez de "Continuar" — señal clara de que es la acción final.
+Conviene además un autoguardado silencioso en cada paso (draft), por si el usuario cierra el navegador a la mitad — no es lo mismo que "Guardar y Continuar" (que es la confirmación explícita del paso), pero evita perder trabajo.
+
+Mapeando tus 6 capturas a 4 pantallas, así lo dividiría:
+
+Paso	Contenido	Corresponde a
+1. Datos Básicos	Nombre del pozo + ¿usar plantilla de pozo anterior? (con selector si dice sí)	Img 2
+2. Sistema de Unidades	Los 10 presets (Standard Oilfield, Metric 1-5, etc.) en tarjetas seleccionables	Img 4
+3. Personalizar Unidades	Solo aparece si eligió "Custom" — dropdown por cada una de las ~15 propiedades	Img 5
+4. Ajustes Finales	Moneda, decimales, tax rate, ecuaciones de sólidos (agua/aceite), categorías de pérdida — y resumen antes de confirmar	Img 3 + Img 6
+

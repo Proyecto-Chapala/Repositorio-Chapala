@@ -1,0 +1,46 @@
+<!-- SIDEBAR PRINCIPAL COLAPSABLE -->
+ <!--jd volao-->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand">
+      <div class="brand-icon">CP</div>
+      <span class="brand-text">CHAPALA</span>
+    </div>
+    <button class="toggle-sidebar-btn" id="toggleSidebarBtn" title="Ocultar / Mostrar barra lateral">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="nav-item" id="navPozos" href="{% url 'operaciones:pozos_list' %}" title="Pozos">
+      <span class="nav-icon">💧</span>
+      <span class="nav-text">Pozos</span>
+    </a>
+    <a class="nav-item active" id="navInventario" href="{% url 'operaciones:index' %}" title="Inventario de Productos">
+      <span class="nav-icon">📦</span>
+      <span class="nav-text">Inventario</span>
+    </a>
+    <a class="nav-item" title="Próximamente: Reportes Diarios">
+      <span class="nav-icon">📄</span>
+      <span class="nav-text">Reportes Diarios</span>
+    </a>
+    <a class="nav-item" href="{% url 'operaciones:pozo_wizard_nuevo' %}" title="Nuevo Pozo">
+      <span class="nav-icon">🏗️</span>
+      <span class="nav-text">Nuevo Pozo</span>
+    </a>
+    <a class="nav-item" href="{% url 'operaciones:catalogos_maestros' %}" title="Catálogos Maestros: Equipos y Mallas de Zaranda">
+      <span class="nav-icon">🗂️</span>
+      <span class="nav-text">Catálogos Maestros</span>
+    </a>
+    <a class="nav-item" title="Próximamente: Volumetría y Fosas">
+      <span class="nav-icon">🧪</span>
+      <span class="nav-text">Fosas / Volumetría</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    AOS &bull; Operaciones
+  </div>
+</aside>

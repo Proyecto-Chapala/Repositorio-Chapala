@@ -1,0 +1,144 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Información General &bull; {{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="subpage">
+
+  <div class="subpage-header">
+    <a class="subpage-back" href="{% url 'operaciones:pozo_main' pozo.pk %}" aria-label="Volver">&larr;</a>
+    <div>
+      <div class="subpage-breadcrumb">{{ pozo.nombre }}</div>
+      <h1 class="subpage-title">Información General del Pozo</h1>
+    </div>
+  </div>
+
+  <div class="subpage-card">
+    <nav class="tab-nav">
+      <button type="button" class="tab-nav-item is-active" data-tab="1">1 - Información del Pozo</button>
+      <button type="button" class="tab-nav-item" data-tab="2">2 - Códigos de Mercadeo</button>
+    </nav>
+
+    <!-- ===================== PESTAÑA 1: Información del Pozo ===================== -->
+    <section class="tab-panel" id="tabPanel1" data-tab="1">
+
+      <label class="checkbox-inline">
+        <input type="checkbox" id="inputEsOffshore">
+        Proyecto Offshore
+      </label>
+      <div class="field-hint" style="margin-bottom:10px;">Si el proyecto es Offshore, Altura Libre, Profundidad de Agua y Temperatura del Lecho Marino son obligatorios y afectan la volumetría.</div>
+
+      <div class="form-grid-3" id="offshoreFieldsWrap" hidden>
+        <div class="form-group">
+          <label for="inputAirGap">Altura Libre — Air Gap (ft)</label>
+          <input type="number" step="0.01" id="inputAirGap" class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="inputWaterDepth">Profundidad de Agua (ft)</label>
+          <input type="number" step="0.01" id="inputWaterDepth" class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="inputSeaFloorTemp">Temperatura del Lecho Marino (°F)</label>
+          <input type="number" step="0.01" id="inputSeaFloorTemp" class="form-input">
+        </div>
+      </div>
+
+      <div class="fieldset-title">Datos del Pozo</div>
+      <div class="form-grid-3">
+        <div class="form-group"><label for="inputOperador">Operador</label><input type="text" id="inputOperador" class="form-input"></div>
+        <div class="form-group"><label for="inputFieldArea">Campo/Área</label><input type="text" id="inputFieldArea" class="form-input"></div>
+        <div class="form-group"><label for="inputDescripcion">Descripción</label><input type="text" id="inputDescripcion" class="form-input"></div>
+
+        <div class="form-group"><label for="inputUbicacion">Ubicación</label><input type="text" id="inputUbicacion" class="form-input"></div>
+        <div class="form-group"><label for="inputAlmacen">Almacén</label><input type="text" id="inputAlmacen" class="form-input"></div>
+        <div class="form-group"><label for="inputContratista">Contratista</label><input type="text" id="inputContratista" class="form-input"></div>
+
+        <div class="form-group"><label for="inputRigName">Nombre del Taladro</label><input type="text" id="inputRigName" class="form-input"></div>
+        <div class="form-group"><label for="inputProjectEngineer">Ingeniero de Proyecto</label><input type="text" id="inputProjectEngineer" class="form-input"></div>
+        <div class="form-group"><label for="inputEngineer1">Ingeniero M-I SWACO 1</label><input type="text" id="inputEngineer1" class="form-input"></div>
+
+        <div class="form-group"><label for="inputEngineer2">Ingeniero M-I SWACO 2</label><input type="text" id="inputEngineer2" class="form-input"></div>
+        <div class="form-group"><label for="inputSpudDate">Fecha de Spud</label><input type="date" id="inputSpudDate" class="form-input"></div>
+        <div class="form-group"><label for="inputTdDate">Fecha de TD</label><input type="date" id="inputTdDate" class="form-input"></div>
+
+        <div class="form-group"><label for="inputTdDays">Días de TD</label><input type="number" id="inputTdDays" class="form-input"></div>
+        <div class="form-group"><label for="inputReEntryDepth">Profundidad de Reentrada (ft)</label><input type="number" step="0.01" id="inputReEntryDepth" class="form-input"></div>
+        <div class="form-group"><label for="inputLatNs">Indicador de Latitud N/S</label><input type="text" id="inputLatNs" class="form-input"></div>
+
+        <div class="form-group"><label for="inputLonEw">Indicador de Longitud E/O</label><input type="text" id="inputLonEw" class="form-input"></div>
+      </div>
+
+      <div class="fieldset-title">API 5ta Edición <span class="field-hint">(opcional, mejora la precisión de hidráulica)</span></div>
+      <div class="form-grid-3">
+        <div class="form-group"><label for="inputSurfaceTemp">Temperatura Superficial (°F)</label><input type="number" step="0.01" id="inputSurfaceTemp" class="form-input"></div>
+        <div class="form-group"><label for="inputTempGradient">Gradiente de Temperatura (°F/100ft)</label><input type="number" step="0.01" id="inputTempGradient" class="form-input"></div>
+      </div>
+
+      <div class="fieldset-title">Fin del Pozo <span class="field-hint">(se completa al finalizar el pozo)</span></div>
+      <div class="form-grid-3">
+        <div class="form-group"><label for="inputTotalDepth">Profundidad Total (ft)</label><input type="number" step="0.01" id="inputTotalDepth" class="form-input"></div>
+        <div class="form-group"><label for="inputTotalDays">Días Totales</label><input type="number" id="inputTotalDays" class="form-input"></div>
+        <div class="form-group"><label for="inputMaxTemp">Temperatura Máxima (°F)</label><input type="number" step="0.01" id="inputMaxTemp" class="form-input"></div>
+
+        <div class="form-group"><label for="inputTvd">TVD (ft)</label><input type="number" step="0.01" id="inputTvd" class="form-input"></div>
+        <div class="form-group"><label for="inputEndDate">Fecha de Fin</label><input type="date" id="inputEndDate" class="form-input"></div>
+        <div class="form-group"><label for="inputTotalCost">Costo Total ($) <span class="field-hint">(manual por ahora)</span></label><input type="number" step="0.01" id="inputTotalCost" class="form-input"></div>
+
+        <div class="form-group"><label for="inputHorizDisplacement">Desplazamiento Horizontal (ft) <span class="field-hint">(Alcance Extendido)</span></label><input type="number" step="0.01" id="inputHorizDisplacement" class="form-input"></div>
+      </div>
+
+      <div class="fieldset-title">Comentarios</div>
+      <div class="form-group">
+        <textarea id="inputComentarios" class="textarea-recap" style="min-height:70px;" placeholder="Ej: notas generales del pozo"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="inputLogit">Número de Control de Proyecto Log-It</label>
+        <input type="text" id="inputLogit" class="form-input" style="max-width:260px;">
+      </div>
+
+      <span class="field-error" id="errorTab1"></span>
+
+      <div class="wizard-footer-actions" style="margin-top:18px;">
+        <button type="button" class="btn btn-guardar" id="btnGuardarTab1">Guardar</button>
+      </div>
+    </section>
+
+    <!-- ===================== PESTAÑA 2: Códigos de Mercadeo ===================== -->
+    <section class="tab-panel" id="tabPanel2" data-tab="2" hidden>
+      <div class="field-hint" style="margin-bottom:14px;">Estos datos se usan en consultas de ONE-TRAX Central, para respuestas de licitación y mercadeo. Deben completarse antes de subir el archivo del pozo a ONE-TRAX Central; si no están disponibles al inicio, se pueden llenar después.</div>
+
+      <div class="form-grid-2">
+        <div class="form-group"><label for="inputPrimaryMudCodigo">Tipo de Lodo Principal — Código</label><input type="text" id="inputPrimaryMudCodigo" class="form-input"></div>
+        <div class="form-group"><label for="inputPrimaryMudDesc">Tipo de Lodo Principal — Descripción</label><input type="text" id="inputPrimaryMudDesc" class="form-input"></div>
+
+        <div class="form-group"><label for="inputWellTypeCodigo">Tipo de Pozo — Código</label><input type="text" id="inputWellTypeCodigo" class="form-input"></div>
+        <div class="form-group"><label for="inputWellTypeDesc">Tipo de Pozo — Descripción</label><input type="text" id="inputWellTypeDesc" class="form-input"></div>
+
+        <div class="form-group"><label for="inputContractCodigo">Tipo de Contrato — Código</label><input type="text" id="inputContractCodigo" class="form-input"></div>
+        <div class="form-group"><label for="inputContractDesc">Tipo de Contrato — Descripción</label><input type="text" id="inputContractDesc" class="form-input"></div>
+
+        <div class="form-group"><label for="inputCompletionCodigo">Tipo de Fluido de Completación — Código</label><input type="text" id="inputCompletionCodigo" class="form-input"></div>
+        <div class="form-group"><label for="inputCompletionDesc">Tipo de Fluido de Completación — Descripción</label><input type="text" id="inputCompletionDesc" class="form-input"></div>
+      </div>
+
+      <span class="field-error" id="errorTab2"></span>
+
+      <div class="wizard-footer-actions" style="margin-top:18px;">
+        <button type="button" class="btn btn-guardar" id="btnGuardarTab2">Guardar</button>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.POZO_ID = {{ pozo.id }};
+</script>
+<script src="{% static 'operaciones/js/well_header.js' %}"></script>
+{% endblock %}

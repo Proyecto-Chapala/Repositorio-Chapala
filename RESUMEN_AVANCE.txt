@@ -1,0 +1,108 @@
+================================================================================
+RESUMEN GENERAL DEL AVANCE DE DESARROLLO - PROYECTO CHAPALA
+SISTEMA MODULAR DE INVENTARIO QUÍMICO Y CONTROL DE REPORTES DIARIOS
+All Oil Services, C.A. (AOS)
+================================================================================
+Fecha de Actualización: 31/08/2026
+Estado: Módulos Operativos, Probados y Sincronizados con PostgreSQL
+================================================================================
+
+1. DESCRIPCIÓN Y ARQUITECTURA DEL PROYECTO
+--------------------------------------------------------------------------------
+Se desarrolló una solución integral para la gestión de productos químicos, registro
+de consumos/salidas y emisión de reportes diarios acumulativos con cálculo
+automático de costos, basada en la siguiente arquitectura:
+
+- Backend (Python / Django):
+  * Procesamiento pesado, lógica de negocio y validación de existencias.
+  * APIs REST en formato JSON para comunicación asíncrona.
+  * Modelos de datos estructurados con compatibilidad directa para PostgreSQL
+    y SQLite (conmutación automática por variables de entorno).
+  * Código limpio, desacoplado y completamente documentado con docstrings.
+
+- Frontend (JavaScript / HTML5 / CSS3):
+  * Interfaz de Usuario Single Page Application (SPA) moderna y reactiva.
+  * Navegación lateral fluida entre módulos (General, Inventario, Uso).
+  * Cálculos matemáticos en tiempo real (Multiplicación de Precio variable × Cantidad).
+  * Formato de impresión oficial idéntico a la planilla física de AOS (con logotipo
+    vectorial SVG, metadatos, tabla de inventario físico, desglose de costos y firmas).
+
+
+2. ESTRUCTURA DE PESTAÑAS Y MÓDULOS IMPLEMENTADOS
+--------------------------------------------------------------------------------
+
+A. PESTAÑA "GENERAL" (Metadatos y Reporte Acumulativo del Día)
+   - Identificación / N° de Reporte único persistido en la BD (ej. REP-2026-0001).
+   - Metadatos del almacén: Departamento ("ALMACÉN"), Encargado ("LUIS BRICEÑO"),
+     Fecha del reporte.
+   - Control de Firmas: Datos de elaboración (Lusneila Franceschi / Administración)
+     y revisión (Luis Briceño / Encargado de Almacén).
+   - Campo Amplio de Observaciones / Comentarios Generales del Reporte.
+   - Tarjeta destacada con el "Costo Final Acumulado del Día" calculada
+     automáticamente a partir de las salidas registradas en la pestaña "Uso".
+   - Botón de acción "Actualizar Reporte" para persistir los metadatos y observaciones.
+   - Botón "Historial de Reportes" para consultar y cargar fechas anteriores.
+   - Acceso directo a la vista previa de la planilla oficial de impresión.
+
+B. PESTAÑA "INVENTARIO" (Catálogo Técnico y Gestión de Productos)
+   - Tabla interactiva con las columnas exigidas en el diagrama:
+     [ Código | Descripción | Unidad | Libraje | Gravedad E. | Cantidad | Estado | Acciones ]
+   - Búsqueda en tiempo real (filtrado instantáneo por código, nombre o especificación).
+   - Modal "Creación / Modificación de Productos" (respetando la estructura del diagrama):
+     * Campo: Codigo (con botón 'Auto' para generar códigos SKU AOS-XXXX aleatorios únicos).
+     * Campo: Descripcion.
+     * Campo: Unidad del producto (Presentación).
+     * Campo: Libraje.
+     * Campo: Gravedad Especifica.
+     * Campo: Cantidad (Stock físico).
+     * Botones: "Crear" / "Guardar" y "Cancelar".
+   - Botón "Consultar Reportes" situado junto a "Imprimir Planilla".
+   - Acciones de Edición rápida, Eliminación individual y Eliminación masiva por lote.
+   - Paginación dinámica y barras de métricas rápidas (Total, Bajo Stock ≤15, Sin Stock).
+
+C. PESTAÑA "USO" (Salidas, Precios Variables y Cálculo Dinámico de Costos)
+   - Selector desplegable de productos químicos con indicador de stock disponible.
+   - Input de Cantidad a retirar con validación de existencias.
+   - Input de Precio Unitario variable (no fijo, solicitado en cada transacción).
+   - Caja de cálculo matemático en vivo (JavaScript): Cantidad × Precio Unitario = Subtotal.
+   - Campo de Observación / Comentario opcional por cada salida de producto.
+   - Tabla interactiva con el desglose de productos utilizados en el día.
+   - Botón de reversión de salida que restituye automáticamente las cantidades
+     al inventario y resta del costo acumulado.
+   - Totalizador general acumulativo sincronizado con la pestaña "General".
+
+D. MÓDULO DE HISTORIAL Y ELIMINACIÓN DE REPORTES
+   - Botón accesible desde la barra superior, pestaña General e Inventario.
+   - Modal con listado completo de todos los reportes diarios guardados identificados
+     por su número único (N° Reporte), fecha, departamento, salidas y costo total.
+   - Opción "Cargar / Modificar" para editar el reporte en la pantalla principal.
+   - Opción "Eliminar": Permite eliminar el reporte de la base de datos restituyendo
+     automáticamente el stock de los productos que fueron utilizados en él.
+
+E. MÓDULO DE IMPRESIÓN OFICIAL (PLANILLA FÍSICA AOS)
+   - Réplica exacta de la planilla oficial extraída del documento PDF:
+     * Logotipo estilizado vectorial de All Oil Services, C.A. con RIF: J-31267150-5.
+     * Encabezado de Departamento, Encargado, N° de Reporte y Fecha.
+     * Tabla de Inventario Físico con desglose: [Inicial | Entrada | Total Existente | Salida | Stock Final].
+     * Sección de Desglose de Costos de Salidas (Código, Producto, Cantidad, Precio Unitario, Subtotal).
+     * Costo Total Acumulado del Día resaltado.
+     * Caja de Observaciones generales del día.
+     * Cuadro de firmas oficiales para "REALIZADO POR" y "REVISADO POR".
+   - Ocultamiento estricto en pantalla y activación exclusiva en modal de consulta e impresión nativa (window.print).
+
+
+3. BASE DE DATOS Y MODELOS (mychapala/models.py)
+--------------------------------------------------------------------------------
+- Modelo `Producto`:
+  * codigo, descripcion, unidad, libraje, gravedad_especifica, cantidad, stock_inicial, activo, fechas.
+- Modelo `ReporteDiario`:
+  * codigo_reporte (N° único indexado), fecha, departamento, encargado, firmas, observaciones, costo_total, fechas.
+- Modelo `RegistroUso`:
+  * reporte, producto, cantidad, precio_unitario, costo_total (calculado), observacion, fecha_hora.
+
+
+4. CARGA INICIAL DE DATOS
+--------------------------------------------------------------------------------
+Se integraron e inyectaron exitosamente en PostgreSQL los 38 reactivos químicos
+oficiales de la planilla AOS con sus stocks y densidades técnicas.
+================================================================================

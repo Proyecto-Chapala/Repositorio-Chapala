@@ -1,0 +1,115 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Configuración de Propiedades de Equipo &bull; {{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="subpage">
+
+  <div class="subpage-header">
+    <a class="subpage-back" href="{% url 'operaciones:pozo_main' pozo.pk %}" aria-label="Volver">&larr;</a>
+    <div>
+      <div class="subpage-breadcrumb">{{ pozo.nombre }}</div>
+      <h1 class="subpage-title">Configuración de Propiedades de Equipo</h1>
+    </div>
+  </div>
+
+  <div class="field-hint" style="margin-bottom:16px;">
+    Selecciona qué propiedades se van a monitorear para cada tipo de equipo activo en este pozo. Los tipos que aparecen aquí dependen de lo agregado en "Productos / Equipos / Mallas Activos".
+  </div>
+
+  <!-- Mensaje: sin equipo activo -->
+  <div class="subpage-card" id="avisoSinEquipo" hidden style="padding:24px;">
+    <div class="field-hint field-hint-warning" style="display:block; margin:0;">
+      No se ha elegido ningún equipo. Ve a
+      <a href="{% url 'operaciones:active_items' pozo.pk %}">"Productos / Equipos / Mallas Activos"</a>
+      para seleccionar equipos primero.
+    </div>
+  </div>
+
+  <div id="tiposEquipoContainer"></div>
+
+  <!-- Unidades Flexibles de Centrífuga -->
+  <div class="subpage-card" id="cardCentrifuga" hidden>
+    <div class="subpage-toolbar">
+      <span class="subpage-toolbar-title">Unidades Flexibles de Centrífuga</span>
+    </div>
+    <div class="product-form" style="padding:20px 24px;">
+      <div class="form-group">
+        <label>Unidad de Flow Rate</label>
+        <select id="selectUnidadFlowRate" class="form-select">
+          <option value="gal/min">gal/min</option>
+          <option value="bbl/min">bbl/min</option>
+          <option value="bbl/hr">bbl/hr</option>
+          <option value="L/min">L/min</option>
+          <option value="m3/hr">m3/hr</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Unidad de Mass</label>
+        <select id="selectUnidadMass" class="form-select">
+          <option value="Ton">Ton</option>
+          <option value="lb">lb</option>
+          <option value="kg">kg</option>
+          <option value="bbl">bbl</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="wizard-footer-actions" id="footerGuardar" style="padding:0 0 20px 0;" hidden>
+    <button type="button" class="btn btn-guardar" id="btnGuardarPropiedades">Guardar</button>
+  </div>
+
+</div>
+
+<!-- Plantilla de una tarjeta de Tipo de Equipo -->
+<template id="tplTipoEquipoCard">
+  <div class="subpage-card tipo-equipo-card">
+    <div class="subpage-toolbar">
+      <span class="subpage-toolbar-title tipo-equipo-nombre"></span>
+    </div>
+    <div class="data-table-wrap">
+      <table class="custom-table">
+        <thead>
+          <tr><th style="width:50px;"></th><th>Propiedad</th><th style="width:120px;">Unidad</th></tr>
+        </thead>
+        <tbody class="propiedades-body"></tbody>
+      </table>
+    </div>
+
+    <div class="fieldset-title">Propiedades Extra</div>
+    <div class="data-table-wrap">
+      <table class="custom-table">
+        <thead>
+          <tr><th>Descripción</th><th style="width:120px;">Unidad</th><th style="width:40px;"></th></tr>
+        </thead>
+        <tbody class="extras-body"></tbody>
+      </table>
+    </div>
+    <div style="padding:0 24px 20px 24px;">
+      <button type="button" class="btn btn-nav btn-agregar-extra">+ Agregar Propiedad Extra</button>
+    </div>
+  </div>
+</template>
+
+<!-- Plantilla de una fila extra -->
+<template id="tplFilaExtra">
+  <tr>
+    <td><input type="text" class="form-input extra-descripcion" placeholder="Descripción"></td>
+    <td><input type="text" class="form-input extra-unidad" placeholder="Unidad"></td>
+    <td><button type="button" class="btn-remove-row" title="Eliminar">&times;</button></td>
+  </tr>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.POZO_ID = {{ pozo.id }};
+</script>
+<script src="{% static 'operaciones/js/equipment_properties_setup.js' %}"></script>
+{% endblock %}

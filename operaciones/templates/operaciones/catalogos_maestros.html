@@ -1,0 +1,261 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Catálogos Maestros &bull; CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/inventario.css' %}">
+{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <div class="topbar-left">
+    <h1 class="page-title">Catálogos Maestros</h1>
+    <div class="category-badges">
+      <button class="cat-badge active" id="tabEquipos">Equipos</button>
+      <button class="cat-badge" id="tabMallas">Mallas de Zaranda</button>
+      <button class="cat-badge" id="tabPropiedades">Propiedades de Equipo</button>
+      <button class="cat-badge" id="tabBenchmark">Parámetros de Benchmark</button>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="Buscar por código o nombre...">
+    </div>
+  </div>
+</header>
+
+<div class="content-area">
+  <div class="wireframe-card">
+
+    <!-- ===================== Equipos ===================== -->
+    <div class="split-view" id="panelEquipos">
+      <div class="left-column">
+        <div class="table-header-bar">
+          <span class="section-label">Catálogo de Equipos</span>
+          <span class="table-stats" id="statsEquipos">0 equipos</span>
+        </div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead><tr><th>Código</th><th>Nombre Oficial</th><th>Tipo de Equipo</th></tr></thead>
+            <tbody id="tablaEquiposBody"></tbody>
+          </table>
+        </div>
+        <div class="left-actions-bar">
+          <div class="crud-btn-group">
+            <button type="button" class="btn btn-nuevo" id="btnNuevoEquipo">+ Nuevo Equipo</button>
+            <button type="button" class="btn btn-eliminar" id="btnEliminarEquipo" disabled>Eliminar</button>
+          </div>
+        </div>
+      </div>
+      <div class="right-column">
+        <div class="form-header-title">
+          <span id="formTituloEquipo">Nuevo Equipo</span>
+          <span class="form-mode-tag" id="formModoEquipo">Creando</span>
+        </div>
+        <div class="product-form">
+          <div class="form-group">
+            <label>Código de Equipo</label>
+            <input type="text" id="inputEquipoCodigo" class="form-input" placeholder="Ej: NC-014">
+          </div>
+          <div class="form-group">
+            <label>Nombre Oficial</label>
+            <input type="text" id="inputEquipoNombre" class="form-input" placeholder="Ej: 518 FSV Centrífuga">
+          </div>
+          <div class="form-group">
+            <label>Tipo de Equipo</label>
+            <select id="inputEquipoTipo" class="form-select">
+              <option value="CENTRIFUGA">Centrífuga</option>
+              <option value="LIMPIADOR_LODO">Limpiador de Lodo (Mud Cleaner)</option>
+              <option value="ZARANDA">Zaranda (Shale Shaker)</option>
+              <option value="SISTEMA_VACIO">Sistema de Vacío</option>
+              <option value="CONTENEDOR_RECORTES">Contenedor de Recortes</option>
+              <option value="OTROS">Otros</option>
+            </select>
+          </div>
+        </div>
+        <span class="field-error" id="errorEquipo" style="display:block; margin-top:8px;"></span>
+        <div class="form-footer-actions">
+          <button type="button" class="btn btn-cancelar" id="btnCancelarEquipo">Cancelar</button>
+          <button type="button" class="btn btn-guardar" id="btnGuardarEquipo">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Mallas de Zaranda ===================== -->
+    <div class="split-view" id="panelMallas" hidden>
+      <div class="left-column">
+        <div class="table-header-bar">
+          <span class="section-label">Catálogo de Mallas de Zaranda</span>
+          <span class="table-stats" id="statsMallas">0 mallas</span>
+        </div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead><tr><th>Código</th><th>Descripción</th><th>Mesh</th></tr></thead>
+            <tbody id="tablaMallasBody"></tbody>
+          </table>
+        </div>
+        <div class="left-actions-bar">
+          <div class="crud-btn-group">
+            <button type="button" class="btn btn-nuevo" id="btnNuevaMalla">+ Nueva Malla</button>
+            <button type="button" class="btn btn-eliminar" id="btnEliminarMalla" disabled>Eliminar</button>
+          </div>
+        </div>
+      </div>
+      <div class="right-column">
+        <div class="form-header-title">
+          <span id="formTituloMalla">Nueva Malla</span>
+          <span class="form-mode-tag" id="formModoMalla">Creando</span>
+        </div>
+        <div class="product-form">
+          <div class="form-group">
+            <label>Código de Malla</label>
+            <input type="text" id="inputMallaCodigo" class="form-input" placeholder="Ej: XSJUE110L">
+          </div>
+          <div class="form-group">
+            <label>Descripción</label>
+            <input type="text" id="inputMallaDescripcion" class="form-input" placeholder="Ej: 110 Mesh Magnum XR">
+          </div>
+          <div class="form-group">
+            <label>Tamaño de Malla (Mesh)</label>
+            <input type="number" id="inputMallaMesh" class="form-input" placeholder="Ej: 110">
+          </div>
+        </div>
+        <span class="field-error" id="errorMalla" style="display:block; margin-top:8px;"></span>
+        <div class="form-footer-actions">
+          <button type="button" class="btn btn-cancelar" id="btnCancelarMalla">Cancelar</button>
+          <button type="button" class="btn btn-guardar" id="btnGuardarMalla">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Propiedades de Equipo ===================== -->
+    <div class="split-view" id="panelPropiedades" hidden>
+      <div class="left-column">
+        <div class="table-header-bar">
+          <span class="section-label">Propiedades por Tipo de Equipo</span>
+          <span class="table-stats" id="statsPropiedades">0 propiedades</span>
+        </div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead><tr><th>Tipo de Equipo</th><th>Descripción</th><th>Unidad</th><th>Orden</th></tr></thead>
+            <tbody id="tablaPropiedadesBody"></tbody>
+          </table>
+        </div>
+        <div class="left-actions-bar">
+          <div class="crud-btn-group">
+            <button type="button" class="btn btn-nuevo" id="btnNuevaPropiedad">+ Nueva Propiedad</button>
+            <button type="button" class="btn btn-eliminar" id="btnEliminarPropiedad" disabled>Eliminar</button>
+          </div>
+        </div>
+      </div>
+      <div class="right-column">
+        <div class="form-header-title">
+          <span id="formTituloPropiedad">Nueva Propiedad</span>
+          <span class="form-mode-tag" id="formModoPropiedad">Creando</span>
+        </div>
+        <div class="product-form">
+          <div class="form-group">
+            <label>Tipo de Equipo</label>
+            <select id="inputPropiedadTipo" class="form-select">
+              <option value="CENTRIFUGA">Centrífuga</option>
+              <option value="LIMPIADOR_LODO">Limpiador de Lodo (Mud Cleaner)</option>
+              <option value="ZARANDA">Zaranda (Shale Shaker)</option>
+              <option value="SISTEMA_VACIO">Sistema de Vacío</option>
+              <option value="CONTENEDOR_RECORTES">Contenedor de Recortes</option>
+              <option value="OTROS">Otros</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Descripción de la Propiedad</label>
+            <input type="text" id="inputPropiedadDescripcion" class="form-input" placeholder="Ej: Flow Rate">
+          </div>
+          <div class="form-group">
+            <label>Unidad</label>
+            <input type="text" id="inputPropiedadUnidad" class="form-input" placeholder="Ej: gal/min">
+          </div>
+          <div class="form-group">
+            <label>Orden</label>
+            <input type="number" id="inputPropiedadOrden" class="form-input" placeholder="Ej: 1">
+          </div>
+        </div>
+        <span class="field-error" id="errorPropiedad" style="display:block; margin-top:8px;"></span>
+        <div class="form-footer-actions">
+          <button type="button" class="btn btn-cancelar" id="btnCancelarPropiedad">Cancelar</button>
+          <button type="button" class="btn btn-guardar" id="btnGuardarPropiedad">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Parámetros de Benchmark ===================== -->
+    <div class="split-view" id="panelBenchmark" hidden>
+      <div class="left-column">
+        <div class="table-header-bar">
+          <span class="section-label">Parámetros de Benchmark</span>
+          <span class="table-stats" id="statsBenchmark">0 parámetros</span>
+        </div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead><tr><th>Grupo</th><th>Descripción</th><th>Unidad</th><th>Fluido</th><th>Tipo de Dato</th></tr></thead>
+            <tbody id="tablaBenchmarkBody"></tbody>
+          </table>
+        </div>
+        <div class="left-actions-bar">
+          <div class="crud-btn-group">
+            <button type="button" class="btn btn-nuevo" id="btnNuevoBenchmark">+ Nuevo Parámetro</button>
+            <button type="button" class="btn btn-eliminar" id="btnEliminarBenchmark" disabled>Eliminar</button>
+          </div>
+        </div>
+      </div>
+      <div class="right-column">
+        <div class="form-header-title">
+          <span id="formTituloBenchmark">Nuevo Parámetro</span>
+          <span class="form-mode-tag" id="formModoBenchmark">Creando</span>
+        </div>
+        <div class="product-form">
+          <div class="form-group">
+            <label>Grupo</label>
+            <input type="text" id="inputBenchmarkGrupo" class="form-input" placeholder="Ej: Mud Properties">
+          </div>
+          <div class="form-group">
+            <label>Descripción</label>
+            <input type="text" id="inputBenchmarkDescripcion" class="form-input" placeholder="Ej: Mud Weight(WBM)">
+          </div>
+          <div class="form-group">
+            <label>Unidad</label>
+            <input type="text" id="inputBenchmarkUnidad" class="form-input" placeholder="Ej: lb/gal">
+          </div>
+          <div class="form-group">
+            <label>Tipo de Fluido</label>
+            <select id="inputBenchmarkFluido" class="form-select">
+              <option value="NA">No Aplica</option>
+              <option value="WBM">WBM (Base Agua)</option>
+              <option value="OBM">OBM (Base Aceite)</option>
+              <option value="AMBOS">Ambos</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tipo de Dato</label>
+            <select id="inputBenchmarkTipoDato" class="form-select">
+              <option value="MIN_MAX">Mínimo / Máximo</option>
+              <option value="NUMERICO">Numérico (valor único)</option>
+              <option value="TEXTO">Texto</option>
+            </select>
+          </div>
+        </div>
+        <span class="field-error" id="errorBenchmark" style="display:block; margin-top:8px;"></span>
+        <div class="form-footer-actions">
+          <button type="button" class="btn btn-cancelar" id="btnCancelarBenchmark">Cancelar</button>
+          <button type="button" class="btn btn-guardar" id="btnGuardarBenchmark">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'operaciones/js/catalogos_maestros.js' %}"></script>
+{% endblock %}

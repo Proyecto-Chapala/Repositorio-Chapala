@@ -1,0 +1,71 @@
+:root {
+  /* ==========================================================================
+     Colores Principales / Marca
+     ========================================================================== */
+  --color-navy: #14213d;           /* Encabezados, barra superior, nav y cabeceras */
+  --color-orange: #f2994a;         /* Acento principal suave, foco, acciones primarias */
+  --color-orange-hover: #e2853a;
+  --color-orange-soft-bg: #fff4e8; /* Fondo suave para resaltados, hover y chips */
+  --color-red: #d7263d;            /* Acciones destructivas (Eliminar, Salir) y errores */
+  --color-red-hover: #b91c30;
+  --color-bg: #ffffff;             /* Fondo general de tarjetas, modales y paneles */
+  --color-bg-app: #faf8f6;         /* Fondo exterior general de la aplicación (blanco suave) */
+
+  /* Alias usados por pozos.css (wizard y pantallas de pozo) */
+  --color-surface: var(--color-bg);
+  --color-surface-muted: #f7f3ef;
+  --color-border-soft: #efe8e0;
+  --color-accent: var(--color-orange);
+  --color-accent-soft: var(--color-orange-soft-bg);
+  --color-danger: var(--color-red);
+
+  /* ==========================================================================
+     Texto y Neutros de Soporte
+     ========================================================================== */
+  --color-text-primary: #14213d;   /* Texto principal / títulos */
+  --color-text-secondary: #5a6472; /* Etiquetas (labels), subtítulos y notas */
+  --color-text-muted: #8c97ae;     /* Texto deshabilitado o notas secundarias */
+  --color-border: #e4e7ec;         /* Bordes de inputs, tablas y divisores */
+  --color-border-dark: #cdd4df;
+  --color-btn-neutral: #f4f5f7;    /* Fondo de botones neutros (Limpiar, Regresar) */
+  --color-icon-muted: #8c97ae;     /* Iconos secundarios, chevrons, lupas */
+
+  /* ==========================================================================
+     Tablas y Estados de Filas
+     ========================================================================== */
+  --color-row-selected: #fff2e2;   /* Fondo de fila seleccionada en tablas */
+  --color-row-zebra: #f7f8fa;      /* Fila alterna (efecto cebra) */
+
+  /* ==========================================================================
+     Semánticos / Indicadores de Inventario (Regla 1-20 Bajo, 21-50 Medio, >50 Alto)
+     ========================================================================== */
+  --color-success: #155724;        /* Entradas de inventario y estados positivos */
+  --color-danger-dark: #721c24;    /* Salidas de inventario y alertas críticas */
+
+  --stock-alto-bg: #e8f7ee;
+  --stock-alto-border: #8ce1a7;
+  --stock-alto-text: #137333;
+
+  --stock-medio-bg: #fff7ed;
+  --stock-medio-border: #fed7aa;
+  --stock-medio-text: #c2410c;
+
+  --stock-bajo-bg: #fdf2f2;
+  --stock-bajo-border: #fca5a5;
+  --stock-bajo-text: #b91c1c;
+
+  /* ==========================================================================
+     Sombras Corporativas (basadas en tema_qt.py)
+     ========================================================================== */
+  --shadow-ventana: 0 10px 28px rgba(20, 33, 61, 0.10);
+  --shadow-tarjeta: 0 6px 20px rgba(20, 33, 61, 0.08);
+  --shadow-btn-nav: 0 6px 14px rgba(20, 33, 61, 0.20);
+  --shadow-btn-outline: 0 2px 8px rgba(20, 33, 61, 0.06);
+
+  /* Dimensiones y Animación */
+  --sidebar-width: 250px;
+  --sidebar-collapsed-width: 72px;
+  --header-height: 64px;
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}

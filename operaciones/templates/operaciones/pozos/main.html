@@ -1,0 +1,174 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}{{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="project-page">
+
+  <header class="project-header">
+    <div>
+      <h1 class="project-header-title">{{ pozo.nombre }}</h1>
+      <div class="project-header-sub">Pantalla Principal del Pozo</div>
+    </div>
+    <div class="project-header-chips">
+      <span class="project-chip chip-accent">{{ pozo.get_sistema_unidades_display }}</span>
+      <span class="project-chip">{{ pozo.moneda_simbolo }}</span>
+      <span class="project-chip">{{ pozo.get_estado_display }}</span>
+    </div>
+  </header>
+
+  <div class="project-section-title">Información del Pozo</div>
+  <div class="project-grid">
+
+    <a class="project-card" href="{% url 'operaciones:well_header' pozo.pk %}">
+      <div class="project-card-icon">📋</div>
+      <div>
+        <div class="project-card-title">Información General del Pozo</div>
+        <div class="project-card-sub">Datos generales y Códigos de Mercadeo</div>
+      </div>
+      <span class="project-card-badge {% if pozo.well_header_info.completado %}badge-ready{% endif %}">
+        {% if pozo.well_header_info.completado %}Listo{% else %}Pendiente{% endif %}
+      </span>
+    </a>
+
+    <a class="project-card" href="{% url 'operaciones:casing_intervals' pozo.pk %}">
+      <div class="project-card-icon">🛢️</div>
+      <div>
+        <div class="project-card-title">Intervalos de Revestimiento (Costo)</div>
+        <div class="project-card-sub">Intervalos de revestimiento y costo</div>
+      </div>
+      <span class="project-card-badge {% if pozo.intervalos_revestimiento.count %}badge-ready{% endif %}">
+        {{ pozo.intervalos_revestimiento.count }} intervalo{{ pozo.intervalos_revestimiento.count|pluralize }}
+      </span>
+    </a>
+
+    <a class="project-card" href="{% url 'operaciones:loss_setup' pozo.pk %}">
+      <div class="project-card-icon">📉</div>
+      <div>
+        <div class="project-card-title">Configuración de Pérdidas</div>
+        <div class="project-card-sub">Categorías de pérdida de fluido</div>
+      </div>
+      <span class="project-card-badge {% if pozo.categorias_perdida.count %}badge-ready{% endif %}">
+        {{ pozo.categorias_perdida.count }} categoría{{ pozo.categorias_perdida.count|pluralize:"s" }}
+      </span>
+    </a>
+
+    <a class="project-card" href="{% url 'operaciones:active_items' pozo.pk %}">
+      <div class="project-card-icon">🧰</div>
+      <div>
+        <div class="project-card-title">Productos / Equipos / Mallas Activos</div>
+        <div class="project-card-sub">Catálogo maestro y lista activa del pozo</div>
+      </div>
+      <span class="project-card-badge {% if pozo.productos_activos.count %}badge-ready{% endif %}">
+        {{ pozo.productos_activos.count }} producto{{ pozo.productos_activos.count|pluralize:"s" }}
+      </span>
+    </a>
+
+    <div class="project-card is-disabled" title="Próximamente">
+      <div class="project-card-icon">📐</div>
+      <div>
+        <div class="project-card-title">Registro Direccional del Pozo</div>
+        <div class="project-card-sub">Próximamente</div>
+      </div>
+    </div>
+
+    <a class="project-card" href="{% url 'operaciones:benchmark_setup' pozo.pk %}">
+      <div class="project-card-icon">📊</div>
+      <div>
+        <div class="project-card-title">Configuración de Benchmark</div>
+        <div class="project-card-sub">Parámetros objetivo por intervalo</div>
+      </div>
+      <span class="project-card-badge {% if pozo.benchmarks_seleccionados.count %}badge-ready{% endif %}">
+        {{ pozo.benchmarks_seleccionados.count }} parámetro{{ pozo.benchmarks_seleccionados.count|pluralize:"s" }}
+      </span>
+    </a>
+
+    <a class="project-card" href="{% url 'operaciones:pits' pozo.pk %}">
+      <div class="project-card-icon">🪣</div>
+      <div>
+        <div class="project-card-title">Información de Fosas</div>
+        <div class="project-card-sub">Fosas, tanques y Tipos de Fosa</div>
+      </div>
+      <span class="project-card-badge {% if pozo.fosas.count %}badge-ready{% endif %}">
+        {{ pozo.fosas.count }} fosa{{ pozo.fosas.count|pluralize }}
+      </span>
+    </a>
+
+    <a class="project-card" href="{% url 'operaciones:equipment_properties_setup' pozo.pk %}">
+      <div class="project-card-icon">⚙️</div>
+      <div>
+        <div class="project-card-title">Configuración de Propiedades de Equipo</div>
+        <div class="project-card-sub">Propiedades a monitorear por tipo de equipo</div>
+      </div>
+    </a>
+
+    <a class="project-card" href="{% url 'operaciones:general_setup' pozo.pk %}">
+      <div class="project-card-icon">🧾</div>
+      <div>
+        <div class="project-card-title">Configuración General</div>
+        <div class="project-card-sub">Moneda, impuestos, almacenes y distribución de tiempo</div>
+      </div>
+    </a>
+
+    <div class="project-card is-disabled" title="Próximamente">
+      <div class="project-card-icon">⚠️</div>
+      <div>
+        <div class="project-card-title">Eventos No Programados</div>
+        <div class="project-card-sub">Próximamente</div>
+      </div>
+    </div>
+
+    <div class="project-card is-disabled" title="Próximamente">
+      <div class="project-card-icon">💲</div>
+      <div>
+        <div class="project-card-title">Resumen de Costos</div>
+        <div class="project-card-sub">Próximamente</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="project-section-title">Módulos ONE-TRAX</div>
+  <div class="project-grid">
+
+    <a class="project-card" href="{% url 'operaciones:daily_reports_hub' pozo.pk %}">
+      <div class="project-card-icon">💧</div>
+      <div>
+        <div class="project-card-title">Fluidos de Perforación y Equipos</div>
+        <div class="project-card-sub">Reporte diario &middot; 8 pestañas &middot; Activo</div>
+      </div>
+    </a>
+
+    <div class="project-card is-disabled" title="Próximamente">
+      <div class="project-card-icon">♻️</div>
+      <div>
+        <div class="project-card-title">Módulo RDF</div>
+        <div class="project-card-sub">Próximamente</div>
+      </div>
+    </div>
+
+    <div class="project-card is-disabled" title="Próximamente">
+      <div class="project-card-icon">🧪</div>
+      <div>
+        <div class="project-card-title">Fluidos de Completación</div>
+        <div class="project-card-sub">Próximamente</div>
+      </div>
+    </div>
+
+    <div class="project-card is-disabled" title="Próximamente">
+      <div class="project-card-icon">🗑️</div>
+      <div>
+        <div class="project-card-title">Tratamiento y Disposición de Desechos</div>
+        <div class="project-card-sub">Próximamente</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

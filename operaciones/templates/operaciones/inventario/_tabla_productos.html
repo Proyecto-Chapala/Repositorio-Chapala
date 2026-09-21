@@ -1,0 +1,49 @@
+<!-- SECCIÓN IZQUIERDA: LISTADO Y BOTONERA -->
+<section class="left-column">
+  <div class="table-header-bar">
+    <span class="section-label">Listado de Existencias</span>
+    <span class="table-stats">Haga clic en una fila para consultar o editar</span>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Descripción</th>
+          <th>Categoría</th>
+          <th>Unidad</th>
+          <th style="text-align: right;">Cantidad</th>
+          <th style="text-align: right;">Costo</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- Inyectado dinámicamente con inventario.js -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- BOTONERA INFERIOR IZQUIERDA (SEGÚN BOCETO) -->
+  <div class="left-actions-bar">
+    <!-- Botones de Acción -->
+    <div class="crud-btn-group">
+      <button type="button" class="btn btn-nuevo" id="btnNuevo">
+        ➕ Nuevo
+      </button>
+      <button type="button" class="btn btn-modificar" id="btnModificar">
+        ✏️ Modificar
+      </button>
+      <button type="button" class="btn btn-eliminar" id="btnEliminar" title="Solo disponible si cantidad es 0">
+        🗑️ Eliminar
+      </button>
+    </div>
+    <!-- Botones de Navegación -->
+    <div class="nav-btn-group">
+      <button type="button" class="btn btn-nav" id="btnInicio" title="Primer producto">Inicio</button>
+      <button type="button" class="btn btn-nav" id="btnAnterior" title="Producto anterior">&lt;</button>
+      <button type="button" class="btn btn-nav" id="btnSiguiente" title="Producto siguiente">&gt;</button>
+      <button type="button" class="btn btn-nav" id="btnFin" title="Último producto">Fin</button>
+    </div>
+  </div>
+</section>

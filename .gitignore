@@ -1,0 +1,39 @@
+﻿# ==============================================================================
+# ARCHIVO .GITIGNORE - PROYECTO CHAPALA (DJANGO & PYTHON)
+# ==============================================================================
+
+# 1. Entorno Virtual de Python (evita subir gigabytes de dependencias locales)
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# 2. Bases de Datos Locales (evita subir bases de datos completas o binarias)
+*.sqlite3
+*.sqlite3-journal
+*.db
+db.sqlite3
+*.backup
+
+# 3. Variables de Entorno Sensibles (claves secretas, contraseñas de BD)
+.env
+.env.local
+.env.*.local
+
+# 4. Archivos Temporales y Caché Compilada de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 5. Configuración local de IDEs y Editores
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# 6. Registros y logs de ejecución
+*.log

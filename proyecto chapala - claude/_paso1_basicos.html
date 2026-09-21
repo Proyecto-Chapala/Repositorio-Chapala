@@ -1,0 +1,26 @@
+<section class="wizard-step" id="step1" data-step="1">
+
+  <div class="form-group">
+    <label for="inputNombrePozo">Nombre del Pozo *</label>
+    <input type="text" id="inputNombrePozo" class="form-input" placeholder="Ej: POZO-LC-115" required>
+    <span class="field-error" id="errorNombrePozo"></span>
+  </div>
+
+  <div class="template-toggle-box">
+    <div class="template-toggle-text">
+      <div class="template-toggle-title">Usar un pozo anterior como plantilla</div>
+      <div class="template-toggle-hint">Copia mallas, productos, tanques y configuración de pérdidas.</div>
+    </div>
+    <button type="button" class="switch" id="toggleUsarPlantilla" role="switch" aria-checked="false" aria-label="Usar plantilla">
+      <span class="switch-knob"></span>
+    </button>
+  </div>
+
+  <div class="form-group template-select-wrap" id="templateSelectWrap" hidden>
+    <label for="selectPlantilla">Copiar configuración de</label>
+    <select id="selectPlantilla" class="form-select">
+      <option value="">Selecciona un pozo activo&hellip;</option>
+    </select>
+  </div>
+
+</section>
