@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import views_daily_reports
 
 app_name = 'operaciones'
 
@@ -11,6 +12,9 @@ urlpatterns = [
     path('api/productos/<int:pk>/', views.api_producto_detail, name='api_producto_detail'),
     path('api/productos/<int:pk>/modificar/', views.api_producto_update, name='api_producto_update'),
     path('api/productos/<int:pk>/eliminar/', views.api_producto_delete, name='api_producto_delete'),
+
+    # --- Lista de Pozos (Temporal) ---
+    path('pozos/', views.pozos_list_view, name='pozos_list'),
 
     # --- Wizard de Nuevo Pozo (shell SPA) ---
     path('pozos/nuevo/', views.pozo_wizard_view, name='pozo_wizard_nuevo'),
@@ -32,7 +36,31 @@ urlpatterns = [
     # --- Project Main Screen ---
     path('pozos/<int:pk>/', views.pozo_main_view, name='pozo_main'),
 
+# --- Drilling Fluids and Equipment (Avances) ---
+    path('pozos/<int:pk>/drilling-fluids-equipment/', views_daily_reports.daily_reports_hub_view, name='daily_reports_hub'),
+    path('pozos/<int:pk>/daily-reports/', views_daily_reports.daily_reports_hub_view, name='daily_reports_hub_alias'),
+    path('pozos/<int:pk>/daily-report/<int:reporte_pk>/', views_daily_reports.reporte_diario_detalle_view, name='reporte_diario_detalle'),
+    
+    path('api/pozos/<int:pk>/reportes-diarios/', views_daily_reports.api_reportes_diarios_list, name='api_reportes_diarios_list'),
+    path('api/pozos/<int:pk>/reportes-diarios/crear/', views_daily_reports.api_reporte_diario_crear, name='api_reporte_diario_crear'),
+    path('api/pozos/<int:pk>/reportes-diarios/<int:reporte_pk>/eliminar/', views_daily_reports.api_reporte_diario_eliminar, name='api_reporte_diario_eliminar'),
+    path('api/pozos/<int:pk>/reportes-diarios/<int:reporte_pk>/general/guardar/', views_daily_reports.api_reporte_diario_general_guardar, name='api_reporte_diario_general_guardar'),
+    path('pozos/<int:pk>/daily-report/<int:reporte_pk>/excel/', views_daily_reports.reporte_diario_excel_view, name='reporte_diario_excel'),
+    path('api/pozos/<int:pk>/survey-stations/', views_daily_reports.api_well_survey_list, name='api_well_survey_list'),
+    path('api/pozos/<int:pk>/survey-stations/guardar/', views_daily_reports.api_well_survey_guardar, name='api_well_survey_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/cost-overview/', views_daily_reports.api_cost_overview_detail, name='api_cost_overview_detail'),
+    
+    path('api/pozos/<int:pk>/propiedades-extra/', views_daily_reports.api_propiedades_extra_list, name='api_propiedades_extra_list'),
+    path('api/pozos/<int:pk>/propiedades-extra/guardar/', views_daily_reports.api_propiedades_extra_guardar, name='api_propiedades_extra_guardar'),
+    path('api/pozos/<int:pk>/formation-tops/', views_daily_reports.api_formation_tops_list, name='api_formation_tops_list'),
+    path('api/pozos/<int:pk>/formation-tops/guardar/', views_daily_reports.api_formation_tops_guardar, name='api_formation_tops_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/pumps-bits/', views_daily_reports.api_pumps_bits_detail, name='api_pumps_bits_detail'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/pumps-bits/guardar/', views_daily_reports.api_pumps_bits_guardar, name='api_pumps_bits_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/mud-properties/', views_daily_reports.api_mud_properties_detail, name='api_mud_properties_detail'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/mud-properties/guardar/', views_daily_reports.api_mud_properties_guardar, name='api_mud_properties_guardar'),
+
     # --- Well Header Information ---
+
     path('pozos/<int:pk>/well-header/', views.well_header_view, name='well_header'),
     path('api/pozos/<int:pk>/well-header/', views.api_well_header_detail, name='api_well_header_detail'),
     path('api/pozos/<int:pk>/well-header/guardar/', views.api_well_header_guardar, name='api_well_header_guardar'),

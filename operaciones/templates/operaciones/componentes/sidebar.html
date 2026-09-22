@@ -1,4 +1,5 @@
 <!-- SIDEBAR PRINCIPAL COLAPSABLE -->
+ <!--jd volao-->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <div class="brand">
@@ -13,6 +14,10 @@
   </div>
 
   <nav class="sidebar-nav">
+    <a class="nav-item" id="navPozos" href="{% url 'operaciones:pozos_list' %}" title="Pozos">
+      <span class="nav-icon">💧</span>
+      <span class="nav-text">Pozos</span>
+    </a>
     <a class="nav-item active" id="navInventario" href="{% url 'operaciones:index' %}" title="Inventario de Productos">
       <span class="nav-icon">📦</span>
       <span class="nav-text">Inventario</span>

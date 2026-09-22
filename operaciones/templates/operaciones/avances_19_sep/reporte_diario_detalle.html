@@ -1,0 +1,3196 @@
+{% extends 'operaciones/base.html' %}
+{% load static l10n %}
+
+{% block title %}Daily Report [ {{ reporte.fecha|date:"m/d/Y" }} ] &middot; {{ pozo.nombre }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/daily_reports.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="subpage subpage-compact">
+  <div style="display:none;">{% csrf_token %}</div>
+
+  <!-- HERO HEADER (ESTILO PANTALLA PRINCIPAL DEL POZO - COMPACTO) -->
+  <header class="report-hero-header">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <a class="btn-back-arrow" href="{% url 'operaciones:daily_reports_hub' pozo.pk %}" title="Volver al Hub de Fluidos" style="margin-right:0; padding:4px 8px; font-size:12px;">&larr;</a>
+      <div>
+        <div class="breadcrumb" style="margin-bottom: 2px; font-size:10.5px;">
+          <a href="{% url 'operaciones:pozos_list' %}" style="color:var(--color-accent);text-decoration:none;">Pozos</a> &rsaquo;
+          <a href="{% url 'operaciones:pozo_main' pozo.pk %}" style="color:var(--color-accent);text-decoration:none;">{{ pozo.nombre }}</a> &rsaquo;
+          <a href="{% url 'operaciones:daily_reports_hub' pozo.pk %}" style="color:var(--color-accent);text-decoration:none;">Fluidos de Perforación y Equipos</a> &rsaquo;
+          Reporte {{ reporte.fecha|date:"d/m/Y" }}
+        </div>
+        <h1 class="report-hero-title">
+          <span>Reporte Diario &ndash; {{ reporte.fecha|date:"d/m/Y" }}</span>
+          <span style="font-size:12px; font-weight:600; color:#64748b;">(Pozo: {{ pozo.nombre }} &bull; {{ pozo.operador|default:"M-I SWACO" }})</span>
+        </h1>
+      </div>
+    </div>
+    <div class="report-hero-chips">
+      <span class="report-chip chip-accent">{% if reporte.tipo_lodo == 'WBM' %}Base Agua (WBM){% elif reporte.tipo_lodo == 'WBM_CACL2' %}Base Agua (CaCl2){% elif reporte.tipo_lodo == 'OBM' %}Base Aceite (OBM){% elif reporte.tipo_lodo == 'SBM' %}Base Sintética (SBM){% else %}{{ reporte.get_tipo_lodo_display }}{% endif %}</span>
+      <span class="report-chip">{% if pozo.sistema_unidades == 'STANDARD_OILFIELD' %}Estándar Petrolero (Oilfield){% else %}{{ pozo.get_sistema_unidades_display }}{% endif %}</span>
+      <span class="report-chip chip-primary">Reporte #{{ reporte.numero_reporte }}</span>
+    </div>
+  </header>
+
+  <!-- 8 TABS (1 SOLA FILA HORIZONTAL COMPACTA) -->
+  <div class="modern-tabs-card">
+    <div class="modern-tabs-grid">
+      <div class="onetrax-tab tab-general is-active" onclick="switchTab(1)" title="Pestaña 1: General">
+        <span class="tab-dot"></span>
+        <span>1- General</span>
+      </div>
+      <div class="onetrax-tab tab-pumps" onclick="switchTab(2)" title="Pestaña 2: Bombas y Barrenas">
+        <span class="tab-dot"></span>
+        <span>2- Bombas/Barrenas</span>
+      </div>
+      <div class="onetrax-tab tab-mudprops" onclick="switchTab(3)" title="Pestaña 3: Propiedades de Lodo">
+        <span class="tab-dot"></span>
+        <span>3- Prop. Lodo</span>
+      </div>
+      <div class="onetrax-tab tab-geometry" onclick="switchTab(4)" title="Pestaña 4: Geometría del Pozo">
+        <span class="tab-dot"></span>
+        <span>4- Geom. Pozo</span>
+      </div>
+      <div class="onetrax-tab tab-comments" onclick="switchTab(5)" title="Pestaña 5: Comentarios Diarios">
+        <span class="tab-dot"></span>
+        <span>5- Comentarios</span>
+      </div>
+      <div class="onetrax-tab tab-solids" onclick="switchTab(6)" title="Pestaña 6: Control de Sólidos">
+        <span class="tab-dot"></span>
+        <span>6- Control Sólidos</span>
+      </div>
+      <div class="onetrax-tab tab-time" onclick="switchTab(7)" title="Pestaña 7: Distribución de Tiempo">
+        <span class="tab-dot"></span>
+        <span>7- Dist. Tiempo</span>
+      </div>
+      <div class="onetrax-tab tab-inv" onclick="switchTab(8)" title="Pestaña 8: Inventario / Hidráulica / Conc.">
+        <span class="tab-dot"></span>
+        <span>8- Inv/Hid/Conc</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1 CONTENT: GENERAL (ALTA DENSIDAD) -->
+  <div id="tabContent-general">
+
+    <!-- Section 1: Parámetros de Operación -->
+    <div class="report-section-title">
+      <span>&#9881;&#65039;</span>
+      <span>Parámetros de Operación &bull; Profundidad y Actividad</span>
+    </div>
+
+    <div class="report-card-modern">
+      <div class="report-grid-3cols">
+
+        <!-- Columna 1: Fechas y Actividad -->
+        <div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Fecha del Reporte">Fecha</label>
+            <input type="date" id="f_fecha" class="report-input" value="{{ reporte.fecha|date:'Y-m-d' }}">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Fecha de inicio de perforación (Heredada del pozo)">Fecha Spud</label>
+            <input type="text" class="report-input" value="{{ spud_date|date:'d/m/Y'|default:'-' }}" disabled title="Heredado de Well Header Information">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Número consecutivo de reporte">Reporte N°</label>
+            <input type="text" class="report-input" value="{{ reporte.numero_reporte }}" disabled style="font-weight:800; color:#0f172a;">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Actividad actual de perforación">Actividad</label>
+            <input type="text" id="f_actividad_actual" class="report-input" value="{{ reporte.actividad_actual }}" placeholder="Actividad de perforación...">
+          </div>
+        </div>
+
+        <!-- Columna 2: Profundidades -->
+        <div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Profundidad actual medida en pies">Profundidad (ft)</label>
+            <input type="number" step="any" id="f_profundidad_actual" class="report-input" value="{{ reporte.profundidad_actual }}">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Profundidad vertical verdadera en pies">TVD (ft)</label>
+            <input type="number" step="any" id="f_profundidad_tvd" class="report-input" value="{{ reporte.profundidad_tvd }}">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Profundidad de la mecha (Disparador de cálculos)">Prof. Barrena (ft)</label>
+            <input type="number" step="any" id="f_bit_depth" class="report-input" value="{{ reporte.bit_depth }}">
+          </div>
+        </div>
+
+        <!-- Columna 3: Fluido, Litología y Botones Setup -->
+        <div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Tipo o nombre comercial del fluido">Tipo de Fluido</label>
+            <input type="text" id="f_tipo_fluido_display" class="report-input" value="{{ reporte.tipo_fluido_display }}" placeholder="Ej. VersaClean...">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Formación o litología actual">Litología</label>
+            <input type="text" id="f_litologia" list="datalist-formaciones" class="report-input" value="{{ reporte.litologia }}" placeholder="Litología o Formación...">
+            <datalist id="datalist-formaciones">
+              {% for ft in formation_tops %}
+                <option value="{{ ft.formation_top }} - {{ ft.lithology }} ({{ ft.porcentaje_arena|unlocalize }}% Sand)">MD: {{ ft.depth_ft|unlocalize }} ft</option>
+              {% endfor %}
+            </datalist>
+          </div>
+          <div style="display:flex; gap:6px; justify-content:flex-end; margin-top:3px;">
+            <button type="button" class="btn-modern-secondary btn-mini-action" onclick="abrirLithologyModal()" title="Configuración de Litología y Topes de Formación (Lithology Setup)" style="flex:1;">
+              <span>&#9881;&#65039;</span>
+              <span>Configuración de Litología</span>
+            </button>
+            <button type="button" class="btn-modern-secondary btn-mini-action" onclick="abrirWellSurveyModal()" title="Trayectoria Direccional y Cálculo de TVD (Well Survey)" style="flex:1;">
+              <span>&#128506;&#65039;</span>
+              <span>Registro Direccional (Survey)</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Section 2: Personal y Contactos -->
+    <div class="report-section-title">
+      <span>&#128100;</span>
+      <span>Personal de Guardia &bull; Representantes y Contactos</span>
+    </div>
+
+    <div class="report-card-modern">
+      <!-- Fila superior: Representantes Operador y Contratista -->
+      <div class="report-grid-2cols" style="margin-bottom:4px;">
+        <div class="report-field-row">
+          <label class="report-field-label" title="Representante de la Operadora">Rep. Operador</label>
+          <input type="text" id="f_operador_representante" class="report-input" value="{{ reporte.operador_representante }}" placeholder="Nombre del representante...">
+        </div>
+        <div class="report-field-row">
+          <label class="report-field-label" title="Representante del Contratista de Perforación">Rep. Contratista</label>
+          <input type="text" id="f_contratista_representante" class="report-input" value="{{ reporte.contratista_representante }}" placeholder="Representante contratista...">
+        </div>
+      </div>
+
+      <!-- Fila inferior: M-I Reps & Telefonos a la izquierda, Rig phones & Rig Box a la derecha -->
+      <div class="report-grid-contacts">
+        <!-- Izquierda: Representantes M-I y Teléfonos -->
+        <div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Ingeniero Principal de Fluidos M-I SWACO">Rep. M-I SWACO 1</label>
+            <input type="text" id="f_mi_representante_1" class="report-input" value="{{ reporte.mi_representante_1 }}" placeholder="Ingeniero principal...">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Ingeniero de Soporte / Guardia M-I SWACO">Rep. M-I SWACO 2</label>
+            <input type="text" id="f_mi_representante_2" class="report-input" value="{{ reporte.mi_representante_2 }}" placeholder="Ingeniero soporte...">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Teléfonos generales">Teléfonos</label>
+            <input type="text" id="f_telefonos" class="report-input" value="{{ reporte.telefonos }}" placeholder="Teléfonos generales...">
+          </div>
+        </div>
+
+        <!-- Derecha: Teléfonos Específicos & Tarjeta del Taladro -->
+        <div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Teléfono en cabina / taladro">Teléfono Taladro</label>
+            <input type="text" id="f_telefono_taladro" class="report-input" value="{{ reporte.telefono_taladro }}" placeholder="Teléfono cabina...">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Teléfono del almacén base">Teléfono Almacén</label>
+            <input type="text" id="f_telefono_almacen" class="report-input" value="{{ reporte.telefono_almacen }}" placeholder="Teléfono almacén...">
+          </div>
+
+          <!-- Compact Modern Rig Info Strip -->
+          <div class="modern-rig-box">
+            <div class="mrb-left">
+              <span style="font-size:14px; color:#f26419;">&#9874;</span>
+              <div>
+                <div style="font-size:11px; font-weight:800; color:#fff; line-height:1.2;">{{ pozo.nombre }}</div>
+                <div style="font-size:9.5px; color:#94a3b8;">Taladro &bull; {{ pozo.operador|default:"M-I SWACO" }}</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:5px;">
+              <span class="mrb-status-badge"><span class="mrb-status-dot"></span> OPERATIVO</span>
+              <span class="report-chip" style="background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.12); color:#e2e8f0; font-size:9.5px; padding:1px 5px;">{% if reporte.tipo_lodo == 'WBM' %}Base Agua (WBM){% elif reporte.tipo_lodo == 'WBM_CACL2' %}Base Agua (CaCl2){% elif reporte.tipo_lodo == 'OBM' %}Base Aceite (OBM){% elif reporte.tipo_lodo == 'SBM' %}Base Sintética (SBM){% else %}{{ reporte.get_tipo_lodo_display }}{% endif %}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Section 3: Resumen de Costos Diarios y Acumulados (ONE-TRAX Tab 1) -->
+    <div class="report-section-title">
+      <span>&#128176;</span>
+      <span>Resumen de Costos Diarios y Acumulados ({{ pozo.moneda_simbolo|default:"USD" }})</span>
+    </div>
+
+    <div class="cost-card-modern">
+      <div class="cost-card-header">
+        <h3 class="cost-card-title">&#128202; Balance Económico de Fluidos y Equipos</h3>
+        <span class="report-chip chip-accent">Moneda: {{ pozo.moneda_simbolo|default:"USD" }}</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="modern-cost-table">
+          <thead>
+            <tr>
+              <th>Concepto</th>
+              <th>Químicos / Personal DF</th>
+              <th>Ingeniero de Fluidos</th>
+              <th>Total Perforación</th>
+              <th>Equipos / Mallas</th>
+              <th>Otros Costos (DWM/CF)</th>
+              <th class="cost-total-head">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="cost-label-cell">Costo Diario</td>
+              <td id="cost_df_chem">0.00</td>
+              <td id="cost_ife_sc">0.00</td>
+              <td id="cost_drilling_total">0.00</td>
+              <td id="cost_df_equip">0.00</td>
+              <td id="cost_other">0.00</td>
+              <td class="cost-total-cell" id="cost_daily_total">0.00</td>
+            </tr>
+            <tr>
+              <td class="cost-label-cell">Costo Acumulado</td>
+              <td id="cum_df_chem">0.00</td>
+              <td id="cum_ife_sc">0.00</td>
+              <td id="cum_drilling_total">0.00</td>
+              <td id="cum_df_equip">0.00</td>
+              <td id="cum_other">0.00</td>
+              <td class="cost-total-cell" id="cum_daily_total">0.00</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 2: PUMPS / BITS (BOMBAS, MECHA, BOQUILLAS Y PRESIONES) -->
+  <!-- ========================================================================= -->
+  <div id="tabContent-pumps-bits" class="pumps-bits-container" style="display:none;">
+
+    <!-- Card 1: Pump Data -->
+    <div class="report-section-title">
+      <span>&#9881;&#65039;</span>
+      <span>Datos de Bombas &bull; Bombas de Lodo del Taladro</span>
+    </div>
+
+    <div class="report-card-modern">
+      <div class="pumps-table-wrapper">
+        <table class="pumps-table" id="tabla-bombas">
+          <thead>
+            <tr>
+              <th style="width:35px;" class="th-left">#</th>
+              <th class="th-left" style="width:180px;">Marca y Modelo</th>
+              <th>Diám. Camisa (in)</th>
+              <th>Long. Carrera (in)</th>
+              <th>Diám. Vástago Dúplex (in)</th>
+              <th>Eficiencia %</th>
+              <th style="color:#c2410c; background:#fff7ed;">Velocidad (spm)</th>
+              <th class="th-center" style="width:110px;">En Reporte</th>
+              <th class="th-center" style="width:85px;">Bomba Riser</th>
+              <th>Desplazamiento (bbl/stk)</th>
+              <th style="font-weight:800; color:#0f172a;">Caudal (gpm)</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-bombas">
+            {% for b in bombas %}
+            <tr id="row-bomba-{{ b.numero_bomba }}" data-bomba-num="{{ b.numero_bomba }}">
+              <td style="font-weight:800; color:#64748b;">{{ b.numero_bomba }}</td>
+              <td>
+                <input type="text" list="lista-modelos-bombas" class="pump-input p-text" id="b_model_{{ b.numero_bomba }}" value="{{ b.make_model }}" placeholder="Ej. EMSCO F-1000..." onchange="calcularHidraulicaBomba(this)">
+              </td>
+              <td>
+                <input type="number" step="any" class="pump-input" id="b_liner_{{ b.numero_bomba }}" value="{{ b.liner_diameter|unlocalize }}" oninput="calcularHidraulicaBomba(this)">
+              </td>
+              <td>
+                <input type="number" step="any" class="pump-input" id="b_stroke_{{ b.numero_bomba }}" value="{{ b.stroke_length|unlocalize }}" oninput="calcularHidraulicaBomba(this)">
+              </td>
+              <td>
+                <input type="number" step="any" class="pump-input" id="b_rod_{{ b.numero_bomba }}" value="{{ b.rod_diam_duplex|default_if_none:'0.0'|unlocalize }}" placeholder="Dúplex..." oninput="calcularHidraulicaBomba(this)">
+              </td>
+              <td>
+                <input type="number" step="any" min="0" max="100" class="pump-input" id="b_eff_{{ b.numero_bomba }}" value="{{ b.eficiencia_pct|unlocalize }}" oninput="calcularHidraulicaBomba(this)">
+              </td>
+              <td>
+                <input type="number" step="any" class="pump-input p-rate" id="b_spm_{{ b.numero_bomba }}" value="{{ b.pump_rate_spm|unlocalize }}" placeholder="0" oninput="calcularHidraulicaBomba(this)">
+              </td>
+              <td style="text-align:center;">
+                <input type="checkbox" class="pump-chk" id="b_onrep_{{ b.numero_bomba }}" {% if b.pump_on_report %}checked{% endif %} onchange="calcularHidraulicaBomba(this)">
+              </td>
+              <td style="text-align:center;">
+                <input type="checkbox" class="pump-chk" id="b_riser_{{ b.numero_bomba }}" {% if b.riser_pump %}checked{% endif %}>
+              </td>
+              <td class="pump-calc-cell" id="b_out_{{ b.numero_bomba }}">
+                {{ b.desplazamiento_bbl_stk|floatformat:5 }}
+              </td>
+              <td class="pump-calc-cell" id="b_flow_{{ b.numero_bomba }}" style="font-weight:800; color:#c2410c;">
+                {{ b.caudal_gpm|floatformat:1 }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <datalist id="lista-modelos-bombas">
+        <option value="EMSCO F-1000"></option>
+        <option value="EMSCO FB-1300"></option>
+        <option value="EMSCO FB-1600"></option>
+        <option value="National 8-P-80"></option>
+        <option value="National 9-P-100"></option>
+        <option value="National 10-P-130"></option>
+        <option value="National 12-P-160"></option>
+        <option value="National 14-P-220"></option>
+        <option value="Gardner Denver PZ-9"></option>
+        <option value="Gardner Denver PZ-10"></option>
+        <option value="Gardner Denver PZ-11"></option>
+        <option value="Ideco T-1300"></option>
+        <option value="Ideco T-1600"></option>
+        <option value="Wirth TPK-1600"></option>
+        <option value="Weatherford MP-16"></option>
+      </datalist>
+    </div>
+
+    <!-- Bloque Inferior Dividido: Nozzles / ECD (Izquierda) & Bit Data / Pressures (Derecha) -->
+    <div class="pumps-bits-split-grid">
+
+      <!-- Columna Izquierda: Nozzles & Extra ECD Input -->
+      <div>
+
+        <!-- Nozzles Box -->
+        <div class="report-section-title" style="margin-top:0;">
+          <span>&#129513;</span>
+          <span>Boquillas de la Barrena (Nozzles)</span>
+        </div>
+
+        <div class="report-card-modern" style="margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:11px; color:#64748b;">Tamaño en 32avos de pulgada</span>
+            <button type="button" class="btn-modern-secondary btn-mini-action" onclick="agregarFilaBoquilla()">
+              <span>&#10133;</span>
+              <span>Añadir</span>
+            </button>
+          </div>
+
+          <table class="nozzles-table">
+            <thead>
+              <tr>
+                <th>Tamaño (32avos)</th>
+                <th>Cantidad</th>
+                <th style="width:35px;">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-boquillas">
+              {% for noz in boquillas %}
+              <tr data-noz-id="{{ noz.id }}">
+                <td>
+                  <input type="number" step="1" min="7" max="32" class="pump-input nz-size" value="{{ noz.size_32nds }}" oninput="calcularTFA()">
+                </td>
+                <td>
+                  <input type="number" step="1" min="1" max="12" class="pump-input nz-qty" value="{{ noz.cantidad }}" oninput="calcularTFA()">
+                </td>
+                <td style="text-align:center;">
+                  <button type="button" class="btn-del-row" onclick="eliminarFilaBoquilla(this)" title="Eliminar boquilla">&times;</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <div class="tfa-readout-badge">
+            <strong>Área de Flujo Total (TFA):</strong>
+            <span class="tfa-value" id="tfa-display">{{ tfa_calculado|floatformat:2 }} sq in</span>
+          </div>
+        </div>
+
+        <!-- Extra ECD Input Box -->
+        <div class="report-section-title">
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <div style="display:flex; align-items:center; gap:5px;">
+              <span>&#128200;</span>
+              <span>Datos Extra de ECD</span>
+            </div>
+            <button type="button" class="btn-modern-secondary btn-mini-action" onclick="abrirSurfaceEquipmentModal()" title="Ver tabla oficial de especificaciones de equipos de superficie (M-I SWACO)">
+              <span>&#128220;</span>
+              <span>Especificaciones</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="report-card-modern">
+          <div class="report-field-row">
+            <label class="report-field-label" title="Código de equipo de superficie para estimar pérdidas de fricción (1-5)">Código de Superficie</label>
+            <select id="f_surface_code" class="report-input" onchange="cambiarSurfaceCode()">
+              <option value="1" {% if bit_data.surface_code == '1' or not bit_data.surface_code %}selected{% endif %}>1 - Manual (Ingreso Manual de Presión)</option>
+              <option value="2" {% if bit_data.surface_code == '2' %}selected{% endif %}>2 - 40'x3&quot; Stdpipe / 45'x2&quot; Hose / 4'x2&quot; Swivel</option>
+              <option value="3" {% if bit_data.surface_code == '3' %}selected{% endif %}>3 - 45'x3.5&quot; Stdpipe / 55'x2.5&quot; Hose / 5'x2.25&quot; Swivel</option>
+              <option value="4" {% if bit_data.surface_code == '4' %}selected{% endif %}>4 - 45'x4&quot; Stdpipe / 55'x3&quot; Hose / 5'x2.25&quot; Swivel</option>
+              <option value="5" {% if bit_data.surface_code == '5' %}selected{% endif %}>5 - 45'x4&quot; Stdpipe / 55'x3&quot; Hose / 6'x3&quot; Swivel</option>
+            </select>
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Surface Pressure: Presión perdida en el equipo de superficie (ingreso manual si Surface Code = 1)">Presión en Superficie</label>
+            <input type="number" step="any" id="f_surface_pressure" class="report-input" value="{{ bit_data.surface_pressure|unlocalize }}" placeholder="psi...">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Ref. Flow Rate: Caudal de referencia al cual fueron medidas las caídas de presión en el MWD y Motor de fondo (gpm)">Caudal de Referencia</label>
+            <input type="number" step="any" id="f_ref_flow_rate" class="report-input" value="{{ bit_data.ref_flow_rate|unlocalize }}" placeholder="gal/min...">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="On/Off Bottom: Caída de presión adicional observada en el standpipe cuando la sarta toca fondo y perfora (psi)">Presión On/Off Fondo</label>
+            <input type="number" step="any" id="f_on_off_bottom" class="report-input" value="{{ bit_data.on_off_bottom_pressure|unlocalize }}" placeholder="psi...">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Columna Derecha: Bit Data, Parámetros Operacionales & Pressures -->
+      <div>
+
+        <div class="report-section-title" style="margin-top:0;">
+          <span>&#9935;&#65039;</span>
+          <span>Datos de Barrena y Perforación</span>
+        </div>
+
+        <div class="report-card-modern">
+
+          <!-- Fila 1: Bit Description + Bit Information Button -->
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:3px;">
+            <div class="report-field-row" style="flex:1; margin-bottom:0;">
+              <label class="report-field-label" title="Descripción o modelo comercial de la mecha">Descripción de Barrena</label>
+              <input type="text" id="f_bit_description" class="report-input" value="{{ bit_data.bit_description }}" placeholder="Ej. Hycalog X-175...">
+            </div>
+            <button type="button" class="btn-modern-secondary btn-mini-action" onclick="abrirBitInfoModal()" title="Ver y registrar especificaciones detalladas de la barrena (IADC, Serial, Fabricante)">
+              <span>&#128196;</span>
+              <span>Información de la Barrena</span>
+            </button>
+          </div>
+
+          <!-- Fila 2 & 3: Bit Number, Bit Size, % Washout, Washout Hole Size -->
+          <div class="report-grid-2cols" style="margin-bottom:6px;">
+            <div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Número consecutivo o corrida de la mecha (Bit Number)">Número de Barrena</label>
+                <input type="text" id="f_bit_number" class="report-input" value="{{ bit_data.bit_number }}">
+              </div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="% Washout: % increase in volume of the open-hole section (NOT the caliper diameter figure from wireline log)">% de Lavado (Washout)</label>
+                <input type="number" step="any" min="0" max="100" id="f_washout_pct" class="report-input" value="{{ bit_data.washout_pct|unlocalize }}" oninput="calcularWashoutHoleSize()" title="% Washout: % incremento en volumen del hoyo abierto">
+              </div>
+            </div>
+            <div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Bit Size / Hole Diameter: Determina la geometría del hoyo abierto (junto con Depth), afectando Downhole Vol, Total Vol y Ripios generados">Tamaño Barrena / Hoyo (in)</label>
+                <input type="number" step="any" id="f_bit_size" class="report-input" value="{{ bit_data.bit_size|unlocalize }}" oninput="calcularWashoutHoleSize()" title="Diámetro nominal de la barrena / hoyo en pulgadas">
+              </div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Washout Hole Size: Diámetro efectivo del hoyo = Bit Size * sqrt(1 + %Washout / 100)">Hoyo con Lavado (in)</label>
+                <input type="number" step="any" id="f_washout_hole_size" class="report-input" value="{{ bit_data.washout_hole_size|unlocalize }}" readonly style="background:#f8fafc; font-weight:700; color:#0f172a;" title="Diámetro ensanchado calculado en pulgadas">
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloque Inferior: 5 Parámetros Mecánicos a la Izquierda & 5 Presiones en Caja Naranja a la Derecha -->
+          <div class="report-grid-2cols" style="align-items:stretch; border-top:1px solid #f1f5f9; padding-top:6px;">
+
+            <!-- Izquierda: Parámetros Mecánicos (5 filas) -->
+            <div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Revoluciones por minuto de la mesa rotaria o top drive">RPM de Mesa Rotaria</label>
+                <input type="number" step="any" id="f_rotary_rpm" class="report-input" value="{{ bit_data.rotary_rpm|unlocalize }}" placeholder="rpm...">
+              </div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Horas acumuladas rotando en el fondo con esta barrena">Horas de Rotación</label>
+                <input type="number" step="any" id="f_rotating_hours" class="report-input" value="{{ bit_data.rotating_hours|unlocalize }}" placeholder="horas...">
+              </div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Peso aplicado sobre la mecha en libras">Peso sobre Barrena (WOB)</label>
+                <input type="number" step="any" id="f_weight_on_bit" class="report-input" value="{{ bit_data.weight_on_bit|unlocalize }}" placeholder="lbs (ej. 24000)...">
+              </div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Tasa de penetración en pies por hora">ROP / Tasa Penetración (ft/hr)</label>
+                <input type="number" step="any" id="f_rop" class="report-input" value="{{ bit_data.rop|unlocalize }}" placeholder="ft/hr...">
+              </div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Flujo de bomba de riser / booster en gal/min">Caudal Bomba Riser (gpm)</label>
+                <input type="number" step="any" id="f_riser_pump_flow_rate" class="report-input" value="{{ bit_data.riser_pump_flow_rate|unlocalize }}" placeholder="gpm...">
+              </div>
+            </div>
+
+            <!-- Derecha: Presiones e Hidráulica (Caja Naranja ONE-TRAX - 5 filas) -->
+            <div class="pressures-highlight-box">
+              <div class="pressures-highlight-header">
+                <span>&#128167; Presiones e Hidráulica</span>
+                <button type="button" class="btn-modern-secondary btn-mini-action" onclick="sincronizarCaudalBombas()" title="Actualiza el caudal con la sumatoria de las bombas activas" style="padding:1px 6px; font-size:9.5px;">
+                  <span>&#128260;</span>
+                  <span>Copiar Caudal</span>
+                </button>
+              </div>
+
+              <div class="report-field-row">
+                <label class="report-field-label" style="color:#c2410c;" title="Caudal total de bombeo en galones por minuto (Editable o calculado)">Caudal Total de Bombas</label>
+                <input type="number" step="any" id="f_pump_flow_rate" class="report-input" style="border-color:#fb923c; font-weight:800; color:#c2410c;" value="{{ bit_data.pump_flow_rate|unlocalize }}" placeholder="gpm...">
+              </div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Presión de bombeo en el standpipe en psi">Presión de Bombas (psi)</label>
+                <input type="number" step="any" id="f_pump_pressure" class="report-input" value="{{ bit_data.pump_pressure|unlocalize }}" placeholder="psi (ej. 3000)...">
+              </div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Caída de presión a través de la herramienta direccional MWD (psi)">Caída Pres. MWD (psi)</label>
+                <input type="number" step="any" id="f_dp_mwd" class="report-input" value="{{ bit_data.dp_mwd|unlocalize }}" placeholder="psi...">
+              </div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Caída de presión a través del motor de fondo (psi)">Caída Pres. Motor (psi)</label>
+                <input type="number" step="any" id="f_dp_motor" class="report-input" value="{{ bit_data.dp_motor|unlocalize }}" placeholder="psi...">
+              </div>
+              <div class="report-field-row">
+                <label class="report-field-label" title="Revoluciones por minuto generadas por el motor de fondo">RPM Motor de Fondo</label>
+                <input type="number" step="any" id="f_motor_rpm" class="report-input" value="{{ bit_data.motor_rpm|unlocalize }}" placeholder="rpm...">
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 3: MUD PROPERTIES (ONE-TRAX REVERSE CHRONOLOGICAL MATRIX) -->
+  <!-- ========================================================================= -->
+  <div id="tabContent-mud-properties" class="tab-content-mud" style="display:none;">
+    
+    <!-- Barra Superior de Herramientas de la Matriz -->
+    <div class="mud-matrix-toolbar">
+      <div class="mud-matrix-title-wrap">
+        <span class="mud-badge-pill">Tab #3</span>
+        <span class="mud-title-text">Matriz de Propiedades del Lodo (Orden Cronol&oacute;gico Inverso)</span>
+        <span class="mud-subtitle-text">&bull; #1 - Principal es el &uacute;ltimo chequeo realizado en el d&iacute;a</span>
+      </div>
+      <div class="report-header-actions" style="display:flex; align-items:center; gap:10px;">
+        <!-- Selector de Separación: WBM vs OBM/SBF -->
+        <div class="mud-mode-switcher" id="mud_mode_pills_container" title="Separación de sistema de lodo: Base Agua (WBM) vs Base Aceite/Sintético (OBM/SBF)">
+          <button type="button" class="mud-mode-pill {% if reporte.tipo_lodo not in 'OBM,SBM' %}active pill-wbm{% endif %}" id="pill_wbm" onclick="switchMudMode('WBM')">
+            <i class="fas fa-tint" style="color:#0284c7;"></i> Base Agua (WBM)
+          </button>
+          <button type="button" class="mud-mode-pill {% if reporte.tipo_lodo in 'OBM,SBM' %}active pill-obm{% endif %}" id="pill_obm" onclick="switchMudMode('OBM')">
+            <i class="fas fa-oil-can" style="color:#d97706;"></i> Base Aceite / Sint&eacute;tico (OBM/SBF)
+          </button>
+        </div>
+        <button type="button" class="btn-modern-primary btn-compact" onclick="guardarMudProperties()">
+          <i class="fas fa-save"></i> Guardar Propiedades
+        </button>
+      </div>
+    </div>
+
+    <!-- Contenedor con Scroll de la Matriz de Propiedades -->
+    <div class="mud-table-wrapper">
+      <table class="mud-matrix-table" id="tabla-mud-properties">
+        <thead>
+          <tr>
+            <th class="col-prop-name">Propiedades del Lodo</th>
+            <th class="col-prop-unit">Unidad</th>
+            {% for chk in mud_checks %}
+              <th class="{% if chk.is_primary %}col-check-primary{% else %}col-check-hdr{% endif %}">
+                {% if chk.is_primary %}
+                  <span class="primary-badge-star">&#9733; Principal</span>
+                {% endif %}
+                #{{ chk.check_number }}{% if chk.is_primary %} - Principal{% endif %}
+              </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          <!-- SECCIÓN: SAMPLE INFO -->
+          <tr class="mud-section-divider-row">
+            <td colspan="6">Informaci&oacute;n de Muestra y Estado del Pozo</td>
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Punto de Muestra</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="text" class="mud-cell-input text-left" id="chk_{{ chk.check_number }}_sample_from" value="{{ chk.sample_from|default:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Hora de Toma</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="text" class="mud-cell-input text-left" id="chk_{{ chk.check_number }}_time_taken" value="{{ chk.time_taken|default:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Temp. L&iacute;nea de Flujo</td>
+            <td class="cell-unit">&deg;F</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_flowline_temp" value="{{ chk.flowline_temp|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Profundidad</td>
+            <td class="cell-unit">ft</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_depth" value="{{ chk.depth|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">TVD</td>
+            <td class="cell-unit">ft</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_tvd" value="{{ chk.tvd|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+
+          <!-- SECCIÓN: DENSITY & VISCOSITY -->
+          <tr class="mud-section-divider-row">
+            <td colspan="6">Densidad y Viscosidad Embudo Marsh</td>
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Densidad del Lodo</td>
+            <td class="cell-unit">lb/gal</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mud_weight" value="{{ chk.mud_weight|default_if_none:'' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Temp. Densidad</td>
+            <td class="cell-unit">&deg;F</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mw_temp" value="{{ chk.mw_temp|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Viscosidad Embudo</td>
+            <td class="cell-unit">s/qt</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_funnel_viscosity" value="{{ chk.funnel_viscosity|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+
+          <!-- SECCIÓN: RHEOLOGY -->
+          <tr class="mud-section-divider-row">
+            <td colspan="6">Reolog&iacute;a (Fann 35 / Viscos&iacute;metro)</td>
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Temp. de Reolog&iacute;a</td>
+            <td class="cell-unit">&deg;F</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_rheology_temp" value="{{ chk.rheology_temp|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">R600</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r600" value="{{ chk.r600|default_if_none:'' }}" oninput="recalcularReologia(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">R300</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r300" value="{{ chk.r300|default_if_none:'' }}" oninput="recalcularReologia(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">R200</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r200" value="{{ chk.r200|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">R100</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r100" value="{{ chk.r100|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">R6</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r6" value="{{ chk.r6|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">R3</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r3" value="{{ chk.r3|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">PV</td>
+            <td class="cell-unit">cP</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input input-calc" id="chk_{{ chk.check_number }}_pv" value="{{ chk.pv|default_if_none:'' }}" title="Autocalculado: R600 - R300">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">YP</td>
+            <td class="cell-unit">lb/100ft&sup2;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input input-calc" id="chk_{{ chk.check_number }}_yp" value="{{ chk.yp|default_if_none:'' }}" title="Autocalculado: R300 - PV">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Gel 10 seg</td>
+            <td class="cell-unit">lb/100ft&sup2;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_gel_10s" value="{{ chk.gel_10s|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Gel 10 min</td>
+            <td class="cell-unit">lb/100ft&sup2;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_gel_10m" value="{{ chk.gel_10m|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Gel 30 min</td>
+            <td class="cell-unit">lb/100ft&sup2;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_gel_30m" value="{{ chk.gel_30m|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+
+          <!-- SECCIÓN: FILTRATION & CAKE -->
+          <tr class="mud-section-divider-row">
+            <td colspan="6">Propiedades de Filtrado y Revoque</td>
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Filtrado API</td>
+            <td class="cell-unit">cc/30min</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_api_fluid_loss" value="{{ chk.api_fluid_loss|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Filtrado HPHT</td>
+            <td class="cell-unit">cc/30min</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_hthp_fluid_loss" value="{{ chk.hthp_fluid_loss|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Revoque API</td>
+            <td class="cell-unit">1/32&quot;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_cake_api" value="{{ chk.cake_api|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Revoque HPHT</td>
+            <td class="cell-unit">1/32&quot;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_cake_hthp" value="{{ chk.cake_hthp|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+
+          <!-- SECCIÓN: SOLIDS ANALYSIS (ENCABEZADO DINÁMICO WBM vs OBM/SBF) -->
+          <tr class="mud-section-divider-row">
+            <td colspan="6" id="hdr_solids_analysis_title">&#9878; {% if reporte.tipo_lodo in 'OBM,SBM' %}An&aacute;lisis de S&oacute;lidos en FLUIDO BASE ACEITE / SINT&Eacute;TICO (OBM/SBM){% else %}An&aacute;lisis de S&oacute;lidos en LODO BASE AGUA (WBM){% endif %}</td>
+          </tr>
+          <tr>
+            <td class="cell-prop-label" title="Densidad del fluido vertido en la celda de retorta a la temperatura indicada">Densidad Lodo Retorta</td>
+            <td class="cell-unit">lb/gal</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_retort_mud_weight" value="{{ chk.retort_mud_weight|default_if_none:'' }}" placeholder="{{ chk.mud_weight|default:'' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label" title="Temperatura del lodo en la retorta (°F, por defecto 75°F)">Temp. Lodo Retorta</td>
+            <td class="cell-unit">&deg;F</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_retort_mud_temp" value="{{ chk.retort_mud_temp|default:'75' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-wbm-only" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Iones potasio provenientes de KCl (mg/l)">K+ (De KCl)</td>
+            <td class="cell-unit">mg/l</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_k_from_kcl" value="{{ chk.k_from_kcl|default:'0' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label" title="Gravedad específica del material densificante (Barita=4.20)">GE Material Densificante</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="0.01" class="mud-cell-input" id="chk_{{ chk.check_number }}_wt_additive_sg" value="{{ chk.wt_additive_sg|default:'4.20' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label" title="Gravedad específica del fluido base / aceite (por defecto 0.70 - 0.84)"><span id="label_base_oil_sg">{% if reporte.tipo_lodo in 'OBM,SBM' %}GE Fluido Base{% else %}GE Aceite Base{% endif %}</span></td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="0.01" class="mud-cell-input" id="chk_{{ chk.check_number }}_oil_sg" value="{{ chk.oil_sg|default:'0.70' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-wbm-only" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Fracción de bentonita: relación de actividad entre arcilla de formación vs bentonita comercial (estándar 0.1111)">Fracci&oacute;n Bentonita</td>
+            <td class="cell-unit">about 0.1111</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="0.0001" class="mud-cell-input" id="chk_{{ chk.check_number }}_frac_bent" value="{{ chk.frac_bent|default:'0.1111' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-wbm-only" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Concentración de químicos en ppb sin incluir densificante, bentonita, sal ni líquidos. Nota: si se deja en 0, el % Drill Solids será mayor al real.">Concentraci&oacute;n Qu&iacute;micos</td>
+            <td class="cell-unit">lb/bbl</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_chem_conc" value="{{ chk.chem_conc|default:'0' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label" title="Gravedad específica de los sólidos perforados de formación (estándar 2.60)">GE S&oacute;lidos Perforados</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="0.01" class="mud-cell-input" id="chk_{{ chk.check_number }}_drill_solids_sg" value="{{ chk.drill_solids_sg|default:'2.60' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label" title="Porcentaje de sólidos totales obtenido de la retorta">S&oacute;lidos</td>
+            <td class="cell-unit">%Vol</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_solids_pct" value="{{ chk.solids_pct|default_if_none:'' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label" title="Porcentaje de aceite obtenido de la retorta">Aceite</td>
+            <td class="cell-unit">%Vol</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_oil_pct" value="{{ chk.oil_pct|default_if_none:'' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label" title="Porcentaje de agua obtenido de la retorta">Agua</td>
+            <td class="cell-unit">%Vol</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_water_pct" value="{{ chk.water_pct|default_if_none:'' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label" title="Porcentaje de arena por embudo">Arena</td>
+            <td class="cell-unit">%Vol</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_sand_pct" value="{{ chk.sand_pct|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+
+          <!-- RESULTADOS EN AMARILLO: SOLIDS ANALYSIS RESULTS (ONE-TRAX STANDARD) -->
+          <tr class="mud-section-divider-row mud-section-solids-yellow">
+            <td colspan="6">&#9888; Resultados de An&aacute;lisis de S&oacute;lidos (en amarillo &bull; Datos Calculados)</td>
+          </tr>
+
+          <!-- === WBM SOLIDS RESULTS ROWS (WATER BASED MUD) === -->
+          <tr class="mud-row-solids mud-row-wbm" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label">NaCl</td>
+            <td class="cell-unit">%</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_nacl_pct" value="{{ chk.nacl_pct|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-wbm" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label">NaCl</td>
+            <td class="cell-unit">lb/bbl</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_nacl_ppb" value="{{ chk.nacl_ppb|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-wbm" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label">KCl</td>
+            <td class="cell-unit">%</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_kcl_pct" value="{{ chk.kcl_pct|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-wbm" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label">KCl</td>
+            <td class="cell-unit">lb/bbl</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_kcl_ppb" value="{{ chk.kcl_ppb|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-wbm" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Low Gravity Solids: Sólidos de baja gravedad">LGS</td>
+            <td class="cell-unit">%</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_lgs_pct" value="{{ chk.lgs_pct|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-wbm" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Low Gravity Solids en lb/bbl (ppb)">LGS</td>
+            <td class="cell-unit">lb/bbl</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_lgs_ppb" value="{{ chk.lgs_ppb|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-wbm" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Bentonita comercial calculada a partir del ensayo MBT y corregida por Frac Bent">Bentonita</td>
+            <td class="cell-unit">%</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_bentonite_pct" value="{{ chk.bentonite_pct|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-wbm" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Bentonita comercial en lb/bbl (ppb)">Bentonita</td>
+            <td class="cell-unit">lb/bbl</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_bentonite_ppb" value="{{ chk.bentonite_ppb|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-wbm" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Sólidos perforados netos: LGS - Bentonita - Chem Conc">S&oacute;lidos Perforados</td>
+            <td class="cell-unit">%</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_drill_solids_pct" value="{{ chk.drill_solids_pct|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-wbm" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Sólidos perforados netos en lb/bbl (ppb)">S&oacute;lidos Perforados</td>
+            <td class="cell-unit">lb/bbl</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_drill_solids_ppb" value="{{ chk.drill_solids_ppb|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-wbm" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="High Gravity Solids: Material densificante (Barita)">HGS</td>
+            <td class="cell-unit">%</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_hgs_pct" value="{{ chk.hgs_pct|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+
+          <!-- === OBM / SBF SOLIDS RESULTS ROWS (Slide media_1790024142384.png) === -->
+          <tr class="mud-row-solids mud-row-obm" {% if reporte.tipo_lodo not in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Concentración en peso de la sal en la salmuera interna (%wt)">Sal</td>
+            <td class="cell-unit">%wt</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_salt_pct_wt" value="{{ chk.salt_pct_wt|default_if_none:'' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-obm" {% if reporte.tipo_lodo not in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Concentración de sal seca en el lodo (lb/bbl)">Sal</td>
+            <td class="cell-unit">lb/bbl</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_salt_ppb" value="{{ chk.salt_ppb|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-obm" {% if reporte.tipo_lodo not in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Sólidos corregidos restando el volumen de sal seca precipitada en retorta (%Vol)">S&oacute;lidos Corregidos</td>
+            <td class="cell-unit">%Vol</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_adjusted_solids_pct" value="{{ chk.adjusted_solids_pct|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-obm" {% if reporte.tipo_lodo not in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Relación Aceite / Agua calculada de la retorta">Relaci&oacute;n Aceite/Agua (OWR)</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="text" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_oil_water_ratio" value="{{ chk.oil_water_ratio|default:'' }}" readonly style="text-align:center;">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-obm" {% if reporte.tipo_lodo not in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Gravedad específica promedio calculada de los sólidos suspendidos">GE Promedio S&oacute;lidos</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_avg_sg_solids" value="{{ chk.avg_sg_solids|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-obm" {% if reporte.tipo_lodo not in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Low Gravity Solids (%Vol)">LGS</td>
+            <td class="cell-unit">%</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_lgs_pct_obm" value="{{ chk.lgs_pct|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-obm" {% if reporte.tipo_lodo not in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="Low Gravity Solids en lb/bbl (ppb)">LGS</td>
+            <td class="cell-unit">lb/bbl</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_lgs_ppb_obm" value="{{ chk.lgs_ppb|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-obm" {% if reporte.tipo_lodo not in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="High Gravity Solids (%Vol)">HGS</td>
+            <td class="cell-unit">%</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_hgs_pct_obm" value="{{ chk.hgs_pct|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+          <tr class="mud-row-solids mud-row-obm" {% if reporte.tipo_lodo not in 'OBM,SBM' %}style="display:none;"{% endif %}>
+            <td class="cell-prop-label" title="High Gravity Solids en lb/bbl (ppb)">HGS</td>
+            <td class="cell-unit">lb/bbl</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input mud-cell-calc-yellow" id="chk_{{ chk.check_number }}_hgs_ppb" value="{{ chk.hgs_ppb|default_if_none:'' }}" readonly>
+              </td>
+            {% endfor %}
+          </tr>
+
+          <!-- SECCIÓN: CHEMICAL ANALYSIS -->
+          <tr class="mud-section-divider-row">
+            <td colspan="6">An&aacute;lisis Qu&iacute;mico y de Filtrado</td>
+          </tr>
+          <tr>
+            <td class="cell-prop-label">pH</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_ph" value="{{ chk.ph|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Temp. de pH</td>
+            <td class="cell-unit">&deg;F</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_ph_temp" value="{{ chk.ph_temp|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Pm</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_pm" value="{{ chk.pm|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Pf</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_pf" value="{{ chk.pf|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Mf</td>
+            <td class="cell-unit">&mdash;</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mf" value="{{ chk.mf|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Cloruros</td>
+            <td class="cell-unit">mg/L</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_chlorides" value="{{ chk.chlorides|default_if_none:'' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Dureza Total (Ca++)</td>
+            <td class="cell-unit">mg/L</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_calcium_hardness" value="{{ chk.calcium_hardness|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">MBT</td>
+            <td class="cell-unit">lb/bbl</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mbt" value="{{ chk.mbt|default_if_none:'' }}" oninput="recalcularSolidsAnalysis(this)">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Estabilidad El&eacute;ctrica</td>
+            <td class="cell-unit">Volts</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_electrical_stability" value="{{ chk.electrical_stability|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td class="cell-prop-label">Exceso de Cal</td>
+            <td class="cell-unit">lb/bbl</td>
+            {% for chk in mud_checks %}
+              <td class="{% if chk.is_primary %}cell-primary{% endif %}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_excess_lime" value="{{ chk.excess_lime|default_if_none:'' }}">
+              </td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Controles Inferiores de la Pestaña (Estilo ONE-TRAX) -->
+    <div class="mud-bottom-controls-bar">
+      <div class="mud-bottom-left">
+        <span>Ecuaciones de An&aacute;lisis de S&oacute;lidos:</span>
+        <span id="label_solids_eq" class="eq-badge-box">{{ mud_config.solids_equation|default:'M-I' }}</span>
+        <button type="button" class="btn-specs-compact" onclick="abrirSolidsSGModal()" title="Especificaciones de Gravedades Espec&iacute;ficas (s.g.)">
+          <i class="fas fa-sliders-h"></i> Especificaciones GE
+        </button>
+      </div>
+      <div class="mud-bottom-center">
+        <!-- Control WBM: Weighted / Unweighted -->
+        <div id="wbm_weighted_box" class="mud-wbm-weighted-box" {% if reporte.tipo_lodo in 'OBM,SBM' %}style="display:none;"{% endif %}>
+          <label class="mud-radio-label">
+            <input type="radio" name="mud_weighted_radio" value="weighted" {% if mud_config.is_weighted %}checked{% endif %} onchange="cambiarWeightedStatus(true)">
+            Densificado (Weighted)
+          </label>
+          <label class="mud-radio-label">
+            <input type="radio" name="mud_weighted_radio" value="unweighted" {% if not mud_config.is_weighted %}checked{% endif %} onchange="cambiarWeightedStatus(false)">
+            No Densificado (Unweighted)
+          </label>
+        </div>
+        <!-- Control OBM: Selector de Sal de Fase Interna (CaCl2 vs NaCl) -->
+        <div id="obm_salt_box" class="mud-salt-box-bordered" {% if reporte.tipo_lodo not in 'OBM,SBM' %}style="display:none;"{% endif %} title="Seleccione la sal de la fase interna aqu&iacute;...">
+          <label class="mud-radio-label">
+            <input type="radio" name="obm_salt_radio" value="CaCl2" {% if mud_config.obm_salt_type == 'CaCl2' or not mud_config.obm_salt_type %}checked{% endif %} onchange="cambiarSaltType('CaCl2')">
+            CaCl2
+          </label>
+          <label class="mud-radio-label">
+            <input type="radio" name="obm_salt_radio" value="NaCl" {% if mud_config.obm_salt_type == 'NaCl' %}checked{% endif %} onchange="cambiarSaltType('NaCl')">
+            NaCl
+          </label>
+        </div>
+      </div>
+      <div class="mud-bottom-right">
+        <button type="button" class="btn-onetrax-extra" onclick="abrirExtraPropertiesModal()" title="Abrir cat&aacute;logo de propiedades extendidas">
+          <i class="fas fa-list-ul"></i> Propiedades Extra
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Placeholder for Other Tabs (4 to 8) -->
+  <div id="tabContent-placeholder" class="report-card-modern" style="display:none; text-align:center; padding:60px 20px;">
+    <h3 id="placeholder-title" style="color:#0f172a; margin-bottom:12px; font-weight:800; font-size:18px;"></h3>
+    <p style="color:#64748b; font-size:13.5px; max-width:500px; margin:0 auto 24px auto;">
+      Esta pestaña se encuentra en fase de desarrollo según la hoja de ruta de ONE-TRAX para CHAPALA.
+    </p>
+    <button type="button" class="btn-modern-primary" onclick="switchTab(1)">&larr; Volver a 1- General</button>
+  </div>
+
+
+
+  <!-- BARRA DE ACCIÓN Y NAVEGACIÓN MODERNA -->
+  <div class="modern-action-toolbar">
+
+    <!-- Navegación entre fechas (Browsing bar) -->
+    <div class="modern-browsing-bar">
+      <!-- First -->
+      {% if primer_reporte and primer_reporte.id != reporte.id %}
+        <a href="{% url 'operaciones:reporte_diario_detalle' pozo.pk primer_reporte.pk %}" class="modern-browsing-btn" title="Primer reporte (&vert;&lsaquo;)">&laquo;&vert;</a>
+      {% else %}
+        <span class="modern-browsing-btn is-disabled">&laquo;&vert;</span>
+      {% endif %}
+
+      <!-- Prev -->
+      {% if reporte_anterior %}
+        <a href="{% url 'operaciones:reporte_diario_detalle' pozo.pk reporte_anterior.pk %}" class="modern-browsing-btn" title="Reporte anterior (&lsaquo;)">&lsaquo;</a>
+      {% else %}
+        <span class="modern-browsing-btn is-disabled">&lsaquo;</span>
+      {% endif %}
+
+      <!-- Date Dropdown Selector -->
+      <select class="modern-date-select" onchange="window.location.href=this.value" title="Seleccionar fecha de reporte">
+        {% for r in todos_reportes %}
+          <option value="{% url 'operaciones:reporte_diario_detalle' pozo.pk r.pk %}" {% if r.id == reporte.id %}selected{% endif %}>
+            &#128197; {{ r.fecha|date:"d/m/Y" }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <!-- Next -->
+      {% if reporte_siguiente %}
+        <a href="{% url 'operaciones:reporte_diario_detalle' pozo.pk reporte_siguiente.pk %}" class="modern-browsing-btn" title="Reporte siguiente (&rsaquo;)">&rsaquo;</a>
+      {% else %}
+        <span class="modern-browsing-btn is-disabled">&rsaquo;</span>
+      {% endif %}
+
+      <!-- Last -->
+      {% if ultimo_reporte and ultimo_reporte.id != reporte.id %}
+        <a href="{% url 'operaciones:reporte_diario_detalle' pozo.pk ultimo_reporte.pk %}" class="modern-browsing-btn" title="Último reporte (&rsaquo;&vert;)">&vert;&raquo;</a>
+      {% else %}
+        <span class="modern-browsing-btn is-disabled">&vert;&raquo;</span>
+      {% endif %}
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="modern-toolbar-actions">
+      <button type="button" class="btn-modern-secondary" onclick="abrirCostOverviewModal()" title="Pantalla detallada de costos (Cost Overview)">
+        <span>&#128176;</span>
+        <span>Resumen de Costos</span>
+      </button>
+      <a href="{% url 'operaciones:reporte_diario_excel' pozo.pk reporte.pk %}" class="btn-modern-secondary" title="Descargar reporte oficial en formato Excel (.xlsx)" download>
+        <span>&#128202;</span>
+        <span>Reporte Excel</span>
+      </a>
+      <button type="button" class="btn-modern-secondary" onclick="window.print()">
+        <span>&#128438;&#65039;</span>
+        <span>Imprimir Reporte</span>
+      </button>
+      <button type="button" class="btn-modern-primary" onclick="guardarPestanaActiva()">
+        <span>&#128190;</span>
+        <span>Guardar Cambios</span>
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 1: WELL SURVEY (TRAYECTORIA DIRECCIONAL Y CÁLCULO DE TVD) -->
+<!-- ========================================================================= -->
+<div id="modal-well-survey" class="modal-backdrop-modern" style="display:none;">
+  <div class="modal-window-modern modal-xl">
+    <div class="modal-header-modern">
+      <div class="modal-title-modern">
+        <span>&#128506;&#65039;</span>
+        <span>Trayectoria Direccional del Pozo &bull; Well Survey (Curvatura Mínima API)</span>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="cerrarWellSurveyModal()">&times;</button>
+    </div>
+    <div class="modal-body-modern">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <div style="font-size:12.5px; color:#475569;">
+          <strong>Pozo:</strong> {{ pozo.nombre }} &bull; Las estaciones calculan automáticamente el <strong>TVD</strong> y <strong>DLS</strong> según el algoritmo API.
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button type="button" class="btn-modern-secondary" onclick="toggleSurveyFileInput()" title="Importar estaciones desde archivo CSV o texto delimitado por comas">
+            <span>&#128196;</span>
+            <span>File Input (CSV)</span>
+          </button>
+          <button type="button" class="btn-modern-secondary" onclick="agregarFilaSurvey()">
+            <span>&#10133;</span>
+            <span>Nueva Estación</span>
+          </button>
+          <button type="button" class="btn-modern-secondary" onclick="recalcularSurvey()">
+            <span>&#128208;</span>
+            <span>Recalcular TVD / DLS</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Panel Desplegable de Importación CSV / File Input (Comma Delimited Text) -->
+      <div id="survey-file-import-panel" class="survey-import-panel" style="display:none;">
+        <div class="survey-import-header">
+          <div class="survey-import-title">
+            <span>&#128196;</span>
+            <span>File Input &bull; Importar Estaciones de Well Survey (Comma Delimited Text)</span>
+          </div>
+          <button type="button" class="modal-close-btn" onclick="toggleSurveyFileInput()">&times;</button>
+        </div>
+        <p style="font-size:11.5px; color:#166534; margin:0 0 8px 0;">
+          Seleccione un archivo de texto o pegue directamente los datos delimitados por comas o tabulaciones.
+          Formato de columnas: <code>Profundidad (MD ft), Inclinación (&deg;), Azimut (&deg;), [Comentarios opcionales]</code>.
+        </p>
+
+        <div style="margin-bottom:10px;">
+          <input type="file" id="survey-file-input" accept=".csv,.txt,text/plain" onchange="cargarArchivoCSV(event)" style="font-size:12px; color:#334155;">
+        </div>
+
+        <textarea id="survey-csv-textarea" class="survey-csv-textarea" rows="4" placeholder="0, 0, 0, Superficie (Tie-In)&#10;1500, 1.5, 45&#10;3000, 4.2, 52.5&#10;4500, 12.0, 55.0"></textarea>
+
+        <div class="survey-import-options">
+          <div class="survey-radio-group">
+            <label class="survey-radio-label">
+              <input type="radio" name="survey-import-mode" value="replace" checked>
+              <span>Reemplazar todas las estaciones</span>
+            </label>
+            <label class="survey-radio-label">
+              <input type="radio" name="survey-import-mode" value="append">
+              <span>Agregar a las existentes</span>
+            </label>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-modern-secondary" onclick="toggleSurveyFileInput()">Cancelar</button>
+            <button type="button" class="btn-import-survey" onclick="procesarCSVInput()">
+              <span>&#9889;</span>
+              <span>Procesar e Importar Estaciones</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="survey-table-wrapper">
+        <table class="survey-table" id="tabla-survey">
+          <thead>
+            <tr>
+              <th style="width:45px;">#</th>
+              <th>MD (ft)</th>
+              <th>Inc (&deg;)</th>
+              <th>Azimuth (&deg;)</th>
+              <th>TVD (ft)</th>
+              <th>DLS (&deg;/100ft)</th>
+              <th>VS (ft)</th>
+              <th>Comentarios / Notas</th>
+              <th style="width:50px;">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-survey">
+            <!-- Filas dinámicas generadas vía JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer-modern">
+      <div style="font-size:12px; color:#64748b;" id="survey-status-bar">
+        Listo para registrar estaciones direccionales.
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn-modern-secondary" onclick="aplicarTVDAlReporte()" title="Aplica el TVD de la estación más profunda al campo TVD de la Pestaña 1">
+          <span>&#128260;</span>
+          <span>Aplicar TVD al Reporte</span>
+        </button>
+        <button type="button" class="btn-modern-primary" onclick="guardarWellSurvey()">
+          <span>&#128190;</span>
+          <span>Guardar Trayectoria</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 2: COST OVERVIEW (PANTALLA DETALLADA DE COSTOS) -->
+<!-- ========================================================================= -->
+<div id="modal-cost-overview" class="modal-backdrop-modern" style="display:none;">
+  <div class="modal-window-modern">
+    <div class="modal-header-modern">
+      <div class="modal-title-modern">
+        <span>&#128176;</span>
+        <span>Pantalla Detallada de Costos &bull; Cost Overview ({{ pozo.moneda_simbolo|default:"USD" }})</span>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="cerrarCostOverviewModal()">&times;</button>
+    </div>
+    <div class="modal-body-modern">
+      <!-- 4 KPI Cards -->
+      <div class="cost-overview-kpis">
+        <div class="cost-kpi-card">
+          <div class="cost-kpi-title">DF Chem / Personnel</div>
+          <div class="cost-kpi-daily" id="kpi-df-chem-daily">$48,430.00</div>
+          <div class="cost-kpi-cum" id="kpi-df-chem-cum">Acum: $345,735.50</div>
+        </div>
+        <div class="cost-kpi-card">
+          <div class="cost-kpi-title">IFE / SC Engineer</div>
+          <div class="cost-kpi-daily" id="kpi-ife-sc-daily">$1,450.00</div>
+          <div class="cost-kpi-cum" id="kpi-ife-sc-cum">Acum: $5,825.00</div>
+        </div>
+        <div class="cost-kpi-card">
+          <div class="cost-kpi-title">DF Equip. / Screens</div>
+          <div class="cost-kpi-daily" id="kpi-df-equip-daily">$1,774.00</div>
+          <div class="cost-kpi-cum" id="kpi-df-equip-cum">Acum: $6,622.00</div>
+        </div>
+        <div class="cost-kpi-card">
+          <div class="cost-kpi-title">Other Cost (DWM/CF)</div>
+          <div class="cost-kpi-daily" id="kpi-other-daily">$7,565.06</div>
+          <div class="cost-kpi-cum" id="kpi-other-cum">Acum: $10,464.29</div>
+        </div>
+      </div>
+
+      <!-- Grand Total Highlight Banner -->
+      <div class="cost-total-banner">
+        <div class="ctb-left">
+          <strong>TOTAL ACUMULADO DEL PROYECTO</strong>
+          <span>(Drilling Total + Equipos + Gestión Ambiental)</span>
+        </div>
+        <div class="ctb-right" id="kpi-grand-total">
+          $368,646.79 {{ pozo.moneda_simbolo|default:"USD" }}
+        </div>
+      </div>
+
+      <!-- Itemized Cost Breakdown Table -->
+      <div class="survey-table-wrapper">
+        <table class="survey-table">
+          <thead>
+            <tr>
+              <th style="text-align:left;">Categoría</th>
+              <th style="text-align:left;">Descripción del Producto / Servicio</th>
+              <th>Cantidad</th>
+              <th>Unidad</th>
+              <th>Costo Unitario</th>
+              <th>Costo Total</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-cost-items">
+            <!-- Rellenado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer-modern">
+      <div style="font-size:12px; color:#64748b;">
+        Reporte #{{ reporte.numero_reporte }} &bull; Fecha: {{ reporte.fecha|date:'d/m/Y' }}
+      </div>
+      <div style="display:flex; gap:8px;">
+        <a href="{% url 'operaciones:reporte_diario_excel' pozo.pk reporte.pk %}" class="btn-modern-secondary" download>
+          <span>&#128202;</span>
+          <span>Descargar Excel</span>
+        </a>
+        <button type="button" class="btn-modern-primary" onclick="cerrarCostOverviewModal()">
+          <span>Cerrar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 3: LITHOLOGY SETUP (CONFIGURACIÓN LITOLÓGICA - 4 COLUMNAS ONE-TRAX) -->
+<!-- ========================================================================= -->
+<div id="modal-lithology-setup" class="modal-backdrop-modern" style="display:none;">
+  <div class="modal-window-modern modal-lg">
+    <div class="modal-header-modern">
+      <div class="modal-title-modern">
+        <span>&#9881;&#65039;</span>
+        <span>Lithology Setup &bull; Formation Tops &amp; Lithology (ONE-TRAX)</span>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="cerrarLithologyModal()">&times;</button>
+    </div>
+    <div class="modal-body-modern">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <div style="font-size:12.5px; color:#475569;">
+          <strong>Estratigrafía del Pozo:</strong> Registre la profundidad medida (MD), nombre del tope de formación, tipo de roca y % de arena.
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-modern-secondary" onclick="detectarFormacionActual()" title="Detecta automáticamente la formación correspondiente a la profundidad del reporte diario">
+            <span>&#128269;</span>
+            <span>Detectar por Profundidad</span>
+          </button>
+          <button type="button" class="btn-modern-secondary" onclick="agregarFilaLithology()">
+            <span>&#10133;</span>
+            <span>Nueva Formación</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="lithology-quick-chips" title="Haga clic para asignar rápidamente el tipo de roca a la fila activa">
+        <span style="font-size:11px; font-weight:700; color:#64748b; margin-right:4px;">Litologías rápidas:</span>
+        <button type="button" class="lithology-quick-chip" onclick="asignarTipoRocaRapida('Shale')">Shale</button>
+        <button type="button" class="lithology-quick-chip" onclick="asignarTipoRocaRapida('Sandstone')">Sandstone</button>
+        <button type="button" class="lithology-quick-chip" onclick="asignarTipoRocaRapida('Limestone')">Limestone</button>
+        <button type="button" class="lithology-quick-chip" onclick="asignarTipoRocaRapida('Dolomite')">Dolomite</button>
+        <button type="button" class="lithology-quick-chip" onclick="asignarTipoRocaRapida('Siltstone')">Siltstone</button>
+        <button type="button" class="lithology-quick-chip" onclick="asignarTipoRocaRapida('Claystone')">Claystone</button>
+        <button type="button" class="lithology-quick-chip" onclick="asignarTipoRocaRapida('Marl')">Marl</button>
+        <button type="button" class="lithology-quick-chip" onclick="asignarTipoRocaRapida('Anhydrite')">Anhydrite</button>
+        <button type="button" class="lithology-quick-chip" onclick="asignarTipoRocaRapida('Salt')">Salt</button>
+        <button type="button" class="lithology-quick-chip" onclick="asignarTipoRocaRapida('Coal')">Coal</button>
+      </div>
+
+      <div class="lithology-table-wrapper">
+        <table class="lithology-table" id="tabla-lithology">
+          <thead>
+            <tr>
+              <th style="width:40px;" class="th-left">#</th>
+              <th style="width:140px;">Depth (ft)</th>
+              <th class="th-left">Formation Top</th>
+              <th class="th-left">Lithology</th>
+              <th style="width:110px;">% Sand</th>
+              <th style="width:50px;">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-lithology">
+            <!-- Filas dinámicas generadas vía JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer-modern">
+      <div style="font-size:12px; color:#64748b;" id="lithology-status-bar">
+        Listo para configurar topes de formación y litología.
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn-modern-secondary" onclick="aplicarLitologiaAlReporte()" title="Asigna la formación activa al campo Lithology de la Pestaña 1">
+          <span>&#128260;</span>
+          <span>Aplicar al Reporte</span>
+        </button>
+        <button type="button" class="btn-modern-primary" onclick="guardarLithologySetup()">
+          <span>&#128190;</span>
+          <span>Guardar Configuración</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 4: BIT INFORMATION (ESPECIFICACIONES DETALLADAS DE MECHA) -->
+<!-- ========================================================================= -->
+<div id="modal-bit-information" class="modal-backdrop-modern" style="display:none;">
+  <div class="modal-window-modern modal-md">
+    <div class="modal-header-modern">
+      <div class="modal-title-modern">
+        <span>&#9935;&#65039;</span>
+        <span>Información de la Barrena &bull; Especificaciones (ONE-TRAX)</span>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="cerrarBitInfoModal()">&times;</button>
+    </div>
+    <div class="modal-body-modern">
+      <p style="font-size:12px; color:#64748b; margin-top:0; margin-bottom:14px;">
+        Registre los datos de trazabilidad y clasificación técnica de la barrena en uso:
+      </p>
+
+      <div class="report-field-row">
+        <label class="report-field-label" title="Fabricante o marca de la mecha">Fabricante</label>
+        <input type="text" id="m_bit_manufacturer" class="report-input" value="{{ bit_data.bit_manufacturer }}" placeholder="Ej. Smith Bits, Baker Hughes, NOV, Halliburton...">
+      </div>
+      <div class="report-field-row">
+        <label class="report-field-label" title="Número de serie grabado en la barrena">Número de Serie</label>
+        <input type="text" id="m_bit_serial_no" class="report-input" value="{{ bit_data.bit_serial_no }}" placeholder="Ej. SN-984210...">
+      </div>
+      <div class="report-field-row">
+        <label class="report-field-label" title="Código de clasificación IADC de la mecha">Código IADC</label>
+        <input type="text" id="m_bit_iadc_code" class="report-input" value="{{ bit_data.bit_iadc_code }}" placeholder="Ej. M432, S323, 517...">
+      </div>
+    </div>
+    <div class="modal-footer-modern">
+      <div style="font-size:12px; color:#64748b;">
+        Barrena #{{ bit_data.bit_number|default:'1' }} &bull; {{ bit_data.bit_size }} in
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn-modern-secondary" onclick="cerrarBitInfoModal()">Cancelar</button>
+        <button type="button" class="btn-modern-primary" onclick="guardarBitInfoModal()">Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 5: SURFACE EQUIPMENT SPECS (EXTRA ECD DATA - ONE-TRAX) -->
+<!-- ========================================================================= -->
+<div id="modal-surface-equipment" class="modal-backdrop-modern" style="display:none;">
+  <div class="modal-window-modern modal-lg">
+    <div class="modal-header-modern">
+      <div class="modal-title-modern">
+        <span>&#128220;</span>
+        <span>Especificaciones de Equipos de Superficie &bull; Datos Extra ECD</span>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="cerrarSurfaceEquipmentModal()">&times;</button>
+    </div>
+    <div class="modal-body-modern">
+      <p style="font-size:11.5px; color:#64748b; margin-top:0; margin-bottom:12px;">
+        Seleccione el código que mejor describe el equipo de superficie de su taladro para estimar las pérdidas de presión por fricción (o seleccione Tipo 1 para entrada manual):
+      </p>
+
+      <div style="overflow-x:auto;">
+        <table class="modern-cost-table" style="text-align:center;">
+          <thead>
+            <tr>
+              <th style="text-align:center; width:60px;">Tipo</th>
+              <th style="text-align:center;">Standpipe (L &times; DI)</th>
+              <th style="text-align:center;">Manguera / Hose (L &times; DI)</th>
+              <th style="text-align:center;">Unión Giratoria / Swivel (L &times; DI)</th>
+              <th style="text-align:center; width:100px;">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align:center; font-weight:800; color:#f26419;">1</td>
+              <td style="text-align:center; color:#64748b;">------------------</td>
+              <td style="text-align:center; color:#64748b;">------------------</td>
+              <td style="text-align:center; color:#64748b;">------------------</td>
+              <td style="text-align:center;">
+                <button type="button" class="btn-modern-secondary btn-mini-action" onclick="seleccionarSurfaceCode('1')">Manual</button>
+              </td>
+            </tr>
+            <tr>
+              <td style="text-align:center; font-weight:800;">2</td>
+              <td style="text-align:center; font-weight:600;">40' &times; 3&quot;</td>
+              <td style="text-align:center; font-weight:600;">45' &times; 2&quot;</td>
+              <td style="text-align:center; font-weight:600;">4' &times; 2&quot;</td>
+              <td style="text-align:center;">
+                <button type="button" class="btn-modern-secondary btn-mini-action" onclick="seleccionarSurfaceCode('2')">Seleccionar</button>
+              </td>
+            </tr>
+            <tr>
+              <td style="text-align:center; font-weight:800;">3</td>
+              <td style="text-align:center; font-weight:600;">45' &times; 3.5&quot;</td>
+              <td style="text-align:center; font-weight:600;">55' &times; 2.5&quot;</td>
+              <td style="text-align:center; font-weight:600;">5' &times; 2.25&quot;</td>
+              <td style="text-align:center;">
+                <button type="button" class="btn-modern-secondary btn-mini-action" onclick="seleccionarSurfaceCode('3')">Seleccionar</button>
+              </td>
+            </tr>
+            <tr>
+              <td style="text-align:center; font-weight:800;">4</td>
+              <td style="text-align:center; font-weight:600;">45' &times; 4&quot;</td>
+              <td style="text-align:center; font-weight:600;">55' &times; 3&quot;</td>
+              <td style="text-align:center; font-weight:600;">5' &times; 2.25&quot;</td>
+              <td style="text-align:center;">
+                <button type="button" class="btn-modern-secondary btn-mini-action" onclick="seleccionarSurfaceCode('4')">Seleccionar</button>
+              </td>
+            </tr>
+            <tr style="background:#f8fafc;">
+              <td style="text-align:center; font-weight:800; color:#1d4ed8;">5</td>
+              <td style="text-align:center; font-weight:700;">45' &times; 4&quot;</td>
+              <td style="text-align:center; font-weight:700;">55' &times; 3&quot;</td>
+              <td style="text-align:center; font-weight:700;">6' &times; 3&quot;</td>
+              <td style="text-align:center;">
+                <button type="button" class="btn-modern-secondary btn-mini-action" onclick="seleccionarSurfaceCode('5')">Seleccionar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:8px 12px; margin-top:12px; font-size:11px; color:#9a3412;">
+        <strong>Nota de Virtual Hydraulics:</strong> Al seleccionar el código 1, debe introducir manualmente la pérdida de presión medida en superficie en el campo <em>Surface Pressure (psi)</em>. Para los códigos 2 al 5, el simulador calcula las pérdidas hidráulicas de superficie automáticamente según las dimensiones del equipo y el caudal de circulación.
+      </div>
+    </div>
+    <div class="modal-footer-modern">
+      <button type="button" class="btn-modern-secondary" onclick="cerrarSurfaceEquipmentModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: EXTRA PROPERTIES (M-I SWACO Tab 3) -->
+<!-- ========================================================================= -->
+<div id="modal-extra-properties" class="modal-backdrop-modern" style="display:none;">
+  <div class="modal-window-modern modal-lg">
+    <div class="modal-header-modern">
+      <div class="modal-title-modern">
+        <span>&#128221;</span>
+        <span>Propiedades Extra del Reporte &bull; Chequeos Diarios (M-I SWACO)</span>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="cerrarExtraPropertiesModal()">&times;</button>
+    </div>
+    <div class="modal-body-modern">
+      <p style="font-size:11.5px; color:#64748b; margin-top:0; margin-bottom:12px;">
+        Capture o consulte los valores de las propiedades extendidas configuradas para este pozo en cada uno de los chequeos del día:
+      </p>
+
+      {% if props_extra %}
+      <div style="overflow-x:auto; max-height:420px;">
+        <table class="mud-matrix-table" id="tabla-modal-extra-props">
+          <thead>
+            <tr>
+              <th style="width:40px; text-align:center;">#</th>
+              <th class="col-prop-name">Etiqueta (Label)</th>
+              <th class="col-prop-unit">Unidad</th>
+              <th class="col-check-primary">#1 - Principal</th>
+              <th class="col-check-hdr">#2</th>
+              <th class="col-check-hdr">#3</th>
+              <th class="col-check-hdr">#4</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pe in props_extra %}
+              <tr>
+                <td style="text-align:center; font-weight:700; color:#64748b;">{{ pe.numero }}</td>
+                <td class="cell-prop-label">{{ pe.etiqueta }}</td>
+                <td class="cell-unit">{{ pe.unidad|default:'&mdash;' }}</td>
+                <td class="cell-primary">
+                  <input type="text" class="mud-cell-input text-left" id="extra_{{ pe.id }}_1">
+                </td>
+                <td>
+                  <input type="text" class="mud-cell-input text-left" id="extra_{{ pe.id }}_2">
+                </td>
+                <td>
+                  <input type="text" class="mud-cell-input text-left" id="extra_{{ pe.id }}_3">
+                </td>
+                <td>
+                  <input type="text" class="mud-cell-input text-left" id="extra_{{ pe.id }}_4">
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:20px; text-align:center; color:#64748b; font-size:12px;">
+        No hay etiquetas adicionales configuradas para este pozo. Puede configurarlas en la pantalla de <strong>Setup de Etiquetas Extra</strong>.
+      </div>
+      {% endif %}
+    </div>
+    <div class="modal-footer-modern">
+      <button type="button" class="btn-modern-secondary" onclick="cerrarExtraPropertiesModal()">Cerrar</button>
+      <button type="button" class="btn-modern-primary" onclick="guardarExtraPropertiesModal()">Guardar Valores Extra</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: SOLIDS ANALYSIS S.G. SPECIFICATIONS (M-I SWACO Tab 3) -->
+<!-- ========================================================================= -->
+<div id="modal-solids-sg" class="modal-backdrop-modern" style="display:none;">
+  <div class="modal-window-modern modal-md">
+    <div class="modal-header-modern">
+      <div class="modal-title-modern">
+        <span>&#9878;</span>
+        <span>An&aacute;lisis de S&oacute;lidos y Especificaciones GE (M-I SWACO)</span>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="cerrarSolidsSGModal()">&times;</button>
+    </div>
+    <div class="modal-body-modern">
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:8px 12px; margin-bottom:14px; font-size:11px; color:#1e40af;">
+        <strong>Nota T&eacute;cnica M-I SWACO:</strong>
+        <em>"Be sure to fill in s.g.'s for base oils, weight materials and drill solids."</em>
+        Los c&aacute;lculos de balance de s&oacute;lidos desacoplan los s&oacute;lidos de alta gravedad (HGS) de los cortes perforados de baja gravedad (LGS) utilizando estas gravedades espec&iacute;ficas.
+      </div>
+
+      <div class="report-field-row">
+        <label class="report-label">Ecuaciones de An&aacute;lisis de S&oacute;lidos:</label>
+        <select id="modal_sg_eq_select" class="modern-input" style="height:25px; font-size:11.5px;">
+          <option value="M-I" {% if mud_config.solids_equation == 'M-I' %}selected{% endif %}>Ecuaciones M-I SWACO</option>
+          <option value="API" {% if mud_config.solids_equation == 'API' %}selected{% endif %}>Ecuaciones Est&aacute;ndar API</option>
+        </select>
+      </div>
+
+      <div class="report-field-row">
+        <label class="report-label">GE Aceite Base / Fluido Base:</label>
+        <input type="number" step="0.01" id="modal_sg_base_oil" class="modern-input" style="height:25px; font-size:11.5px;" value="{{ mud_config.sg_base_oil|default:'0.84' }}">
+        <span class="report-unit-badge">s.g.</span>
+      </div>
+
+      <div class="report-field-row">
+        <label class="report-label">GE Material Densificante:</label>
+        <input type="number" step="0.01" id="modal_sg_weight_mat" class="modern-input" style="height:25px; font-size:11.5px;" value="{{ mud_config.sg_weight_material|default:'4.20' }}">
+        <span class="report-unit-badge">Barita=4.20</span>
+      </div>
+
+      <div class="report-field-row">
+        <label class="report-label">GE S&oacute;lidos Perforados:</label>
+        <input type="number" step="0.01" id="modal_sg_drill_solids" class="modern-input" style="height:25px; font-size:11.5px;" value="{{ mud_config.sg_drill_solids|default:'2.60' }}">
+        <span class="report-unit-badge">Formaci&oacute;n=2.60</span>
+      </div>
+    </div>
+    <div class="modal-footer-modern">
+      <button type="button" class="btn-modern-secondary" onclick="cerrarSolidsSGModal()">Cancelar</button>
+      <button type="button" class="btn-modern-primary" onclick="aplicarSolidsSGModal()">Aplicar Par&aacute;metros</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast-msg"></div>
+
+<script>
+const POZO_ID = parseInt("{{ pozo.id }}", 10);
+const REPORTE_ID = parseInt("{{ reporte.id }}", 10);
+const API_GUARDAR = `/api/pozos/${POZO_ID}/reportes-diarios/${REPORTE_ID}/general/guardar/`;
+const API_SURVEY_LIST = `/api/pozos/${POZO_ID}/survey-stations/`;
+const API_SURVEY_GUARDAR = `/api/pozos/${POZO_ID}/survey-stations/guardar/`;
+const API_COST_OVERVIEW = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/cost-overview/`;
+const API_FORMATION_TOPS_LIST = `/api/pozos/${POZO_ID}/formation-tops/`;
+const API_FORMATION_TOPS_GUARDAR = `/api/pozos/${POZO_ID}/formation-tops/guardar/`;
+const API_PUMPS_BITS_DETAIL = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/pumps-bits/`;
+const API_PUMPS_BITS_GUARDAR = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/pumps-bits/guardar/`;
+const API_MUD_PROPERTIES_DETAIL = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/mud-properties/`;
+const API_MUD_PROPERTIES_GUARDAR = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/mud-properties/guardar/`;
+
+function getCookie(n){
+  const v=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)');
+  if(v) return v.pop();
+  if(n === 'csrftoken'){
+    const input = document.querySelector('[name=csrfmiddlewaretoken]');
+    if(input) return input.value;
+  }
+  return '';
+}
+
+function showToast(msg, ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className=`toast-msg ${ok?'ok':'err'} show`;
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+let currentTabNum = 1;
+
+/* Switch between the 8 Tabs */
+function switchTab(tabNum){
+  currentTabNum = tabNum;
+  const tabs = document.querySelectorAll('.onetrax-tab');
+  tabs.forEach(t => t.classList.remove('is-active'));
+
+  const generalContent = document.getElementById('tabContent-general');
+  const pumpsBitsContent = document.getElementById('tabContent-pumps-bits');
+  const mudPropsContent = document.getElementById('tabContent-mud-properties');
+  const placeholderContent = document.getElementById('tabContent-placeholder');
+  const placeholderTitle = document.getElementById('placeholder-title');
+
+  const tabNames = {
+    1: '1- General',
+    2: '2- Pumps / Bits',
+    3: '3- Mud Properties',
+    4: '4- Well Geometry',
+    5: '5- Comments',
+    6: '6- Solids Equipment',
+    7: '7- Time Distribution',
+    8: '8- Inv/Hyd/Conc'
+  };
+
+  const tabClassMap = {
+    1: '.tab-general',
+    2: '.tab-pumps',
+    3: '.tab-mudprops',
+    4: '.tab-geometry',
+    5: '.tab-comments',
+    6: '.tab-solids',
+    7: '.tab-time',
+    8: '.tab-inv'
+  };
+
+  if(tabClassMap[tabNum]){
+    const tabEl = document.querySelector(tabClassMap[tabNum]);
+    if(tabEl) tabEl.classList.add('is-active');
+  }
+
+  if(tabNum === 1){
+    if(generalContent) generalContent.style.display = 'block';
+    if(pumpsBitsContent) pumpsBitsContent.style.display = 'none';
+    if(mudPropsContent) mudPropsContent.style.display = 'none';
+    if(placeholderContent) placeholderContent.style.display = 'none';
+  } else if(tabNum === 2){
+    if(generalContent) generalContent.style.display = 'none';
+    if(pumpsBitsContent) pumpsBitsContent.style.display = 'flex';
+    if(mudPropsContent) mudPropsContent.style.display = 'none';
+    if(placeholderContent) placeholderContent.style.display = 'none';
+  } else if(tabNum === 3){
+    if(generalContent) generalContent.style.display = 'none';
+    if(pumpsBitsContent) pumpsBitsContent.style.display = 'none';
+    if(mudPropsContent) mudPropsContent.style.display = 'block';
+    if(placeholderContent) placeholderContent.style.display = 'none';
+    [1, 2, 3, 4].forEach(n => recalcularSolidsAnalysis(n));
+  } else {
+    if(generalContent) generalContent.style.display = 'none';
+    if(pumpsBitsContent) pumpsBitsContent.style.display = 'none';
+    if(mudPropsContent) mudPropsContent.style.display = 'none';
+    if(placeholderContent) {
+      placeholderContent.style.display = 'block';
+      placeholderTitle.textContent = tabNames[tabNum] || `Pestaña ${tabNum}`;
+    }
+  }
+}
+
+function guardarPestanaActiva() {
+  if (currentTabNum === 1) {
+    guardarGeneral();
+  } else if (currentTabNum === 2) {
+    guardarPumpsBits();
+  } else if (currentTabNum === 3) {
+    guardarMudProperties();
+  } else {
+    showToast('Pestaña en desarrollo.');
+  }
+}
+
+/* Save General Tab Data */
+async function guardarGeneral() {
+  const data = {
+    fecha: document.getElementById('f_fecha').value,
+    profundidad_actual: document.getElementById('f_profundidad_actual').value || 0,
+    profundidad_tvd: document.getElementById('f_profundidad_tvd').value || 0,
+    bit_depth: document.getElementById('f_bit_depth').value || 0,
+    actividad_actual: document.getElementById('f_actividad_actual').value,
+    tipo_fluido_display: document.getElementById('f_tipo_fluido_display').value,
+    litologia: document.getElementById('f_litologia').value,
+    operador_representante: document.getElementById('f_operador_representante').value,
+    contratista_representante: document.getElementById('f_contratista_representante').value,
+    mi_representante_1: document.getElementById('f_mi_representante_1').value,
+    mi_representante_2: document.getElementById('f_mi_representante_2').value,
+    telefono_taladro: document.getElementById('f_telefono_taladro').value,
+    telefono_almacen: document.getElementById('f_telefono_almacen').value,
+    telefonos: document.getElementById('f_telefonos').value,
+    fax_numbers: document.getElementById('f_fax_numbers') ? document.getElementById('f_fax_numbers').value : ''
+  };
+
+  try {
+    const res = await fetch(API_GUARDAR, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if(result.ok) {
+      showToast('Datos generales guardados correctamente');
+    } else {
+      showToast(result.error || 'Error al guardar', false);
+    }
+  } catch(e) {
+    showToast('Error de red al guardar', false);
+  }
+}
+
+/* =========================================================================
+   TAB 2: PUMPS / BITS (CÁLCULOS EN VIVO, BOQUILLAS Y PERSISTENCIA)
+   ========================================================================= */
+
+function calcularHidraulicaBomba(target) {
+  let num = target;
+  if(typeof target === 'object' && target !== null) {
+    const tr = target.closest('tr');
+    num = tr ? (tr.dataset.bombaNum || 1) : 1;
+  }
+  const liner = parseFloat(document.getElementById('b_liner_' + num)?.value) || 0;
+  const stroke = parseFloat(document.getElementById('b_stroke_' + num)?.value) || 0;
+  const eff = (parseFloat(document.getElementById('b_eff_' + num)?.value) || 0) / 100.0;
+  const spm = parseFloat(document.getElementById('b_spm_' + num)?.value) || 0;
+  const onRep = document.getElementById('b_onrep_' + num)?.checked;
+
+  const bblStk = 0.000243 * (liner * liner) * stroke * eff;
+  const galStk = bblStk * 42.0;
+  const gpm = onRep ? (galStk * spm) : 0;
+
+  const outEl = document.getElementById('b_out_' + num);
+  const flowEl = document.getElementById('b_flow_' + num);
+  if(outEl) outEl.textContent = bblStk.toFixed(5);
+  if(flowEl) flowEl.textContent = gpm.toFixed(1);
+}
+
+function sincronizarCaudalBombas() {
+  let totalGpm = 0;
+  for(let i = 1; i <= 4; i++) {
+    const liner = parseFloat(document.getElementById('b_liner_' + i)?.value) || 0;
+    const stroke = parseFloat(document.getElementById('b_stroke_' + i)?.value) || 0;
+    const eff = (parseFloat(document.getElementById('b_eff_' + i)?.value) || 0) / 100.0;
+    const spm = parseFloat(document.getElementById('b_spm_' + i)?.value) || 0;
+    const onRep = document.getElementById('b_onrep_' + i)?.checked;
+    if(onRep) {
+      const bblStk = 0.000243 * (liner * liner) * stroke * eff;
+      totalGpm += (bblStk * 42.0 * spm);
+    }
+  }
+  const flowInput = document.getElementById('f_pump_flow_rate');
+  if(flowInput) {
+    flowInput.value = totalGpm.toFixed(1);
+    showToast(`Caudal sincronizado desde bombas: ${totalGpm.toFixed(1)} gpm`);
+  }
+}
+
+function calcularTFA() {
+  const rows = document.querySelectorAll('#tbody-boquillas tr');
+  let totalTFA = 0.0;
+  rows.forEach(tr => {
+    const sizeInput = tr.querySelector('.nz-size');
+    const qtyInput = tr.querySelector('.nz-qty');
+    const size = parseFloat(sizeInput ? sizeInput.value : 0) || 0;
+    const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
+    if(size > 0 && qty > 0) {
+      const diam = size / 32.0;
+      const area = qty * (Math.PI / 4.0) * (diam * diam);
+      totalTFA += area;
+    }
+  });
+  const tfaEl = document.getElementById('tfa-display');
+  if(tfaEl) {
+    tfaEl.textContent = totalTFA.toFixed(2) + ' sq in';
+  }
+}
+
+function calcularWashoutHoleSize() {
+  const bitSize = parseFloat(document.getElementById('f_bit_size')?.value) || 0;
+  const washout = parseFloat(document.getElementById('f_washout_pct')?.value) || 0;
+  const wSize = bitSize * Math.sqrt(1.0 + (washout / 100.0));
+  const outEl = document.getElementById('f_washout_hole_size');
+  if(outEl) {
+    outEl.value = wSize.toFixed(3);
+  }
+}
+
+function agregarFilaBoquilla() {
+  const tbody = document.getElementById('tbody-boquillas');
+  if(!tbody) return;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="number" step="1" min="7" max="32" class="pump-input nz-size" value="12" oninput="calcularTFA()"></td>
+    <td><input type="number" step="1" min="1" max="12" class="pump-input nz-qty" value="1" oninput="calcularTFA()"></td>
+    <td style="text-align:center;">
+      <button type="button" class="btn-del-row" onclick="eliminarFilaBoquilla(this)" title="Eliminar boquilla">&times;</button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+  calcularTFA();
+}
+
+function eliminarFilaBoquilla(btn) {
+  const tr = btn.closest('tr');
+  if(tr) {
+    tr.remove();
+    calcularTFA();
+  }
+}
+
+function abrirBitInfoModal() {
+  document.getElementById('modal-bit-information').style.display = 'flex';
+}
+
+function cerrarBitInfoModal() {
+  document.getElementById('modal-bit-information').style.display = 'none';
+}
+
+function guardarBitInfoModal() {
+  cerrarBitInfoModal();
+  showToast('Especificaciones de barrena actualizadas');
+}
+
+function cambiarSurfaceCode() {
+  const sel = document.getElementById('f_surface_code');
+  const pressInput = document.getElementById('f_surface_pressure');
+  if (!sel || !pressInput) return;
+  const code = sel.value;
+  if (code === '1') {
+    pressInput.placeholder = 'Entrada manual (psi)...';
+    pressInput.focus();
+  } else {
+    pressInput.placeholder = `Precalculado Tipo ${code} (o manual psi)...`;
+  }
+}
+
+function abrirSurfaceEquipmentModal() {
+  const modal = document.getElementById('modal-surface-equipment');
+  if (modal) modal.style.display = 'flex';
+}
+
+function cerrarSurfaceEquipmentModal() {
+  const modal = document.getElementById('modal-surface-equipment');
+  if (modal) modal.style.display = 'none';
+}
+
+function seleccionarSurfaceCode(code) {
+  const sel = document.getElementById('f_surface_code');
+  if (sel) {
+    sel.value = String(code);
+    cambiarSurfaceCode();
+  }
+  cerrarSurfaceEquipmentModal();
+  showToast(`Surface Code ${code} seleccionado`);
+}
+
+async function guardarPumpsBits() {
+  const parseVal = (id, def = 0) => {
+    const el = document.getElementById(id);
+    return el ? (parseFloat(el.value) || def) : def;
+  };
+  const parseStr = (id, def = '') => {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : def;
+  };
+
+  // 1. Bombas
+  const bombas = [];
+  for(let i = 1; i <= 4; i++) {
+    bombas.push({
+      numero_bomba: i,
+      make_model: parseStr('b_model_' + i),
+      liner_diameter: parseVal('b_liner_' + i, 6.5),
+      stroke_length: parseVal('b_stroke_' + i, 12.0),
+      rod_diam_duplex: parseVal('b_rod_' + i, 0.0),
+      eficiencia_pct: parseVal('b_eff_' + i, 97.0),
+      pump_rate_spm: parseVal('b_spm_' + i, 0.0),
+      pump_on_report: document.getElementById('b_onrep_' + i)?.checked || false,
+      riser_pump: document.getElementById('b_riser_' + i)?.checked || false
+    });
+  }
+
+  // 2. Boquillas
+  const boquillas = [];
+  const rows = document.querySelectorAll('#tbody-boquillas tr');
+  rows.forEach(tr => {
+    const sz = parseInt(tr.querySelector('.nz-size')?.value, 10) || 0;
+    const qty = parseInt(tr.querySelector('.nz-qty')?.value, 10) || 0;
+    if(sz > 0 && qty > 0) {
+      boquillas.push({ size_32nds: sz, cantidad: qty });
+    }
+  });
+
+  // 3. Bit Data & Presiones & ECD
+  const bitData = {
+    bit_description: parseStr('f_bit_description'),
+    bit_number: parseStr('f_bit_number'),
+    washout_pct: parseVal('f_washout_pct', 0),
+    bit_size: parseVal('f_bit_size', 12.25),
+    riser_pump_flow_rate: parseVal('f_riser_pump_flow_rate', 0),
+    rotary_rpm: parseVal('f_rotary_rpm', 0),
+    rotating_hours: parseVal('f_rotating_hours', 0),
+    weight_on_bit: parseVal('f_weight_on_bit', 0),
+    rop: parseVal('f_rop', 0),
+    pump_flow_rate: parseVal('f_pump_flow_rate', 0),
+    pump_pressure: parseVal('f_pump_pressure', 0),
+    dp_mwd: parseVal('f_dp_mwd', 0),
+    dp_motor: parseVal('f_dp_motor', 0),
+    motor_rpm: parseVal('f_motor_rpm', 0),
+    surface_code: parseStr('f_surface_code', '1'),
+    surface_pressure: parseVal('f_surface_pressure', 0),
+    ref_flow_rate: parseVal('f_ref_flow_rate', 0),
+    on_off_bottom_pressure: parseVal('f_on_off_bottom', 0),
+    bit_manufacturer: parseStr('m_bit_manufacturer'),
+    bit_serial_no: parseStr('m_bit_serial_no'),
+    bit_iadc_code: parseStr('m_bit_iadc_code')
+  };
+
+  try {
+    const res = await fetch(API_PUMPS_BITS_GUARDAR, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+        bombas: bombas,
+        boquillas: boquillas,
+        bit_data: bitData
+      })
+    });
+    const result = await res.json();
+    if(result.ok) {
+      if(result.washout_hole_size) {
+        document.getElementById('f_washout_hole_size').value = result.washout_hole_size;
+      }
+      if(result.tfa !== undefined) {
+        document.getElementById('tfa-display').textContent = result.tfa + ' sq in';
+      }
+      showToast('Datos de Bombas e Hidráulica guardados correctamente');
+    } else {
+      showToast(result.error || 'Error al guardar bombas', false);
+    }
+  } catch(e) {
+    showToast('Error de red al guardar datos de bombas', false);
+  }
+}
+
+/* =========================================================================
+   WELL SURVEY: MODAL, CÁLCULO Y GESTIÓN DE TRAYECTORIA
+   ========================================================================= */
+let surveyEstaciones = [];
+
+function abrirWellSurveyModal() {
+  document.getElementById('modal-well-survey').style.display = 'flex';
+  cargarWellSurvey();
+}
+
+function cerrarWellSurveyModal() {
+  document.getElementById('modal-well-survey').style.display = 'none';
+}
+
+async function cargarWellSurvey() {
+  try {
+    document.getElementById('survey-status-bar').textContent = 'Cargando estaciones direccionales...';
+    const res = await fetch(API_SURVEY_LIST);
+    const data = await res.json();
+    if(data.ok && data.estaciones) {
+      surveyEstaciones = data.estaciones;
+      renderTablaSurvey();
+      document.getElementById('survey-status-bar').textContent = `${surveyEstaciones.length} estación(es) cargada(s).`;
+    }
+  } catch(e) {
+    document.getElementById('survey-status-bar').textContent = 'Error al cargar survey.';
+  }
+}
+
+function renderTablaSurvey() {
+  const tbody = document.getElementById('tbody-survey');
+  tbody.innerHTML = '';
+
+  if(surveyEstaciones.length === 0) {
+    surveyEstaciones.push({
+      estacion: 1,
+      md_ft: 0,
+      inclinacion_deg: 0,
+      azimut_deg: 0,
+      tvd_ft: 0,
+      dls_deg_100ft: 0,
+      seccion_vertical_ft: 0,
+      comentarios: 'Superficie (Tie-In)'
+    });
+  }
+
+  surveyEstaciones.forEach((st, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="text-align:center; font-weight:800; color:#64748b;">${idx + 1}</td>
+      <td><input type="number" step="any" class="survey-input s-md" value="${st.md_ft}" onchange="actualizarDatoSurvey(${idx}, 'md_ft', this.value)"></td>
+      <td><input type="number" step="any" class="survey-input s-inc" value="${st.inclinacion_deg}" onchange="actualizarDatoSurvey(${idx}, 'inclinacion_deg', this.value)"></td>
+      <td><input type="number" step="any" class="survey-input s-az" value="${st.azimut_deg}" onchange="actualizarDatoSurvey(${idx}, 'azimut_deg', this.value)"></td>
+      <td class="survey-val-read s-tvd">${parseFloat(st.tvd_ft || 0).toFixed(2)}</td>
+      <td class="survey-val-read s-dls">${parseFloat(st.dls_deg_100ft || 0).toFixed(2)}</td>
+      <td class="survey-val-read s-vs">${parseFloat(st.seccion_vertical_ft || 0).toFixed(2)}</td>
+      <td><input type="text" class="survey-input" style="text-align:left;" value="${st.comentarios || ''}" placeholder="Nota..." onchange="actualizarDatoSurvey(${idx}, 'comentarios', this.value)"></td>
+      <td style="text-align:center;">
+        ${idx > 0 ? `<button type="button" class="btn-del-survey" onclick="eliminarFilaSurvey(${idx})" title="Eliminar estación">&times;</button>` : `<span style="color:#94a3b8; font-size:11px;">Tie-In</span>`}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function actualizarDatoSurvey(idx, campo, val) {
+  if(surveyEstaciones[idx]) {
+    surveyEstaciones[idx][campo] = (campo === 'comentarios') ? val : (parseFloat(val) || 0);
+  }
+}
+
+function agregarFilaSurvey() {
+  const ultima = surveyEstaciones[surveyEstaciones.length - 1] || { md_ft: 0, inclinacion_deg: 0, azimut_deg: 0 };
+  const nuevoMD = (parseFloat(ultima.md_ft) || 0) + 500;
+  surveyEstaciones.push({
+    estacion: surveyEstaciones.length + 1,
+    md_ft: nuevoMD,
+    inclinacion_deg: ultima.inclinacion_deg || 0,
+    azimut_deg: ultima.azimut_deg || 0,
+    tvd_ft: 0,
+    dls_deg_100ft: 0,
+    seccion_vertical_ft: 0,
+    comentarios: `Estación @ ${nuevoMD} ft`
+  });
+  renderTablaSurvey();
+  recalcularSurvey();
+}
+
+function eliminarFilaSurvey(idx) {
+  if(idx > 0 && surveyEstaciones.length > 1) {
+    surveyEstaciones.splice(idx, 1);
+    renderTablaSurvey();
+    recalcularSurvey();
+  }
+}
+
+async function recalcularSurvey() {
+  document.getElementById('survey-status-bar').textContent = 'Calculando curvatura mínima...';
+  try {
+    const res = await fetch(API_SURVEY_GUARDAR, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ estaciones: surveyEstaciones })
+    });
+    const data = await res.json();
+    if(data.ok && data.estaciones) {
+      surveyEstaciones = data.estaciones;
+      renderTablaSurvey();
+      document.getElementById('survey-status-bar').textContent = `Recálculo exitoso. TVD fondo: ${data.ultimo_tvd} ft.`;
+    } else {
+      document.getElementById('survey-status-bar').textContent = data.error || 'Error al calcular.';
+    }
+  } catch(e) {
+    document.getElementById('survey-status-bar').textContent = 'Error al comunicar con el servidor.';
+  }
+}
+
+async function guardarWellSurvey() {
+  await recalcularSurvey();
+  showToast('Trayectoria de Well Survey guardada');
+}
+
+function aplicarTVDAlReporte() {
+  if(surveyEstaciones.length > 0) {
+    const ultima = surveyEstaciones[surveyEstaciones.length - 1];
+    const tvdInput = document.getElementById('f_profundidad_tvd');
+    if(tvdInput && ultima.tvd_ft !== undefined) {
+      tvdInput.value = parseFloat(ultima.tvd_ft).toFixed(2);
+      showToast(`TVD actualizado a ${ultima.tvd_ft} ft en la Pestaña 1`);
+      cerrarWellSurveyModal();
+    }
+  }
+}
+
+/* =========================================================================
+   WELL SURVEY: FILE INPUT (COMMA DELIMITED TEXT / CSV IMPORT)
+   ========================================================================= */
+function toggleSurveyFileInput() {
+  const panel = document.getElementById('survey-file-import-panel');
+  if (!panel) return;
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'block';
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function cargarArchivoCSV(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('survey-csv-textarea').value = e.target.result;
+    showToast(`Archivo cargado: ${file.name}`);
+  };
+  reader.readAsText(file);
+}
+
+function procesarCSVInput() {
+  const texto = document.getElementById('survey-csv-textarea').value.trim();
+  if (!texto) {
+    showToast('No hay datos en el cuadro de texto para importar', false);
+    return;
+  }
+
+  const lineas = texto.split(/\r?\n/);
+  const nuevasEstaciones = [];
+
+  for (let i = 0; i < lineas.length; i++) {
+    const rawLine = lineas[i].trim();
+    if (!rawLine) continue;
+
+    let partes;
+    if (rawLine.includes('\t')) {
+      partes = rawLine.split('\t');
+    } else if (rawLine.includes(';')) {
+      partes = rawLine.split(';');
+    } else {
+      partes = rawLine.split(',');
+    }
+
+    partes = partes.map(p => p.trim());
+    if (partes.length < 2) continue;
+
+    const mdVal = parseFloat(partes[0]);
+    const incVal = parseFloat(partes[1]);
+    const azVal = partes.length > 2 ? parseFloat(partes[2]) : 0;
+    const comentario = partes.length > 3 ? partes.slice(3).join(' ') : '';
+
+    // Si la fila contiene encabezado alfabético (ej. "MD, Inc, Azimuth"), ignorarla
+    if (isNaN(mdVal) || isNaN(incVal)) {
+      continue;
+    }
+
+    nuevasEstaciones.push({
+      estacion: nuevasEstaciones.length + 1,
+      md_ft: mdVal,
+      inclinacion_deg: incVal,
+      azimut_deg: isNaN(azVal) ? 0 : azVal,
+      tvd_ft: 0,
+      dls_deg_100ft: 0,
+      seccion_vertical_ft: 0,
+      comentarios: comentario || `Estación @ ${mdVal} ft`
+    });
+  }
+
+  if (nuevasEstaciones.length === 0) {
+    showToast('No se encontraron filas con datos numéricos de MD e Inclinación.', false);
+    return;
+  }
+
+  const modeEl = document.querySelector('input[name="survey-import-mode"]:checked');
+  const modo = modeEl ? modeEl.value : 'replace';
+
+  if (modo === 'replace') {
+    if (nuevasEstaciones[0].md_ft > 0) {
+      nuevasEstaciones.unshift({
+        estacion: 1,
+        md_ft: 0,
+        inclinacion_deg: 0,
+        azimut_deg: 0,
+        tvd_ft: 0,
+        dls_deg_100ft: 0,
+        seccion_vertical_ft: 0,
+        comentarios: 'Superficie (Tie-In)'
+      });
+    }
+    surveyEstaciones = nuevasEstaciones;
+  } else {
+    surveyEstaciones = surveyEstaciones.concat(nuevasEstaciones);
+  }
+
+  surveyEstaciones.forEach((st, idx) => { st.estacion = idx + 1; });
+
+  renderTablaSurvey();
+  recalcularSurvey();
+  toggleSurveyFileInput();
+  showToast(`${nuevasEstaciones.length} estaciones importadas exitosamente`);
+}
+
+/* =========================================================================
+   COST OVERVIEW: MODAL Y BALANCE FINANCIERO
+   ========================================================================= */
+function abrirCostOverviewModal() {
+  document.getElementById('modal-cost-overview').style.display = 'flex';
+  cargarCostOverview();
+}
+
+function cerrarCostOverviewModal() {
+  document.getElementById('modal-cost-overview').style.display = 'none';
+}
+
+async function cargarCostOverview() {
+  try {
+    const res = await fetch(API_COST_OVERVIEW);
+    const data = await res.json();
+    if(data.ok) {
+      const mon = data.moneda || 'USD';
+      document.getElementById('kpi-df-chem-daily').textContent = `$${data.daily.df_chem.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+      document.getElementById('kpi-df-chem-cum').textContent = `Acum: $${data.cumulative.df_chem.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+
+      document.getElementById('kpi-ife-sc-daily').textContent = `$${data.daily.ife_sc.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+      document.getElementById('kpi-ife-sc-cum').textContent = `Acum: $${data.cumulative.ife_sc.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+
+      document.getElementById('kpi-df-equip-daily').textContent = `$${data.daily.df_equip.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+      document.getElementById('kpi-df-equip-cum').textContent = `Acum: $${data.cumulative.df_equip.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+
+      document.getElementById('kpi-other-daily').textContent = `$${data.daily.other_cost.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+      document.getElementById('kpi-other-cum').textContent = `Acum: $${data.cumulative.other_cost.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+
+      document.getElementById('kpi-grand-total').textContent = `$${data.cumulative.total.toLocaleString('en-US', {minimumFractionDigits:2})} ${mon}`;
+
+      const tbody = document.getElementById('tbody-cost-items');
+      tbody.innerHTML = '';
+      data.items.forEach(it => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:700; color:#334155;">${it.categoria}</td>
+          <td style="color:#0f172a;">${it.descripcion}</td>
+          <td style="text-align:right; font-weight:700;">${it.cantidad}</td>
+          <td style="text-align:center; color:#64748b;">${it.unidad}</td>
+          <td style="text-align:right;">$${it.costo_unitario.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+          <td style="text-align:right; font-weight:800; color:#0f172a;">$${it.costo_total.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+/* =========================================================================
+   LITHOLOGY SETUP: TOPES DE FORMACIÓN Y LITOLOGÍA (4 COLUMNAS ONE-TRAX)
+   ========================================================================= */
+let formationTops = [];
+let filaLitologiaActiva = 0;
+
+function abrirLithologyModal() {
+  document.getElementById('modal-lithology-setup').style.display = 'flex';
+  cargarFormationTops();
+}
+
+function cerrarLithologyModal() {
+  document.getElementById('modal-lithology-setup').style.display = 'none';
+}
+
+async function cargarFormationTops() {
+  try {
+    document.getElementById('lithology-status-bar').textContent = 'Cargando topes de formación...';
+    const res = await fetch(API_FORMATION_TOPS_LIST);
+    const data = await res.json();
+    if(data.ok && data.formation_tops) {
+      formationTops = data.formation_tops;
+      renderTablaLithology();
+      actualizarDatalistFormaciones();
+      document.getElementById('lithology-status-bar').textContent = `${formationTops.length} formación(es) configurada(s).`;
+    }
+  } catch(e) {
+    document.getElementById('lithology-status-bar').textContent = 'Error al cargar formaciones.';
+  }
+}
+
+function renderTablaLithology() {
+  const tbody = document.getElementById('tbody-lithology');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+
+  if(formationTops.length === 0) {
+    formationTops.push({
+      id: null,
+      depth_ft: 0,
+      formation_top: 'Superficie / Reciente',
+      lithology: 'Claystone / Sandstone',
+      porcentaje_arena: 20
+    });
+  }
+
+  formationTops.forEach((ft, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="text-align:center; font-weight:800; color:#64748b;">${idx + 1}</td>
+      <td><input type="number" step="any" class="lithology-input" value="${ft.depth_ft}" onchange="actualizarDatoLithology(${idx}, 'depth_ft', this.value)" onfocus="filaLitologiaActiva = ${idx}"></td>
+      <td><input type="text" class="lithology-input lit-text" value="${ft.formation_top || ''}" placeholder="Ej. Oficina..." onchange="actualizarDatoLithology(${idx}, 'formation_top', this.value)" onfocus="filaLitologiaActiva = ${idx}"></td>
+      <td><input type="text" class="lithology-input lit-text" value="${ft.lithology || ''}" placeholder="Ej. Sandstone / Shale..." onchange="actualizarDatoLithology(${idx}, 'lithology', this.value)" onfocus="filaLitologiaActiva = ${idx}"></td>
+      <td><input type="number" step="any" min="0" max="100" class="lithology-input" value="${ft.porcentaje_arena || 0}" onchange="actualizarDatoLithology(${idx}, 'porcentaje_arena', this.value)" onfocus="filaLitologiaActiva = ${idx}"></td>
+      <td style="text-align:center;">
+        <button type="button" class="btn-del-row" onclick="eliminarFilaLithology(${idx})" title="Eliminar formación">&times;</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function actualizarDatoLithology(idx, campo, val) {
+  if(formationTops[idx]) {
+    if(campo === 'formation_top' || campo === 'lithology') {
+      formationTops[idx][campo] = val;
+    } else {
+      formationTops[idx][campo] = parseFloat(val) || 0;
+    }
+  }
+}
+
+function agregarFilaLithology() {
+  const ultima = formationTops[formationTops.length - 1] || { depth_ft: 0 };
+  const nuevaProf = (parseFloat(ultima.depth_ft) || 0) + 1500;
+  formationTops.push({
+    id: null,
+    depth_ft: nuevaProf,
+    formation_top: `Formación @ ${nuevaProf} ft`,
+    lithology: 'Shale',
+    porcentaje_arena: 15
+  });
+  renderTablaLithology();
+  filaLitologiaActiva = formationTops.length - 1;
+}
+
+function eliminarFilaLithology(idx) {
+  if(formationTops.length > 1) {
+    formationTops.splice(idx, 1);
+    renderTablaLithology();
+  } else {
+    showToast('Debe existir al menos un tope de formación.', false);
+  }
+}
+
+function asignarTipoRocaRapida(tipoRoca) {
+  if(formationTops[filaLitologiaActiva]) {
+    formationTops[filaLitologiaActiva].lithology = tipoRoca;
+    renderTablaLithology();
+    showToast(`Asignado "${tipoRoca}" a la fila #${filaLitologiaActiva + 1}`);
+  }
+}
+
+async function guardarLithologySetup() {
+  document.getElementById('lithology-status-bar').textContent = 'Guardando configuración de litología...';
+  try {
+    const res = await fetch(API_FORMATION_TOPS_GUARDAR, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ formation_tops: formationTops })
+    });
+    const data = await res.json();
+    if(data.ok && data.formation_tops) {
+      formationTops = data.formation_tops;
+      renderTablaLithology();
+      actualizarDatalistFormaciones();
+      document.getElementById('lithology-status-bar').textContent = data.mensaje || 'Guardado exitoso.';
+      showToast('Configuración de litología guardada');
+    } else {
+      document.getElementById('lithology-status-bar').textContent = data.error || 'Error al guardar.';
+      showToast(data.error || 'Error al guardar.', false);
+    }
+  } catch(e) {
+    document.getElementById('lithology-status-bar').textContent = 'Error al comunicar con el servidor.';
+  }
+}
+
+function actualizarDatalistFormaciones() {
+  const dl = document.getElementById('datalist-formaciones');
+  if(!dl) return;
+  dl.innerHTML = '';
+  formationTops.forEach(ft => {
+    const opt = document.createElement('option');
+    opt.value = `${ft.formation_top} - ${ft.lithology} (${ft.porcentaje_arena}% Sand)`;
+    opt.textContent = `MD: ${ft.depth_ft} ft`;
+    dl.appendChild(opt);
+  });
+}
+
+function detectarFormacionActual() {
+  const depthInput = document.getElementById('f_profundidad_actual');
+  const currentDepth = parseFloat(depthInput ? depthInput.value : 0) || 0;
+
+  if(formationTops.length === 0) {
+    showToast('No hay topes de formación configurados.', false);
+    return;
+  }
+
+  let activa = formationTops[0];
+  for(let i = 0; i < formationTops.length; i++) {
+    if(formationTops[i].depth_ft <= currentDepth) {
+      activa = formationTops[i];
+    } else {
+      break;
+    }
+  }
+
+  if(activa) {
+    const texto = `${activa.formation_top} - ${activa.lithology} (${activa.porcentaje_arena}% Sand)`;
+    document.getElementById('f_litologia').value = texto;
+    showToast(`Formación detectada a ${currentDepth} ft: ${activa.formation_top}`);
+    cerrarLithologyModal();
+  }
+}
+
+function aplicarLitologiaAlReporte() {
+  if(formationTops.length > 0) {
+    const seleccionada = formationTops[filaLitologiaActiva] || formationTops[0];
+    const texto = `${seleccionada.formation_top} - ${seleccionada.lithology} (${seleccionada.porcentaje_arena}% Sand)`;
+    document.getElementById('f_litologia').value = texto;
+    showToast(`Litología asignada: ${texto}`);
+    cerrarLithologyModal();
+  }
+}
+
+/* ========================================================================= */
+/* TAB 3: MUD PROPERTIES (JAVASCRIPT LOGIC)                                  */
+/* ========================================================================= */
+
+function recalcularReologia(target){
+  let chkNum = target;
+  if(typeof target === 'object' && target !== null){
+    const match = target.id ? target.id.match(/^chk_(\d+)_/) : null;
+    chkNum = match ? match[1] : 1;
+  }
+  const r600El = document.getElementById(`chk_${chkNum}_r600`);
+  const r300El = document.getElementById(`chk_${chkNum}_r300`);
+  const pvEl = document.getElementById(`chk_${chkNum}_pv`);
+  const ypEl = document.getElementById(`chk_${chkNum}_yp`);
+  if(!r600El || !r300El || !pvEl || !ypEl) return;
+
+  const r600Val = parseFloat(r600El.value);
+  const r300Val = parseFloat(r300El.value);
+
+  if(!isNaN(r600Val) && !isNaN(r300Val)){
+    const pv = Math.max(0, Math.round((r600Val - r300Val) * 100) / 100);
+    const yp = Math.max(0, Math.round((r300Val - pv) * 100) / 100);
+    pvEl.value = pv;
+    ypEl.value = yp;
+  }
+}
+
+function recalcularSolidsAnalysis(target) {
+  let chkNum = target;
+  if (typeof target === 'object' && target !== null) {
+    const match = target.id ? target.id.match(/^chk_(\d+)_/) : null;
+    chkNum = match ? match[1] : 1;
+  }
+
+  const getVal = (field, defaultVal = 0) => {
+    const el = document.getElementById(`chk_${chkNum}_${field}`);
+    if (!el || el.value === '' || isNaN(parseFloat(el.value))) return defaultVal;
+    return parseFloat(el.value);
+  };
+
+  const setVal = (field, val, isError = false) => {
+    const el = document.getElementById(`chk_${chkNum}_${field}`);
+    if (el) {
+      el.value = (val !== null && !isNaN(val)) ? val : '';
+      if (isError) {
+        el.classList.add('mud-cell-error');
+      } else {
+        el.classList.remove('mud-cell-error');
+      }
+    }
+  };
+
+  let mw = getVal('retort_mud_weight', null);
+  if (mw === null) mw = getVal('mud_weight', 10.0);
+
+  const vw = getVal('water_pct', 0);
+  const vo = getVal('oil_pct', 0);
+  let vs = getVal('solids_pct', null);
+  if (vs === null) {
+    vs = (vw > 0) ? Math.max(0, 100 - vw - vo) : 0;
+  }
+
+  // 1. KCl
+  const kPlus = getVal('k_from_kcl', 0);
+  let kclPpb = 0;
+  let kclPct = 0;
+  if (kPlus > 0 && vw > 0) {
+    const kclMgL = kPlus * 1.9066;
+    kclPpb = Math.round((kclMgL * 0.0003505 * (vw / 100.0)) * 10) / 10;
+    kclPct = Math.round((kclPpb / (3.5 * 1.984)) * 10) / 10;
+  }
+  setVal('kcl_ppb', kclPpb);
+  setVal('kcl_pct', kclPct);
+
+  // 2. NaCl
+  const clTotal = getVal('chlorides', 0);
+  const clKcl = (kclPpb > 0 && vw > 0) ? (kclPpb / (0.0003505 * (vw / 100.0))) * (35.45 / 74.55) : 0;
+  const clNacl = Math.max(0, clTotal - clKcl);
+  let naclPpb = 0;
+  let naclPct = 0;
+  if (clNacl > 0 && vw > 0) {
+    naclPpb = Math.round((clNacl * 1.6485 * 0.0003505 * (vw / 100.0)) * 10) / 10;
+    naclPct = Math.round((naclPpb / (3.5 * 2.165)) * 10) / 10;
+  }
+  setVal('nacl_ppb', naclPpb);
+  setVal('nacl_pct', naclPct);
+
+  // 3. Suspended solids and LGS/HGS separation
+  const vSs = Math.max(0, vs - naclPct - kclPct);
+  const sgHgs = getVal('wt_additive_sg', 4.20);
+  const sgLgs = getVal('drill_solids_sg', 2.60);
+  const sgOil = getVal('oil_sg', 0.70);
+  const sgWater = 1.0 + (naclPpb + kclPpb) / 350.0;
+
+  const mTotal = (mw / 8.33) * 100.0;
+  const mLiquid = (vw * sgWater) + (vo * sgOil);
+  const mSs = mTotal - mLiquid;
+
+  let vLgs = 0;
+  let vHgs = 0;
+  let hasError = false;
+
+  if ((sgHgs - sgLgs) > 0 && vSs > 0) {
+    vLgs = (sgHgs * vSs - mSs) / (sgHgs - sgLgs);
+    vHgs = vSs - vLgs;
+    if (vLgs < 0) {
+      hasError = true;
+    }
+  } else {
+    vLgs = vSs;
+    vHgs = 0;
+  }
+
+  const lgsPct = Math.round(Math.max(0, vLgs) * 10) / 10;
+  const hgsPct = Math.round(Math.max(0, vHgs) * 10) / 10;
+  const lgsPpb = Math.round((lgsPct * 3.5 * sgLgs) * 10) / 10;
+
+  setVal('lgs_pct', lgsPct, hasError);
+  setVal('lgs_ppb', lgsPpb, hasError);
+  setVal('hgs_pct', hgsPct);
+
+  // 4. Bentonite and Drill Solids (WBM)
+  const fracBent = getVal('frac_bent', 0.1111);
+  const chemConc = getVal('chem_conc', 0);
+  const mbtVal = getVal('mbt', 0);
+
+  let bentonitePpb = 0;
+  let bentonitePct = 0;
+  if (mbtVal > 0) {
+    bentonitePpb = Math.round(Math.max(0, mbtVal * 5.0 * (1.0 - fracBent)) * 10) / 10;
+    bentonitePct = Math.round((bentonitePpb / (3.5 * sgLgs)) * 10) / 10;
+  }
+  setVal('bentonite_ppb', bentonitePpb);
+  setVal('bentonite_pct', bentonitePct);
+
+  const drillSolidsPpb = Math.round(Math.max(0, lgsPpb - bentonitePpb - chemConc) * 10) / 10;
+  const drillSolidsPct = Math.round(Math.max(0, lgsPct - bentonitePct) * 10) / 10;
+
+  setVal('drill_solids_ppb', drillSolidsPpb);
+  setVal('drill_solids_pct', drillSolidsPct);
+
+  // --- OBM / SBF SOLIDS ANALYSIS (Slide media_1790024142384.png) ---
+  // 1. OWR
+  const vLiq = vo + vw;
+  let owrStr = '';
+  if (vLiq > 0) {
+    const oRatio = Math.round((vo / vLiq) * 100);
+    const wRatio = Math.round((vw / vLiq) * 100);
+    owrStr = `${oRatio}/${wRatio}`;
+  }
+  const owrEl = document.getElementById(`chk_${chkNum}_oil_water_ratio`);
+  if (owrEl) owrEl.value = owrStr;
+
+  // 2. Salt Type & Concentration
+  const saltRadio = document.querySelector('input[name="obm_salt_radio"]:checked');
+  const saltType = saltRadio ? saltRadio.value : 'CaCl2';
+
+  let saltWt = getVal('salt_pct_wt', null);
+  if (saltWt === null) {
+    if (clTotal > 0 && vw > 0) {
+      const clFactor = (saltType === 'CaCl2') ? 1.565 : 1.6485;
+      const clBrine = clTotal / (vw / 100.0);
+      saltWt = Math.round(((clBrine * clFactor) / 10000.0) * 100) / 100;
+      setVal('salt_pct_wt', saltWt);
+    } else {
+      saltWt = 0;
+    }
+  }
+
+  let saltPpb = 0;
+  if (saltWt > 0 && saltWt < 100 && vw > 0) {
+    saltPpb = Math.round(((saltWt / (100.0 - saltWt)) * vw * 3.50) * 100) / 100;
+  }
+  setVal('salt_ppb', saltPpb);
+
+  // Dry salt volume
+  const sgSalt = (saltType === 'CaCl2') ? 2.15 : 2.165;
+  const vSalt = (saltPpb > 0 && sgSalt > 0) ? (saltPpb / (3.5 * sgSalt)) : 0;
+
+  // 3. Adjusted Solids (%Vol) - permite valores negativos para detección de inconsistencia física
+  const adjSolids = Math.round((vs - vSalt) * 100) / 100;
+  setVal('adjusted_solids_pct', adjSolids, adjSolids < 0);
+
+  // 4. Liquid & Solids mass for OBM
+  const mBrine = (vw * 1.0) + (saltPpb > 0 ? saltPpb / 3.5 : 0);
+  const mLiqObm = (vo * sgOil) + mBrine;
+  const mSsObm = mTotal - mLiqObm;
+
+  // 5. Avg SG Solids - permite valores negativos para detección de inconsistencia física
+  let avgSg = 0;
+  if (adjSolids !== 0) {
+    avgSg = Math.round((mSsObm / adjSolids) * 10) / 10;
+  }
+  setVal('avg_sg_solids', avgSg, avgSg < 0);
+
+  // 6. Decoupled LGS & HGS for OBM
+  let vLgsObm = 0;
+  let vHgsObm = 0;
+  let hasObmError = false;
+  if ((sgHgs - sgLgs) > 0 && adjSolids !== 0) {
+    vLgsObm = (sgHgs * adjSolids - mSsObm) / (sgHgs - sgLgs);
+    vHgsObm = adjSolids - vLgsObm;
+    if (vLgsObm < 0) hasObmError = true;
+  } else {
+    vLgsObm = adjSolids;
+    vHgsObm = 0;
+  }
+
+  const lgsPctObm = Math.round(vLgsObm * 10) / 10;
+  const hgsPctObm = Math.round(vHgsObm * 10) / 10;
+  const lgsPpbObm = Math.round((lgsPctObm * 3.5 * sgLgs) * 100) / 100;
+  const hgsPpbObm = Math.round((hgsPctObm * 3.5 * sgHgs) * 100) / 100;
+
+  setVal('lgs_pct_obm', lgsPctObm, hasObmError);
+  setVal('lgs_ppb_obm', lgsPpbObm, hasObmError);
+  setVal('hgs_pct_obm', hgsPctObm);
+  setVal('hgs_ppb', hgsPpbObm);
+}
+
+let currentMudMode = '{% if reporte.tipo_lodo in "OBM,SBM" %}OBM{% else %}WBM{% endif %}';
+
+function switchMudMode(mode) {
+  currentMudMode = mode;
+  const isObm = (currentMudMode === 'OBM');
+
+  // Actualizar píldoras activas
+  const pillWbm = document.getElementById('pill_wbm');
+  const pillObm = document.getElementById('pill_obm');
+  if (pillWbm) {
+    pillWbm.classList.toggle('active', !isObm);
+    pillWbm.classList.toggle('pill-wbm', !isObm);
+  }
+  if (pillObm) {
+    pillObm.classList.toggle('active', isObm);
+    pillObm.classList.toggle('pill-obm', isObm);
+  }
+
+  // Actualizar título de sección
+  const titleEl = document.getElementById('hdr_solids_analysis_title');
+  if (titleEl) {
+    titleEl.innerHTML = isObm 
+      ? '&#9878; An&aacute;lisis de S&oacute;lidos en FLUIDO BASE ACEITE / SINT&Eacute;TICO (OBM/SBM)' 
+      : '&#9878; An&aacute;lisis de S&oacute;lidos en LODO BASE AGUA (WBM)';
+  }
+
+  // Mostrar / ocultar filas según modo
+  document.querySelectorAll('.mud-row-wbm').forEach(el => el.style.display = isObm ? 'none' : '');
+  document.querySelectorAll('.mud-row-wbm-only').forEach(el => el.style.display = isObm ? 'none' : '');
+  document.querySelectorAll('.mud-row-obm').forEach(el => el.style.display = isObm ? '' : 'none');
+
+  // Controles inferiores
+  const wbmBox = document.getElementById('wbm_weighted_box');
+  const obmBox = document.getElementById('obm_salt_box');
+  if (wbmBox) wbmBox.style.display = isObm ? 'none' : 'flex';
+  if (obmBox) obmBox.style.display = isObm ? 'flex' : 'none';
+
+  // Etiqueta Oil SG vs Base Fluid SG
+  const labelOil = document.getElementById('label_base_oil_sg');
+  if (labelOil) labelOil.textContent = isObm ? 'GE Fluido Base' : 'GE Aceite Base';
+
+  // Recalcular los 4 chequeos
+  [1, 2, 3, 4].forEach(n => recalcularSolidsAnalysis(n));
+}
+
+function cambiarSaltType(newSalt) {
+  showToast(`Sal de fase interna seleccionada: ${newSalt}`);
+  [1, 2, 3, 4].forEach(n => recalcularSolidsAnalysis(n));
+}
+
+function cambiarWeightedStatus(isWeighted){
+  showToast(`Estado de densificación: ${isWeighted ? 'Densificado (Weighted)' : 'No Densificado (Unweighted)'}. Recuerde guardar los cambios.`);
+}
+
+async function guardarMudProperties(){
+  const fields = [
+    'sample_from', 'time_taken', 'flowline_temp', 'depth', 'tvd',
+    'mud_weight', 'mw_temp', 'funnel_viscosity',
+    'rheology_temp', 'r600', 'r300', 'r200', 'r100', 'r6', 'r3',
+    'pv', 'yp', 'gel_10s', 'gel_10m', 'gel_30m',
+    'api_fluid_loss', 'hthp_fluid_loss', 'cake_api', 'cake_hthp',
+    'solids_pct', 'oil_pct', 'water_pct', 'sand_pct',
+    'retort_mud_weight', 'retort_mud_temp', 'k_from_kcl', 'wt_additive_sg', 'oil_sg', 'frac_bent', 'chem_conc', 'drill_solids_sg',
+    'nacl_pct', 'nacl_ppb', 'kcl_pct', 'kcl_ppb', 'lgs_pct', 'lgs_ppb', 'bentonite_pct', 'bentonite_ppb', 'drill_solids_pct', 'drill_solids_ppb', 'hgs_pct',
+    'salt_pct_wt', 'salt_ppb', 'adjusted_solids_pct', 'oil_water_ratio', 'avg_sg_solids', 'hgs_ppb',
+    'ph', 'ph_temp', 'pm', 'pf', 'mf', 'chlorides', 'calcium_hardness',
+    'mbt', 'electrical_stability', 'excess_lime'
+  ];
+
+  const checksPayload = [];
+  for(let i = 1; i <= 4; i++){
+    const chkData = { check_number: i };
+    fields.forEach(f => {
+      let el = document.getElementById(`chk_${i}_${f}`);
+      if (currentMudMode === 'OBM') {
+        if (f === 'lgs_pct') el = document.getElementById(`chk_${i}_lgs_pct_obm`) || el;
+        if (f === 'lgs_ppb') el = document.getElementById(`chk_${i}_lgs_ppb_obm`) || el;
+        if (f === 'hgs_pct') el = document.getElementById(`chk_${i}_hgs_pct_obm`) || el;
+      }
+      if(el){
+        chkData[f] = el.value.trim();
+      }
+    });
+    checksPayload.push(chkData);
+  }
+
+  const weightedRadio = document.querySelector('input[name="mud_weighted_radio"]:checked');
+  const isWeighted = weightedRadio ? (weightedRadio.value === 'weighted') : true;
+
+  const saltRadio = document.querySelector('input[name="obm_salt_radio"]:checked');
+  const obmSaltType = saltRadio ? saltRadio.value : 'CaCl2';
+
+  const configPayload = {
+    solids_equation: document.getElementById('label_solids_eq') ? document.getElementById('label_solids_eq').textContent.trim() : 'M-I',
+    is_weighted: isWeighted,
+    obm_salt_type: obmSaltType,
+    sg_base_oil: parseFloat(document.getElementById('modal_sg_base_oil') ? document.getElementById('modal_sg_base_oil').value : 0.84) || 0.84,
+    sg_weight_material: parseFloat(document.getElementById('modal_sg_weight_mat') ? document.getElementById('modal_sg_weight_mat').value : 4.20) || 4.20,
+    sg_drill_solids: parseFloat(document.getElementById('modal_sg_drill_solids') ? document.getElementById('modal_sg_drill_solids').value : 2.60) || 2.60,
+  };
+
+  try {
+    const res = await fetch(API_MUD_PROPERTIES_GUARDAR, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+        config: configPayload,
+        checks: checksPayload,
+        primary_check_number: 1
+      })
+    });
+    const result = await res.json();
+    if(result.ok){
+      showToast(result.mensaje || 'Propiedades de Lodo guardadas exitosamente.');
+    } else {
+      showToast(result.error || 'Error al guardar propiedades de lodo.', false);
+    }
+  } catch(e) {
+    showToast('Error de conexión al guardar propiedades de lodo.', false);
+  }
+}
+
+function abrirSolidsSGModal(){
+  const m = document.getElementById('modal-solids-sg');
+  if(m) m.style.display = 'flex';
+}
+
+function cerrarSolidsSGModal(){
+  const m = document.getElementById('modal-solids-sg');
+  if(m) m.style.display = 'none';
+}
+
+function aplicarSolidsSGModal(){
+  const eqSelect = document.getElementById('modal_sg_eq_select');
+  if(eqSelect){
+    const labelEq = document.getElementById('label_solids_eq');
+    if(labelEq) labelEq.textContent = eqSelect.value;
+  }
+  cerrarSolidsSGModal();
+  guardarMudProperties();
+}
+
+function abrirExtraPropertiesModal(){
+  const m = document.getElementById('modal-extra-properties');
+  if(m) {
+    m.style.display = 'flex';
+    cargarExtraPropertiesValores();
+  }
+}
+
+function cerrarExtraPropertiesModal(){
+  const m = document.getElementById('modal-extra-properties');
+  if(m) m.style.display = 'none';
+}
+
+async function cargarExtraPropertiesValores(){
+  try {
+    const res = await fetch(API_MUD_PROPERTIES_DETAIL);
+    const data = await res.json();
+    if(data.ok && data.extra_properties){
+      data.extra_properties.forEach(ep => {
+        for(let c = 1; c <= 4; c++){
+          const inputEl = document.getElementById(`extra_${ep.id}_${c}`);
+          if(inputEl && ep.valores && ep.valores[c.toString()] !== undefined){
+            inputEl.value = ep.valores[c.toString()];
+          }
+        }
+      });
+    }
+  } catch(e){
+    console.error('Error al cargar valores de propiedades extra', e);
+  }
+}
+
+async function guardarExtraPropertiesModal(){
+  const extraInputs = document.querySelectorAll('[id^="extra_"]');
+  const extraPayload = [];
+  extraInputs.forEach(inp => {
+    const parts = inp.id.split('_');
+    if(parts.length === 3){
+      const propId = parts[1];
+      const checkNum = parts[2];
+      extraPayload.push({
+        check_number: parseInt(checkNum, 10),
+        propiedad_extra_id: parseInt(propId, 10),
+        valor: inp.value.trim()
+      });
+    }
+  });
+
+  try {
+    const res = await fetch(API_MUD_PROPERTIES_GUARDAR, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+        checks: [],
+        extra_values: extraPayload
+      })
+    });
+    const result = await res.json();
+    if(result.ok){
+      showToast('Valores de propiedades extra guardados.');
+      cerrarExtraPropertiesModal();
+    } else {
+      showToast(result.error || 'Error al guardar propiedades extra.', false);
+    }
+  } catch(e){
+    showToast('Error de conexión al guardar propiedades extra.', false);
+  }
+}
+</script>
+{% endblock %}

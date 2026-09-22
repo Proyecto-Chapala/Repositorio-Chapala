@@ -1227,3 +1227,9 @@ class BenchmarkTarget(models.Model):
     def __str__(self):
         columna = self.intervalo.numero_intervalo if self.intervalo_id else 'Whole Well'
         return f"{self.pozo.nombre} — {self.parametro.descripcion} ({columna})"
+
+
+# === Nuevos modulos (Avances 19 Sep) ===
+
+
+from .models_daily_reports import *

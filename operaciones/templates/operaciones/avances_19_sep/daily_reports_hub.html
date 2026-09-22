@@ -1,0 +1,690 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Fluidos de Perforación y Equipos &middot; {{ pozo.nombre }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/daily_reports.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="subpage">
+  <div style="display:none;">{% csrf_token %}</div>
+
+  <!-- HEADER -->
+  <div class="subpage-header">
+    <a class="subpage-back" href="{% url 'operaciones:pozo_main' pozo.pk %}" title="Volver al Menú del Pozo">&larr;</a>
+    <div>
+      <div class="subpage-breadcrumb">
+        <a href="{% url 'operaciones:pozos_list' %}" style="color:var(--color-accent);text-decoration:none;">Pozos</a> &rsaquo;
+        <a href="{% url 'operaciones:pozo_main' pozo.pk %}" style="color:var(--color-accent);text-decoration:none;">{{ pozo.nombre }}</a> &rsaquo;
+        Fluidos de Perforación y Equipos
+      </div>
+      <h1 class="subpage-title">Fluidos de Perforación y Equipos</h1>
+    </div>
+  </div>
+
+  <!-- WELL INFO BAR -->
+  <div class="well-info-bar">
+    <div class="wi-label">Operador</div>
+    <div class="wi-value">{{ pozo.operador|default:"&mdash;" }}</div>
+    <div class="wi-label">Nombre del Pozo</div>
+    <div class="wi-value">{{ pozo.nombre }}</div>
+    <div class="wi-label">Sistema de Unidades</div>
+    <div class="wi-value">{% if pozo.sistema_unidades == 'STANDARD_OILFIELD' %}Estándar Petrolero (Oilfield){% else %}{{ pozo.get_sistema_unidades_display }}{% endif %}</div>
+  </div>
+
+  <!-- MAIN WORKSPACE CARD -->
+  <div class="subpage-card">
+    <div class="tab-panel" style="padding: 24px;">
+      <div class="df-columns">
+
+        <!-- LEFT PANEL -->
+        <div class="df-left">
+          <div class="section-title">Reporte Diario</div>
+          <div class="btn-grid">
+            <button type="button" class="btn-action" onclick="openNewReportModal()" style="grid-column: 1 / -1; font-weight: 800; background: #fff7ed; border-color: #fdba74; color: #c2410c;">+ Nuevo Reporte</button>
+            <button type="button" class="btn-action" onclick="desplazarAHistorial()">Editar</button>
+            <button type="button" class="btn-action" onclick="activarModoEliminar()" style="border-color:#fca5a5; color:#b91c1c;">Eliminar</button>
+          </div>
+
+          <div class="field-label">Reporte Diario Especial</div>
+          <select><option>Ninguno</option></select>
+        </div>
+
+        <!-- RIGHT PANEL: EXTRA REPORT LABELS -->
+        <div class="erl-card" id="extraLabelsPanel">
+
+          <!-- TITLE -->
+          <div class="erl-main-title">Etiquetas de Propiedades Extra</div>
+
+          <!-- PRESET BAR -->
+          <div class="erl-preset-bar">
+            <label>Configuración Predefinida:</label>
+            <select id="presetSelect">
+              <option value="">Personalizado (Ninguno)</option>
+              <option value="statoil">Statoil</option>
+            </select>
+            <button onclick="cargarPreset()">Cargar</button>
+            <button onclick="guardarPreset()">Guardar como Plantilla</button>
+          </div>
+
+          <!-- WATER-BASED -->
+          <div class="erl-section-header wbm">Base Agua (WBM)</div>
+          <div class="erl-grid">
+            <div></div><div class="col-head">Etiqueta</div><div class="col-head">Unidad</div>
+            <div></div>
+            <div></div><div class="col-head">Etiqueta</div><div class="col-head">Unidad</div>
+
+            <div class="rn">1</div>
+            <input type="text" data-tipo="WBM" data-num="1" data-field="label">
+            <input type="text" data-tipo="WBM" data-num="1" data-field="unit">
+            <div></div>
+            <div class="rn">5</div>
+            <input type="text" data-tipo="WBM" data-num="5" data-field="label">
+            <input type="text" data-tipo="WBM" data-num="5" data-field="unit">
+
+            <div class="rn">2</div>
+            <input type="text" data-tipo="WBM" data-num="2" data-field="label">
+            <input type="text" data-tipo="WBM" data-num="2" data-field="unit">
+            <div></div>
+            <div class="rn">6</div>
+            <input type="text" data-tipo="WBM" data-num="6" data-field="label">
+            <input type="text" data-tipo="WBM" data-num="6" data-field="unit">
+
+            <div class="rn">3</div>
+            <input type="text" data-tipo="WBM" data-num="3" data-field="label">
+            <input type="text" data-tipo="WBM" data-num="3" data-field="unit">
+            <div></div>
+            <div class="rn">7</div>
+            <input type="text" data-tipo="WBM" data-num="7" data-field="label">
+            <input type="text" data-tipo="WBM" data-num="7" data-field="unit">
+
+            <div class="rn">4</div>
+            <input type="text" data-tipo="WBM" data-num="4" data-field="label">
+            <input type="text" data-tipo="WBM" data-num="4" data-field="unit">
+            <div></div>
+            <div class="rn">8</div>
+            <input type="text" data-tipo="WBM" data-num="8" data-field="label">
+            <input type="text" data-tipo="WBM" data-num="8" data-field="unit">
+          </div>
+
+          <!-- OIL-BASED / SYNTHETIC-BASED -->
+          <div class="erl-section-header obm">Base Aceite / Sintético (OBM/SBF)</div>
+          <div class="erl-grid">
+            <div></div><div class="col-head">Etiqueta</div><div class="col-head">Unidad</div>
+            <div></div>
+            <div></div><div class="col-head">Etiqueta</div><div class="col-head">Unidad</div>
+
+            <div class="rn">1</div>
+            <input type="text" data-tipo="OBM" data-num="1" data-field="label">
+            <input type="text" data-tipo="OBM" data-num="1" data-field="unit">
+            <div></div>
+            <div class="rn">5</div>
+            <input type="text" data-tipo="OBM" data-num="5" data-field="label">
+            <input type="text" data-tipo="OBM" data-num="5" data-field="unit">
+
+            <div class="rn">2</div>
+            <input type="text" data-tipo="OBM" data-num="2" data-field="label">
+            <input type="text" data-tipo="OBM" data-num="2" data-field="unit">
+            <div></div>
+            <div class="rn">6</div>
+            <input type="text" data-tipo="OBM" data-num="6" data-field="label">
+            <input type="text" data-tipo="OBM" data-num="6" data-field="unit">
+
+            <div class="rn">3</div>
+            <input type="text" data-tipo="OBM" data-num="3" data-field="label">
+            <input type="text" data-tipo="OBM" data-num="3" data-field="unit">
+            <div></div>
+            <div class="rn">7</div>
+            <input type="text" data-tipo="OBM" data-num="7" data-field="label">
+            <input type="text" data-tipo="OBM" data-num="7" data-field="unit">
+
+            <div class="rn">4</div>
+            <input type="text" data-tipo="OBM" data-num="4" data-field="label">
+            <input type="text" data-tipo="OBM" data-num="4" data-field="unit">
+            <div></div>
+            <div class="rn">8</div>
+            <input type="text" data-tipo="OBM" data-num="8" data-field="label">
+            <input type="text" data-tipo="OBM" data-num="8" data-field="unit">
+          </div>
+
+          <div class="erl-footer">
+            <button onclick="alert('Las etiquetas 9-60 son para reporte Excel. Funcionalidad por implementar.')">Etiquetas Extra 9 &ndash; 60</button>
+            <span class="note">Las etiquetas extra (9-60) son solo para el reporte de Excel.</span>
+          </div>
+
+          <div class="erl-save-bar">
+            <button class="btn-save-main" onclick="guardarExtraLabels()">&#128190; Guardar Etiquetas</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SECCIÓN INFERIOR: HISTORIAL DE REPORTES DIARIOS -->
+      <div class="historial-section" id="seccionHistorial" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 22px;">&#128197;</span>
+            <div>
+              <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.01em;">Historial de Reportes Diarios</h3>
+              <p style="font-size: 12px; color: #64748b; margin: 3px 0 0 0;">Reportes registrados cronológicamente para este pozo</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-action" onclick="openNewReportModal()" style="font-size: 12px; padding: 6px 14px; border-radius: 16px; background: #fff7ed; border-color: #fdba74; color: #c2410c; font-weight: 700;">
+              + Nuevo Reporte
+            </button>
+            <button type="button" class="btn-action" id="btnToggleEliminar" onclick="toggleModoEliminar()" style="border-color:#fca5a5; color:#b91c1c; font-size: 12px; padding: 6px 14px; border-radius: 16px; font-weight: 700;">
+              &#128465; Modo Eliminación
+            </button>
+          </div>
+        </div>
+
+        <!-- Delete Mode Banner (Shown when user clicks Delete) -->
+        <div id="bannerModoEliminar" class="delete-mode-banner" style="display:none;">
+          <div class="dmb-left">
+            <span class="dmb-icon">&#9888;&#65039;</span>
+            <div>
+              <strong>Modo de Eliminación Activo</strong>
+              <p>Haz clic en el botón rojo de la fila para eliminar permanentemente el reporte de ese día.</p>
+            </div>
+          </div>
+          <button type="button" class="btn-exit-delete-mode" onclick="desactivarModoEliminar()">
+            <span>&#128682;</span> Salir del modo eliminación
+          </button>
+        </div>
+
+        <table class="project-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Profundidad</th>
+              <th>Actividad</th>
+              <th>Tipo de Lodo</th>
+              <th style="text-align:center; width:160px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="reportesBody">
+            <tr><td colspan="5" class="table-empty-hint">Cargando reportes...</td></tr>
+          </tbody>
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- MODAL NUEVO REPORTE (REDISEÑADO, MODERNO Y 100% OPERATIVO) -->
+<div class="modal-bg" id="newReportModal">
+  <div class="modal-card-modern">
+
+    <!-- Header -->
+    <div class="modal-header-modern">
+      <div>
+        <h3><span>&#128197;</span> Nuevo Reporte Diario</h3>
+        <p>Inicia el registro diario de fluidos y equipos para este pozo</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeNewReportModal()">&times;</button>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body-modern">
+
+      <!-- Fecha del Reporte -->
+      <div class="modal-field-group">
+        <label class="field-title">Fecha del Reporte</label>
+        <div class="date-input-container">
+          <span class="date-input-icon">&#128197;</span>
+          <input type="date" id="modalFecha" value="{{ sugerencia_fecha }}" onclick="this.showPicker && this.showPicker()" oninput="actualizarInfoFecha(this.value)">
+        </div>
+        <div id="previewFechaTexto" class="date-feedback-text">
+          <span>&#10003;</span> <span id="fechaLegibleTexto">Cargando fecha...</span>
+        </div>
+        <div class="date-shortcuts-bar">
+          <button type="button" id="btnChipConsecutivo" class="date-chip-btn" onclick="fijarFechaSugerida()">&#9197; Consecutivo ({{ sugerencia_fecha }})</button>
+          <button type="button" class="date-chip-btn" onclick="fijarFechaHoy()">&#128197; Hoy</button>
+          {% if spud_date_str %}
+            <button type="button" class="date-chip-btn" onclick="fijarFechaSpud('{{ spud_date_str }}')">&#9875; Fecha Spud</button>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Mud Check Type -->
+      <div class="modal-field-group">
+        <label class="field-title">Tipo de Fluido (Lodo)</label>
+        <div class="mud-type-grid">
+          <label class="mud-type-card {% if sugerencia_lodo == 'WBM' or not sugerencia_lodo %}is-selected{% endif %}" id="card_WBM" onclick="seleccionarMudType('WBM')">
+            <input type="radio" name="mud_type" value="WBM" {% if sugerencia_lodo == 'WBM' or not sugerencia_lodo %}checked{% endif %}>
+            <span class="mud-label">&#128167; Base Agua (WBM)</span>
+          </label>
+          <label class="mud-type-card {% if sugerencia_lodo == 'WBM_CACL2' %}is-selected{% endif %}" id="card_WBM_CACL2" onclick="seleccionarMudType('WBM_CACL2')">
+            <input type="radio" name="mud_type" value="WBM_CACL2" {% if sugerencia_lodo == 'WBM_CACL2' %}checked{% endif %}>
+            <span class="mud-label">&#129514; Base Agua (CaCl2)</span>
+          </label>
+          <label class="mud-type-card {% if sugerencia_lodo == 'OBM' %}is-selected{% endif %}" id="card_OBM" onclick="seleccionarMudType('OBM')">
+            <input type="radio" name="mud_type" value="OBM" {% if sugerencia_lodo == 'OBM' %}checked{% endif %}>
+            <span class="mud-label">&#128738; Base Aceite (OBM)</span>
+          </label>
+          <label class="mud-type-card {% if sugerencia_lodo == 'SBM' %}is-selected{% endif %}" id="card_SBM" onclick="seleccionarMudType('SBM')">
+            <input type="radio" name="mud_type" value="SBM" {% if sugerencia_lodo == 'SBM' %}checked{% endif %}>
+            <span class="mud-label">&#128300; Base Sintética (SBM)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Copy Data from Prior Day? -->
+      <div class="copy-data-box">
+        <div class="cd-title">¿Copiar datos del día anterior (Copy Data)?</div>
+        <div class="cd-desc">Hereda automáticamente las profundidades, contactos y geometrías del día previo.</div>
+        <div class="copy-options-row">
+          <label class="copy-option-pill">
+            <input type="radio" name="copy_data" value="yes" checked>
+            <span>&#10003; Sí, copiar datos (Recomendado)</span>
+          </label>
+          <label class="copy-option-pill">
+            <input type="radio" name="copy_data" value="no">
+            <span>&times; No, iniciar en blanco</span>
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="modal-actions-modern">
+      <button type="button" class="btn-modern-cancel" onclick="closeNewReportModal()">Cancelar</button>
+      <button type="button" class="btn-modern-create" id="btnSubmitCrear" onclick="crearReporte()">OK (Crear Reporte) &rarr;</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR ELIMINACION (MODO ELIMINAR) -->
+<div class="modal-bg" id="confirmDeleteModal">
+  <div class="modal-card-modern" style="max-width:440px;">
+    <div class="modal-header-modern" style="background:#fef2f2; border-bottom:1px solid #fee2e2;">
+      <div>
+        <h3 style="color:#991b1b;"><span>&#9888;&#65039;</span> Confirmar Eliminación</h3>
+        <p style="color:#b91c1c;">Esta acción no se puede deshacer</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="cerrarModalEliminar()">&times;</button>
+    </div>
+    <div class="modal-body-modern">
+      <p style="font-size:13.5px; color:#334155; line-height:1.5; margin:0 0 12px 0;">
+        ¿Estás seguro de que deseas eliminar permanentemente el reporte diario del <strong id="deleteFechaTarget" style="color:#dc2626;"></strong>?
+      </p>
+      <p style="font-size:12px; color:#64748b; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin:0;">
+        Se eliminarán todos los registros de profundidades, propiedades de lodo, equipos de sólidos y costos cargados en esta fecha.
+      </p>
+    </div>
+    <div class="modal-actions-modern">
+      <button type="button" class="btn-modern-cancel" onclick="cerrarModalEliminar()">Cancelar</button>
+      <button type="button" class="btn-modern-create" style="background:#dc2626; border-color:#b91c1c;" id="btnConfirmarEliminar" onclick="ejecutarEliminarReporte()">
+        &#128465; Sí, Eliminar Reporte
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast-msg"></div>
+
+<script>
+const POZO_ID = parseInt("{{ pozo.id }}", 10);
+const SUGERENCIA_FECHA_DEFECTO = "{{ sugerencia_fecha|default:'' }}";
+const API_EXTRA      = `/api/pozos/${POZO_ID}/propiedades-extra/`;
+const API_EXTRA_SAVE = `/api/pozos/${POZO_ID}/propiedades-extra/guardar/`;
+const API_REPORTES   = `/api/pozos/${POZO_ID}/reportes-diarios/`;
+const API_REP_CREAR  = `/api/pozos/${POZO_ID}/reportes-diarios/crear/`;
+
+let modoEliminarActivo = false;
+let reporteIdAEliminar = null;
+let idReporteReciente = null;
+let sugerenciaFechaActual = SUGERENCIA_FECHA_DEFECTO;
+
+function getCookie(n){
+  const v=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)');
+  if(v) return v.pop();
+  if(n === 'csrftoken'){
+    const input = document.querySelector('[name=csrfmiddlewaretoken]');
+    if(input) return input.value;
+  }
+  return '';
+}
+
+function showToast(msg, ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast-msg ${ok?'ok':'err'} show`;
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+/* === NAVEGACIÓN Y HISTORIAL === */
+function desplazarAHistorial(){
+  const el = document.getElementById('seccionHistorial');
+  if(el){
+    el.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function switchTab(name){
+  if(name === 'historial') desplazarAHistorial();
+}
+
+/* === MODO ELIMINAR === */
+function activarModoEliminar(){
+  modoEliminarActivo = true;
+  const banner = document.getElementById('bannerModoEliminar');
+  if(banner) banner.style.display = 'flex';
+  const btn = document.getElementById('btnToggleEliminar');
+  if(btn) btn.textContent = '❌ Salir de Eliminación';
+  desplazarAHistorial();
+  cargarReportes();
+}
+
+function desactivarModoEliminar(){
+  modoEliminarActivo = false;
+  const banner = document.getElementById('bannerModoEliminar');
+  if(banner) banner.style.display = 'none';
+  const btn = document.getElementById('btnToggleEliminar');
+  if(btn) btn.textContent = '🗑️ Modo Eliminación';
+  cargarReportes();
+}
+
+function toggleModoEliminar(){
+  if(modoEliminarActivo){
+    desactivarModoEliminar();
+  } else {
+    activarModoEliminar();
+  }
+}
+
+function solicitarEliminar(id, fecha){
+  reporteIdAEliminar = id;
+  document.getElementById('deleteFechaTarget').textContent = fecha;
+  document.getElementById('confirmDeleteModal').classList.add('open');
+}
+
+function cerrarModalEliminar(){
+  reporteIdAEliminar = null;
+  document.getElementById('confirmDeleteModal').classList.remove('open');
+}
+
+async function ejecutarEliminarReporte(){
+  if(!reporteIdAEliminar) return;
+  const btn = document.getElementById('btnConfirmarEliminar');
+  btn.disabled = true;
+  btn.textContent = 'Eliminando...';
+  try{
+    const r=await fetch(`/api/pozos/${POZO_ID}/reportes-diarios/${reporteIdAEliminar}/eliminar/`,{
+      method:'DELETE',
+      headers:{'X-CSRFToken':getCookie('csrftoken')}
+    });
+    const d=await r.json();
+    if(d.ok){
+      showToast('Reporte diario eliminado con éxito');
+      cerrarModalEliminar();
+      cargarReportes();
+    } else {
+      showToast(d.error||'Error al eliminar', false);
+    }
+  }catch(e){
+    showToast('Error de conexión', false);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '&#128465; Sí, Eliminar Reporte';
+  }
+}
+
+/* === EXTRA LABELS: Cargar === */
+async function cargarExtraLabels(){
+  try{
+    const r=await fetch(API_EXTRA);
+    const d=await r.json();
+    if(!d.ok) return;
+    const p=d.propiedades;
+    document.querySelectorAll('#extraLabelsPanel input[data-tipo]').forEach(i=>{
+      const k=`${i.dataset.tipo}_${i.dataset.num}`;
+      if(p[k]) i.value = i.dataset.field==='label' ? p[k].etiqueta : p[k].unidad;
+    });
+  }catch(e){console.error(e);}
+}
+
+/* === EXTRA LABELS: Guardar === */
+async function guardarExtraLabels(){
+  const items=[];
+  document.querySelectorAll('#extraLabelsPanel input[data-field="label"]').forEach(li=>{
+    const t=li.dataset.tipo, n=parseInt(li.dataset.num);
+    const ui=document.querySelector(`#extraLabelsPanel input[data-tipo="${t}"][data-num="${n}"][data-field="unit"]`);
+    items.push({tipo_fluido:t,numero:n,etiqueta:li.value.trim(),unidad:ui?ui.value.trim():''});
+  });
+  try{
+    const r=await fetch(API_EXTRA_SAVE,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+      body:JSON.stringify({items})
+    });
+    const d=await r.json();
+    d.ok ? showToast(`${d.guardados} etiquetas guardadas`) : showToast(d.error||'Error',false);
+  }catch(e){showToast('Error de conexion',false);}
+}
+
+/* === PRESETS (placeholder) === */
+function cargarPreset(){ showToast('Funcionalidad de presets por implementar'); }
+function guardarPreset(){ showToast('Funcionalidad de presets por implementar'); }
+
+/* === REPORTES: Cargar === */
+async function cargarReportes(){
+  try{
+    const r=await fetch(API_REPORTES);
+    const d=await r.json();
+    const tb=document.getElementById('reportesBody');
+    if(!d.ok||!d.reportes.length){
+      tb.innerHTML='<tr><td colspan="5" class="table-empty-hint">No hay reportes diarios registrados aún. Haz clic en "+ Nuevo Reporte" para crear el primero.</td></tr>';
+      return;
+    }
+    tb.innerHTML=d.reportes.map(r=>{
+      const esReciente = r.id === idReporteReciente;
+      return `
+      <tr class="${modoEliminarActivo ? 'row-danger-highlight' : ''}" style="${esReciente ? 'background: #f0fdf4; border-left: 4px solid #22c55e;' : ''}">
+        <td>
+          <a href="/pozos/${POZO_ID}/daily-report/${r.id}/" style="color:var(--color-accent); font-weight:700; text-decoration:none;">
+            ${r.fecha}
+          </a>
+          ${esReciente ? '<span style="background:#22c55e; color:#fff; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:8px; display:inline-block;">NUEVO</span>' : ''}
+        </td>
+        <td>${r.profundidad_actual} ft</td>
+        <td>${r.actividad_actual||'&mdash;'}</td>
+        <td><span class="project-chip" style="font-size:11px;">${r.tipo_lodo_display}</span></td>
+        <td style="text-align:center;">
+          ${modoEliminarActivo ? `
+            <button type="button" class="btn-delete-row-prominent" onclick="solicitarEliminar(${r.id}, '${r.fecha}')">
+              &#128465; Eliminar
+            </button>
+          ` : `
+            <a href="/pozos/${POZO_ID}/daily-report/${r.id}/" class="btn-nav" style="text-decoration:none; color:var(--color-text-primary); font-size: 11px; padding: 4px 10px; margin-right: 5px; font-weight:700;">&#9998; Abrir</a>
+            <button type="button" class="btn-remove-row" title="Eliminar" onclick="solicitarEliminar(${r.id}, '${r.fecha}')">&times;</button>
+          `}
+        </td>
+      </tr>
+    `;
+    }).join('');
+  }catch(e){
+    console.error('Error cargando reportes:', e);
+    const tb = document.getElementById('reportesBody');
+    if(tb) tb.innerHTML='<tr><td colspan="5" class="table-empty-hint" style="color:#ef4444;">Error de comunicación al cargar reportes. Recarga la página.</td></tr>';
+  }
+}
+
+/* === MODAL NUEVO REPORTE === */
+function openNewReportModal(){
+  const el = document.getElementById('modalFecha');
+  if(!el.value && SUGERENCIA_FECHA_DEFECTO){
+    el.value = SUGERENCIA_FECHA_DEFECTO;
+  }
+  actualizarInfoFecha(el.value);
+  document.getElementById('newReportModal').classList.add('open');
+}
+
+function closeNewReportModal(){
+  document.getElementById('newReportModal').classList.remove('open');
+}
+
+function seleccionarMudType(val){
+  document.querySelectorAll('.mud-type-card').forEach(c=>c.classList.remove('is-selected'));
+  const card = document.getElementById('card_' + val);
+  if(card){
+    card.classList.add('is-selected');
+    const rd = card.querySelector('input[type="radio"]');
+    if(rd) rd.checked = true;
+  }
+}
+
+function actualizarInfoFecha(val){
+  const lbl = document.getElementById('fechaLegibleTexto');
+  if(!val){
+    lbl.textContent = 'Selecciona una fecha en el calendario';
+    return;
+  }
+  try{
+    const parts = val.split('-');
+    if(parts.length === 3){
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+      const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      lbl.textContent = d.toLocaleDateString('es-ES', opciones);
+    } else {
+      lbl.textContent = val;
+    }
+  }catch(e){
+    lbl.textContent = val;
+  }
+}
+
+function fijarFechaSugerida(){
+  const el = document.getElementById('modalFecha');
+  if(sugerenciaFechaActual){
+    el.value = sugerenciaFechaActual;
+    actualizarInfoFecha(el.value);
+  }
+}
+
+function fijarFechaHoy(){
+  const el = document.getElementById('modalFecha');
+  const hoy = new Date().toISOString().split('T')[0];
+  el.value = hoy;
+  actualizarInfoFecha(hoy);
+}
+
+function fijarFechaSpud(spud){
+  const el = document.getElementById('modalFecha');
+  el.value = spud;
+  actualizarInfoFecha(spud);
+}
+
+function actualizarSugerenciaSiguienteFecha(fechaStr){
+  try{
+    const parts = fechaStr.split('-');
+    if(parts.length === 3){
+      const dt = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10)-1, parseInt(parts[2], 10));
+      dt.setDate(dt.getDate() + 1);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, '0');
+      const day = String(dt.getDate()).padStart(2, '0');
+      const sig = `${y}-${m}-${day}`;
+      sugerenciaFechaActual = sig;
+      const inp = document.getElementById('modalFecha');
+      if(inp){
+        inp.value = sig;
+        actualizarInfoFecha(sig);
+      }
+      const chip = document.getElementById('btnChipConsecutivo');
+      if(chip){
+        chip.textContent = `⏭ Consecutivo (${sig})`;
+      }
+    }
+  }catch(e){ console.error(e); }
+}
+
+async function crearReporte(){
+  const f = document.getElementById('modalFecha').value;
+  const radioLodo = document.querySelector('input[name="mud_type"]:checked');
+  const t = radioLodo ? radioLodo.value : 'WBM';
+  const c = document.querySelector('input[name="copy_data"]:checked').value === 'yes';
+
+  if(!f){
+    showToast('Selecciona una fecha válida', false);
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmitCrear');
+  btn.disabled = true;
+  btn.textContent = 'Creando reporte...';
+
+  try{
+    const r = await fetch(API_REP_CREAR,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+      body:JSON.stringify({fecha:f, tipo_lodo:t, copy_data:c})
+    });
+    let d;
+    try {
+      d = await r.json();
+    } catch(err) {
+      showToast(`Error del servidor (${r.status})`, false);
+      btn.disabled = false;
+      btn.innerHTML = 'OK (Crear Reporte) &rarr;';
+      return;
+    }
+    if(d && d.ok){
+      showToast(`Reporte para ${d.fecha} creado exitosamente`);
+      closeNewReportModal();
+      btn.disabled = false;
+      btn.innerHTML = 'OK (Crear Reporte) &rarr;';
+
+      // Marcar reporte para resaltar su fila en el historial
+      idReporteReciente = d.id;
+
+      // Recargar lista de reportes en la tabla inferior
+      await cargarReportes();
+
+      // Desplazar suavemente hacia la tabla para ver el reporte creado
+      desplazarAHistorial();
+
+      // Avanzar fecha sugerida en el modal para el próximo registro
+      actualizarSugerenciaSiguienteFecha(d.fecha);
+
+      // Quitar resaltado tras unos segundos
+      setTimeout(() => {
+        idReporteReciente = null;
+        cargarReportes();
+      }, 7000);
+    }
+    else {
+      showToast((d && d.error) ? d.error : 'Error al crear el reporte', false);
+      btn.disabled = false;
+      btn.innerHTML = 'OK (Crear Reporte) &rarr;';
+    }
+  }catch(e){
+    console.error(e);
+    showToast('Error de conexión con el servidor', false);
+    btn.disabled = false;
+    btn.innerHTML = 'OK (Crear Reporte) &rarr;';
+  }
+}
+
+/* === INIT === */
+document.addEventListener('DOMContentLoaded',()=>{
+  cargarExtraLabels();
+  cargarReportes();
+  if(document.getElementById('modalFecha')){
+    actualizarInfoFecha(document.getElementById('modalFecha').value);
+  }
+});
+</script>
+{% endblock %}

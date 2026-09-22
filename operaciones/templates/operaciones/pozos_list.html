@@ -1,0 +1,45 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Vista General del Proyecto | CHAPALA{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="subpage">
+
+  <div class="subpage-header">
+    <div>
+      <h1 class="subpage-title">Vista General del Proyecto</h1>
+      <div class="subpage-breadcrumb">Selecciona un pozo para acceder a su configuracion y modulos operativos.</div>
+    </div>
+  </div>
+
+  <div class="project-grid">
+    {% for pozo in pozos %}
+    <a class="project-card" href="{% url 'operaciones:pozo_main' pozo.id %}">
+      <div class="project-card-icon">🛢️</div>
+      <div>
+        <div class="project-card-title">{{ pozo.nombre }}</div>
+        <div class="project-card-sub">
+          {{ pozo.operador|default:"Operador no definido" }}
+          {% if pozo.spud_date %} · Spud: {{ pozo.spud_date|date:"d/M/Y" }}{% endif %}
+        </div>
+      </div>
+      <span class="project-card-badge badge-ready">{{ pozo.get_estado_display }}</span>
+    </a>
+    {% empty %}
+    <div class="project-card is-disabled" style="grid-column:1/-1; justify-content:center; cursor:default;">
+      <div class="project-card-icon">📭</div>
+      <div>
+        <div class="project-card-title">No hay pozos creados</div>
+        <div class="project-card-sub">Utiliza "Nuevo Pozo" en la barra lateral para comenzar.</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

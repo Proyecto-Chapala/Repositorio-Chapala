@@ -627,6 +627,15 @@ def pozo_main_view(request, pk):
     return render(request, 'operaciones/pozos/main.html', {'pozo': pozo})
 
 
+
+
+def pozos_list_view(request):
+    """Vista temporal/placeholder para la lista de pozos en el sidebar."""
+    from .models import Pozo
+    pozos = Pozo.objects.all()
+    return render(request, 'operaciones/pozos_list.html', {'pozos': pozos})
+
+
 # ============================================================
 # Well Header Information (2 pestañas)
 # ============================================================
