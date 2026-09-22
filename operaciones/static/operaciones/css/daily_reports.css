@@ -2373,3 +2373,263 @@
 }
 
 
+
+/* =====================================================================
+   PESTAÑA 4 — GEOMETRÍA DEL POZO (WELL GEOMETRY)
+   ===================================================================== */
+
+/* ---------- Franja de continuidad ---------- */
+.wg-continuidad{
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  background:#ffffff; border:1px solid #e2e8f0; border-left:3px solid #f2994a;
+  border-radius:10px; padding:10px 16px; margin-bottom:14px;
+  box-shadow:0 1px 2px rgba(15,23,42,.05);
+}
+.wg-continuidad-item{ display:flex; flex-direction:column; gap:1px; }
+.wg-cont-label{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#94a3b8; }
+.wg-cont-valor{ font-size:13px; font-weight:700; color:#0f172a; }
+.wg-cont-flecha{ color:#cbd5e1; font-size:16px; }
+.wg-cont-avance{ margin-left:auto; text-align:right; }
+.wg-cont-avance .wg-cont-valor{ color:#64748b; }
+.wg-cont-avance .wg-cont-valor.wg-avance-positivo{ color:#16a34a; }
+
+/* ---------- Barra superior de la sarta ---------- */
+.wg-sarta-toolbar{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:14px; flex-wrap:wrap; margin-bottom:10px;
+}
+.wg-sarta-medidas{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+.wg-medida{ display:flex; flex-direction:column; gap:1px; }
+.wg-medida-label{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#94a3b8; }
+.wg-medida-valor{ font-size:15px; font-weight:800; color:#0f172a; }
+.wg-medida-link{ font-size:10.5px; color:#f2994a; text-decoration:none; font-weight:600; }
+.wg-medida-link:hover{ text-decoration:underline; }
+.wg-sarta-acciones{ display:flex; gap:8px; }
+.btn-sm{ padding:6px 12px !important; font-size:12px !important; }
+
+.wg-chip-estado{
+  display:inline-flex; align-items:center; padding:4px 11px; border-radius:999px;
+  font-size:11.5px; font-weight:700; white-space:nowrap;
+}
+.wg-chip-ok{ background:#dcfce7; color:#15803d; }
+.wg-chip-alerta{ background:#fef3c7; color:#b45309; }
+.wg-chip-neutro{ background:#f1f5f9; color:#64748b; }
+
+/* ---------- Tablas ---------- */
+.wg-tabla-wrapper{ overflow-x:auto; border:1px solid #e2e8f0; border-radius:8px; background:#fff; }
+.wg-tabla{ width:100%; border-collapse:collapse; font-size:12px; }
+.wg-tabla thead th{
+  background:#f8fafc; color:#475569; font-size:10.5px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.35px; text-align:left;
+  padding:8px 8px; border-bottom:1px solid #e2e8f0; white-space:nowrap;
+}
+.wg-tabla tbody td{ padding:4px 6px; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+.wg-tabla tbody tr:last-child td{ border-bottom:none; }
+.wg-tabla .wg-col-junta{ background:#fcfcfd; }
+.wg-tabla thead .wg-col-junta{ background:#f1f5f9; color:#64748b; }
+.wg-tabla .wg-col-calc{ background:#fffbf5; }
+.wg-td-orden{ text-align:center; font-weight:800; color:#94a3b8; font-size:11px; }
+.wg-td-calc{ text-align:right; font-weight:700; color:#0f172a; font-variant-numeric:tabular-nums; }
+.wg-td-num{ text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+.wg-td-desc{ color:#334155; font-weight:600; }
+.wg-fila-vacia td{ text-align:center; color:#94a3b8; padding:22px 12px !important; font-style:italic; }
+.wg-fila-bajo-mecha td{ background:#fefce8; }
+.wg-fila-activa td{ background:#fff3e6 !important; }
+
+.wg-input{
+  width:100%; min-width:64px; padding:5px 7px; border:1px solid #e2e8f0; border-radius:5px;
+  font-size:12px; font-family:inherit; color:#0f172a; background:#fff; transition:border-color .12s, box-shadow .12s;
+}
+.wg-input:focus{ outline:none; border-color:#f2994a; box-shadow:0 0 0 2px rgba(242,153,74,.16); }
+.wg-input-texto{ min-width:180px; }
+
+.wg-td-acciones{ white-space:nowrap; text-align:center; }
+.wg-btn-icono{
+  border:1px solid #e2e8f0; background:#fff; color:#64748b; border-radius:4px;
+  width:20px; height:20px; line-height:1; font-size:9px; cursor:pointer; padding:0; margin:0 1px;
+}
+.wg-btn-icono:hover:not(:disabled){ background:#f8fafc; color:#0f172a; }
+.wg-btn-icono:disabled{ opacity:.35; cursor:not-allowed; }
+.wg-btn-borrar:hover{ background:#fef2f2 !important; color:#dc2626 !important; border-color:#fecaca !important; }
+
+.wg-nota{ font-size:11.5px; color:#64748b; line-height:1.5; margin:8px 2px 0 2px; }
+.wg-nota-compacta{ margin-top:6px; font-size:11px; }
+
+/* ---------- Contexto del pozo ---------- */
+.wg-contexto-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; }
+.wg-contexto-col{ min-width:0; }
+.wg-subtitulo{
+  font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.5px;
+  color:#f2994a; margin-bottom:8px; display:flex; align-items:center; gap:8px;
+}
+.wg-solo-lectura{
+  font-size:9.5px; font-weight:700; text-transform:none; letter-spacing:0;
+  background:#f1f5f9; color:#94a3b8; padding:2px 7px; border-radius:999px;
+}
+.wg-intervalo-detalle{
+  font-size:11.5px; color:#475569; background:#f8fafc; border-radius:6px;
+  padding:8px 10px; margin-top:8px; line-height:1.5;
+}
+.wg-link-gestion{
+  display:inline-block; margin-top:8px; font-size:11.5px; font-weight:700;
+  color:#f2994a; text-decoration:none;
+}
+.wg-link-gestion:hover{ text-decoration:underline; }
+
+.wg-perfil-lista{ border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; background:#fff; }
+.wg-perfil-fila{
+  display:flex; align-items:center; gap:8px; padding:7px 10px;
+  border-bottom:1px solid #f1f5f9; font-size:11.5px; border-left:3px solid transparent;
+}
+.wg-perfil-fila:last-child{ border-bottom:none; }
+.wg-perfil-riser{ border-left-color:#94a3b8; }
+.wg-perfil-casing{ border-left-color:#64748b; }
+.wg-perfil-hoyo{ border-left-color:#c8a27a; }
+.wg-perfil-piloto{ border-left-color:#a9835c; }
+.wg-perfil-rango{ font-variant-numeric:tabular-nums; color:#64748b; white-space:nowrap; }
+.wg-perfil-etiqueta{ font-weight:700; color:#0f172a; flex:1; }
+.wg-perfil-diam{ font-variant-numeric:tabular-nums; font-weight:700; color:#475569; }
+.wg-perfil-vacio{ padding:18px 12px; text-align:center; color:#94a3b8; font-size:11.5px; font-style:italic; }
+
+/* ---------- Barra de avance del intervalo ---------- */
+.wg-avance-wrapper{ margin-top:18px; padding-top:14px; border-top:1px solid #e2e8f0; }
+.wg-avance-head{ display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:7px; }
+.wg-avance-titulo{ font-size:12.5px; font-weight:800; color:#0f172a; }
+.wg-avance-cifras{ font-size:11.5px; color:#64748b; font-variant-numeric:tabular-nums; }
+.wg-avance-barra{ height:9px; background:#f1f5f9; border-radius:999px; overflow:hidden; }
+.wg-avance-relleno{
+  height:100%; border-radius:999px;
+  background:linear-gradient(90deg, #f2994a, #e8863a); transition:width .3s ease;
+}
+
+/* ---------- Tarjetas de volúmenes ---------- */
+.wg-avisos{ margin-bottom:12px; }
+.wg-aviso{
+  background:#fffbeb; border:1px solid #fde68a; border-radius:7px;
+  padding:8px 12px; font-size:12px; color:#92400e; margin-bottom:6px;
+}
+.wg-tarjetas{ display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:12px; }
+.wg-tarjeta{
+  background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px;
+  display:flex; flex-direction:column; gap:2px; box-shadow:0 1px 2px rgba(15,23,42,.05);
+}
+.wg-tarjeta-label{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#94a3b8; }
+.wg-tarjeta-valor{ font-size:22px; font-weight:800; color:#0f172a; font-variant-numeric:tabular-nums; line-height:1.15; }
+.wg-tarjeta-unidad{ font-size:10.5px; color:#94a3b8; font-weight:600; }
+.wg-tarjeta-principal{ border-left:3px solid #f2994a; }
+.wg-tarjeta-total{ background:#0f172a; border-color:#0f172a; }
+.wg-tarjeta-total .wg-tarjeta-label,
+.wg-tarjeta-total .wg-tarjeta-unidad{ color:#94a3b8; }
+.wg-tarjeta-total .wg-tarjeta-valor{ color:#ffffff; }
+.wg-tarjetas-secundarias .wg-tarjeta-valor{ font-size:17px; }
+
+/* ---------- Desglose y esquema ---------- */
+.wg-desglose{ display:grid; grid-template-columns:1fr 290px; gap:16px; align-items:start; }
+.wg-desglose-tabla{ min-width:0; }
+.wg-desglose-head{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.5px;
+  color:#475569; margin-bottom:7px;
+}
+.wg-tabla-lectura tbody td{ padding:6px 8px; }
+.wg-tabla-lectura tbody tr{ cursor:default; }
+.wg-esquema{ min-width:0; }
+.wg-esquema-lienzo{
+  border:1px solid #e2e8f0; border-radius:8px; background:#fff; padding:6px;
+  display:flex; align-items:center; justify-content:center; min-height:200px;
+}
+.wg-svg{ width:100%; height:auto; max-height:430px; }
+.wg-svg-etq{ font-size:8px; fill:#64748b; font-family:inherit; font-weight:600; }
+.wg-svg-mecha{ font-size:8.5px; fill:#dc2626; font-family:inherit; font-weight:700; }
+.wg-svg-escala{ font-size:8px; fill:#94a3b8; font-family:inherit; font-weight:600; }
+.wg-esquema-leyenda{
+  display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;
+  font-size:10.5px; color:#64748b; justify-content:center;
+}
+.wg-esquema-leyenda span{ display:inline-flex; align-items:center; gap:4px; }
+.wg-lg{ width:9px; height:9px; border-radius:2px; display:inline-block; border:1px solid; }
+.wg-lg-riser{ border-color:#94a3b8; background:#fff; }
+.wg-lg-casing{ border-color:#64748b; background:#fff; }
+.wg-lg-hoyo{ border-color:#c8a27a; background:#f5efe7; }
+.wg-lg-sarta{ border-color:#d97b2b; background:#f2994a; }
+
+.wg-formula-nota{
+  margin-top:14px; padding-top:11px; border-top:1px solid #f1f5f9;
+  font-size:11px; color:#94a3b8; line-height:1.6;
+}
+
+@media (max-width: 1280px){
+  .wg-desglose{ grid-template-columns:1fr; }
+  .wg-esquema-lienzo{ max-width:320px; margin:0 auto; }
+}
+@media (max-width: 1100px){
+  .wg-contexto-grid{ grid-template-columns:1fr 1fr; }
+  .wg-tarjetas{ grid-template-columns:repeat(2, 1fr); }
+}
+@media (max-width: 720px){
+  .wg-contexto-grid{ grid-template-columns:1fr; }
+  .wg-tarjetas{ grid-template-columns:1fr; }
+  .wg-sarta-toolbar{ flex-direction:column; align-items:flex-start; }
+}
+
+/* =====================================================================
+   PESTAÑA 5 — COMENTARIOS (COMMENTS)
+   ===================================================================== */
+
+.cm-spec-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:22px; }
+.cm-nota{ font-size:11.5px; color:#64748b; line-height:1.5; margin:10px 2px 0 2px; }
+
+.cm-textarea{
+  width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px;
+  font-size:13px; font-family:inherit; line-height:1.6; color:#0f172a; background:#fff;
+  resize:vertical; transition:border-color .12s, box-shadow .12s;
+}
+.cm-textarea:focus{ outline:none; border-color:#f2994a; box-shadow:0 0 0 3px rgba(242,153,74,.14); }
+.cm-textarea::placeholder{ color:#cbd5e1; }
+.cm-textarea-recap{ font-weight:600; }
+
+.cm-pie{
+  display:flex; align-items:baseline; justify-content:space-between;
+  gap:14px; flex-wrap:wrap; margin-top:6px;
+}
+.cm-ayuda{ font-size:11px; color:#94a3b8; line-height:1.5; flex:1; min-width:220px; }
+.cm-contador{
+  font-size:10.5px; font-weight:700; color:#cbd5e1;
+  font-variant-numeric:tabular-nums; white-space:nowrap;
+}
+.cm-contador-lleno{ color:#94a3b8; }
+
+.cm-recap-anterior{
+  display:flex; align-items:baseline; gap:10px; margin-bottom:10px;
+  background:#f8fafc; border-left:3px solid #cbd5e1; border-radius:0 6px 6px 0;
+  padding:8px 12px;
+}
+.cm-recap-label{
+  font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.4px;
+  color:#94a3b8; white-space:nowrap;
+}
+.cm-recap-texto{ font-size:12px; color:#64748b; line-height:1.55; font-style:italic; }
+
+.cm-bloques{ display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+.cm-bloque{ min-width:0; display:flex; flex-direction:column; }
+.cm-bloque-head{
+  display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:3px;
+}
+.cm-bloque-titulo{
+  font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:#f2994a;
+}
+.cm-bloque-ayuda{ font-size:11px; color:#94a3b8; line-height:1.5; margin-bottom:7px; }
+
+.cm-acciones{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  margin-top:16px; padding-top:13px; border-top:1px solid #f1f5f9;
+}
+.cm-pendiente{
+  font-size:10.5px; font-weight:700; color:#94a3b8;
+  background:#f1f5f9; padding:3px 9px; border-radius:999px;
+}
+
+@media (max-width: 900px){
+  .cm-bloques{ grid-template-columns:1fr; }
+  .cm-spec-grid{ grid-template-columns:1fr; gap:0; }
+}

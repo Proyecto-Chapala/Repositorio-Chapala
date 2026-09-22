@@ -1290,6 +1290,353 @@
 
   </div>
 
+  <!-- TAB 4 CONTENT: GEOMETRÍA DEL POZO (WELL GEOMETRY) -->
+  <div id="tabContent-well-geometry" style="display:none;">
+
+    <!-- Franja de continuidad: de dónde viene el trabajo y cuánto se avanzó hoy -->
+    <div class="wg-continuidad" id="wgContinuidad" style="display:none;">
+      <div class="wg-continuidad-item">
+        <span class="wg-cont-label">Reporte anterior</span>
+        <span class="wg-cont-valor" id="wgContAnterior">&mdash;</span>
+      </div>
+      <span class="wg-cont-flecha">&rarr;</span>
+      <div class="wg-continuidad-item">
+        <span class="wg-cont-label">Hoy ({{ reporte.fecha|date:"d/m/Y" }})</span>
+        <span class="wg-cont-valor" id="wgContHoy">&mdash;</span>
+      </div>
+      <div class="wg-continuidad-item wg-cont-avance">
+        <span class="wg-cont-label">Avance del día</span>
+        <span class="wg-cont-valor" id="wgContAvance">&mdash;</span>
+      </div>
+    </div>
+
+    <!-- ============ BLOQUE A: SARTA DE PERFORACIÓN ============ -->
+    <div class="report-section-title">
+      <span>&#128736;&#65039;</span>
+      <span>Sarta de Perforación &bull; Ensamblaje desde la mecha hacia arriba</span>
+    </div>
+
+    <div class="report-card-modern">
+      <div class="wg-sarta-toolbar">
+        <div class="wg-sarta-medidas">
+          <span class="wg-medida">
+            <span class="wg-medida-label">Longitud total de sarta</span>
+            <span class="wg-medida-valor" id="wgLongitudSarta">0 ft</span>
+          </span>
+          <span class="wg-medida">
+            <span class="wg-medida-label">Profundidad de mecha</span>
+            <span class="wg-medida-valor" id="wgBitDepth">0 ft</span>
+            <a href="#" onclick="switchTab(2); return false;" class="wg-medida-link" title="La profundidad de la mecha se captura en la pestaña 2">editar &rsaquo;</a>
+          </span>
+          <span class="wg-chip-estado" id="wgEstadoSarta">&mdash;</span>
+        </div>
+        <div class="wg-sarta-acciones">
+          <button type="button" class="btn-modern-secondary btn-sm" onclick="heredarSartaAnterior()" title="Copiar la sarta del reporte anterior">
+            <span>&#8617;</span><span>Heredar del día anterior</span>
+          </button>
+          <button type="button" class="btn-modern-primary btn-sm" onclick="agregarTramoSarta()">
+            <span>&#43;</span><span>Agregar Componente</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="wg-tabla-wrapper">
+        <table class="wg-tabla" id="wgTablaSarta">
+          <thead>
+            <tr>
+              <th style="width:34px;">#</th>
+              <th style="min-width:190px;">Componente</th>
+              <th>Longitud (ft)</th>
+              <th>OD (in)</th>
+              <th>ID (in)</th>
+              <th class="wg-col-junta">OD Junta</th>
+              <th class="wg-col-junta">ID Junta</th>
+              <th class="wg-col-junta">Largo Junta (in)</th>
+              <th class="wg-col-junta">Tramo (ft)</th>
+              <th class="wg-col-calc">Vol. Int. (bbl)</th>
+              <th style="width:64px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="wgTablaSartaBody"></tbody>
+        </table>
+      </div>
+      <p class="wg-nota">
+        El orden importa: la fila 1 es la mecha y cada fila siguiente se apila hacia superficie.
+        Las columnas de junta solo aplican a tubería de perforación y tubería pesada; en portamechas
+        se dejan vacías y el cálculo usa la fórmula simple.
+      </p>
+      <datalist id="wgCatalogoComponentes"></datalist>
+    </div>
+
+    <!-- ============ BLOQUE B: CONTEXTO DEL POZO ============ -->
+    <div class="report-section-title">
+      <span>&#127981;</span>
+      <span>Contexto del Pozo &bull; Intervalo de Costo, Hoyo Piloto y Perfil</span>
+    </div>
+
+    <div class="report-card-modern">
+      <div class="wg-contexto-grid">
+
+        <!-- Intervalo de costo -->
+        <div class="wg-contexto-col">
+          <div class="wg-subtitulo">Intervalo de Costo</div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Intervalo al que se imputan los costos del día">N° de Intervalo</label>
+            <select id="wgIntervaloCosto" class="report-input">
+              <option value="">&mdash; Sin asignar &mdash;</option>
+              {% for itv in intervalos_pozo %}
+                <option value="{{ itv.id }}" {% if reporte.intervalo_costo_id == itv.id %}selected{% endif %}>
+                  Intervalo {{ itv.numero_intervalo }}{% if itv.casing_od_in %} &bull; {{ itv.casing_od_in|floatformat:"-3" }}"{% endif %}{% if itv.profundidad_ft %} &bull; {{ itv.profundidad_ft|floatformat:"0" }} ft{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Orden de impresión del intervalo en el reporte">Orden de Impresión</label>
+            <input type="number" id="wgOrdenImpresion" class="report-input" value="{{ reporte.orden_impresion_intervalo|default_if_none:'' }}" placeholder="—">
+          </div>
+          <div class="wg-intervalo-detalle" id="wgIntervaloDetalle">Selecciona un intervalo para ver sus datos.</div>
+          <a class="wg-link-gestion" href="{% url 'operaciones:casing_intervals' pozo.pk %}">Gestionar intervalos del pozo &rsaquo;</a>
+        </div>
+
+        <!-- Hoyo piloto -->
+        <div class="wg-contexto-col">
+          <div class="wg-subtitulo">Hoyo Piloto</div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Diámetro del hoyo piloto perforado por delante">Diámetro (in)</label>
+            <input type="number" step="any" id="wgPilotSize" class="report-input" value="{{ reporte.pilot_hole_size_in }}">
+          </div>
+          <div class="report-field-row">
+            <label class="report-field-label" title="Profundidad hasta la que llega el hoyo piloto">Profundidad (ft)</label>
+            <input type="number" step="any" id="wgPilotDepth" class="report-input" value="{{ reporte.pilot_hole_depth_ft }}">
+          </div>
+          <p class="wg-nota wg-nota-compacta">
+            El hoyo piloto ocupa el tramo más profundo del pozo, desde el fondo del hoyo
+            principal hasta su propia profundidad. Déjalo en 0 si no aplica.
+          </p>
+        </div>
+
+        <!-- Perfil del pozo -->
+        <div class="wg-contexto-col">
+          <div class="wg-subtitulo">Perfil del Pozo <span class="wg-solo-lectura">solo lectura</span></div>
+          <div class="wg-perfil-lista" id="wgPerfilLista">
+            <div class="wg-perfil-vacio">Sin datos suficientes para armar el perfil.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Barra de avance del intervalo -->
+      <div class="wg-avance-wrapper" id="wgAvanceWrapper" style="display:none;">
+        <div class="wg-avance-head">
+          <span class="wg-avance-titulo" id="wgAvanceTitulo">&mdash;</span>
+          <span class="wg-avance-cifras" id="wgAvanceCifras">&mdash;</span>
+        </div>
+        <div class="wg-avance-barra"><div class="wg-avance-relleno" id="wgAvanceRelleno" style="width:0%;"></div></div>
+      </div>
+    </div>
+
+    <!-- ============ BLOQUE C: VOLÚMENES DEL HOYO ============ -->
+    <div class="report-section-title">
+      <span>&#128167;</span>
+      <span>Volúmenes del Hoyo &bull; Calculado en vivo (Daily Casing / Volume)</span>
+    </div>
+
+    <div class="report-card-modern">
+      <div class="wg-avisos" id="wgAvisos" style="display:none;"></div>
+
+      <div class="wg-tarjetas">
+        <div class="wg-tarjeta wg-tarjeta-principal">
+          <span class="wg-tarjeta-label">Sarta</span>
+          <span class="wg-tarjeta-valor" id="wgTotSarta">0,00</span>
+          <span class="wg-tarjeta-unidad">bbl</span>
+        </div>
+        <div class="wg-tarjeta wg-tarjeta-principal">
+          <span class="wg-tarjeta-label">Anular</span>
+          <span class="wg-tarjeta-valor" id="wgTotAnular">0,00</span>
+          <span class="wg-tarjeta-unidad">bbl</span>
+        </div>
+        <div class="wg-tarjeta wg-tarjeta-principal">
+          <span class="wg-tarjeta-label">Bajo la Mecha</span>
+          <span class="wg-tarjeta-valor" id="wgTotBajoMecha">0,00</span>
+          <span class="wg-tarjeta-unidad">bbl</span>
+        </div>
+        <div class="wg-tarjeta wg-tarjeta-total">
+          <span class="wg-tarjeta-label">Volumen Total</span>
+          <span class="wg-tarjeta-valor" id="wgTotTotal">0,00</span>
+          <span class="wg-tarjeta-unidad">bbl</span>
+        </div>
+      </div>
+
+      <div class="wg-tarjetas wg-tarjetas-secundarias">
+        <div class="wg-tarjeta">
+          <span class="wg-tarjeta-label">Fondo Arriba</span>
+          <span class="wg-tarjeta-valor" id="wgBottomUpStks">0</span>
+          <span class="wg-tarjeta-unidad">emboladas</span>
+        </div>
+        <div class="wg-tarjeta">
+          <span class="wg-tarjeta-label">Fondo Arriba</span>
+          <span class="wg-tarjeta-valor" id="wgBottomUpMin">0,0</span>
+          <span class="wg-tarjeta-unidad">minutos</span>
+        </div>
+        <div class="wg-tarjeta">
+          <span class="wg-tarjeta-label">Desplazamiento de Tubería</span>
+          <span class="wg-tarjeta-valor" id="wgDesplazamiento">0,00</span>
+          <span class="wg-tarjeta-unidad">bbl</span>
+        </div>
+        <div class="wg-tarjeta">
+          <span class="wg-tarjeta-label">Longitud Total de Sarta</span>
+          <span class="wg-tarjeta-valor" id="wgTotLongitud">0</span>
+          <span class="wg-tarjeta-unidad">ft</span>
+        </div>
+      </div>
+
+      <div class="wg-desglose">
+        <!-- Tabla de secciones -->
+        <div class="wg-desglose-tabla">
+          <div class="wg-desglose-head">
+            <span>Desglose por Sección</span>
+            <span class="wg-solo-lectura">solo lectura</span>
+          </div>
+          <div class="wg-tabla-wrapper">
+            <table class="wg-tabla wg-tabla-lectura" id="wgTablaSecciones">
+              <thead>
+                <tr>
+                  <th style="width:34px;">Sec</th>
+                  <th>Long. (ft)</th>
+                  <th>&Oslash; Hoyo</th>
+                  <th>OD Tub</th>
+                  <th>ID Tub</th>
+                  <th style="min-width:170px;">Descripción</th>
+                  <th>Vol. Sarta</th>
+                  <th>Vol. Anular</th>
+                </tr>
+              </thead>
+              <tbody id="wgTablaSeccionesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Esquema del pozo -->
+        <div class="wg-esquema">
+          <div class="wg-desglose-head"><span>Esquema del Pozo</span></div>
+          <div class="wg-esquema-lienzo" id="wgEsquema"></div>
+          <div class="wg-esquema-leyenda">
+            <span><i class="wg-lg wg-lg-riser"></i>Riser</span>
+            <span><i class="wg-lg wg-lg-casing"></i>Revestidor</span>
+            <span><i class="wg-lg wg-lg-hoyo"></i>Hoyo Abierto</span>
+            <span><i class="wg-lg wg-lg-sarta"></i>Sarta</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="wg-formula-nota">
+        Capacidad interna = ID² / 1029,4 &times; longitud &nbsp;&bull;&nbsp;
+        Capacidad anular = (&Oslash;<sub>confinamiento</sub>² &minus; OD²) / 1029,4 &times; longitud.
+        En tubería con junta, ambas se ponderan por la fracción de longitud que ocupa la junta.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TAB 5 CONTENT: COMENTARIOS (COMMENTS) -->
+  <div id="tabContent-comentarios" style="display:none;">
+
+    <!-- Especificación de propiedades del lodo -->
+    <div class="report-section-title">
+      <span>&#128203;</span>
+      <span>Especificación de Propiedades del Lodo &bull; Rango objetivo acordado</span>
+    </div>
+
+    <div class="report-card-modern">
+      <div class="cm-spec-grid">
+        <div class="report-field-row">
+          <label class="report-field-label" title="Rango de peso del lodo acordado con el operador">Peso del Lodo</label>
+          <input type="text" id="cmSpecMudWeight" class="report-input" placeholder="Ej: 11.5-12.0">
+        </div>
+        <div class="report-field-row">
+          <label class="report-field-label" title="Rango de viscosidad acordado">Viscosidad</label>
+          <input type="text" id="cmSpecViscosidad" class="report-input" placeholder="Ej: 45-55">
+        </div>
+        <div class="report-field-row">
+          <label class="report-field-label" title="Rango de filtrado acordado">Filtrado</label>
+          <input type="text" id="cmSpecFiltrado" class="report-input" placeholder="Ej: 3.0-5.0">
+        </div>
+      </div>
+      <p class="cm-nota">
+        Es el rango objetivo pactado con el operador, no la medición del día: esa vive en
+        los chequeos de la pestaña 3. Como casi nunca cambia, se hereda automáticamente
+        del reporte anterior al crear uno nuevo.
+      </p>
+    </div>
+
+    <!-- Resumen del día -->
+    <div class="report-section-title">
+      <span>&#128221;</span>
+      <span>Resumen del Día &bull; Se imprime en el Recap del Pozo</span>
+    </div>
+
+    <div class="report-card-modern">
+      <div class="cm-recap-anterior" id="cmRecapAnterior" style="display:none;">
+        <span class="cm-recap-label" id="cmRecapAnteriorLabel">Ayer</span>
+        <span class="cm-recap-texto" id="cmRecapAnteriorTexto"></span>
+      </div>
+
+      <textarea id="cmMudRecap" class="cm-textarea cm-textarea-recap" rows="2"
+                placeholder="Ej: Cementó 13-3/8. Desplazó a lodo base aceite. Perforó hasta 7.023 ft con pérdidas por filtración."></textarea>
+      <div class="cm-pie">
+        <span class="cm-ayuda">Una sola línea. Los saltos de línea se colapsan al guardar, porque este texto se imprime en una fila del Well Recap.</span>
+        <span class="cm-contador" id="cmContadorRecap">0 caracteres</span>
+      </div>
+    </div>
+
+    <!-- Dos bloques de observaciones -->
+    <div class="report-section-title">
+      <span>&#128172;</span>
+      <span>Observaciones del Día</span>
+    </div>
+
+    <div class="report-card-modern">
+      <div class="cm-bloques">
+
+        <div class="cm-bloque">
+          <div class="cm-bloque-head">
+            <span class="cm-bloque-titulo">Observaciones y Tratamiento</span>
+            <span class="cm-contador" id="cmContadorTratamiento">0 caracteres</span>
+          </div>
+          <div class="cm-bloque-ayuda">
+            Actividad y servicio de fluidos prestado durante el día: tratamientos aplicados,
+            productos recibidos, limpieza de fosas, manejo de desechos.
+          </div>
+          <textarea id="cmRemarksTratamiento" class="cm-textarea" rows="10"
+                    placeholder="Ej: Asentó revestidor a 5.002 ft. Circuló el volumen del revestidor dos veces y cementó. Sin pérdidas durante la cementación. Limpió fosas y recibió 2.000 bbl de VERSACLEAN LTOBM a 11.5 lpg para desplazar el pozo."></textarea>
+        </div>
+
+        <div class="cm-bloque">
+          <div class="cm-bloque-head">
+            <span class="cm-bloque-titulo">Observaciones de Operaciones</span>
+            <span class="cm-contador" id="cmContadorOperaciones">0 caracteres</span>
+          </div>
+          <div class="cm-bloque-ayuda">
+            Operaciones generales del taladro. Normalmente se transcribe de la hoja IADC.
+          </div>
+          <textarea id="cmRemarks" class="cm-textarea" rows="10"
+                    placeholder="Ej: Continuó perforando hasta 7.023 ft. Torque y arrastre excesivos. Problemas para mantener la alcalinidad. Pérdidas por filtración de unos 72 bbl."></textarea>
+        </div>
+
+      </div>
+
+      <div class="cm-acciones">
+        <button type="button" class="btn-modern-secondary btn-sm" disabled
+                title="Pendiente: esta pantalla se comparte con los intervalos de revestimiento y se construirá cuando revisemos sus páginas del manual.">
+          <span>&#9888;</span><span>Eventos No Programados</span>
+        </button>
+        <span class="cm-pendiente">Pendiente de construir</span>
+      </div>
+    </div>
+
+  </div>
+
   <!-- Placeholder for Other Tabs (4 to 8) -->
   <div id="tabContent-placeholder" class="report-card-modern" style="display:none; text-align:center; padding:60px 20px;">
     <h3 id="placeholder-title" style="color:#0f172a; margin-bottom:12px; font-weight:800; font-size:18px;"></h3>
@@ -1909,6 +2256,12 @@ const API_PUMPS_BITS_DETAIL = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/
 const API_PUMPS_BITS_GUARDAR = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/pumps-bits/guardar/`;
 const API_MUD_PROPERTIES_DETAIL = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/mud-properties/`;
 const API_MUD_PROPERTIES_GUARDAR = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/mud-properties/guardar/`;
+const API_WELL_GEOMETRY_DETAIL = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/well-geometry/`;
+const API_WELL_GEOMETRY_GUARDAR = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/well-geometry/guardar/`;
+const API_SARTA_ANTERIOR = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/well-geometry/sarta-anterior/`;
+const API_COMPONENTES_SARTA = `/api/componentes-sarta/`;
+const API_COMENTARIOS_DETAIL = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/comentarios/`;
+const API_COMENTARIOS_GUARDAR = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/comentarios/guardar/`;
 
 function getCookie(n){
   const v=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)');
@@ -1938,6 +2291,8 @@ function switchTab(tabNum){
   const generalContent = document.getElementById('tabContent-general');
   const pumpsBitsContent = document.getElementById('tabContent-pumps-bits');
   const mudPropsContent = document.getElementById('tabContent-mud-properties');
+  const wellGeometryContent = document.getElementById('tabContent-well-geometry');
+  const comentariosContent = document.getElementById('tabContent-comentarios');
   const placeholderContent = document.getElementById('tabContent-placeholder');
   const placeholderTitle = document.getElementById('placeholder-title');
 
@@ -1968,26 +2323,31 @@ function switchTab(tabNum){
     if(tabEl) tabEl.classList.add('is-active');
   }
 
+  const ocultarTodo = () => {
+    if(generalContent) generalContent.style.display = 'none';
+    if(pumpsBitsContent) pumpsBitsContent.style.display = 'none';
+    if(mudPropsContent) mudPropsContent.style.display = 'none';
+    if(wellGeometryContent) wellGeometryContent.style.display = 'none';
+    if(comentariosContent) comentariosContent.style.display = 'none';
+    if(placeholderContent) placeholderContent.style.display = 'none';
+  };
+
+  ocultarTodo();
+
   if(tabNum === 1){
     if(generalContent) generalContent.style.display = 'block';
-    if(pumpsBitsContent) pumpsBitsContent.style.display = 'none';
-    if(mudPropsContent) mudPropsContent.style.display = 'none';
-    if(placeholderContent) placeholderContent.style.display = 'none';
   } else if(tabNum === 2){
-    if(generalContent) generalContent.style.display = 'none';
     if(pumpsBitsContent) pumpsBitsContent.style.display = 'flex';
-    if(mudPropsContent) mudPropsContent.style.display = 'none';
-    if(placeholderContent) placeholderContent.style.display = 'none';
   } else if(tabNum === 3){
-    if(generalContent) generalContent.style.display = 'none';
-    if(pumpsBitsContent) pumpsBitsContent.style.display = 'none';
     if(mudPropsContent) mudPropsContent.style.display = 'block';
-    if(placeholderContent) placeholderContent.style.display = 'none';
     [1, 2, 3, 4].forEach(n => recalcularSolidsAnalysis(n));
+  } else if(tabNum === 4){
+    if(wellGeometryContent) wellGeometryContent.style.display = 'block';
+    inicializarWellGeometry();
+  } else if(tabNum === 5){
+    if(comentariosContent) comentariosContent.style.display = 'block';
+    inicializarComentarios();
   } else {
-    if(generalContent) generalContent.style.display = 'none';
-    if(pumpsBitsContent) pumpsBitsContent.style.display = 'none';
-    if(mudPropsContent) mudPropsContent.style.display = 'none';
     if(placeholderContent) {
       placeholderContent.style.display = 'block';
       placeholderTitle.textContent = tabNames[tabNum] || `Pestaña ${tabNum}`;
@@ -2002,10 +2362,773 @@ function guardarPestanaActiva() {
     guardarPumpsBits();
   } else if (currentTabNum === 3) {
     guardarMudProperties();
+  } else if (currentTabNum === 4) {
+    guardarWellGeometry();
+  } else if (currentTabNum === 5) {
+    guardarComentarios();
   } else {
     showToast('Pestaña en desarrollo.');
   }
 }
+
+/* =====================================================================
+   PESTAÑA 4 — GEOMETRÍA DEL POZO (WELL GEOMETRY)
+
+   El cálculo en vivo replica exactamente el motor de Python
+   (operaciones/geometria_pozo.py). Cualquier cambio de fórmula debe hacerse
+   en los dos lados.
+   ===================================================================== */
+
+const WG_CONSTANTE = 1029.4;
+const WG_EPSILON = 0.0005;
+
+let wgCargado = false;
+let wgTramos = [];
+let wgIntervalos = [];
+let wgCatalogo = [];
+let wgRiser = null;
+let wgHoleSize = 0;
+let wgBitDepth = 0;
+let wgProfundidad = 0;
+let wgBblPorEmbolada = 0;
+let wgCaudalGpm = 0;
+
+/* ---------- Fórmulas base ---------- */
+function wgCapInterna(id_in){
+  const d = parseFloat(id_in) || 0;
+  return d > 0 ? (d * d) / WG_CONSTANTE : 0;
+}
+function wgCapAnular(dConf, od){
+  const dc = parseFloat(dConf) || 0;
+  const de = parseFloat(od) || 0;
+  if(dc <= 0) return 0;
+  const area = (dc * dc) - (de * de);
+  return area > 0 ? area / WG_CONSTANTE : 0;
+}
+function wgCapDesplazamiento(od, id_in){
+  const de = parseFloat(od) || 0;
+  const di = parseFloat(id_in) || 0;
+  if(de <= 0) return 0;
+  const area = (de * de) - (di * di);
+  return area > 0 ? area / WG_CONSTANTE : 0;
+}
+function wgFraccionJunta(t){
+  const largoTramoIn = (parseFloat(t.largo_tramo_ft) || 0) * 12;
+  const largoJunta = parseFloat(t.tool_joint_length_in) || 0;
+  if(largoTramoIn <= 0 || largoJunta <= 0) return 0;
+  return Math.min(1, largoJunta / largoTramoIn);
+}
+function wgPonderar(cuerpo, junta, f){
+  return f <= 0 ? cuerpo : cuerpo * (1 - f) + junta * f;
+}
+function wgCapInternaEfectiva(t){
+  const f = wgFraccionJunta(t);
+  const cuerpo = wgCapInterna(t.id_in);
+  if(f <= 0) return cuerpo;
+  const tjId = parseFloat(t.tool_joint_id_in) || 0;
+  return wgPonderar(cuerpo, tjId > 0 ? wgCapInterna(tjId) : cuerpo, f);
+}
+function wgCapAnularEfectiva(t, dConf){
+  const f = wgFraccionJunta(t);
+  const cuerpo = wgCapAnular(dConf, t.od_in);
+  if(f <= 0) return cuerpo;
+  const tjOd = parseFloat(t.tool_joint_od_in) || 0;
+  return wgPonderar(cuerpo, tjOd > 0 ? wgCapAnular(dConf, tjOd) : cuerpo, f);
+}
+function wgCapDesplEfectiva(t){
+  const f = wgFraccionJunta(t);
+  const cuerpo = wgCapDesplazamiento(t.od_in, t.id_in);
+  if(f <= 0) return cuerpo;
+  const tjOd = parseFloat(t.tool_joint_od_in) || 0;
+  const tjId = parseFloat(t.tool_joint_id_in) || 0;
+  if(tjOd <= 0) return cuerpo;
+  return wgPonderar(cuerpo, wgCapDesplazamiento(tjOd, tjId), f);
+}
+
+/* ---------- Perfil de confinamiento del pozo ---------- */
+function wgConstruirPerfil(fondoHoyo, holeSize, pilot){
+  if(fondoHoyo <= 0) return [];
+
+  const fronteras = new Set([0, fondoHoyo]);
+
+  let riserLen = 0, riserId = 0;
+  if(wgRiser){
+    riserLen = parseFloat(wgRiser.longitud_ft) || 0;
+    riserId = parseFloat(wgRiser.id_in) || 0;
+    if(riserLen > 0 && riserId > 0) fronteras.add(Math.min(riserLen, fondoHoyo));
+  }
+
+  const validos = [];
+  wgIntervalos.forEach(function(itv){
+    const casingId = parseFloat(itv.casing_id_in) || 0;
+    const shoe = parseFloat(itv.profundidad_ft) || 0;
+    if(casingId <= 0 || shoe <= 0) return;
+    const top = parseFloat(itv.top_of_liner_ft) || 0;
+    validos.push({ casing_id_in: casingId, top_ft: top, shoe_ft: shoe, etiqueta: itv.etiqueta });
+    if(top > 0 && top < fondoHoyo) fronteras.add(top);
+    if(shoe > 0 && shoe < fondoHoyo) fronteras.add(shoe);
+  });
+
+  let pilotSize = 0, pilotDesde = 0, pilotHasta = 0;
+  if(pilot && pilot.hole_size_in > 0 && pilot.depth_ft > pilot.desde_ft){
+    pilotSize = pilot.hole_size_in;
+    pilotDesde = pilot.desde_ft;
+    pilotHasta = pilot.depth_ft;
+    if(pilotDesde > 0 && pilotDesde < fondoHoyo) fronteras.add(pilotDesde);
+    if(pilotHasta > 0 && pilotHasta < fondoHoyo) fronteras.add(pilotHasta);
+  }
+
+  const limites = Array.from(fronteras).filter(x => x >= 0 && x <= fondoHoyo).sort((a,b) => a-b);
+  const perfil = [];
+
+  for(let i = 0; i < limites.length - 1; i++){
+    const desde = limites[i], hasta = limites[i+1];
+    if((hasta - desde) <= WG_EPSILON) continue;
+    const medio = (desde + hasta) / 2;
+
+    if(riserLen > 0 && riserId > 0 && medio <= riserLen){
+      perfil.push({ desde_ft: desde, hasta_ft: hasta, diametro_in: riserId, etiqueta: 'Riser', tipo: 'riser' });
+      continue;
+    }
+
+    const candidatos = validos.filter(c => c.top_ft <= medio && medio <= c.shoe_ft);
+    if(candidatos.length){
+      const interno = candidatos.reduce((a, b) => a.casing_id_in <= b.casing_id_in ? a : b);
+      perfil.push({ desde_ft: desde, hasta_ft: hasta, diametro_in: interno.casing_id_in, etiqueta: interno.etiqueta, tipo: 'casing' });
+      continue;
+    }
+
+    let diam = holeSize, etiqueta = 'Hoyo Abierto', tipo = 'hoyo';
+    if(pilotSize > 0 && medio >= pilotDesde && medio <= pilotHasta){
+      diam = pilotSize; etiqueta = 'Hoyo Piloto'; tipo = 'piloto';
+    }
+    perfil.push({ desde_ft: desde, hasta_ft: hasta, diametro_in: diam, etiqueta: etiqueta, tipo: tipo });
+  }
+  return perfil;
+}
+
+/* ---------- Motor principal (espejo de calcular_geometria en Python) ---------- */
+function wgCalcular(){
+  const pilotSize = parseFloat(document.getElementById('wgPilotSize').value) || 0;
+  const pilotDepth = parseFloat(document.getElementById('wgPilotDepth').value) || 0;
+  const fondoHoyo = Math.max(wgProfundidad, wgBitDepth, pilotDepth);
+
+  const pilot = (pilotSize > 0 && pilotDepth > wgProfundidad)
+    ? { hole_size_in: pilotSize, depth_ft: pilotDepth, desde_ft: wgProfundidad }
+    : null;
+
+  const perfil = wgConstruirPerfil(fondoHoyo, wgHoleSize, pilot);
+
+  // Apilar la sarta desde la mecha hacia arriba.
+  let base = wgBitDepth;
+  const ubicados = [];
+  let longitudSarta = 0;
+  wgTramos.forEach(function(t){
+    const longitud = parseFloat(t.longitud_ft) || 0;
+    if(longitud <= 0) return;
+    longitudSarta += longitud;
+    const tope = base - longitud;
+    ubicados.push({ tramo: t, desde_ft: tope, hasta_ft: base });
+    base = tope;
+  });
+  ubicados.sort((a,b) => a.desde_ft - b.desde_ft);
+
+  const fronteras = new Set([0]);
+  perfil.forEach(s => { fronteras.add(s.desde_ft); fronteras.add(s.hasta_ft); });
+  ubicados.forEach(u => { fronteras.add(u.desde_ft); fronteras.add(u.hasta_ft); });
+  if(fondoHoyo > 0) fronteras.add(fondoHoyo);
+
+  const tope = Math.max(fondoHoyo, wgBitDepth);
+  const limites = Array.from(fronteras).filter(x => x >= 0 && x <= tope).sort((a,b) => a-b);
+
+  const secciones = [];
+  let totDs = 0, totAnn = 0, totBajo = 0, totDespl = 0;
+
+  for(let i = 0; i < limites.length - 1; i++){
+    const desde = limites[i], hasta = limites[i+1];
+    const longitud = hasta - desde;
+    if(longitud <= WG_EPSILON) continue;
+    const medio = (desde + hasta) / 2;
+
+    const segPozo = perfil.find(s => s.desde_ft <= medio && medio <= s.hasta_ft);
+    if(!segPozo) continue;
+    const dConf = segPozo.diametro_in;
+
+    const ub = ubicados.find(u => u.desde_ft <= medio && medio <= u.hasta_ft);
+
+    if(!ub){
+      const vol = wgCapInterna(dConf) * longitud;
+      const esBajoMecha = medio > wgBitDepth;
+      if(esBajoMecha) totBajo += vol; else totAnn += vol;
+      secciones.push({
+        longitud_ft: longitud, diametro_hoyo_in: dConf, od_in: null, id_in: null,
+        descripcion: (esBajoMecha ? 'Bajo la Mecha / ' : 'Sin Tubería / ') + segPozo.etiqueta,
+        vol_sarta_bbl: 0, vol_anular_bbl: vol, es_bajo_mecha: esBajoMecha
+      });
+      continue;
+    }
+
+    const t = ub.tramo;
+    const volInt = wgCapInternaEfectiva(t) * longitud;
+    const volAnn = wgCapAnularEfectiva(t, dConf) * longitud;
+    totDs += volInt;
+    totAnn += volAnn;
+    totDespl += wgCapDesplEfectiva(t) * longitud;
+
+    secciones.push({
+      longitud_ft: longitud, diametro_hoyo_in: dConf,
+      od_in: parseFloat(t.od_in) || 0, id_in: parseFloat(t.id_in) || 0,
+      descripcion: (t.descripcion || 'Tramo') + ' / ' + segPozo.etiqueta,
+      vol_sarta_bbl: volInt, vol_anular_bbl: volAnn, es_bajo_mecha: false
+    });
+  }
+
+  const bottomUpStks = wgBblPorEmbolada > 0 ? totAnn / wgBblPorEmbolada : 0;
+  const caudalBblMin = wgCaudalGpm / 42;
+  const bottomUpMin = caudalBblMin > 0 ? totAnn / caudalBblMin : 0;
+
+  const avisos = [];
+  if(wgBitDepth > 0 && longitudSarta > 0){
+    const dif = wgBitDepth - longitudSarta;
+    if(Math.abs(dif) > 1){
+      avisos.push(dif > 0
+        ? `La sarta no llega a la mecha: faltan ${wgFmt(dif, 0)} ft. Revisa la longitud de la tubería de perforación.`
+        : `La sarta excede la profundidad de la mecha en ${wgFmt(Math.abs(dif), 0)} ft.`);
+    }
+  }
+  if(wgBitDepth <= 0) avisos.push('La profundidad de la mecha es 0. Captúrala en la pestaña 2 (Bombas/Barrenas).');
+  if(wgHoleSize <= 0) avisos.push('No hay diámetro de hoyo abierto. Captura el Bit Size en la pestaña 2 (Bombas/Barrenas).');
+  if(!wgIntervalos.length) avisos.push('El pozo no tiene intervalos de revestimiento cargados; todo el pozo se está calculando como hoyo abierto.');
+
+  return {
+    perfil: perfil,
+    secciones: secciones,
+    longitudSarta: longitudSarta,
+    fondoHoyo: fondoHoyo,
+    totales: {
+      sarta: totDs, anular: totAnn, bajoMecha: totBajo,
+      total: totDs + totAnn + totBajo, desplazamiento: totDespl,
+      bottomUpStks: bottomUpStks, bottomUpMin: bottomUpMin
+    },
+    avisos: avisos
+  };
+}
+
+/* ---------- Formato ---------- */
+function wgFmt(valor, decimales){
+  const n = parseFloat(valor) || 0;
+  return n.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+}
+function wgEsc(str){
+  const d = document.createElement('div');
+  d.textContent = (str === null || str === undefined) ? '' : str;
+  return d.innerHTML;
+}
+
+/* ---------- Carga inicial ---------- */
+async function inicializarWellGeometry(){
+  if(wgCargado){ recalcularWellGeometry(); return; }
+  wgCargado = true;
+
+  try {
+    const [resGeo, resCat] = await Promise.all([
+      fetch(API_WELL_GEOMETRY_DETAIL).then(r => r.json()),
+      fetch(API_COMPONENTES_SARTA).then(r => r.json())
+    ]);
+
+    if(resGeo && resGeo.ok){
+      wgTramos = resGeo.tramos || [];
+      wgIntervalos = resGeo.intervalos || [];
+      wgRiser = resGeo.riser || null;
+      wgHoleSize = parseFloat(resGeo.hole_size_in) || 0;
+      wgBitDepth = parseFloat(resGeo.bit_depth_ft) || 0;
+      wgProfundidad = parseFloat(resGeo.profundidad_actual_ft) || 0;
+      wgBblPorEmbolada = parseFloat(resGeo.bbl_por_embolada) || 0;
+      wgCaudalGpm = parseFloat(resGeo.caudal_gpm) || 0;
+      renderContinuidad(resGeo.continuidad);
+    }
+
+    wgCatalogo = (resCat && resCat.componentes) || [];
+    renderCatalogoComponentes();
+    renderSartaTabla();
+    recalcularWellGeometry();
+  } catch(e){
+    showToast('No se pudo cargar la geometría del pozo.', false);
+  }
+}
+
+function renderCatalogoComponentes(){
+  const dl = document.getElementById('wgCatalogoComponentes');
+  if(!dl) return;
+  dl.innerHTML = wgCatalogo.map(c =>
+    `<option value="${wgEsc(c.descripcion)}">${wgEsc(c.codigo)} · ${wgEsc(c.tipo_display)}</option>`
+  ).join('');
+}
+
+function renderContinuidad(cont){
+  const wrap = document.getElementById('wgContinuidad');
+  if(!wrap) return;
+  if(!cont){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+
+  const partes = cont.fecha_anterior.split('-');
+  document.getElementById('wgContAnterior').textContent =
+    `${partes[2]}/${partes[1]} — mecha a ${wgFmt(cont.bit_depth_anterior, 0)} ft`;
+  document.getElementById('wgContHoy').textContent = `mecha a ${wgFmt(wgBitDepth, 0)} ft`;
+
+  const avance = document.getElementById('wgContAvance');
+  const valor = cont.avance_dia_ft;
+  avance.textContent = (valor >= 0 ? '+' : '') + wgFmt(valor, 0) + ' ft';
+  avance.classList.toggle('wg-avance-positivo', valor > 0);
+}
+
+/* ---------- Tabla de sarta ---------- */
+function renderSartaTabla(){
+  const tbody = document.getElementById('wgTablaSartaBody');
+  if(!tbody) return;
+
+  if(!wgTramos.length){
+    tbody.innerHTML = `<tr class="wg-fila-vacia"><td colspan="11">
+      Sin componentes cargados. Agrega el primero (la mecha) o hereda la sarta del día anterior.
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = wgTramos.map(function(t, i){
+    const volInt = wgCapInternaEfectiva(t) * (parseFloat(t.longitud_ft) || 0);
+    return `<tr>
+      <td class="wg-td-orden">${i + 1}</td>
+      <td>
+        <input type="text" class="wg-input wg-input-texto" list="wgCatalogoComponentes"
+               value="${wgEsc(t.descripcion || '')}" placeholder="Ej: Tubería de Perforación 5&quot;"
+               oninput="wgSetTramo(${i}, 'descripcion', this.value); wgAutocompletar(${i}, this.value);">
+      </td>
+      <td><input type="number" step="any" class="wg-input" value="${t.longitud_ft || ''}" oninput="wgSetTramo(${i}, 'longitud_ft', this.value)"></td>
+      <td><input type="number" step="any" class="wg-input" value="${t.od_in || ''}" oninput="wgSetTramo(${i}, 'od_in', this.value)"></td>
+      <td><input type="number" step="any" class="wg-input" value="${t.id_in || ''}" oninput="wgSetTramo(${i}, 'id_in', this.value)"></td>
+      <td class="wg-col-junta"><input type="number" step="any" class="wg-input" value="${t.tool_joint_od_in || ''}" oninput="wgSetTramo(${i}, 'tool_joint_od_in', this.value)"></td>
+      <td class="wg-col-junta"><input type="number" step="any" class="wg-input" value="${t.tool_joint_id_in || ''}" oninput="wgSetTramo(${i}, 'tool_joint_id_in', this.value)"></td>
+      <td class="wg-col-junta"><input type="number" step="any" class="wg-input" value="${t.tool_joint_length_in || ''}" oninput="wgSetTramo(${i}, 'tool_joint_length_in', this.value)"></td>
+      <td class="wg-col-junta"><input type="number" step="any" class="wg-input" value="${t.largo_tramo_ft || 31}" oninput="wgSetTramo(${i}, 'largo_tramo_ft', this.value)"></td>
+      <td class="wg-col-calc wg-td-calc">${wgFmt(volInt, 2)}</td>
+      <td class="wg-td-acciones">
+        <button type="button" class="wg-btn-icono" title="Subir" onclick="wgMoverTramo(${i}, -1)" ${i === 0 ? 'disabled' : ''}>&#9650;</button>
+        <button type="button" class="wg-btn-icono" title="Bajar" onclick="wgMoverTramo(${i}, 1)" ${i === wgTramos.length - 1 ? 'disabled' : ''}>&#9660;</button>
+        <button type="button" class="wg-btn-icono wg-btn-borrar" title="Eliminar" onclick="wgEliminarTramo(${i})">&#10005;</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function wgSetTramo(i, campo, valor){
+  if(!wgTramos[i]) return;
+  wgTramos[i][campo] = (campo === 'descripcion') ? valor : (parseFloat(valor) || 0);
+  if(campo !== 'descripcion'){
+    const fila = document.getElementById('wgTablaSartaBody').rows[i];
+    if(fila){
+      const celda = fila.querySelector('.wg-td-calc');
+      if(celda) celda.textContent = wgFmt(wgCapInternaEfectiva(wgTramos[i]) * (parseFloat(wgTramos[i].longitud_ft) || 0), 2);
+    }
+  }
+  recalcularWellGeometry();
+}
+
+function wgAutocompletar(i, texto){
+  const c = wgCatalogo.find(x => x.descripcion === texto);
+  if(!c) return;
+  const t = wgTramos[i];
+  t.componente_id = c.id;
+  t.od_in = c.od_in || 0;
+  t.id_in = c.id_in || 0;
+  t.tool_joint_od_in = c.tool_joint_od_in || 0;
+  t.tool_joint_id_in = c.tool_joint_id_in || 0;
+  t.tool_joint_length_in = c.tool_joint_length_in || 0;
+  t.largo_tramo_ft = c.largo_tramo_ft || 31;
+  renderSartaTabla();
+  recalcularWellGeometry();
+  showToast(`Diámetros cargados de "${c.codigo}". Puedes ajustarlos si este tramo es distinto.`);
+}
+
+function agregarTramoSarta(){
+  wgTramos.push({
+    orden: wgTramos.length + 1, componente_id: null, descripcion: '',
+    longitud_ft: 0, od_in: 0, id_in: 0,
+    tool_joint_od_in: 0, tool_joint_id_in: 0, tool_joint_length_in: 0, largo_tramo_ft: 31
+  });
+  renderSartaTabla();
+  recalcularWellGeometry();
+}
+
+function wgEliminarTramo(i){
+  wgTramos.splice(i, 1);
+  wgTramos.forEach((t, idx) => { t.orden = idx + 1; });
+  renderSartaTabla();
+  recalcularWellGeometry();
+}
+
+function wgMoverTramo(i, direccion){
+  const j = i + direccion;
+  if(j < 0 || j >= wgTramos.length) return;
+  const tmp = wgTramos[i];
+  wgTramos[i] = wgTramos[j];
+  wgTramos[j] = tmp;
+  wgTramos.forEach((t, idx) => { t.orden = idx + 1; });
+  renderSartaTabla();
+  recalcularWellGeometry();
+}
+
+async function heredarSartaAnterior(){
+  try {
+    const res = await fetch(API_SARTA_ANTERIOR);
+    const data = await res.json();
+    if(!data.ok || !data.tramos || !data.tramos.length){
+      showToast('El reporte anterior no tiene sarta cargada.', false);
+      return;
+    }
+    if(wgTramos.length && !confirm('Esto reemplaza la sarta actual por la del reporte anterior. ¿Continuar?')) return;
+
+    wgTramos = data.tramos.map((t, idx) => Object.assign({}, t, { id: null, orden: idx + 1 }));
+    renderSartaTabla();
+    recalcularWellGeometry();
+
+    const partes = (data.fecha_origen || '').split('-');
+    showToast(`Sarta heredada del reporte del ${partes[2]}/${partes[1]}/${partes[0]}. Ajústala si cambió.`);
+  } catch(e){
+    showToast('No se pudo heredar la sarta del día anterior.', false);
+  }
+}
+
+/* ---------- Render de resultados ---------- */
+function recalcularWellGeometry(){
+  const r = wgCalcular();
+
+  // Medidas de la barra de sarta
+  document.getElementById('wgLongitudSarta').textContent = wgFmt(r.longitudSarta, 0) + ' ft';
+  document.getElementById('wgBitDepth').textContent = wgFmt(wgBitDepth, 0) + ' ft';
+
+  const chip = document.getElementById('wgEstadoSarta');
+  const dif = wgBitDepth - r.longitudSarta;
+  if(!wgTramos.length){
+    chip.textContent = 'Sin sarta';
+    chip.className = 'wg-chip-estado wg-chip-neutro';
+  } else if(Math.abs(dif) <= 1){
+    chip.textContent = '✓ La sarta llega a la mecha';
+    chip.className = 'wg-chip-estado wg-chip-ok';
+  } else if(dif > 0){
+    chip.textContent = `Faltan ${wgFmt(dif, 0)} ft para la mecha`;
+    chip.className = 'wg-chip-estado wg-chip-alerta';
+  } else {
+    chip.textContent = `Excede la mecha en ${wgFmt(Math.abs(dif), 0)} ft`;
+    chip.className = 'wg-chip-estado wg-chip-alerta';
+  }
+
+  // Tarjetas
+  const t = r.totales;
+  document.getElementById('wgTotSarta').textContent = wgFmt(t.sarta, 2);
+  document.getElementById('wgTotAnular').textContent = wgFmt(t.anular, 2);
+  document.getElementById('wgTotBajoMecha').textContent = wgFmt(t.bajoMecha, 2);
+  document.getElementById('wgTotTotal').textContent = wgFmt(t.total, 2);
+  document.getElementById('wgBottomUpStks').textContent = wgFmt(t.bottomUpStks, 0);
+  document.getElementById('wgBottomUpMin').textContent = wgFmt(t.bottomUpMin, 1);
+  document.getElementById('wgDesplazamiento').textContent = wgFmt(t.desplazamiento, 2);
+  document.getElementById('wgTotLongitud').textContent = wgFmt(r.longitudSarta, 0);
+
+  // Avisos
+  const avisosEl = document.getElementById('wgAvisos');
+  if(r.avisos.length){
+    avisosEl.style.display = 'block';
+    avisosEl.innerHTML = r.avisos.map(a => `<div class="wg-aviso">⚠ ${wgEsc(a)}</div>`).join('');
+  } else {
+    avisosEl.style.display = 'none';
+  }
+
+  // Tabla de secciones
+  const tbody = document.getElementById('wgTablaSeccionesBody');
+  if(!r.secciones.length){
+    tbody.innerHTML = `<tr class="wg-fila-vacia"><td colspan="8">Sin secciones que mostrar.</td></tr>`;
+  } else {
+    tbody.innerHTML = r.secciones.map((s, i) => `<tr${s.es_bajo_mecha ? ' class="wg-fila-bajo-mecha"' : ''}
+        onmouseenter="wgResaltarSeccion(${i}, true)" onmouseleave="wgResaltarSeccion(${i}, false)">
+      <td class="wg-td-orden">${i + 1}</td>
+      <td>${wgFmt(s.longitud_ft, 0)}</td>
+      <td>${wgFmt(s.diametro_hoyo_in, 3)}</td>
+      <td>${s.od_in ? wgFmt(s.od_in, 3) : '—'}</td>
+      <td>${s.id_in ? wgFmt(s.id_in, 3) : '—'}</td>
+      <td class="wg-td-desc">${wgEsc(s.descripcion)}</td>
+      <td class="wg-td-num">${wgFmt(s.vol_sarta_bbl, 2)}</td>
+      <td class="wg-td-num">${wgFmt(s.vol_anular_bbl, 2)}</td>
+    </tr>`).join('');
+  }
+
+  renderPerfilLista(r.perfil);
+  renderEsquemaPozo(r);
+  renderAvanceIntervalo();
+}
+
+function renderPerfilLista(perfil){
+  const cont = document.getElementById('wgPerfilLista');
+  if(!perfil.length){
+    cont.innerHTML = '<div class="wg-perfil-vacio">Sin datos suficientes para armar el perfil.</div>';
+    return;
+  }
+  cont.innerHTML = perfil.map(s => `<div class="wg-perfil-fila wg-perfil-${s.tipo}">
+    <span class="wg-perfil-rango">${wgFmt(s.desde_ft, 0)} – ${wgFmt(s.hasta_ft, 0)} ft</span>
+    <span class="wg-perfil-etiqueta">${wgEsc(s.etiqueta)}</span>
+    <span class="wg-perfil-diam">${wgFmt(s.diametro_in, 3)}"</span>
+  </div>`).join('');
+}
+
+function renderAvanceIntervalo(){
+  const wrap = document.getElementById('wgAvanceWrapper');
+  const select = document.getElementById('wgIntervaloCosto');
+  const detalle = document.getElementById('wgIntervaloDetalle');
+  const id = parseInt(select.value, 10);
+
+  if(!id){
+    wrap.style.display = 'none';
+    detalle.textContent = 'Selecciona un intervalo para ver sus datos.';
+    return;
+  }
+
+  const itv = wgIntervalos.find(x => x.id === id);
+  if(!itv){ wrap.style.display = 'none'; return; }
+
+  const partes = [];
+  if(itv.casing_od_in) partes.push(`Revestidor ${wgFmt(itv.casing_od_in, 3)}" × ${wgFmt(itv.casing_id_in, 3)}"`);
+  if(itv.profundidad_ft) partes.push(`Zapata ${wgFmt(itv.profundidad_ft, 0)} ft`);
+  if(itv.hole_size_in) partes.push(`Hoyo ${wgFmt(itv.hole_size_in, 3)}"`);
+  detalle.textContent = partes.length ? partes.join(' · ') : 'Este intervalo aún no tiene datos cargados.';
+
+  if(itv.planned_length_ft > 0){
+    wrap.style.display = 'block';
+    const pct = Math.max(0, Math.min(100, (wgProfundidad / itv.planned_length_ft) * 100));
+    document.getElementById('wgAvanceTitulo').textContent = `Intervalo ${itv.numero} — ${itv.etiqueta}`;
+    document.getElementById('wgAvanceCifras').textContent =
+      `Plan: ${wgFmt(itv.planned_length_ft, 0)} ft / ${itv.planned_days || '—'} días   ·   ` +
+      `Real: ${wgFmt(wgProfundidad, 0)} ft / ${itv.interval_days || '—'} días   ·   ${wgFmt(pct, 0)}%`;
+    document.getElementById('wgAvanceRelleno').style.width = pct + '%';
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+/* ---------- Esquema SVG del pozo ---------- */
+function renderEsquemaPozo(r){
+  const cont = document.getElementById('wgEsquema');
+  if(!cont) return;
+
+  const fondo = r.fondoHoyo;
+  if(fondo <= 0 || !r.perfil.length){
+    cont.innerHTML = '<div class="wg-perfil-vacio">Sin datos para dibujar el pozo.</div>';
+    return;
+  }
+
+  const W = 260, H = 420, margenSup = 18, margenInf = 22;
+  const alturaUtil = H - margenSup - margenInf;
+  const cx = W / 2;
+  const escalaY = d => margenSup + (d / fondo) * alturaUtil;
+
+  const maxDiam = Math.max.apply(null, r.perfil.map(s => s.diametro_in).concat([1]));
+  const escalaX = d => Math.max(4, (d / maxDiam) * (W * 0.34));
+
+  const colores = { riser: '#94a3b8', casing: '#64748b', hoyo: '#c8a27a', piloto: '#a9835c' };
+  let svg = `<svg viewBox="0 0 ${W} ${H}" class="wg-svg" role="img" aria-label="Esquema del pozo">`;
+
+  // Formación de fondo
+  svg += `<rect x="0" y="${margenSup}" width="${W}" height="${alturaUtil}" fill="#f5efe7"/>`;
+
+  // Tramos de confinamiento
+  r.perfil.forEach(function(s){
+    const y1 = escalaY(s.desde_ft), y2 = escalaY(s.hasta_ft);
+    const semi = escalaX(s.diametro_in);
+    svg += `<rect x="${cx - semi}" y="${y1}" width="${semi * 2}" height="${Math.max(1, y2 - y1)}"
+              fill="#ffffff" stroke="${colores[s.tipo] || '#64748b'}" stroke-width="2"/>`;
+    if((y2 - y1) > 26){
+      svg += `<text x="${cx + semi + 6}" y="${(y1 + y2) / 2 + 3}" class="wg-svg-etq">${wgEsc(s.etiqueta)}</text>`;
+    }
+  });
+
+  // Sarta, apilada desde la mecha
+  let base = wgBitDepth;
+  wgTramos.forEach(function(t){
+    const longitud = parseFloat(t.longitud_ft) || 0;
+    if(longitud <= 0) return;
+    const tope = base - longitud;
+    const y1 = escalaY(Math.max(0, tope)), y2 = escalaY(Math.min(fondo, base));
+    const semi = Math.max(2, escalaX(parseFloat(t.od_in) || 0));
+    svg += `<rect x="${cx - semi}" y="${y1}" width="${semi * 2}" height="${Math.max(1, y2 - y1)}"
+              fill="#f2994a" fill-opacity="0.75" stroke="#d97b2b" stroke-width="1"/>`;
+    base = tope;
+  });
+
+  // Marca de la profundidad de la mecha
+  if(wgBitDepth > 0 && wgBitDepth <= fondo){
+    const y = escalaY(wgBitDepth);
+    svg += `<line x1="8" y1="${y}" x2="${W - 8}" y2="${y}" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    svg += `<text x="10" y="${y - 5}" class="wg-svg-mecha">Mecha ${wgFmt(wgBitDepth, 0)} ft</text>`;
+  }
+
+  // Escala de profundidad
+  svg += `<text x="4" y="${margenSup - 5}" class="wg-svg-escala">0 ft</text>`;
+  svg += `<text x="4" y="${H - 8}" class="wg-svg-escala">${wgFmt(fondo, 0)} ft</text>`;
+  svg += `</svg>`;
+
+  cont.innerHTML = svg;
+}
+
+function wgResaltarSeccion(indice, activo){
+  const filas = document.querySelectorAll('#wgTablaSeccionesBody tr');
+  if(filas[indice]) filas[indice].classList.toggle('wg-fila-activa', activo);
+}
+
+/* ---------- Guardar ---------- */
+async function guardarWellGeometry(){
+  const payload = {
+    intervalo_costo_id: document.getElementById('wgIntervaloCosto').value || null,
+    orden_impresion_intervalo: document.getElementById('wgOrdenImpresion').value || null,
+    pilot_hole_size_in: document.getElementById('wgPilotSize').value || 0,
+    pilot_hole_depth_ft: document.getElementById('wgPilotDepth').value || 0,
+    tramos: wgTramos.map((t, i) => ({
+      orden: i + 1,
+      componente_id: t.componente_id || null,
+      descripcion: t.descripcion || '',
+      longitud_ft: t.longitud_ft || 0,
+      od_in: t.od_in || 0,
+      id_in: t.id_in || 0,
+      tool_joint_od_in: t.tool_joint_od_in || 0,
+      tool_joint_id_in: t.tool_joint_id_in || 0,
+      tool_joint_length_in: t.tool_joint_length_in || 0,
+      largo_tramo_ft: t.largo_tramo_ft || 31
+    }))
+  };
+
+  try {
+    const res = await fetch(API_WELL_GEOMETRY_GUARDAR, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(data.ok){
+      wgTramos = data.tramos || wgTramos;
+      renderSartaTabla();
+      recalcularWellGeometry();
+      showToast('Geometría del pozo guardada correctamente');
+    } else {
+      showToast(data.error || 'Error al guardar la geometría', false);
+    }
+  } catch(e){
+    showToast('Error de conexión al guardar la geometría', false);
+  }
+}
+
+/* Recalcular cuando cambian los campos de contexto */
+document.addEventListener('DOMContentLoaded', function(){
+  ['wgPilotSize', 'wgPilotDepth'].forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('input', recalcularWellGeometry);
+  });
+  const sel = document.getElementById('wgIntervaloCosto');
+  if(sel) sel.addEventListener('change', renderAvanceIntervalo);
+});
+
+/* =====================================================================
+   PESTAÑA 5 — COMENTARIOS (COMMENTS)
+   ===================================================================== */
+
+let cmCargado = false;
+
+const CM_CAMPOS = {
+  cmSpecMudWeight:      'spec_mud_weight',
+  cmSpecViscosidad:     'spec_viscosidad',
+  cmSpecFiltrado:       'spec_filtrado',
+  cmMudRecap:           'mud_recap_remarks',
+  cmRemarksTratamiento: 'remarks_and_treatment',
+  cmRemarks:            'remarks'
+};
+
+const CM_CONTADORES = {
+  cmMudRecap:           'cmContadorRecap',
+  cmRemarksTratamiento: 'cmContadorTratamiento',
+  cmRemarks:            'cmContadorOperaciones'
+};
+
+async function inicializarComentarios(){
+  if(cmCargado) return;
+  cmCargado = true;
+
+  try {
+    const res = await fetch(API_COMENTARIOS_DETAIL);
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'respuesta inválida');
+
+    const c = data.comentarios || {};
+    Object.keys(CM_CAMPOS).forEach(function(id){
+      const el = document.getElementById(id);
+      if(el) el.value = c[CM_CAMPOS[id]] || '';
+    });
+
+    // Resumen del día anterior como referencia al redactar el de hoy.
+    if(data.recap_anterior){
+      const partes = data.recap_anterior.fecha.split('-');
+      document.getElementById('cmRecapAnteriorLabel').textContent = `${partes[2]}/${partes[1]}`;
+      document.getElementById('cmRecapAnteriorTexto').textContent = data.recap_anterior.texto;
+      document.getElementById('cmRecapAnterior').style.display = 'flex';
+    }
+
+    cmActualizarContadores();
+  } catch(e){
+    cmCargado = false;
+    showToast('No se pudieron cargar los comentarios.', false);
+  }
+}
+
+function cmActualizarContadores(){
+  Object.keys(CM_CONTADORES).forEach(function(id){
+    const el = document.getElementById(id);
+    const contador = document.getElementById(CM_CONTADORES[id]);
+    if(!el || !contador) return;
+    const n = el.value.length;
+    contador.textContent = n === 1 ? '1 carácter' : `${n.toLocaleString('es-VE')} caracteres`;
+    contador.classList.toggle('cm-contador-lleno', n > 0);
+  });
+}
+
+async function guardarComentarios(){
+  const payload = {};
+  Object.keys(CM_CAMPOS).forEach(function(id){
+    const el = document.getElementById(id);
+    payload[CM_CAMPOS[id]] = el ? el.value : '';
+  });
+
+  try {
+    const res = await fetch(API_COMENTARIOS_GUARDAR, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(data.ok){
+      // El servidor colapsa los saltos de línea del resumen: refleja el texto real guardado.
+      const c = data.comentarios || {};
+      const recap = document.getElementById('cmMudRecap');
+      if(recap && c.mud_recap_remarks !== undefined) recap.value = c.mud_recap_remarks;
+      cmActualizarContadores();
+      showToast('Comentarios guardados correctamente');
+    } else {
+      showToast(data.error || 'Error al guardar los comentarios', false);
+    }
+  } catch(e){
+    showToast('Error de conexión al guardar los comentarios', false);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  Object.keys(CM_CONTADORES).forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('input', cmActualizarContadores);
+  });
+});
 
 /* Save General Tab Data */
 async function guardarGeneral() {

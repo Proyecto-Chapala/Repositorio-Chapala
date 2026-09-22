@@ -509,6 +509,17 @@ class WellHeaderInfo(models.Model):
 
     # --- Offshore (obligatorio si es_offshore=True; afecta volumetría) ---
     es_offshore = models.BooleanField(default=False, verbose_name="Proyecto Offshore")
+    usa_riser = models.BooleanField(
+        default=False, verbose_name="El pozo usa Riser",
+        help_text="Si está activo, el riser se incluye como primer tramo del perfil de confinamiento del pozo."
+    )
+    riser_id_in = models.DecimalField(
+        max_digits=8, decimal_places=3, null=True, blank=True, verbose_name="Diámetro Interno del Riser (in)"
+    )
+    riser_length_ft = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Longitud del Riser (ft)",
+        help_text="Si se deja vacío se asume Air Gap + Water Depth."
+    )
     air_gap_ft = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Altura Libre — Air Gap (ft)"
     )
@@ -888,6 +899,88 @@ class MallaZaranda(models.Model):
         return {
             "id": self.id, "codigo": self.codigo,
             "descripcion": self.descripcion, "mesh_size": self.mesh_size,
+        }
+
+
+class ComponenteSarta(models.Model):
+    """
+    Catálogo maestro global de componentes de sarta ('Master Drill String Component List').
+
+    Cada fila es un componente físico con sus diámetros característicos: una mecha de
+    12¼", un drill collar 8½" x 3", una tubería de perforación 5" x 4.276" con junta
+    6.375" x 3.75". Al elegirlo en la tabla de Sarta del reporte diario, los diámetros
+    se autocompletan pero quedan editables (requerimiento explícito del ingeniero de
+    fluidos: "esos números podrían ser modificables").
+    """
+
+    TIPO_CHOICES = [
+        ('MECHA', 'Mecha (Bit)'),
+        ('MOTOR', 'Motor de Fondo / MWD'),
+        ('DRILL_COLLAR', 'Portamecha (Drill Collar)'),
+        ('HEAVY_WEIGHT', 'Tubería Pesada (Heavy Weight)'),
+        ('DRILL_PIPE', 'Tubería de Perforación (Drill Pipe)'),
+        ('ESTABILIZADOR', 'Estabilizador'),
+        ('CROSSOVER', 'Crossover / Nipple'),
+        ('REVESTIDOR', 'Revestidor (bajando casing)'),
+        ('OTROS', 'Otros'),
+    ]
+
+    # Tipos cuya geometría incluye juntas (tool joints) que afectan el cálculo volumétrico.
+    TIPOS_CON_JUNTA = ('DRILL_PIPE', 'HEAVY_WEIGHT')
+
+    codigo = models.CharField(max_length=30, unique=True, verbose_name="Código del Componente")
+    descripcion = models.CharField(max_length=150, verbose_name="Descripción")
+    tipo = models.CharField(
+        max_length=20, choices=TIPO_CHOICES, default='DRILL_PIPE', verbose_name="Tipo de Componente"
+    )
+
+    od_in = models.DecimalField(
+        max_digits=8, decimal_places=4, verbose_name="Diámetro Externo — OD (in)"
+    )
+    id_in = models.DecimalField(
+        max_digits=8, decimal_places=4, default=0, verbose_name="Diámetro Interno — ID (in)",
+        help_text="0 para componentes macizos o para la mecha."
+    )
+
+    tool_joint_od_in = models.DecimalField(
+        max_digits=8, decimal_places=4, null=True, blank=True, verbose_name="OD de Junta (in)"
+    )
+    tool_joint_id_in = models.DecimalField(
+        max_digits=8, decimal_places=4, null=True, blank=True, verbose_name="ID de Junta (in)"
+    )
+    tool_joint_length_in = models.DecimalField(
+        max_digits=8, decimal_places=2, null=True, blank=True, verbose_name="Largo de Junta (in)",
+        help_text="Largo de la junta por tramo, en pulgadas (ONE-TRAX usa 21 in por tramo de 31 ft)."
+    )
+    largo_tramo_ft = models.DecimalField(
+        max_digits=8, decimal_places=2, default=31.0, verbose_name="Largo de Tramo (ft)",
+        help_text="Largo nominal de un tramo (joint). Se usa para ponderar el efecto de la junta."
+    )
+
+    class Meta:
+        verbose_name = "Componente de Sarta (Catálogo Maestro)"
+        verbose_name_plural = "Componentes de Sarta (Catálogo Maestro)"
+        ordering = ['tipo', '-od_in', 'codigo']
+
+    def __str__(self):
+        return f"{self.codigo} - {self.descripcion}"
+
+    def to_dict(self):
+        def _f(valor):
+            return float(valor) if valor is not None else None
+
+        return {
+            "id": self.id,
+            "codigo": self.codigo,
+            "descripcion": self.descripcion,
+            "tipo": self.tipo,
+            "tipo_display": self.get_tipo_display(),
+            "od_in": _f(self.od_in),
+            "id_in": _f(self.id_in),
+            "tool_joint_od_in": _f(self.tool_joint_od_in),
+            "tool_joint_id_in": _f(self.tool_joint_id_in),
+            "tool_joint_length_in": _f(self.tool_joint_length_in),
+            "largo_tramo_ft": _f(self.largo_tramo_ft),
         }
 
 

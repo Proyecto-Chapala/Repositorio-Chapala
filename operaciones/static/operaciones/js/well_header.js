@@ -72,6 +72,38 @@
     checkbox.addEventListener('change', () => {
       wrap.hidden = !checkbox.checked;
     });
+
+    const riserCheck = document.getElementById('inputUsaRiser');
+    const riserWrap = document.getElementById('riserFieldsWrap');
+    if (riserCheck && riserWrap) {
+      riserCheck.addEventListener('change', () => {
+        riserWrap.hidden = !riserCheck.checked;
+        if (!riserCheck.checked) {
+          document.getElementById('errorRiserId').textContent = '';
+        }
+      });
+      ['inputAirGap', 'inputWaterDepth', 'inputRiserLength'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', actualizarHintRiser);
+      });
+    }
+  }
+
+  // Muestra qué longitud de riser se usará realmente en el cálculo de volúmenes.
+  function actualizarHintRiser() {
+    const hint = document.getElementById('hintRiserLength');
+    if (!hint) return;
+    const explicita = num('inputRiserLength');
+    if (explicita !== null && explicita > 0) {
+      hint.textContent = 'Se usará la longitud que escribiste.';
+      return;
+    }
+    const airGap = num('inputAirGap') || 0;
+    const waterDepth = num('inputWaterDepth') || 0;
+    const auto = airGap + waterDepth;
+    hint.textContent = auto > 0
+      ? `Si lo dejas vacío se asume Altura Libre + Profundidad de Agua = ${auto.toLocaleString('es-VE')} ft.`
+      : 'Si lo dejas vacío se asume Altura Libre + Profundidad de Agua.';
   }
 
   // --------- Cargar datos ---------
@@ -84,6 +116,12 @@
     setVal('inputAirGap', w.air_gap_ft);
     setVal('inputWaterDepth', w.water_depth_ft);
     setVal('inputSeaFloorTemp', w.sea_floor_temp_f);
+
+    document.getElementById('inputUsaRiser').checked = !!w.usa_riser;
+    document.getElementById('riserFieldsWrap').hidden = !w.usa_riser;
+    setVal('inputRiserId', w.riser_id_in);
+    setVal('inputRiserLength', w.riser_length_ft);
+    actualizarHintRiser();
 
     setVal('inputOperador', w.operador);
     setVal('inputFieldArea', w.field_area);
@@ -129,11 +167,15 @@
   // --------- Guardar Tab 1 ---------
   async function guardarTab1() {
     document.getElementById('errorTab1').textContent = '';
+    document.getElementById('errorRiserId').textContent = '';
     const payload = {
       es_offshore: document.getElementById('inputEsOffshore').checked,
       air_gap_ft: num('inputAirGap'),
       water_depth_ft: num('inputWaterDepth'),
       sea_floor_temp_f: num('inputSeaFloorTemp'),
+      usa_riser: document.getElementById('inputUsaRiser').checked,
+      riser_id_in: num('inputRiserId'),
+      riser_length_ft: num('inputRiserLength'),
       operador: val('inputOperador'),
       field_area: val('inputFieldArea'),
       descripcion: val('inputDescripcion'),
@@ -170,7 +212,12 @@
       });
       showToast('Well Information guardada.', 'success');
     } catch (err) {
-      document.getElementById('errorTab1').textContent = err.data.error || 'Error al guardar.';
+      const errores = (err.data && err.data.errores) || {};
+      if (errores.riser_id_in) {
+        document.getElementById('errorRiserId').textContent = errores.riser_id_in[0];
+      }
+      document.getElementById('errorTab1').textContent =
+        (err.data && err.data.error) || 'Error al guardar.';
     }
   }
 

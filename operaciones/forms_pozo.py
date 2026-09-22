@@ -162,6 +162,29 @@ class WellHeaderInfoForm(forms.ModelForm):
                 raise forms.ValidationError(
                     "Los proyectos Offshore deben completar: " + ", ".join(faltantes) + "."
                 )
+
+            # El riser solo entra al perfil del pozo si tiene diámetro interno; sin él
+            # los volúmenes anulares de ese tramo saldrían mal sin avisar.
+            if cleaned.get('usa_riser'):
+                riser_id = cleaned.get('riser_id_in')
+                if riser_id is None or riser_id <= 0:
+                    raise forms.ValidationError({
+                        'riser_id_in': "Indica el diámetro interno del riser; sin él no se "
+                                       "puede calcular el volumen anular de ese tramo."
+                    })
+                longitud = cleaned.get('riser_length_ft')
+                if longitud is None or longitud <= 0:
+                    # Se asume Altura Libre + Profundidad de Agua (mesa rotaria al lecho marino).
+                    auto = (cleaned.get('air_gap_ft') or 0) + (cleaned.get('water_depth_ft') or 0)
+                    if auto <= 0:
+                        raise forms.ValidationError({
+                            'riser_length_ft': "Indica la longitud del riser, o completa Altura "
+                                               "Libre y Profundidad de Agua para deducirla."
+                        })
+        elif cleaned.get('usa_riser'):
+            raise forms.ValidationError({
+                'usa_riser': "El riser solo aplica a proyectos Offshore."
+            })
         return cleaned
 
 

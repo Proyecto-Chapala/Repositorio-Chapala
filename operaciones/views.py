@@ -14,6 +14,7 @@ from .models import (
     Equipo, MallaZaranda, ProductoActivoPozo, EquipoActivoPozo, MallaActivaPozo,
     PropiedadEquipoTipo, EquipoPropiedadSeleccionada, EquipoPropiedadExtra,
     CentrifugaUnidadConfig, ParametroBenchmark, BenchmarkSeleccionado, BenchmarkTarget,
+    ComponenteSarta,
 )
 from .forms_pozo import (
     PozoPaso1Form, PozoPaso2Form, PropiedadUnidadPozoForm,
@@ -648,6 +649,7 @@ def well_header_view(request, pk):
 def _well_header_to_dict(info):
     campos = [
         'es_offshore', 'air_gap_ft', 'water_depth_ft', 'sea_floor_temp_f',
+        'usa_riser', 'riser_id_in', 'riser_length_ft',
         'operador', 'field_area', 'descripcion', 'ubicacion', 'almacen',
         'contratista', 'nombre_taladro', 'ingeniero_proyecto',
         'ingeniero_miswaco_1', 'ingeniero_miswaco_2',
@@ -1885,3 +1887,157 @@ def api_benchmark_targets_guardar(request, pk):
         BenchmarkTarget.objects.bulk_create(nuevas)
 
     return JsonResponse({"success": True, "mensaje": "Objetivos de Benchmark guardados.", "total": len(nuevas)})
+
+
+# ============================================================
+# Catálogo Maestro — Componentes de Sarta de Perforación
+# ============================================================
+
+def _parse_decimal_opcional(valor, campo, errores, obligatorio=False, minimo=None):
+    """Convierte un valor a Decimal validando; devuelve None si viene vacío."""
+    if valor in (None, '', 'null'):
+        if obligatorio:
+            errores[campo] = "Este campo es obligatorio."
+        return None
+    try:
+        numero = Decimal(str(valor))
+    except Exception:
+        errores[campo] = "Debe ser un número válido."
+        return None
+    if minimo is not None and numero < minimo:
+        errores[campo] = f"Debe ser mayor o igual a {minimo}."
+        return None
+    return numero
+
+
+def _validar_componente_sarta(data, instancia=None):
+    """Valida y normaliza el payload de un componente de sarta."""
+    errores = {}
+
+    codigo = str(data.get('codigo', instancia.codigo if instancia else '')).strip()
+    descripcion = str(data.get('descripcion', instancia.descripcion if instancia else '')).strip()
+    tipo = str(data.get('tipo', instancia.tipo if instancia else 'DRILL_PIPE')).strip()
+
+    if not codigo:
+        errores['codigo'] = "El código del componente es obligatorio."
+    else:
+        qs = ComponenteSarta.objects.filter(codigo__iexact=codigo)
+        if instancia:
+            qs = qs.exclude(pk=instancia.pk)
+        if qs.exists():
+            errores['codigo'] = f"Ya existe un componente con el código '{codigo}'."
+
+    if not descripcion:
+        errores['descripcion'] = "La descripción es obligatoria."
+
+    tipos_validos = [t[0] for t in ComponenteSarta.TIPO_CHOICES]
+    if tipo not in tipos_validos:
+        errores['tipo'] = "Tipo de componente no válido."
+
+    od = _parse_decimal_opcional(data.get('od_in'), 'od_in', errores, obligatorio=True, minimo=0)
+    diam_int = _parse_decimal_opcional(data.get('id_in'), 'id_in', errores, minimo=0)
+    if diam_int is None and 'id_in' not in errores:
+        diam_int = Decimal('0')
+
+    tj_od = _parse_decimal_opcional(data.get('tool_joint_od_in'), 'tool_joint_od_in', errores, minimo=0)
+    tj_id = _parse_decimal_opcional(data.get('tool_joint_id_in'), 'tool_joint_id_in', errores, minimo=0)
+    tj_len = _parse_decimal_opcional(data.get('tool_joint_length_in'), 'tool_joint_length_in', errores, minimo=0)
+    largo_tramo = _parse_decimal_opcional(data.get('largo_tramo_ft'), 'largo_tramo_ft', errores, minimo=0)
+    if largo_tramo is None and 'largo_tramo_ft' not in errores:
+        largo_tramo = Decimal('31')
+
+    if od is not None and diam_int is not None and diam_int >= od and od > 0:
+        errores['id_in'] = "El diámetro interno debe ser menor que el externo."
+
+    if tj_len and tj_len > 0 and (not largo_tramo or largo_tramo <= 0):
+        errores['largo_tramo_ft'] = "Para ponderar la junta se necesita el largo del tramo."
+
+    return {
+        'codigo': codigo,
+        'descripcion': descripcion,
+        'tipo': tipo,
+        'od_in': od,
+        'id_in': diam_int,
+        'tool_joint_od_in': tj_od,
+        'tool_joint_id_in': tj_id,
+        'tool_joint_length_in': tj_len,
+        'largo_tramo_ft': largo_tramo,
+    }, errores
+
+
+@require_http_methods(["GET"])
+def api_componentes_sarta_list(request):
+    """Catálogo maestro global de componentes de sarta de perforación."""
+    search = request.GET.get('search', '').strip()
+    tipo = request.GET.get('tipo', '').strip()
+    qs = ComponenteSarta.objects.all()
+    if search:
+        qs = qs.filter(Q(codigo__icontains=search) | Q(descripcion__icontains=search))
+    if tipo:
+        qs = qs.filter(tipo=tipo)
+    return JsonResponse({
+        "success": True,
+        "componentes": [c.to_dict() for c in qs],
+    })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_componente_sarta_create(request):
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+
+    valores, errores = _validar_componente_sarta(data)
+    if errores:
+        return JsonResponse(
+            {"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400
+        )
+
+    componente = ComponenteSarta.objects.create(**valores)
+    return JsonResponse({
+        "success": True,
+        "mensaje": f"Componente '{componente.codigo}' creado.",
+        "componente": componente.to_dict(),
+    }, status=201)
+
+
+@csrf_exempt
+@require_http_methods(["PUT", "POST"])
+def api_componente_sarta_update(request, pk):
+    componente = get_object_or_404(ComponenteSarta, pk=pk)
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+
+    valores, errores = _validar_componente_sarta(data, instancia=componente)
+    if errores:
+        return JsonResponse(
+            {"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400
+        )
+
+    for campo, valor in valores.items():
+        setattr(componente, campo, valor)
+    componente.save()
+    return JsonResponse({
+        "success": True,
+        "mensaje": f"Componente '{componente.codigo}' actualizado.",
+        "componente": componente.to_dict(),
+    })
+
+
+@csrf_exempt
+@require_http_methods(["DELETE", "POST"])
+def api_componente_sarta_delete(request, pk):
+    componente = get_object_or_404(ComponenteSarta, pk=pk)
+    codigo = componente.codigo
+    try:
+        componente.delete()
+    except ProtectedError:
+        return JsonResponse({
+            "success": False,
+            "error": f"No se puede eliminar el componente '{codigo}' porque ya está en uso en la sarta de uno o más reportes diarios."
+        }, status=400)
+    return JsonResponse({"success": True, "mensaje": f"Componente '{codigo}' eliminado."})

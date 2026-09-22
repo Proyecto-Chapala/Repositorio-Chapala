@@ -59,6 +59,15 @@ urlpatterns = [
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/mud-properties/', views_daily_reports.api_mud_properties_detail, name='api_mud_properties_detail'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/mud-properties/guardar/', views_daily_reports.api_mud_properties_guardar, name='api_mud_properties_guardar'),
 
+    # --- Pestaña 4: Geometría del Pozo (Well Geometry) ---
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/well-geometry/', views_daily_reports.api_well_geometry_detail, name='api_well_geometry_detail'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/well-geometry/guardar/', views_daily_reports.api_well_geometry_guardar, name='api_well_geometry_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/well-geometry/sarta-anterior/', views_daily_reports.api_sarta_reporte_anterior, name='api_sarta_reporte_anterior'),
+
+    # --- Pestaña 5: Comentarios (Comments) ---
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/comentarios/', views_daily_reports.api_comentarios_detail, name='api_comentarios_detail'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/comentarios/guardar/', views_daily_reports.api_comentarios_guardar, name='api_comentarios_guardar'),
+
     # --- Well Header Information ---
 
     path('pozos/<int:pk>/well-header/', views.well_header_view, name='well_header'),
@@ -122,6 +131,12 @@ urlpatterns = [
     path('api/parametros-benchmark/crear/', views.api_parametro_benchmark_create, name='api_parametro_benchmark_create'),
     path('api/parametros-benchmark/<int:pk>/modificar/', views.api_parametro_benchmark_update, name='api_parametro_benchmark_update'),
     path('api/parametros-benchmark/<int:pk>/eliminar/', views.api_parametro_benchmark_delete, name='api_parametro_benchmark_delete'),
+
+    # --- Catálogo Maestro: Componentes de Sarta ---
+    path('api/componentes-sarta/', views.api_componentes_sarta_list, name='api_componentes_sarta_list'),
+    path('api/componentes-sarta/crear/', views.api_componente_sarta_create, name='api_componente_sarta_create'),
+    path('api/componentes-sarta/<int:pk>/modificar/', views.api_componente_sarta_update, name='api_componente_sarta_update'),
+    path('api/componentes-sarta/<int:pk>/eliminar/', views.api_componente_sarta_delete, name='api_componente_sarta_delete'),
 
     # --- Equipment Properties Setup ---
     path('pozos/<int:pk>/equipment-properties-setup/', views.equipment_properties_setup_view, name='equipment_properties_setup'),

@@ -7,17 +7,20 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 
-from .models import Pozo
+from .models import Pozo, IntervaloRevestimiento, ComponenteSarta
 from .models_daily_reports import (
     ReporteDiario, PropiedadExtraFluido, WellSurveyStation, WellFormationTop,
     ReporteDiarioBomba, ReporteDiarioBitData, ReporteDiarioBoquilla,
-    ReporteDiarioMudConfig, ReporteDiarioMudCheck, ReporteDiarioMudExtraValue
+    ReporteDiarioMudConfig, ReporteDiarioMudCheck, ReporteDiarioMudExtraValue,
+    TramoSarta, ReporteDiarioComentarios,
 )
+from .geometria_pozo import construir_perfil_confinamiento, calcular_geometria
 
 
 @ensure_csrf_cookie
@@ -337,7 +340,11 @@ def reporte_diario_detalle_view(request, pk, reporte_pk):
     # Propiedades extra de lodo activas para el pozo
     props_extra = pozo.propiedades_extra.all().order_by('numero')
 
+    # Datos para Tab 4: Well Geometry
+    intervalos_pozo = pozo.intervalos_revestimiento.all().order_by('numero_intervalo')
+
     return render(request, 'operaciones/avances_19_sep/reporte_diario_detalle.html', {
+        'intervalos_pozo': intervalos_pozo,
         'pozo': pozo,
         'reporte': reporte,
         'reporte_anterior': reporte_anterior,
@@ -1494,6 +1501,406 @@ def api_mud_properties_guardar(request, pk, reporte_pk):
             'ok': True,
             'mensaje': 'Propiedades de Lodo guardadas exitosamente.',
             'primary_check_number': primary_check_num,
+        })
+    except Exception as e:
+        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+
+
+# =====================================================================
+# API: Pestaña 4 - Well Geometry (ONE-TRAX Daily Data Input)
+# =====================================================================
+
+def _float(valor, defecto=0.0):
+    try:
+        return float(valor) if valor not in ('', None) else defecto
+    except (ValueError, TypeError):
+        return defecto
+
+
+def obtener_riser_del_pozo(pozo):
+    """
+    Devuelve {'longitud_ft', 'id_in'} si el pozo usa riser, o None.
+
+    Si no se capturó la longitud del riser se asume Air Gap + Water Depth, que es
+    la distancia real entre la mesa rotaria y el lecho marino.
+    """
+    header = getattr(pozo, 'well_header_info', None)
+    if not header or not getattr(header, 'usa_riser', False):
+        return None
+
+    riser_id = _float(header.riser_id_in)
+    if riser_id <= 0:
+        return None
+
+    longitud = _float(header.riser_length_ft)
+    if longitud <= 0:
+        longitud = _float(header.air_gap_ft) + _float(header.water_depth_ft)
+    if longitud <= 0:
+        return None
+
+    return {'longitud_ft': longitud, 'id_in': riser_id}
+
+
+def obtener_intervalos_del_pozo(pozo):
+    """Intervalos de revestimiento del pozo, listos para el motor de geometría."""
+    datos = []
+    for itv in pozo.intervalos_revestimiento.all().order_by('numero_intervalo'):
+        etiqueta = itv.get_tipo_display() if itv.tipo else 'Revestidor'
+        if itv.casing_od_in:
+            etiqueta = f"{etiqueta} {_float(itv.casing_od_in):g}\""
+        datos.append({
+            'id': itv.id,
+            'numero': itv.numero_intervalo,
+            'casing_od_in': _float(itv.casing_od_in),
+            'casing_id_in': _float(itv.casing_id_in),
+            'hole_size_in': _float(itv.hole_size_in),
+            'profundidad_ft': _float(itv.profundidad_ft),
+            'tvd_ft': _float(itv.tvd_ft),
+            'top_of_liner_ft': _float(itv.top_of_liner_ft),
+            'planned_length_ft': _float(itv.planned_length_ft),
+            'planned_days': itv.planned_days or 0,
+            'interval_days': itv.interval_days or 0,
+            'tipo': itv.tipo,
+            'etiqueta': etiqueta,
+        })
+    return datos
+
+
+def obtener_hidraulica_bombas(reporte):
+    """
+    Salida de bomba para los cálculos de 'Fondo Arriba' (Bottom Up).
+
+    Las emboladas se cuentan contra UNA bomba (la primera activa del reporte), que es
+    como el perforador las cuenta en el taladro; los minutos usan el caudal total de
+    todas las bombas activas. Esta combinación reproduce los valores del manual.
+    """
+    bombas = list(reporte.bombas.all().order_by('numero_bomba'))
+    activas = [b for b in bombas if b.pump_on_report]
+    bbl_stk = activas[0].desplazamiento_bbl_stk if activas else 0.0
+    caudal_gpm = sum(b.caudal_gpm for b in activas)
+    return bbl_stk, caudal_gpm
+
+
+def calcular_geometria_reporte(pozo, reporte):
+    """Arma el perfil del pozo y corre el motor de volúmenes para un reporte diario."""
+    bit_data = getattr(reporte, 'bit_data', None)
+
+    # Diámetro del hoyo abierto: bit size corregido por washout cuando está disponible.
+    hole_size = 0.0
+    if bit_data:
+        hole_size = _float(bit_data.washout_hole_size) or _float(bit_data.bit_size)
+    if hole_size <= 0:
+        intervalo = reporte.intervalo_costo
+        if intervalo:
+            hole_size = _float(intervalo.hole_size_in)
+
+    bit_depth = _float(reporte.bit_depth)
+    profundidad = _float(reporte.profundidad_actual)
+    pilot_depth = _float(reporte.pilot_hole_depth_ft)
+    pilot_size = _float(reporte.pilot_hole_size_in)
+
+    fondo_hoyo = max(profundidad, bit_depth, pilot_depth)
+
+    pilot_hole = None
+    if pilot_size > 0 and pilot_depth > profundidad:
+        pilot_hole = {
+            'hole_size_in': pilot_size,
+            'depth_ft': pilot_depth,
+            'desde_ft': profundidad,
+        }
+
+    riser = obtener_riser_del_pozo(pozo)
+    intervalos = obtener_intervalos_del_pozo(pozo)
+
+    perfil = construir_perfil_confinamiento(
+        riser=riser,
+        intervalos=intervalos,
+        fondo_hoyo_ft=fondo_hoyo,
+        hole_size_in=hole_size,
+        pilot_hole=pilot_hole,
+    )
+
+    tramos = [t.to_dict() for t in reporte.tramos_sarta.all().order_by('orden')]
+    bbl_stk, caudal_gpm = obtener_hidraulica_bombas(reporte)
+
+    resultado = calcular_geometria(
+        perfil_pozo=perfil,
+        tramos=tramos,
+        bit_depth_ft=bit_depth,
+        fondo_hoyo_ft=fondo_hoyo,
+        bbl_por_embolada=bbl_stk,
+        caudal_gpm=caudal_gpm,
+    )
+    resultado['perfil_pozo'] = [
+        {
+            'desde_ft': round(s['desde_ft'], 2),
+            'hasta_ft': round(s['hasta_ft'], 2),
+            'diametro_in': round(s['diametro_in'], 3),
+            'etiqueta': s['etiqueta'],
+            'es_hoyo_abierto': s['es_hoyo_abierto'],
+        }
+        for s in perfil
+    ]
+    resultado['hole_size_in'] = round(hole_size, 3)
+    return resultado, tramos, intervalos
+
+
+def _resumen_avance_intervalo(reporte, intervalos):
+    """Compara lo planeado contra lo real del intervalo de costo asignado al reporte."""
+    intervalo = reporte.intervalo_costo
+    if not intervalo:
+        return None
+
+    datos = next((i for i in intervalos if i['id'] == intervalo.id), None)
+    if not datos:
+        return None
+
+    planeado_ft = datos['planned_length_ft']
+    real_ft = _float(reporte.profundidad_actual)
+    porcentaje = round((real_ft / planeado_ft) * 100.0, 1) if planeado_ft > 0 else None
+
+    return {
+        'numero': datos['numero'],
+        'etiqueta': datos['etiqueta'],
+        'casing_od_in': datos['casing_od_in'],
+        'casing_id_in': datos['casing_id_in'],
+        'hole_size_in': datos['hole_size_in'],
+        'profundidad_ft': datos['profundidad_ft'],
+        'planned_length_ft': planeado_ft,
+        'planned_days': datos['planned_days'],
+        'interval_days': datos['interval_days'],
+        'avance_ft': real_ft,
+        'avance_pct': porcentaje,
+    }
+
+
+@require_http_methods(["GET"])
+def api_well_geometry_detail(request, pk, reporte_pk):
+    """Devuelve la sarta, el contexto del pozo y los volúmenes calculados del Tab 4."""
+    pozo = get_object_or_404(Pozo, pk=pk)
+    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+
+    geometria, tramos, intervalos = calcular_geometria_reporte(pozo, reporte)
+
+    # Continuidad: de dónde viene el trabajo y cuánto se avanzó hoy.
+    anterior = pozo.reportes_diarios.filter(fecha__lt=reporte.fecha).order_by('-fecha').first()
+    continuidad = None
+    if anterior:
+        bit_anterior = _float(anterior.bit_depth)
+        continuidad = {
+            'fecha_anterior': anterior.fecha.isoformat(),
+            'bit_depth_anterior': round(bit_anterior, 2),
+            'profundidad_anterior': round(_float(anterior.profundidad_actual), 2),
+            'avance_dia_ft': round(_float(reporte.profundidad_actual) - _float(anterior.profundidad_actual), 2),
+            'tiene_sarta': anterior.tramos_sarta.exists(),
+        }
+
+    bbl_stk, caudal_gpm = obtener_hidraulica_bombas(reporte)
+
+    return JsonResponse({
+        'ok': True,
+        'tramos': tramos,
+        'intervalos': intervalos,
+        'riser': obtener_riser_del_pozo(pozo),
+        'hole_size_in': geometria['hole_size_in'],
+        'bbl_por_embolada': round(bbl_stk, 6),
+        'caudal_gpm': round(caudal_gpm, 2),
+        'intervalo_costo_id': reporte.intervalo_costo_id,
+        'orden_impresion_intervalo': reporte.orden_impresion_intervalo,
+        'pilot_hole_size_in': _float(reporte.pilot_hole_size_in),
+        'pilot_hole_depth_ft': _float(reporte.pilot_hole_depth_ft),
+        'bit_depth_ft': _float(reporte.bit_depth),
+        'profundidad_actual_ft': _float(reporte.profundidad_actual),
+        'avance_intervalo': _resumen_avance_intervalo(reporte, intervalos),
+        'continuidad': continuidad,
+        'geometria': geometria,
+    })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_well_geometry_guardar(request, pk, reporte_pk):
+    """Guarda la sarta del día (reemplazo total), el intervalo de costo y el hoyo piloto."""
+    pozo = get_object_or_404(Pozo, pk=pk)
+    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+
+    try:
+        body = json.loads(request.body)
+
+        # 1. Intervalo de costo y orden de impresión
+        intervalo_id = body.get('intervalo_costo_id')
+        if intervalo_id in ('', None, 'null'):
+            reporte.intervalo_costo = None
+        else:
+            reporte.intervalo_costo = get_object_or_404(
+                IntervaloRevestimiento, pk=int(intervalo_id), pozo=pozo
+            )
+
+        orden = body.get('orden_impresion_intervalo')
+        reporte.orden_impresion_intervalo = int(orden) if str(orden or '').strip().isdigit() else None
+
+        # 2. Hoyo piloto
+        reporte.pilot_hole_size_in = _float(body.get('pilot_hole_size_in'))
+        reporte.pilot_hole_depth_ft = _float(body.get('pilot_hole_depth_ft'))
+        reporte.save()
+
+        # 3. Sarta: reemplazo total (mismo patrón que boquillas y listas activas)
+        filas = body.get('tramos', [])
+        nuevos = []
+        orden_actual = 0
+        for fila in filas:
+            longitud = _float(fila.get('longitud_ft'))
+            od = _float(fila.get('od_in'))
+            descripcion = str(fila.get('descripcion', '')).strip()
+            if longitud <= 0 and od <= 0 and not descripcion:
+                continue
+            orden_actual += 1
+            componente_id = fila.get('componente_id')
+            nuevos.append(TramoSarta(
+                reporte=reporte,
+                orden=orden_actual,
+                componente_id=int(componente_id) if str(componente_id or '').isdigit() else None,
+                descripcion=descripcion[:150],
+                longitud_ft=longitud,
+                od_in=od,
+                id_in=_float(fila.get('id_in')),
+                tool_joint_od_in=_float(fila.get('tool_joint_od_in')),
+                tool_joint_id_in=_float(fila.get('tool_joint_id_in')),
+                tool_joint_length_in=_float(fila.get('tool_joint_length_in')),
+                largo_tramo_ft=_float(fila.get('largo_tramo_ft'), 31.0),
+            ))
+
+        with transaction.atomic():
+            reporte.tramos_sarta.all().delete()
+            TramoSarta.objects.bulk_create(nuevos)
+
+        reporte.refresh_from_db()
+        geometria, tramos, intervalos = calcular_geometria_reporte(pozo, reporte)
+
+        return JsonResponse({
+            'ok': True,
+            'mensaje': 'Geometría del pozo guardada correctamente.',
+            'tramos': tramos,
+            'avance_intervalo': _resumen_avance_intervalo(reporte, intervalos),
+            'geometria': geometria,
+        })
+    except Exception as e:
+        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+
+
+@require_http_methods(["GET"])
+def api_sarta_reporte_anterior(request, pk, reporte_pk):
+    """Devuelve la sarta del reporte anterior, para heredarla al reporte del día."""
+    pozo = get_object_or_404(Pozo, pk=pk)
+    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+
+    anterior = pozo.reportes_diarios.filter(fecha__lt=reporte.fecha).order_by('-fecha').first()
+    if not anterior:
+        return JsonResponse({'ok': True, 'tramos': [], 'fecha_origen': None})
+
+    return JsonResponse({
+        'ok': True,
+        'fecha_origen': anterior.fecha.isoformat(),
+        'bit_depth_origen': _float(anterior.bit_depth),
+        'tramos': [t.to_dict() for t in anterior.tramos_sarta.all().order_by('orden')],
+    })
+
+
+# =====================================================================
+# API: Pestaña 5 - Comments (ONE-TRAX Daily Data Input)
+# =====================================================================
+
+def obtener_o_crear_comentarios(reporte):
+    """
+    Devuelve los comentarios del reporte, creándolos si es la primera vez.
+
+    La especificación de propiedades del lodo (peso, viscosidad, filtrado) es el rango
+    objetivo acordado con el operador: no cambia día a día, así que al crear el registro
+    se hereda del reporte anterior. Los bloques de texto NO se heredan: cada día tiene
+    sus propios comentarios.
+    """
+    comentarios = getattr(reporte, 'comentarios', None)
+    if comentarios:
+        return comentarios
+
+    valores = {}
+    anterior = (
+        ReporteDiario.objects
+        .filter(pozo=reporte.pozo, fecha__lt=reporte.fecha)
+        .order_by('-fecha')
+        .first()
+    )
+    if anterior:
+        previos = getattr(anterior, 'comentarios', None)
+        if previos:
+            valores = {
+                'spec_mud_weight': previos.spec_mud_weight,
+                'spec_viscosidad': previos.spec_viscosidad,
+                'spec_filtrado': previos.spec_filtrado,
+            }
+
+    return ReporteDiarioComentarios.objects.create(reporte=reporte, **valores)
+
+
+@require_http_methods(["GET"])
+def api_comentarios_detail(request, pk, reporte_pk):
+    """Devuelve los comentarios del día y el resumen del reporte anterior como referencia."""
+    pozo = get_object_or_404(Pozo, pk=pk)
+    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+
+    comentarios = obtener_o_crear_comentarios(reporte)
+
+    # Resumen del día anterior: sirve de contexto al redactar el de hoy.
+    anterior = (
+        pozo.reportes_diarios
+        .filter(fecha__lt=reporte.fecha)
+        .order_by('-fecha')
+        .first()
+    )
+    recap_anterior = None
+    if anterior:
+        previos = getattr(anterior, 'comentarios', None)
+        if previos and previos.mud_recap_remarks.strip():
+            recap_anterior = {
+                'fecha': anterior.fecha.isoformat(),
+                'texto': previos.mud_recap_remarks.strip(),
+            }
+
+    return JsonResponse({
+        'ok': True,
+        'comentarios': comentarios.to_dict(),
+        'recap_anterior': recap_anterior,
+    })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_comentarios_guardar(request, pk, reporte_pk):
+    """Guarda la especificación de lodo y los tres bloques de comentarios del día."""
+    pozo = get_object_or_404(Pozo, pk=pk)
+    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+
+    try:
+        body = json.loads(request.body)
+        comentarios = obtener_o_crear_comentarios(reporte)
+
+        comentarios.spec_mud_weight = str(body.get('spec_mud_weight', ''))[:50].strip()
+        comentarios.spec_viscosidad = str(body.get('spec_viscosidad', ''))[:50].strip()
+        comentarios.spec_filtrado = str(body.get('spec_filtrado', ''))[:50].strip()
+
+        # El Mud Recap se imprime como una sola línea en el Well Recap del pozo:
+        # se colapsan los saltos de línea para que no rompa el formato del reporte.
+        recap = str(body.get('mud_recap_remarks', '')).strip()
+        comentarios.mud_recap_remarks = ' '.join(recap.split())
+
+        comentarios.remarks_and_treatment = str(body.get('remarks_and_treatment', '')).strip()
+        comentarios.remarks = str(body.get('remarks', '')).strip()
+        comentarios.save()
+
+        return JsonResponse({
+            'ok': True,
+            'mensaje': 'Comentarios guardados correctamente.',
+            'comentarios': comentarios.to_dict(),
         })
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=400)

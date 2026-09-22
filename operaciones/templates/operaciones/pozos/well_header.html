@@ -33,18 +33,44 @@
       </label>
       <div class="field-hint" style="margin-bottom:10px;">Si el proyecto es Offshore, Altura Libre, Profundidad de Agua y Temperatura del Lecho Marino son obligatorios y afectan la volumetría.</div>
 
-      <div class="form-grid-3" id="offshoreFieldsWrap" hidden>
-        <div class="form-group">
-          <label for="inputAirGap">Altura Libre — Air Gap (ft)</label>
-          <input type="number" step="0.01" id="inputAirGap" class="form-input">
+      <div id="offshoreFieldsWrap" hidden>
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label for="inputAirGap">Altura Libre — Air Gap (ft)</label>
+            <input type="number" step="0.01" id="inputAirGap" class="form-input">
+          </div>
+          <div class="form-group">
+            <label for="inputWaterDepth">Profundidad de Agua (ft)</label>
+            <input type="number" step="0.01" id="inputWaterDepth" class="form-input">
+          </div>
+          <div class="form-group">
+            <label for="inputSeaFloorTemp">Temperatura del Lecho Marino (°F)</label>
+            <input type="number" step="0.01" id="inputSeaFloorTemp" class="form-input">
+          </div>
         </div>
-        <div class="form-group">
-          <label for="inputWaterDepth">Profundidad de Agua (ft)</label>
-          <input type="number" step="0.01" id="inputWaterDepth" class="form-input">
+
+        <label class="checkbox-inline" style="margin-top:6px;">
+          <input type="checkbox" id="inputUsaRiser">
+          El pozo usa Riser
+        </label>
+        <div class="field-hint" style="margin-bottom:10px;">
+          El riser entra como primer tramo del perfil del pozo en la Geometría del Pozo (pestaña 4
+          del reporte diario) y cambia el volumen anular de ese tramo.
         </div>
-        <div class="form-group">
-          <label for="inputSeaFloorTemp">Temperatura del Lecho Marino (°F)</label>
-          <input type="number" step="0.01" id="inputSeaFloorTemp" class="form-input">
+
+        <div class="form-grid-3" id="riserFieldsWrap" hidden>
+          <div class="form-group">
+            <label for="inputRiserId">Diámetro Interno del Riser (in)</label>
+            <input type="number" step="0.001" id="inputRiserId" class="form-input">
+            <span class="field-error" id="errorRiserId"></span>
+          </div>
+          <div class="form-group">
+            <label for="inputRiserLength">Longitud del Riser (ft)</label>
+            <input type="number" step="0.01" id="inputRiserLength" class="form-input" placeholder="Automático">
+            <div class="field-hint" id="hintRiserLength">
+              Si lo dejas vacío se asume Altura Libre + Profundidad de Agua.
+            </div>
+          </div>
         </div>
       </div>
 

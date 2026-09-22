@@ -16,6 +16,7 @@
       <button class="cat-badge" id="tabMallas">Mallas de Zaranda</button>
       <button class="cat-badge" id="tabPropiedades">Propiedades de Equipo</button>
       <button class="cat-badge" id="tabBenchmark">Parámetros de Benchmark</button>
+      <button class="cat-badge" id="tabComponentes">Componentes de Sarta</button>
     </div>
   </div>
   <div class="topbar-right">
@@ -248,6 +249,96 @@
         <div class="form-footer-actions">
           <button type="button" class="btn btn-cancelar" id="btnCancelarBenchmark">Cancelar</button>
           <button type="button" class="btn btn-guardar" id="btnGuardarBenchmark">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Componentes de Sarta ===================== -->
+    <div class="split-view" id="panelComponentes" hidden>
+      <div class="left-column">
+        <div class="table-header-bar">
+          <span class="section-label">Componentes de Sarta de Perforación</span>
+          <span class="table-stats" id="statsComponentes">0 componentes</span>
+        </div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead><tr><th>Código</th><th>Descripción</th><th>Tipo</th><th>OD (in)</th><th>ID (in)</th></tr></thead>
+            <tbody id="tablaComponentesBody"></tbody>
+          </table>
+        </div>
+        <div class="left-actions-bar">
+          <div class="crud-btn-group">
+            <button type="button" class="btn btn-nuevo" id="btnNuevoComponente">+ Nuevo Componente</button>
+            <button type="button" class="btn btn-eliminar" id="btnEliminarComponente" disabled>Eliminar</button>
+          </div>
+        </div>
+      </div>
+      <div class="right-column">
+        <div class="form-header-title">
+          <span id="formTituloComponente">Nuevo Componente</span>
+          <span class="form-mode-tag" id="formModoComponente">Creando</span>
+        </div>
+        <div class="product-form">
+          <div class="form-group">
+            <label>Código del Componente</label>
+            <input type="text" id="inputComponenteCodigo" class="form-input" placeholder="Ej: DP-5-4276">
+          </div>
+          <div class="form-group">
+            <label>Descripción</label>
+            <input type="text" id="inputComponenteDescripcion" class="form-input" placeholder="Ej: Tubería de Perforación 5&quot; x 4.276&quot;">
+          </div>
+          <div class="form-group">
+            <label>Tipo de Componente</label>
+            <select id="inputComponenteTipo" class="form-select">
+              <option value="MECHA">Mecha (Bit)</option>
+              <option value="MOTOR">Motor de Fondo / MWD</option>
+              <option value="DRILL_COLLAR">Portamecha (Drill Collar)</option>
+              <option value="HEAVY_WEIGHT">Tubería Pesada (Heavy Weight)</option>
+              <option value="DRILL_PIPE" selected>Tubería de Perforación (Drill Pipe)</option>
+              <option value="ESTABILIZADOR">Estabilizador</option>
+              <option value="CROSSOVER">Crossover / Nipple</option>
+              <option value="REVESTIDOR">Revestidor (bajando casing)</option>
+              <option value="OTROS">Otros</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Diámetro Externo — OD (in)</label>
+            <input type="number" step="any" id="inputComponenteOd" class="form-input" placeholder="Ej: 5">
+          </div>
+          <div class="form-group">
+            <label>Diámetro Interno — ID (in)</label>
+            <input type="number" step="any" id="inputComponenteId" class="form-input" placeholder="Ej: 4.276">
+          </div>
+
+          <div class="form-group" style="margin-top:6px; border-top:1px solid #e2e8f0; padding-top:10px;">
+            <label style="font-weight:700;">Junta (Tool Joint)</label>
+            <small style="display:block; color:#64748b; font-size:11.5px; line-height:1.45; margin-bottom:6px;">
+              Solo aplica a tubería de perforación y tubería pesada. La junta tiene ID más
+              pequeño y OD más grande que el cuerpo del tubo, así que reduce tanto la
+              capacidad interna como la anular. Déjalo vacío en portamechas y mechas.
+            </small>
+          </div>
+          <div class="form-group">
+            <label>OD de Junta (in)</label>
+            <input type="number" step="any" id="inputComponenteTjOd" class="form-input" placeholder="Ej: 6.375">
+          </div>
+          <div class="form-group">
+            <label>ID de Junta (in)</label>
+            <input type="number" step="any" id="inputComponenteTjId" class="form-input" placeholder="Ej: 3.75">
+          </div>
+          <div class="form-group">
+            <label>Largo de Junta (in)</label>
+            <input type="number" step="any" id="inputComponenteTjLen" class="form-input" placeholder="Ej: 21">
+          </div>
+          <div class="form-group">
+            <label>Largo de Tramo (ft)</label>
+            <input type="number" step="any" id="inputComponenteLargoTramo" class="form-input" placeholder="31" value="31">
+          </div>
+        </div>
+        <span class="field-error" id="errorComponente" style="display:block; margin-top:8px;"></span>
+        <div class="form-footer-actions">
+          <button type="button" class="btn btn-cancelar" id="btnCancelarComponente">Cancelar</button>
+          <button type="button" class="btn btn-guardar" id="btnGuardarComponente">Guardar</button>
         </div>
       </div>
     </div>

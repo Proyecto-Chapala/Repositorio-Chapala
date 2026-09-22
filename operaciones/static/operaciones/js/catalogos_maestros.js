@@ -8,10 +8,12 @@ document.addEventListener('DOMContentLoaded', function () {
     let mallas = [];
     let propiedades = [];
     let benchmarks = [];
+    let componentes = [];
     let equipoSeleccionadoId = null;
     let mallaSeleccionadaId = null;
     let propiedadSeleccionadaId = null;
     let benchmarkSeleccionadoId = null;
+    let componenteSeleccionadoId = null;
 
     const TIPO_EQUIPO_LABELS = {
         CENTRIFUGA: 'Centrífuga',
@@ -28,12 +30,14 @@ document.addEventListener('DOMContentLoaded', function () {
         mallas: document.getElementById('tabMallas'),
         propiedades: document.getElementById('tabPropiedades'),
         benchmark: document.getElementById('tabBenchmark'),
+        componentes: document.getElementById('tabComponentes'),
     };
     const panels = {
         equipos: document.getElementById('panelEquipos'),
         mallas: document.getElementById('panelMallas'),
         propiedades: document.getElementById('panelPropiedades'),
         benchmark: document.getElementById('panelBenchmark'),
+        componentes: document.getElementById('panelComponentes'),
     };
     const searchInput = document.getElementById('searchInput');
 
@@ -96,6 +100,26 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnCancelarBenchmark = document.getElementById('btnCancelarBenchmark');
     const btnGuardarBenchmark = document.getElementById('btnGuardarBenchmark');
 
+    // ---------- Elementos: Componentes de Sarta ----------
+    const tablaComponentesBody = document.getElementById('tablaComponentesBody');
+    const statsComponentes = document.getElementById('statsComponentes');
+    const btnNuevoComponente = document.getElementById('btnNuevoComponente');
+    const btnEliminarComponente = document.getElementById('btnEliminarComponente');
+    const formTituloComponente = document.getElementById('formTituloComponente');
+    const formModoComponente = document.getElementById('formModoComponente');
+    const inputComponenteCodigo = document.getElementById('inputComponenteCodigo');
+    const inputComponenteDescripcion = document.getElementById('inputComponenteDescripcion');
+    const inputComponenteTipo = document.getElementById('inputComponenteTipo');
+    const inputComponenteOd = document.getElementById('inputComponenteOd');
+    const inputComponenteId = document.getElementById('inputComponenteId');
+    const inputComponenteTjOd = document.getElementById('inputComponenteTjOd');
+    const inputComponenteTjId = document.getElementById('inputComponenteTjId');
+    const inputComponenteTjLen = document.getElementById('inputComponenteTjLen');
+    const inputComponenteLargoTramo = document.getElementById('inputComponenteLargoTramo');
+    const errorComponente = document.getElementById('errorComponente');
+    const btnCancelarComponente = document.getElementById('btnCancelarComponente');
+    const btnGuardarComponente = document.getElementById('btnGuardarComponente');
+
     // ---------- Helpers ----------
     function getCookie(name) {
         let cookieValue = null;
@@ -155,6 +179,7 @@ document.addEventListener('DOMContentLoaded', function () {
         mallas: 'Buscar por código o descripción...',
         propiedades: 'Buscar por descripción...',
         benchmark: 'Buscar por descripción...',
+        componentes: 'Buscar por código o descripción...',
     };
 
     function activarTab(tab) {
@@ -171,6 +196,7 @@ document.addEventListener('DOMContentLoaded', function () {
     tabButtons.mallas.addEventListener('click', () => activarTab('mallas'));
     tabButtons.propiedades.addEventListener('click', () => activarTab('propiedades'));
     tabButtons.benchmark.addEventListener('click', () => activarTab('benchmark'));
+    tabButtons.componentes.addEventListener('click', () => activarTab('componentes'));
 
     // ---------- Carga de datos ----------
     async function cargarEquipos(search) {
@@ -595,6 +621,143 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // ---------- Componentes de Sarta ----------
+    async function cargarComponentes(search) {
+        try {
+            const url = '/api/componentes-sarta/' + (search ? ('?search=' + encodeURIComponent(search)) : '');
+            const data = await apiFetch(url);
+            componentes = (data && data.componentes) || [];
+            renderComponentes();
+        } catch (err) {
+            showToast('Error al cargar el catálogo de componentes de sarta.', 'error');
+        }
+    }
+
+    function fmtNum(valor) {
+        if (valor === null || valor === undefined || valor === '') return '—';
+        const n = parseFloat(valor);
+        if (isNaN(n) || n === 0) return '—';
+        return String(parseFloat(n.toFixed(4)));
+    }
+
+    function renderComponentes() {
+        tablaComponentesBody.innerHTML = '';
+        statsComponentes.textContent = componentes.length + (componentes.length === 1 ? ' componente' : ' componentes');
+        componentes.forEach(function (c) {
+            const tr = document.createElement('tr');
+            tr.dataset.id = c.id;
+            if (c.id === componenteSeleccionadoId) tr.classList.add('selected');
+            tr.innerHTML =
+                '<td>' + escapeHtml(c.codigo) + '</td>' +
+                '<td>' + escapeHtml(c.descripcion) + '</td>' +
+                '<td>' + escapeHtml(c.tipo_display) + '</td>' +
+                '<td>' + escapeHtml(fmtNum(c.od_in)) + '</td>' +
+                '<td>' + escapeHtml(fmtNum(c.id_in)) + '</td>';
+            tr.addEventListener('click', function () {
+                seleccionarComponente(c.id);
+            });
+            tablaComponentesBody.appendChild(tr);
+        });
+    }
+
+    function seleccionarComponente(id) {
+        componenteSeleccionadoId = id;
+        const c = componentes.find(function (x) { return x.id === id; });
+        if (!c) return;
+        inputComponenteCodigo.value = c.codigo;
+        inputComponenteDescripcion.value = c.descripcion;
+        inputComponenteTipo.value = c.tipo;
+        inputComponenteOd.value = c.od_in !== null ? c.od_in : '';
+        inputComponenteId.value = c.id_in !== null ? c.id_in : '';
+        inputComponenteTjOd.value = c.tool_joint_od_in !== null ? c.tool_joint_od_in : '';
+        inputComponenteTjId.value = c.tool_joint_id_in !== null ? c.tool_joint_id_in : '';
+        inputComponenteTjLen.value = c.tool_joint_length_in !== null ? c.tool_joint_length_in : '';
+        inputComponenteLargoTramo.value = c.largo_tramo_ft !== null ? c.largo_tramo_ft : 31;
+        formTituloComponente.textContent = c.descripcion;
+        formModoComponente.textContent = 'Editando';
+        errorComponente.textContent = '';
+        btnEliminarComponente.disabled = false;
+        renderComponentes();
+    }
+
+    function limpiarFormComponente() {
+        componenteSeleccionadoId = null;
+        inputComponenteCodigo.value = '';
+        inputComponenteDescripcion.value = '';
+        inputComponenteTipo.value = 'DRILL_PIPE';
+        inputComponenteOd.value = '';
+        inputComponenteId.value = '';
+        inputComponenteTjOd.value = '';
+        inputComponenteTjId.value = '';
+        inputComponenteTjLen.value = '';
+        inputComponenteLargoTramo.value = 31;
+        formTituloComponente.textContent = 'Nuevo Componente';
+        formModoComponente.textContent = 'Creando';
+        errorComponente.textContent = '';
+        btnEliminarComponente.disabled = true;
+        renderComponentes();
+    }
+
+    btnNuevoComponente.addEventListener('click', limpiarFormComponente);
+    btnCancelarComponente.addEventListener('click', limpiarFormComponente);
+
+    btnGuardarComponente.addEventListener('click', async function () {
+        errorComponente.textContent = '';
+        const codigo = inputComponenteCodigo.value.trim();
+        const descripcion = inputComponenteDescripcion.value.trim();
+        const od = inputComponenteOd.value.trim();
+
+        if (!codigo || !descripcion || !od) {
+            errorComponente.textContent = 'El código, la descripción y el diámetro externo son obligatorios.';
+            return;
+        }
+
+        const payload = {
+            codigo: codigo,
+            descripcion: descripcion,
+            tipo: inputComponenteTipo.value,
+            od_in: od,
+            id_in: inputComponenteId.value.trim() || 0,
+            tool_joint_od_in: inputComponenteTjOd.value.trim() || null,
+            tool_joint_id_in: inputComponenteTjId.value.trim() || null,
+            tool_joint_length_in: inputComponenteTjLen.value.trim() || null,
+            largo_tramo_ft: inputComponenteLargoTramo.value.trim() || 31,
+        };
+
+        const esEdicion = componenteSeleccionadoId !== null;
+        const url = esEdicion
+            ? '/api/componentes-sarta/' + componenteSeleccionadoId + '/modificar/'
+            : '/api/componentes-sarta/crear/';
+
+        try {
+            await apiFetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            showToast(esEdicion ? 'Componente actualizado correctamente.' : 'Componente creado correctamente.', 'success');
+            limpiarFormComponente();
+            await cargarComponentes(searchInput.value.trim());
+        } catch (err) {
+            const msg = (err.data && err.data.error) || 'No se pudo guardar el componente.';
+            errorComponente.textContent = msg;
+        }
+    });
+
+    btnEliminarComponente.addEventListener('click', async function () {
+        if (componenteSeleccionadoId === null) return;
+        if (!confirm('¿Eliminar este componente del catálogo maestro?')) return;
+        try {
+            await apiFetch('/api/componentes-sarta/' + componenteSeleccionadoId + '/eliminar/', { method: 'POST' });
+            showToast('Componente eliminado correctamente.', 'success');
+            limpiarFormComponente();
+            await cargarComponentes(searchInput.value.trim());
+        } catch (err) {
+            const msg = (err.data && err.data.error) || 'No se pudo eliminar el componente.';
+            showToast(msg, 'error');
+        }
+    });
+
     // ---------- Búsqueda (debounced) ----------
     let searchTimeout = null;
     searchInput.addEventListener('input', function () {
@@ -607,6 +770,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 cargarMallas(term);
             } else if (tabActiva === 'propiedades') {
                 cargarPropiedades(term);
+            } else if (tabActiva === 'componentes') {
+                cargarComponentes(term);
             } else {
                 cargarBenchmarks(term);
             }
@@ -618,4 +783,5 @@ document.addEventListener('DOMContentLoaded', function () {
     cargarMallas('');
     cargarPropiedades('');
     cargarBenchmarks('');
+    cargarComponentes('');
 });

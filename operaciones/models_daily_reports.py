@@ -1,5 +1,5 @@
 from django.db import models
-from .models import Pozo
+from .models import Pozo, IntervaloRevestimiento, ComponenteSarta
 
 
 class ReporteDiario(models.Model):
@@ -30,6 +30,22 @@ class ReporteDiario(models.Model):
     telefono_almacen = models.CharField(max_length=100, blank=True, verbose_name="Teléfono del Almacén")
     telefonos = models.CharField(max_length=255, blank=True, verbose_name="Otros Teléfonos")
     fax_numbers = models.CharField(max_length=255, blank=True, verbose_name="Pagers/FAX")
+
+    # --- Tab 4: Well Geometry ---
+    intervalo_costo = models.ForeignKey(
+        IntervaloRevestimiento, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='reportes_asignados', verbose_name="Intervalo de Costo (Interval Number)",
+        help_text="Intervalo del pozo al que se imputan los costos del día."
+    )
+    orden_impresion_intervalo = models.PositiveSmallIntegerField(
+        null=True, blank=True, verbose_name="Orden de Impresión (Print Order)"
+    )
+    pilot_hole_size_in = models.FloatField(
+        default=0.0, verbose_name="Diámetro del Hoyo Piloto (in)"
+    )
+    pilot_hole_depth_ft = models.FloatField(
+        default=0.0, verbose_name="Profundidad del Hoyo Piloto (ft)"
+    )
 
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
@@ -566,6 +582,147 @@ class ReporteDiarioMudCheck(models.Model):
             self.calcular_solids_analysis_obm()
         else:
             self.calcular_solids_analysis_wbm()
+
+
+class TramoSarta(models.Model):
+    """
+    Un componente de la sarta de perforación instalado en el hoyo en la fecha del reporte
+    (Tab #4 - Well Geometry, tabla 'Drill String').
+
+    Las filas se ordenan DESDE LA MECHA HACIA ARRIBA (orden=1 es la mecha), que es como
+    el ingeniero arma físicamente el ensamblaje. Cada tramo aporta un volumen interno
+    (su propio ID) y un volumen anular (su OD contra el diámetro que lo confina, que lo
+    da el perfil de revestidores del pozo y puede cambiar a lo largo de un mismo tramo).
+    """
+
+    reporte = models.ForeignKey(ReporteDiario, on_delete=models.CASCADE, related_name='tramos_sarta')
+    orden = models.PositiveSmallIntegerField(
+        default=1, verbose_name="Orden (1 = mecha)",
+        help_text="Posición desde la mecha hacia superficie."
+    )
+    componente = models.ForeignKey(
+        ComponenteSarta, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='tramos_usados', verbose_name="Componente del Catálogo",
+        help_text="Opcional: al elegirlo se autocompletan los diámetros, que siguen siendo editables."
+    )
+    descripcion = models.CharField(max_length=150, blank=True, verbose_name="Descripción / Tipo")
+
+    longitud_ft = models.FloatField(default=0.0, verbose_name="Longitud (ft)")
+    od_in = models.FloatField(default=0.0, verbose_name="Diámetro Externo — OD (in)")
+    id_in = models.FloatField(default=0.0, verbose_name="Diámetro Interno — ID (in)")
+
+    tool_joint_od_in = models.FloatField(default=0.0, verbose_name="OD de Junta (in)")
+    tool_joint_id_in = models.FloatField(default=0.0, verbose_name="ID de Junta (in)")
+    tool_joint_length_in = models.FloatField(default=0.0, verbose_name="Largo de Junta (in)")
+    largo_tramo_ft = models.FloatField(default=31.0, verbose_name="Largo de Tramo (ft)")
+
+    class Meta:
+        verbose_name = "Tramo de Sarta de Perforación"
+        verbose_name_plural = "Tramos de Sarta de Perforación"
+        ordering = ['orden', 'id']
+        unique_together = ('reporte', 'orden')
+
+    def __str__(self):
+        return f"#{self.orden} {self.descripcion or 'Tramo'} ({self.longitud_ft} ft) - {self.reporte}"
+
+    @property
+    def fraccion_junta(self):
+        """
+        Fracción de la longitud del tramo ocupada por juntas (tool joints).
+
+        ONE-TRAX pondera la capacidad del tramo entre el cuerpo del tubo y la junta:
+        con 21 in de junta por tramo de 31 ft la fracción es 21 / (31 * 12) = 0.05645.
+        """
+        largo_tramo_in = (self.largo_tramo_ft or 0.0) * 12.0
+        if largo_tramo_in <= 0 or (self.tool_joint_length_in or 0.0) <= 0:
+            return 0.0
+        return min(1.0, self.tool_joint_length_in / largo_tramo_in)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'orden': self.orden,
+            'componente_id': self.componente_id,
+            'descripcion': self.descripcion,
+            'longitud_ft': self.longitud_ft,
+            'od_in': self.od_in,
+            'id_in': self.id_in,
+            'tool_joint_od_in': self.tool_joint_od_in,
+            'tool_joint_id_in': self.tool_joint_id_in,
+            'tool_joint_length_in': self.tool_joint_length_in,
+            'largo_tramo_ft': self.largo_tramo_ft,
+        }
+
+
+class ReporteDiarioComentarios(models.Model):
+    """
+    Comentarios del día (Tab #5 - Comments).
+
+    Tres bloques de texto con destinos distintos, más la especificación de propiedades
+    del lodo (el rango objetivo acordado con el operador, no el valor medido del día:
+    eso vive en los Mud Checks de la pestaña 3).
+    """
+
+    reporte = models.OneToOneField(
+        ReporteDiario, on_delete=models.CASCADE, related_name='comentarios'
+    )
+
+    # --- Mud Property Specification (rangos objetivo, texto libre tipo "11.5-12.0") ---
+    spec_mud_weight = models.CharField(
+        max_length=50, blank=True, verbose_name="Peso del Lodo — Especificación",
+        help_text="Rango objetivo acordado, por ejemplo 11.5-12.0"
+    )
+    spec_viscosidad = models.CharField(
+        max_length=50, blank=True, verbose_name="Viscosidad — Especificación"
+    )
+    spec_filtrado = models.CharField(
+        max_length=50, blank=True, verbose_name="Filtrado — Especificación",
+        help_text="Rango objetivo acordado, por ejemplo 3.0-5.0"
+    )
+
+    # --- Bloques de comentarios ---
+    mud_recap_remarks = models.TextField(
+        blank=True, verbose_name="Resumen del Día (Mud Recap Remarks)",
+        help_text="Una sola línea: es lo que se imprime en el Well Recap del pozo."
+    )
+    remarks_and_treatment = models.TextField(
+        blank=True, verbose_name="Observaciones y Tratamiento",
+        help_text="Actividad y servicio de fluidos prestado durante el día."
+    )
+    remarks = models.TextField(
+        blank=True, verbose_name="Observaciones de Operaciones",
+        help_text="Operaciones generales del taladro; normalmente se toma de la hoja IADC."
+    )
+
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Comentarios del Reporte Diario"
+        verbose_name_plural = "Comentarios de Reportes Diarios"
+
+    def __str__(self):
+        return f"Comentarios - {self.reporte}"
+
+    @property
+    def tiene_contenido(self):
+        """True si el ingeniero ya escribió algo en cualquiera de los bloques."""
+        return any([
+            self.mud_recap_remarks.strip(),
+            self.remarks_and_treatment.strip(),
+            self.remarks.strip(),
+        ])
+
+    def to_dict(self):
+        return {
+            'spec_mud_weight': self.spec_mud_weight,
+            'spec_viscosidad': self.spec_viscosidad,
+            'spec_filtrado': self.spec_filtrado,
+            'mud_recap_remarks': self.mud_recap_remarks,
+            'remarks_and_treatment': self.remarks_and_treatment,
+            'remarks': self.remarks,
+            'tiene_contenido': self.tiene_contenido,
+        }
 
 
 class ReporteDiarioMudExtraValue(models.Model):
