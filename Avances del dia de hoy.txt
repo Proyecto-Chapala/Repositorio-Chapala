@@ -1,0 +1,156 @@
+================================================================================
+REPORTE DE AVANCES, CAMBIOS Y CORRECCIONES DE ERRORES - PROYECTO CHAPALA
+SISTEMA DE GESTIÓN DE OPERACIONES PETROLERAS Y FLUIDOS DE PERFORACIÓN
+================================================================================
+Fecha de Actualización: 22 de Septiembre de 2026
+Entorno: Django / Python 3.14 / PostgreSQL / JavaScript Vanilla / CSS3
+Archivo Destino: Avances del dia de hoy.txt (Raíz del proyecto)
+================================================================================
+
+1. RESUMEN EJECUTIVO DE LA JORNADA
+--------------------------------------------------------------------------------
+Durante el día de hoy se llevaron a cabo tareas críticas de estabilización,
+corrección de persistencia de datos en el reporte diario, auditoría de integridad
+de base de datos en PostgreSQL y un rediseño completo de interfaz de usuario (UI/UX)
+para el módulo de "Catálogos Maestros" (/catalogos-maestros/), solucionando
+problemas de renderizado, conflictos de especificidad CSS y caché persistente de navegador.
+
+
+2. ERRORES CRÍTICOS DIAGNOSTICADOS Y SOLUCIONADOS
+--------------------------------------------------------------------------------
+
+A. BUG DE PERSISTENCIA EN REPORTE DIARIO (PESTAÑA 1 - GENERAL):
+   - Problema: Los datos introducidos en los campos de operaciones (Profundidad
+     Medida, TVD, Profundidad de Barrena, Fecha Spud y Actividad) se perdían o
+     se reseteaban al recargar la página del reporte diario.
+   - Causa Raíz: Discrepancia en la serialización JSON del payload en el frontend
+     y manejo de valores vacíos/nulos en la función de guardado en el backend
+     (api_reporte_diario_general_guardar).
+   - Solución Aplicada:
+     * Se normalizó la deserialización en el endpoint correspondiente de
+       views_daily_reports.py.
+     * Se corrigió el binding y la recarga en el script de cliente para asegurar
+       que cada dato guardado sea mapeado exactamente a su input correspondiente
+       al abrir o refrescar el reporte.
+
+B. SOPORTE COMPLETO PARA VALORES DECIMALES (PRECISIÓN CONTINUA):
+   - Problema: Inseguridad sobre si valores con fracciones decimales (ej. 20.5 ft
+     o medidas intermedias de tubería) se registraban correctamente o se truncaban.
+   - Solución Aplicada:
+     * Se verificó y aseguró que los campos en modelos y formularios utilicen tipos
+       numéricos decimales/flotantes de alta precisión.
+     * Se comprobó que valores como 20.5 se guarden y recuperen exactamente con su
+       fracción decimal sin redondeos indeseados ni conversiones forzadas a enteros.
+
+C. SUPERPOSICIÓN DE PANELES EN CATÁLOGOS MAESTROS (BUG CSS GRID VS [HIDDEN]):
+   - Problema: Al entrar a Catálogos Maestros, los 5 paneles (Equipos, Mallas,
+     Propiedades, Benchmark y Componentes de Sarta) aparecían superpuestos y
+     apilados uno debajo del otro en un scroll vertical interminable.
+   - Causa Raíz: En CSS, la clase `.split-view { display: grid; }` tenía mayor
+     especificidad que el atributo nativo HTML `[hidden]`, por lo que el navegador
+     forzaba el renderizado de los paneles aunque tuvieran `hidden="true"`.
+   - Solución Aplicada:
+     * Se añadió la regla prioritaria con especificidad absoluta en
+       catalogos_maestros.css:
+         .split-view[hidden], [hidden] { display: none !important; }
+     * En catalogos_maestros.js se programó el cambio de estilo explícito
+       (style.display = 'grid' o 'none') al alternar entre pestañas.
+
+D. DESFASE POR CACHÉ DEL NAVEGADOR Y CONTADORES EN CERO:
+   - Problema: Tras el rediseño, el usuario no visualizaba sus registros guardados,
+     las pestañas mostraban "0" en todos los contadores y la pestaña de componentes
+     no respondía a los clics.
+   - Causa Raíz: El navegador web (Chrome/Edge) mantuvo en su memoria caché de disco
+     el archivo `catalogos_maestros.js` anterior, el cual carecía de los manejadores
+     de eventos para "Componentes de Sarta" y de la actualización de badges.
+   - Solución Aplicada:
+     * Inyección desde Servidor (SSR): Se modificó `catalogos_maestros_view` en
+       `operaciones/views.py` para calcular y enviar los conteos reales directamente
+       desde la base de datos PostgreSQL (`counts = {'equipos': ..., 'mallas': ...,
+       'componentes': ...}`). Así los badges se renderizan con los valores correctos
+       (1, 1, 0, 1, 3) desde el primer milisegundo en el HTML.
+     * Invalidador de Caché Dinámico (Cache-Busting): Se añadió el tag
+       `?v={% now 'YmdHis' %}` a los enlaces de script y hoja de estilos en
+       `catalogos_maestros.html`, forzando al navegador a solicitar siempre la
+       última versión sin depender de la caché local.
+     * Selección Automática Inteligente: Se incorporó lógica en el JS para que al
+       cargar la página o cambiar de pestaña, si existen registros, se seleccione
+       automáticamente el primer elemento (ej. equipo 'Diegui 2' o componente 'DC-9.5'),
+       llenando el formulario en modo "Editando" en lugar de mostrarlo vacío en "Creando".
+
+
+3. REDISEÑO Y MEJORAS DE LA INTERFAZ (CATÁLOGOS MAESTROS)
+--------------------------------------------------------------------------------
+
+A. TOPBAR Y NAVEGACIÓN POR PESTAÑAS (PILLS):
+   - Diseño estilo píldora segmentada con íconos descriptivos y contadores en vivo:
+     * ⚙️ Equipos
+     * ▦ Mallas de Zaranda
+     * 📋 Propiedades de Equipo
+     * 📊 Parámetros de Benchmark
+     * 🔩 Componentes de Sarta
+   - Buscador universal en la barra superior con debounce (250ms) adaptado
+     automáticamente al contexto de la pestaña activa.
+
+B. ESTRUCTURA DIVIDIDA (SPLIT-VIEW) MODERNA Y ERGONÓMICA:
+   - Columna Izquierda (Tabla de Registros):
+     * Encabezado fijo con botón de acción rápida "+ Nuevo [Elemento]".
+     * Tabla interactiva con resaltado de fila activa (estado `.selected`).
+     * Tip contextual y botón de "Eliminar" en la barra inferior (deshabilitado
+       en modo creación y habilitado únicamente al seleccionar un registro existente).
+   - Columna Derecha (Formulario de Detalle y Edición):
+     * Tarjeta limpia con badge dinámico de estado:
+       - Verde: "Creando"
+       - Azul: "Editando"
+     * Cuadrículas responsivas a 2 columnas (form-grid-2cols).
+     * Caja especial agrupada para "Junta (Tool Joint)" en componentes de sarta,
+       con campos de OD, ID, Largo de Junta y Largo de Tramo (31 ft por defecto).
+     * Acciones claras al pie del formulario: "Cancelar" y "Guardar [Elemento]" en
+       color corporativo naranja.
+
+C. SEGURIDAD Y PRESERVACIÓN DE CÓDIGO:
+   - Se preservó el 100% de los identificadores (`id`), nombres de inputs, botones,
+     rutas de endpoints y payloads de la API REST original.
+   - Se reforzó la protección contra falsificación de petición en sitios cruzados
+     (CSRF) mediante inyección explícita del token `{% csrf_token %}` en la plantilla.
+
+
+4. AUDITORÍA DE INTEGRIDAD DE DATOS (POSTGRESQL)
+--------------------------------------------------------------------------------
+Se realizó una verificación exhaustiva mediante scripts directos en la base de datos
+local de PostgreSQL (`chapala_db`), certificando que ningún registro fue alterado
+ni eliminado durante los cambios:
+
+- Equipos (1 registro):
+  * ID 1: Código 'Diegui 2', Nombre 'Diegui Peo', Tipo 'CENTRIFUGA'.
+- Mallas de Zaranda (1 registro):
+  * ID 1: Código 'DIEGUI MALLA', Descripción 'PIPE PARAO', Malla '13 Mesh'.
+- Propiedades de Equipo:
+  * 0 registros (tabla limpia, lista para nuevas configuraciones).
+- Parámetros de Benchmark (1 registro):
+  * ID 1: Grupo 'Diegui Lodo Pupu', Descripción 'mamaguevo eso pesa', Unidad 'LB'.
+- Componentes de Sarta (3 registros):
+  * ID 6: Código 'DC-9.5', Descripción 'PORTAMECHA 9' (OD: 9.5", ID: 3.0").
+  * ID 5: Código 'DC-8.5', Descripción 'PERFORACION 8' (OD: 8.5", ID: 3.0").
+  * ID 4: Código 'DP-5', Descripción 'TUBERIA DE PERFORACION 5' (OD: 5.0", ID: 4.276", TJ: 6.375").
+
+
+5. ARCHIVOS MODIFICADOS Y CREADOS
+--------------------------------------------------------------------------------
+- `operaciones/views.py`:
+  * Actualización de `catalogos_maestros_view` para inyectar diccionario `counts`.
+- `operaciones/templates/operaciones/catalogos_maestros.html`:
+  * Rediseño estructural del layout, soporte de contadores SSR, inclusión de
+    CSRF token y cache-busting con `{% now 'YmdHis' %}`.
+- `operaciones/static/operaciones/css/catalogos_maestros.css`:
+  * Hoja de estilos moderna, paleta corporativa (Navy/Naranja/Gris), reglas de
+    prioridad para ocultar pestañas inactivas y diseño adaptativo.
+- `operaciones/static/operaciones/js/catalogos_maestros.js`:
+  * Lógica completa de navegación entre 5 pestañas, selección automática,
+    actualización reactiva de badges y consumo de endpoints CRUD.
+- `Avances del dia de hoy.txt`:
+  * Documento de auditoría y resumen detallado del día de trabajo.
+================================================================================
+FIN DEL REPORTE
+================================================================================
+

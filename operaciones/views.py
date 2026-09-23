@@ -1353,7 +1353,14 @@ def api_mallas_activas_guardar(request, pk):
 # ============================================================
 
 def catalogos_maestros_view(request):
-    return render(request, 'operaciones/catalogos_maestros.html')
+    counts = {
+        'equipos': Equipo.objects.count(),
+        'mallas': MallaZaranda.objects.count(),
+        'propiedades': PropiedadEquipoTipo.objects.count(),
+        'benchmark': ParametroBenchmark.objects.count(),
+        'componentes': ComponenteSarta.objects.count(),
+    }
+    return render(request, 'operaciones/catalogos_maestros.html', {'counts': counts})
 
 
 @csrf_exempt

@@ -187,9 +187,22 @@ document.addEventListener('DOMContentLoaded', function () {
         Object.keys(tabButtons).forEach(function (key) {
             tabButtons[key].classList.toggle('active', key === tab);
             panels[key].hidden = (key !== tab);
+            panels[key].style.display = (key === tab) ? 'grid' : 'none';
         });
         searchInput.placeholder = searchPlaceholders[tab];
         searchInput.value = '';
+
+        if (tab === 'equipos' && equipos.length > 0 && equipoSeleccionadoId === null) {
+            seleccionarEquipo(equipos[0].id);
+        } else if (tab === 'mallas' && mallas.length > 0 && mallaSeleccionadaId === null) {
+            seleccionarMalla(mallas[0].id);
+        } else if (tab === 'propiedades' && propiedades.length > 0 && propiedadSeleccionadaId === null) {
+            seleccionarPropiedad(propiedades[0].id);
+        } else if (tab === 'benchmark' && benchmarks.length > 0 && benchmarkSeleccionadoId === null) {
+            seleccionarBenchmark(benchmarks[0].id);
+        } else if (tab === 'componentes' && componentes.length > 0 && componenteSeleccionadoId === null) {
+            seleccionarComponente(componentes[0].id);
+        }
     }
 
     tabButtons.equipos.addEventListener('click', () => activarTab('equipos'));
@@ -205,6 +218,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await apiFetch(url);
             equipos = (data && data.equipos) || [];
             renderEquipos();
+            if (equipos.length > 0 && equipoSeleccionadoId === null && tabActiva === 'equipos') {
+                seleccionarEquipo(equipos[0].id);
+            }
         } catch (err) {
             showToast('Error al cargar el catálogo de equipos.', 'error');
         }
@@ -216,6 +232,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await apiFetch(url);
             mallas = (data && data.mallas) || [];
             renderMallas();
+            if (mallas.length > 0 && mallaSeleccionadaId === null && tabActiva === 'mallas') {
+                seleccionarMalla(mallas[0].id);
+            }
         } catch (err) {
             showToast('Error al cargar el catálogo de mallas.', 'error');
         }
@@ -227,6 +246,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await apiFetch(url);
             propiedades = (data && data.propiedades) || [];
             renderPropiedades();
+            if (propiedades.length > 0 && propiedadSeleccionadaId === null && tabActiva === 'propiedades') {
+                seleccionarPropiedad(propiedades[0].id);
+            }
         } catch (err) {
             showToast('Error al cargar las propiedades de equipo.', 'error');
         }
@@ -238,6 +260,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await apiFetch(url);
             benchmarks = (data && data.parametros) || [];
             renderBenchmarks();
+            if (benchmarks.length > 0 && benchmarkSeleccionadoId === null && tabActiva === 'benchmark') {
+                seleccionarBenchmark(benchmarks[0].id);
+            }
         } catch (err) {
             showToast('Error al cargar los parámetros de benchmark.', 'error');
         }
@@ -247,11 +272,17 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderEquipos() {
         tablaEquiposBody.innerHTML = '';
         statsEquipos.textContent = equipos.length + (equipos.length === 1 ? ' equipo' : ' equipos');
+        const b = document.getElementById('tabBadgeEquipos');
+        if (b) b.textContent = equipos.length;
+        if (equipos.length === 0) {
+            tablaEquiposBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:32px 16px; color:#94a3b8;">Sin equipos registrados. Pulsa "+ Nuevo Equipo" para agregar uno.</td></tr>';
+            return;
+        }
         equipos.forEach(function (eq) {
             const tr = document.createElement('tr');
             tr.dataset.id = eq.id;
             if (eq.id === equipoSeleccionadoId) tr.classList.add('selected');
-            tr.innerHTML = '<td>' + escapeHtml(eq.codigo) + '</td><td>' + escapeHtml(eq.nombre) + '</td><td>' + escapeHtml(eq.tipo_equipo_display) + '</td>';
+            tr.innerHTML = '<td><strong>' + escapeHtml(eq.codigo) + '</strong></td><td>' + escapeHtml(eq.nombre) + '</td><td><span class="badge-cat">' + escapeHtml(eq.tipo_equipo_display) + '</span></td>';
             tr.addEventListener('click', function () {
                 seleccionarEquipo(eq.id);
             });
@@ -262,11 +293,17 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderMallas() {
         tablaMallasBody.innerHTML = '';
         statsMallas.textContent = mallas.length + (mallas.length === 1 ? ' malla' : ' mallas');
+        const b = document.getElementById('tabBadgeMallas');
+        if (b) b.textContent = mallas.length;
+        if (mallas.length === 0) {
+            tablaMallasBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:32px 16px; color:#94a3b8;">Sin mallas registradas. Pulsa "+ Nueva Malla" para agregar una.</td></tr>';
+            return;
+        }
         mallas.forEach(function (m) {
             const tr = document.createElement('tr');
             tr.dataset.id = m.id;
             if (m.id === mallaSeleccionadaId) tr.classList.add('selected');
-            tr.innerHTML = '<td>' + escapeHtml(m.codigo) + '</td><td>' + escapeHtml(m.descripcion) + '</td><td>' + escapeHtml(String(m.mesh_size)) + '</td>';
+            tr.innerHTML = '<td><strong>' + escapeHtml(m.codigo) + '</strong></td><td>' + escapeHtml(m.descripcion) + '</td><td>' + escapeHtml(String(m.mesh_size)) + ' Mesh</td>';
             tr.addEventListener('click', function () {
                 seleccionarMalla(m.id);
             });
@@ -277,11 +314,17 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderPropiedades() {
         tablaPropiedadesBody.innerHTML = '';
         statsPropiedades.textContent = propiedades.length + (propiedades.length === 1 ? ' propiedad' : ' propiedades');
+        const b = document.getElementById('tabBadgePropiedades');
+        if (b) b.textContent = propiedades.length;
+        if (propiedades.length === 0) {
+            tablaPropiedadesBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:32px 16px; color:#94a3b8;">Sin propiedades registradas. Pulsa "+ Nueva Propiedad" para agregar una.</td></tr>';
+            return;
+        }
         propiedades.forEach(function (p) {
             const tr = document.createElement('tr');
             tr.dataset.id = p.id;
             if (p.id === propiedadSeleccionadaId) tr.classList.add('selected');
-            tr.innerHTML = '<td>' + escapeHtml(p.tipo_equipo_display) + '</td><td>' + escapeHtml(p.descripcion) + '</td><td>' + escapeHtml(p.unidad) + '</td><td>' + escapeHtml(String(p.orden)) + '</td>';
+            tr.innerHTML = '<td><span class="badge-cat">' + escapeHtml(p.tipo_equipo_display) + '</span></td><td>' + escapeHtml(p.descripcion) + '</td><td>' + escapeHtml(p.unidad || '—') + '</td><td style="text-align:center;">' + escapeHtml(String(p.orden)) + '</td>';
             tr.addEventListener('click', function () {
                 seleccionarPropiedad(p.id);
             });
@@ -292,11 +335,17 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderBenchmarks() {
         tablaBenchmarkBody.innerHTML = '';
         statsBenchmark.textContent = benchmarks.length + (benchmarks.length === 1 ? ' parámetro' : ' parámetros');
+        const b = document.getElementById('tabBadgeBenchmark');
+        if (b) b.textContent = benchmarks.length;
+        if (benchmarks.length === 0) {
+            tablaBenchmarkBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:32px 16px; color:#94a3b8;">Sin parámetros registrados. Pulsa "+ Nuevo Parámetro" para agregar uno.</td></tr>';
+            return;
+        }
         benchmarks.forEach(function (b) {
             const tr = document.createElement('tr');
             tr.dataset.id = b.id;
             if (b.id === benchmarkSeleccionadoId) tr.classList.add('selected');
-            tr.innerHTML = '<td>' + escapeHtml(b.grupo) + '</td><td>' + escapeHtml(b.descripcion) + '</td><td>' + escapeHtml(b.unidad) + '</td><td>' + escapeHtml(b.tipo_fluido_display) + '</td><td>' + escapeHtml(b.tipo_dato_display) + '</td>';
+            tr.innerHTML = '<td><strong>' + escapeHtml(b.grupo) + '</strong></td><td>' + escapeHtml(b.descripcion) + '</td><td>' + escapeHtml(b.unidad || '—') + '</td><td><span class="badge-cat">' + escapeHtml(b.tipo_fluido_display) + '</span></td><td>' + escapeHtml(b.tipo_dato_display) + '</td>';
             tr.addEventListener('click', function () {
                 seleccionarBenchmark(b.id);
             });
@@ -314,6 +363,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputEquipoTipo.value = eq.tipo_equipo;
         formTituloEquipo.textContent = eq.nombre;
         formModoEquipo.textContent = 'Editando';
+        formModoEquipo.className = 'catalogos-mode-badge editando form-mode-tag';
         errorEquipo.textContent = '';
         btnEliminarEquipo.disabled = false;
         renderEquipos();
@@ -328,6 +378,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputMallaMesh.value = m.mesh_size;
         formTituloMalla.textContent = m.descripcion;
         formModoMalla.textContent = 'Editando';
+        formModoMalla.className = 'catalogos-mode-badge editando form-mode-tag';
         errorMalla.textContent = '';
         btnEliminarMalla.disabled = false;
         renderMallas();
@@ -343,6 +394,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputPropiedadOrden.value = p.orden;
         formTituloPropiedad.textContent = p.descripcion;
         formModoPropiedad.textContent = 'Editando';
+        formModoPropiedad.className = 'catalogos-mode-badge editando form-mode-tag';
         errorPropiedad.textContent = '';
         btnEliminarPropiedad.disabled = false;
         renderPropiedades();
@@ -359,6 +411,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputBenchmarkTipoDato.value = b.tipo_dato;
         formTituloBenchmark.textContent = b.descripcion;
         formModoBenchmark.textContent = 'Editando';
+        formModoBenchmark.className = 'catalogos-mode-badge editando form-mode-tag';
         errorBenchmark.textContent = '';
         btnEliminarBenchmark.disabled = false;
         renderBenchmarks();
@@ -371,6 +424,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputEquipoTipo.value = 'CENTRIFUGA';
         formTituloEquipo.textContent = 'Nuevo Equipo';
         formModoEquipo.textContent = 'Creando';
+        formModoEquipo.className = 'catalogos-mode-badge creando form-mode-tag';
         errorEquipo.textContent = '';
         btnEliminarEquipo.disabled = true;
         renderEquipos();
@@ -383,6 +437,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputMallaMesh.value = '';
         formTituloMalla.textContent = 'Nueva Malla';
         formModoMalla.textContent = 'Creando';
+        formModoMalla.className = 'catalogos-mode-badge creando form-mode-tag';
         errorMalla.textContent = '';
         btnEliminarMalla.disabled = true;
         renderMallas();
@@ -396,6 +451,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputPropiedadOrden.value = '';
         formTituloPropiedad.textContent = 'Nueva Propiedad';
         formModoPropiedad.textContent = 'Creando';
+        formModoPropiedad.className = 'catalogos-mode-badge creando form-mode-tag';
         errorPropiedad.textContent = '';
         btnEliminarPropiedad.disabled = true;
         renderPropiedades();
@@ -410,6 +466,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputBenchmarkTipoDato.value = 'MIN_MAX';
         formTituloBenchmark.textContent = 'Nuevo Parámetro';
         formModoBenchmark.textContent = 'Creando';
+        formModoBenchmark.className = 'catalogos-mode-badge creando form-mode-tag';
         errorBenchmark.textContent = '';
         btnEliminarBenchmark.disabled = true;
         renderBenchmarks();
@@ -628,6 +685,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await apiFetch(url);
             componentes = (data && data.componentes) || [];
             renderComponentes();
+            if (componentes.length > 0 && componenteSeleccionadoId === null && tabActiva === 'componentes') {
+                seleccionarComponente(componentes[0].id);
+            }
         } catch (err) {
             showToast('Error al cargar el catálogo de componentes de sarta.', 'error');
         }
@@ -643,14 +703,20 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderComponentes() {
         tablaComponentesBody.innerHTML = '';
         statsComponentes.textContent = componentes.length + (componentes.length === 1 ? ' componente' : ' componentes');
+        const b = document.getElementById('tabBadgeComponentes');
+        if (b) b.textContent = componentes.length;
+        if (componentes.length === 0) {
+            tablaComponentesBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:32px 16px; color:#94a3b8;">Sin componentes registrados. Pulsa "+ Nuevo Componente" para agregar uno.</td></tr>';
+            return;
+        }
         componentes.forEach(function (c) {
             const tr = document.createElement('tr');
             tr.dataset.id = c.id;
             if (c.id === componenteSeleccionadoId) tr.classList.add('selected');
             tr.innerHTML =
-                '<td>' + escapeHtml(c.codigo) + '</td>' +
+                '<td><strong>' + escapeHtml(c.codigo) + '</strong></td>' +
                 '<td>' + escapeHtml(c.descripcion) + '</td>' +
-                '<td>' + escapeHtml(c.tipo_display) + '</td>' +
+                '<td><span class="badge-cat">' + escapeHtml(c.tipo_display) + '</span></td>' +
                 '<td>' + escapeHtml(fmtNum(c.od_in)) + '</td>' +
                 '<td>' + escapeHtml(fmtNum(c.id_in)) + '</td>';
             tr.addEventListener('click', function () {
@@ -675,6 +741,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputComponenteLargoTramo.value = c.largo_tramo_ft !== null ? c.largo_tramo_ft : 31;
         formTituloComponente.textContent = c.descripcion;
         formModoComponente.textContent = 'Editando';
+        formModoComponente.className = 'catalogos-mode-badge editando form-mode-tag';
         errorComponente.textContent = '';
         btnEliminarComponente.disabled = false;
         renderComponentes();
@@ -693,6 +760,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputComponenteLargoTramo.value = 31;
         formTituloComponente.textContent = 'Nuevo Componente';
         formModoComponente.textContent = 'Creando';
+        formModoComponente.className = 'catalogos-mode-badge creando form-mode-tag';
         errorComponente.textContent = '';
         btnEliminarComponente.disabled = true;
         renderComponentes();

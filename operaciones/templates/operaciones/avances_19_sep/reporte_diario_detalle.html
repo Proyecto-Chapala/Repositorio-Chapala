@@ -111,15 +111,15 @@
         <div>
           <div class="report-field-row">
             <label class="report-field-label" title="Profundidad actual medida en pies">Profundidad (ft)</label>
-            <input type="number" step="any" id="f_profundidad_actual" class="report-input" value="{{ reporte.profundidad_actual }}">
+            <input type="number" step="any" id="f_profundidad_actual" class="report-input" value="{{ reporte.profundidad_actual|unlocalize }}">
           </div>
           <div class="report-field-row">
             <label class="report-field-label" title="Profundidad vertical verdadera en pies">TVD (ft)</label>
-            <input type="number" step="any" id="f_profundidad_tvd" class="report-input" value="{{ reporte.profundidad_tvd }}">
+            <input type="number" step="any" id="f_profundidad_tvd" class="report-input" value="{{ reporte.profundidad_tvd|unlocalize }}">
           </div>
           <div class="report-field-row">
             <label class="report-field-label" title="Profundidad de la mecha (Disparador de cálculos)">Prof. Barrena (ft)</label>
-            <input type="number" step="any" id="f_bit_depth" class="report-input" value="{{ reporte.bit_depth }}">
+            <input type="number" step="any" id="f_bit_depth" class="report-input" value="{{ reporte.bit_depth|unlocalize }}">
           </div>
         </div>
 
@@ -1326,7 +1326,7 @@
           <span class="wg-medida">
             <span class="wg-medida-label">Profundidad de mecha</span>
             <span class="wg-medida-valor" id="wgBitDepth">0 ft</span>
-            <a href="#" onclick="switchTab(2); return false;" class="wg-medida-link" title="La profundidad de la mecha se captura en la pestaña 2">editar &rsaquo;</a>
+            <a href="#" onclick="switchTab(1); return false;" class="wg-medida-link" title="La profundidad de la mecha se captura en la pestaña 1 (General)">editar &rsaquo;</a>
           </span>
           <span class="wg-chip-estado" id="wgEstadoSarta">&mdash;</span>
         </div>
@@ -1336,6 +1336,9 @@
           </button>
           <button type="button" class="btn-modern-primary btn-sm" onclick="agregarTramoSarta()">
             <span>&#43;</span><span>Agregar Componente</span>
+          </button>
+          <button type="button" class="btn-modern-primary btn-sm" style="background:#059669; border-color:#059669;" onclick="guardarWellGeometry()" title="Guardar cambios de sarta y geometría">
+            <span>&#128190;</span><span>Guardar Sarta</span>
           </button>
         </div>
       </div>
@@ -1393,7 +1396,7 @@
           </div>
           <div class="report-field-row">
             <label class="report-field-label" title="Orden de impresión del intervalo en el reporte">Orden de Impresión</label>
-            <input type="number" id="wgOrdenImpresion" class="report-input" value="{{ reporte.orden_impresion_intervalo|default_if_none:'' }}" placeholder="—">
+            <input type="number" id="wgOrdenImpresion" class="report-input" value="{{ reporte.orden_impresion_intervalo|default_if_none:''|unlocalize }}" placeholder="—">
           </div>
           <div class="wg-intervalo-detalle" id="wgIntervaloDetalle">Selecciona un intervalo para ver sus datos.</div>
           <a class="wg-link-gestion" href="{% url 'operaciones:casing_intervals' pozo.pk %}">Gestionar intervalos del pozo &rsaquo;</a>
@@ -1404,11 +1407,11 @@
           <div class="wg-subtitulo">Hoyo Piloto</div>
           <div class="report-field-row">
             <label class="report-field-label" title="Diámetro del hoyo piloto perforado por delante">Diámetro (in)</label>
-            <input type="number" step="any" id="wgPilotSize" class="report-input" value="{{ reporte.pilot_hole_size_in }}">
+            <input type="number" step="any" id="wgPilotSize" class="report-input" value="{{ reporte.pilot_hole_size_in|unlocalize }}">
           </div>
           <div class="report-field-row">
             <label class="report-field-label" title="Profundidad hasta la que llega el hoyo piloto">Profundidad (ft)</label>
-            <input type="number" step="any" id="wgPilotDepth" class="report-input" value="{{ reporte.pilot_hole_depth_ft }}">
+            <input type="number" step="any" id="wgPilotDepth" class="report-input" value="{{ reporte.pilot_hole_depth_ft|unlocalize }}">
           </div>
           <p class="wg-nota wg-nota-compacta">
             El hoyo piloto ocupa el tramo más profundo del pozo, desde el fondo del hoyo
@@ -2284,6 +2287,13 @@ let currentTabNum = 1;
 
 /* Switch between the 8 Tabs */
 function switchTab(tabNum){
+  const prevTab = currentTabNum;
+  if(prevTab === 1 && tabNum !== 1){
+    guardarGeneral(true);
+  } else if(prevTab === 4 && tabNum !== 4 && wgCargado){
+    guardarWellGeometry(true);
+  }
+
   currentTabNum = tabNum;
   const tabs = document.querySelectorAll('.onetrax-tab');
   tabs.forEach(t => t.classList.remove('is-active'));
@@ -2355,17 +2365,21 @@ function switchTab(tabNum){
   }
 }
 
-function guardarPestanaActiva() {
+async function guardarPestanaActiva() {
   if (currentTabNum === 1) {
-    guardarGeneral();
+    await guardarGeneral();
+    if (wgCargado) {
+      await guardarWellGeometry(true);
+    }
   } else if (currentTabNum === 2) {
-    guardarPumpsBits();
+    await guardarPumpsBits();
   } else if (currentTabNum === 3) {
-    guardarMudProperties();
+    await guardarMudProperties();
   } else if (currentTabNum === 4) {
-    guardarWellGeometry();
+    await guardarWellGeometry();
+    await guardarGeneral(true);
   } else if (currentTabNum === 5) {
-    guardarComentarios();
+    await guardarComentarios();
   } else {
     showToast('Pestaña en desarrollo.');
   }
@@ -2627,6 +2641,11 @@ function wgEsc(str){
 
 /* ---------- Carga inicial ---------- */
 async function inicializarWellGeometry(){
+  const inProf = parseFloat(document.getElementById('f_profundidad_actual')?.value);
+  const inBit = parseFloat(document.getElementById('f_bit_depth')?.value);
+  if(!isNaN(inProf) && inProf > 0) wgProfundidad = inProf;
+  if(!isNaN(inBit) && inBit > 0) wgBitDepth = inBit;
+
   if(wgCargado){ recalcularWellGeometry(); return; }
   wgCargado = true;
 
@@ -2641,8 +2660,8 @@ async function inicializarWellGeometry(){
       wgIntervalos = resGeo.intervalos || [];
       wgRiser = resGeo.riser || null;
       wgHoleSize = parseFloat(resGeo.hole_size_in) || 0;
-      wgBitDepth = parseFloat(resGeo.bit_depth_ft) || 0;
-      wgProfundidad = parseFloat(resGeo.profundidad_actual_ft) || 0;
+      if(isNaN(inBit) || inBit <= 0) wgBitDepth = parseFloat(resGeo.bit_depth_ft) || 0;
+      if(isNaN(inProf) || inProf <= 0) wgProfundidad = parseFloat(resGeo.profundidad_actual_ft) || 0;
       wgBblPorEmbolada = parseFloat(resGeo.bbl_por_embolada) || 0;
       wgCaudalGpm = parseFloat(resGeo.caudal_gpm) || 0;
       renderContinuidad(resGeo.continuidad);
@@ -2981,8 +3000,27 @@ function wgResaltarSeccion(indice, activo){
   if(filas[indice]) filas[indice].classList.toggle('wg-fila-activa', activo);
 }
 
+function sincronizarTramosDesdeDOM(){
+  const filas = document.querySelectorAll('#wgTablaSartaBody tr');
+  filas.forEach((fila, i) => {
+    if(!wgTramos[i]) return;
+    const inputs = fila.querySelectorAll('input');
+    if(inputs.length >= 8){
+      wgTramos[i].descripcion = inputs[0].value;
+      wgTramos[i].longitud_ft = parseFloat(inputs[1].value) || 0;
+      wgTramos[i].od_in = parseFloat(inputs[2].value) || 0;
+      wgTramos[i].id_in = parseFloat(inputs[3].value) || 0;
+      wgTramos[i].tool_joint_od_in = parseFloat(inputs[4].value) || 0;
+      wgTramos[i].tool_joint_id_in = parseFloat(inputs[5].value) || 0;
+      wgTramos[i].tool_joint_length_in = parseFloat(inputs[6].value) || 0;
+      wgTramos[i].largo_tramo_ft = parseFloat(inputs[7].value) || 31;
+    }
+  });
+}
+
 /* ---------- Guardar ---------- */
-async function guardarWellGeometry(){
+async function guardarWellGeometry(silent = false){
+  sincronizarTramosDesdeDOM();
   const payload = {
     intervalo_costo_id: document.getElementById('wgIntervaloCosto').value || null,
     orden_impresion_intervalo: document.getElementById('wgOrdenImpresion').value || null,
@@ -3013,12 +3051,12 @@ async function guardarWellGeometry(){
       wgTramos = data.tramos || wgTramos;
       renderSartaTabla();
       recalcularWellGeometry();
-      showToast('Geometría del pozo guardada correctamente');
+      if(!silent) showToast('Geometría del pozo guardada correctamente');
     } else {
-      showToast(data.error || 'Error al guardar la geometría', false);
+      if(!silent) showToast(data.error || 'Error al guardar la geometría', false);
     }
   } catch(e){
-    showToast('Error de conexión al guardar la geometría', false);
+    if(!silent) showToast('Error de conexión al guardar la geometría', false);
   }
 }
 
@@ -3131,7 +3169,7 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 /* Save General Tab Data */
-async function guardarGeneral() {
+async function guardarGeneral(silent = false) {
   const data = {
     fecha: document.getElementById('f_fecha').value,
     profundidad_actual: document.getElementById('f_profundidad_actual').value || 0,
@@ -3161,12 +3199,12 @@ async function guardarGeneral() {
     });
     const result = await res.json();
     if(result.ok) {
-      showToast('Datos generales guardados correctamente');
+      if(!silent) showToast('Datos generales guardados correctamente');
     } else {
-      showToast(result.error || 'Error al guardar', false);
+      if(!silent) showToast(result.error || 'Error al guardar', false);
     }
   } catch(e) {
-    showToast('Error de red al guardar', false);
+    if(!silent) showToast('Error de red al guardar', false);
   }
 }
 

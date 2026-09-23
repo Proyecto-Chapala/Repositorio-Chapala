@@ -5,161 +5,232 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'operaciones/css/inventario.css' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/catalogos_maestros.css' %}?v={% now 'YmdHis' %}">
 {% endblock %}
 
 {% block content %}
-<header class="topbar">
-  <div class="topbar-left">
-    <h1 class="page-title">Catálogos Maestros</h1>
-    <div class="category-badges">
-      <button class="cat-badge active" id="tabEquipos">Equipos</button>
-      <button class="cat-badge" id="tabMallas">Mallas de Zaranda</button>
-      <button class="cat-badge" id="tabPropiedades">Propiedades de Equipo</button>
-      <button class="cat-badge" id="tabBenchmark">Parámetros de Benchmark</button>
-      <button class="cat-badge" id="tabComponentes">Componentes de Sarta</button>
+<div style="display:none;">{% csrf_token %}</div>
+<!-- BARRA SUPERIOR CON TABS SEGMENTADAS Y BÚSQUEDA -->
+<header class="catalogos-topbar topbar">
+  <div class="catalogos-header-left topbar-left">
+    <div class="catalogos-title-area">
+      <h1 class="catalogos-title page-title">Catálogos Maestros</h1>
+      <p class="catalogos-subtitle">Configuración y mantenimiento de componentes, equipos y parámetros globales</p>
+    </div>
+    
+    <div class="catalogos-tabs category-badges" role="tablist">
+      <button type="button" class="catalogos-tab-btn cat-badge active" id="tabEquipos">
+        <span class="catalogos-tab-icon">⚙️</span>
+        <span>Equipos</span>
+        <span class="catalogos-tab-counter" id="tabBadgeEquipos">{{ counts.equipos|default:0 }}</span>
+      </button>
+      <button type="button" class="catalogos-tab-btn cat-badge" id="tabMallas">
+        <span class="catalogos-tab-icon">▦</span>
+        <span>Mallas de Zaranda</span>
+        <span class="catalogos-tab-counter" id="tabBadgeMallas">{{ counts.mallas|default:0 }}</span>
+      </button>
+      <button type="button" class="catalogos-tab-btn cat-badge" id="tabPropiedades">
+        <span class="catalogos-tab-icon">📋</span>
+        <span>Propiedades de Equipo</span>
+        <span class="catalogos-tab-counter" id="tabBadgePropiedades">{{ counts.propiedades|default:0 }}</span>
+      </button>
+      <button type="button" class="catalogos-tab-btn cat-badge" id="tabBenchmark">
+        <span class="catalogos-tab-icon">📊</span>
+        <span>Parámetros de Benchmark</span>
+        <span class="catalogos-tab-counter" id="tabBadgeBenchmark">{{ counts.benchmark|default:0 }}</span>
+      </button>
+      <button type="button" class="catalogos-tab-btn cat-badge" id="tabComponentes">
+        <span class="catalogos-tab-icon">🔩</span>
+        <span>Componentes de Sarta</span>
+        <span class="catalogos-tab-counter" id="tabBadgeComponentes">{{ counts.componentes|default:0 }}</span>
+      </button>
     </div>
   </div>
-  <div class="topbar-right">
-    <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" class="search-input" placeholder="Buscar por código o nombre...">
-    </div>
+
+  <div class="catalogos-search-box search-box topbar-right">
+    <span class="catalogos-search-icon search-icon">🔍</span>
+    <input type="text" id="searchInput" class="catalogos-search-input search-input" placeholder="Buscar por código o nombre...">
   </div>
 </header>
 
-<div class="content-area">
-  <div class="wireframe-card">
+<!-- CONTENEDOR PRINCIPAL: TARJETA WIREFRAME -->
+<div class="catalogos-content content-area">
+  <div class="catalogos-card wireframe-card">
 
-    <!-- ===================== Equipos ===================== -->
+    <!-- ===================== 1. EQUIPOS ===================== -->
     <div class="split-view" id="panelEquipos">
-      <div class="left-column">
-        <div class="table-header-bar">
-          <span class="section-label">Catálogo de Equipos</span>
-          <span class="table-stats" id="statsEquipos">0 equipos</span>
+      <!-- Columna Izquierda: Tabla -->
+      <div class="catalogos-left-col left-column">
+        <div class="catalogos-table-header table-header-bar">
+          <div class="catalogos-table-title-wrap">
+            <span class="catalogos-table-title section-label">Catálogo de Equipos</span>
+            <span class="catalogos-table-badge table-stats" id="statsEquipos">0 equipos</span>
+          </div>
+          <button type="button" class="catalogos-btn-nuevo-top btn btn-nuevo" id="btnNuevoEquipo">+ Nuevo Equipo</button>
         </div>
-        <div class="table-wrapper">
-          <table class="custom-table">
-            <thead><tr><th>Código</th><th>Nombre Oficial</th><th>Tipo de Equipo</th></tr></thead>
+        <div class="catalogos-table-wrap table-wrapper">
+          <table class="catalogos-table custom-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Nombre Oficial</th>
+                <th>Tipo de Equipo</th>
+              </tr>
+            </thead>
             <tbody id="tablaEquiposBody"></tbody>
           </table>
         </div>
-        <div class="left-actions-bar">
-          <div class="crud-btn-group">
-            <button type="button" class="btn btn-nuevo" id="btnNuevoEquipo">+ Nuevo Equipo</button>
-            <button type="button" class="btn btn-eliminar" id="btnEliminarEquipo" disabled>Eliminar</button>
-          </div>
+        <div class="catalogos-table-footer left-actions-bar">
+          <span class="catalogos-table-tip">💡 Haz clic en una fila para editarla o pulsa "+ Nuevo"</span>
+          <button type="button" class="btn-eliminar-danger btn btn-eliminar" id="btnEliminarEquipo" disabled>🗑️ Eliminar</button>
         </div>
       </div>
-      <div class="right-column">
-        <div class="form-header-title">
-          <span id="formTituloEquipo">Nuevo Equipo</span>
-          <span class="form-mode-tag" id="formModoEquipo">Creando</span>
+
+      <!-- Columna Derecha: Formulario -->
+      <div class="catalogos-right-col right-column">
+        <div class="catalogos-form-header form-header-title">
+          <div class="catalogos-form-title-group">
+            <span class="catalogos-form-icon">⚙️</span>
+            <span class="catalogos-form-title" id="formTituloEquipo">Nuevo Equipo</span>
+          </div>
+          <span class="catalogos-mode-badge creando form-mode-tag" id="formModoEquipo">Creando</span>
         </div>
-        <div class="product-form">
-          <div class="form-group">
-            <label>Código de Equipo</label>
-            <input type="text" id="inputEquipoCodigo" class="form-input" placeholder="Ej: NC-014">
+        <div class="catalogos-form-body product-form">
+          <div class="form-grid-2cols">
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Código de Equipo</label>
+              <input type="text" id="inputEquipoCodigo" class="catalogos-input form-input" placeholder="Ej: NC-014">
+            </div>
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Tipo de Equipo</label>
+              <select id="inputEquipoTipo" class="catalogos-select form-select">
+                <option value="CENTRIFUGA">Centrífuga</option>
+                <option value="LIMPIADOR_LODO">Limpiador de Lodo (Mud Cleaner)</option>
+                <option value="ZARANDA">Zaranda (Shale Shaker)</option>
+                <option value="SISTEMA_VACIO">Sistema de Vacío</option>
+                <option value="CONTENEDOR_RECORTES">Contenedor de Recortes</option>
+                <option value="OTROS">Otros</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Nombre Oficial</label>
-            <input type="text" id="inputEquipoNombre" class="form-input" placeholder="Ej: 518 FSV Centrífuga">
+          <div class="catalogos-form-group form-group">
+            <label class="catalogos-label">Nombre Oficial</label>
+            <input type="text" id="inputEquipoNombre" class="catalogos-input form-input" placeholder="Ej: 518 FSV Centrífuga">
           </div>
-          <div class="form-group">
-            <label>Tipo de Equipo</label>
-            <select id="inputEquipoTipo" class="form-select">
-              <option value="CENTRIFUGA">Centrífuga</option>
-              <option value="LIMPIADOR_LODO">Limpiador de Lodo (Mud Cleaner)</option>
-              <option value="ZARANDA">Zaranda (Shale Shaker)</option>
-              <option value="SISTEMA_VACIO">Sistema de Vacío</option>
-              <option value="CONTENEDOR_RECORTES">Contenedor de Recortes</option>
-              <option value="OTROS">Otros</option>
-            </select>
-          </div>
+          <div class="catalogos-error-msg field-error" id="errorEquipo"></div>
         </div>
-        <span class="field-error" id="errorEquipo" style="display:block; margin-top:8px;"></span>
-        <div class="form-footer-actions">
-          <button type="button" class="btn btn-cancelar" id="btnCancelarEquipo">Cancelar</button>
-          <button type="button" class="btn btn-guardar" id="btnGuardarEquipo">Guardar</button>
+        <div class="catalogos-form-footer form-footer-actions">
+          <button type="button" class="btn-form-cancel btn btn-cancelar" id="btnCancelarEquipo">Cancelar</button>
+          <button type="button" class="btn-form-save btn btn-guardar" id="btnGuardarEquipo">Guardar Equipo</button>
         </div>
       </div>
     </div>
 
-    <!-- ===================== Mallas de Zaranda ===================== -->
-    <div class="split-view" id="panelMallas" hidden>
-      <div class="left-column">
-        <div class="table-header-bar">
-          <span class="section-label">Catálogo de Mallas de Zaranda</span>
-          <span class="table-stats" id="statsMallas">0 mallas</span>
+    <!-- ===================== 2. MALLAS DE ZARANDA ===================== -->
+    <div class="split-view" id="panelMallas" hidden style="display:none;">
+      <!-- Columna Izquierda: Tabla -->
+      <div class="catalogos-left-col left-column">
+        <div class="catalogos-table-header table-header-bar">
+          <div class="catalogos-table-title-wrap">
+            <span class="catalogos-table-title section-label">Catálogo de Mallas</span>
+            <span class="catalogos-table-badge table-stats" id="statsMallas">0 mallas</span>
+          </div>
+          <button type="button" class="catalogos-btn-nuevo-top btn btn-nuevo" id="btnNuevaMalla">+ Nueva Malla</button>
         </div>
-        <div class="table-wrapper">
-          <table class="custom-table">
-            <thead><tr><th>Código</th><th>Descripción</th><th>Mesh</th></tr></thead>
+        <div class="catalogos-table-wrap table-wrapper">
+          <table class="catalogos-table custom-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Mesh</th>
+              </tr>
+            </thead>
             <tbody id="tablaMallasBody"></tbody>
           </table>
         </div>
-        <div class="left-actions-bar">
-          <div class="crud-btn-group">
-            <button type="button" class="btn btn-nuevo" id="btnNuevaMalla">+ Nueva Malla</button>
-            <button type="button" class="btn btn-eliminar" id="btnEliminarMalla" disabled>Eliminar</button>
-          </div>
+        <div class="catalogos-table-footer left-actions-bar">
+          <span class="catalogos-table-tip">💡 Haz clic en una fila para editarla o pulsa "+ Nuevo"</span>
+          <button type="button" class="btn-eliminar-danger btn btn-eliminar" id="btnEliminarMalla" disabled>🗑️ Eliminar</button>
         </div>
       </div>
-      <div class="right-column">
-        <div class="form-header-title">
-          <span id="formTituloMalla">Nueva Malla</span>
-          <span class="form-mode-tag" id="formModoMalla">Creando</span>
+
+      <!-- Columna Derecha: Formulario -->
+      <div class="catalogos-right-col right-column">
+        <div class="catalogos-form-header form-header-title">
+          <div class="catalogos-form-title-group">
+            <span class="catalogos-form-icon">▦</span>
+            <span class="catalogos-form-title" id="formTituloMalla">Nueva Malla</span>
+          </div>
+          <span class="catalogos-mode-badge creando form-mode-tag" id="formModoMalla">Creando</span>
         </div>
-        <div class="product-form">
-          <div class="form-group">
-            <label>Código de Malla</label>
-            <input type="text" id="inputMallaCodigo" class="form-input" placeholder="Ej: XSJUE110L">
+        <div class="catalogos-form-body product-form">
+          <div class="form-grid-2cols">
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Código de Malla</label>
+              <input type="text" id="inputMallaCodigo" class="catalogos-input form-input" placeholder="Ej: XSJUE110L">
+            </div>
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Tamaño de Malla (Mesh)</label>
+              <input type="number" id="inputMallaMesh" class="catalogos-input form-input" placeholder="Ej: 110">
+            </div>
           </div>
-          <div class="form-group">
-            <label>Descripción</label>
-            <input type="text" id="inputMallaDescripcion" class="form-input" placeholder="Ej: 110 Mesh Magnum XR">
+          <div class="catalogos-form-group form-group">
+            <label class="catalogos-label">Descripción de la Malla</label>
+            <input type="text" id="inputMallaDescripcion" class="catalogos-input form-input" placeholder="Ej: 110 Mesh Magnum XR">
           </div>
-          <div class="form-group">
-            <label>Tamaño de Malla (Mesh)</label>
-            <input type="number" id="inputMallaMesh" class="form-input" placeholder="Ej: 110">
-          </div>
+          <div class="catalogos-error-msg field-error" id="errorMalla"></div>
         </div>
-        <span class="field-error" id="errorMalla" style="display:block; margin-top:8px;"></span>
-        <div class="form-footer-actions">
-          <button type="button" class="btn btn-cancelar" id="btnCancelarMalla">Cancelar</button>
-          <button type="button" class="btn btn-guardar" id="btnGuardarMalla">Guardar</button>
+        <div class="catalogos-form-footer form-footer-actions">
+          <button type="button" class="btn-form-cancel btn btn-cancelar" id="btnCancelarMalla">Cancelar</button>
+          <button type="button" class="btn-form-save btn btn-guardar" id="btnGuardarMalla">Guardar Malla</button>
         </div>
       </div>
     </div>
 
-    <!-- ===================== Propiedades de Equipo ===================== -->
-    <div class="split-view" id="panelPropiedades" hidden>
-      <div class="left-column">
-        <div class="table-header-bar">
-          <span class="section-label">Propiedades por Tipo de Equipo</span>
-          <span class="table-stats" id="statsPropiedades">0 propiedades</span>
+    <!-- ===================== 3. PROPIEDADES DE EQUIPO ===================== -->
+    <div class="split-view" id="panelPropiedades" hidden style="display:none;">
+      <!-- Columna Izquierda: Tabla -->
+      <div class="catalogos-left-col left-column">
+        <div class="catalogos-table-header table-header-bar">
+          <div class="catalogos-table-title-wrap">
+            <span class="catalogos-table-title section-label">Propiedades por Tipo de Equipo</span>
+            <span class="catalogos-table-badge table-stats" id="statsPropiedades">0 propiedades</span>
+          </div>
+          <button type="button" class="catalogos-btn-nuevo-top btn btn-nuevo" id="btnNuevaPropiedad">+ Nueva Propiedad</button>
         </div>
-        <div class="table-wrapper">
-          <table class="custom-table">
-            <thead><tr><th>Tipo de Equipo</th><th>Descripción</th><th>Unidad</th><th>Orden</th></tr></thead>
+        <div class="catalogos-table-wrap table-wrapper">
+          <table class="catalogos-table custom-table">
+            <thead>
+              <tr>
+                <th>Tipo de Equipo</th>
+                <th>Descripción</th>
+                <th>Unidad</th>
+                <th>Orden</th>
+              </tr>
+            </thead>
             <tbody id="tablaPropiedadesBody"></tbody>
           </table>
         </div>
-        <div class="left-actions-bar">
-          <div class="crud-btn-group">
-            <button type="button" class="btn btn-nuevo" id="btnNuevaPropiedad">+ Nueva Propiedad</button>
-            <button type="button" class="btn btn-eliminar" id="btnEliminarPropiedad" disabled>Eliminar</button>
-          </div>
+        <div class="catalogos-table-footer left-actions-bar">
+          <span class="catalogos-table-tip">💡 Haz clic en una fila para editarla o pulsa "+ Nuevo"</span>
+          <button type="button" class="btn-eliminar-danger btn btn-eliminar" id="btnEliminarPropiedad" disabled>🗑️ Eliminar</button>
         </div>
       </div>
-      <div class="right-column">
-        <div class="form-header-title">
-          <span id="formTituloPropiedad">Nueva Propiedad</span>
-          <span class="form-mode-tag" id="formModoPropiedad">Creando</span>
+
+      <!-- Columna Derecha: Formulario -->
+      <div class="catalogos-right-col right-column">
+        <div class="catalogos-form-header form-header-title">
+          <div class="catalogos-form-title-group">
+            <span class="catalogos-form-icon">📋</span>
+            <span class="catalogos-form-title" id="formTituloPropiedad">Nueva Propiedad</span>
+          </div>
+          <span class="catalogos-mode-badge creando form-mode-tag" id="formModoPropiedad">Creando</span>
         </div>
-        <div class="product-form">
-          <div class="form-group">
-            <label>Tipo de Equipo</label>
-            <select id="inputPropiedadTipo" class="form-select">
+        <div class="catalogos-form-body product-form">
+          <div class="catalogos-form-group form-group">
+            <label class="catalogos-label">Tipo de Equipo</label>
+            <select id="inputPropiedadTipo" class="catalogos-select form-select">
               <option value="CENTRIFUGA">Centrífuga</option>
               <option value="LIMPIADOR_LODO">Limpiador de Lodo (Mud Cleaner)</option>
               <option value="ZARANDA">Zaranda (Shale Shaker)</option>
@@ -168,177 +239,226 @@
               <option value="OTROS">Otros</option>
             </select>
           </div>
-          <div class="form-group">
-            <label>Descripción de la Propiedad</label>
-            <input type="text" id="inputPropiedadDescripcion" class="form-input" placeholder="Ej: Flow Rate">
+          <div class="catalogos-form-group form-group">
+            <label class="catalogos-label">Descripción de la Propiedad</label>
+            <input type="text" id="inputPropiedadDescripcion" class="catalogos-input form-input" placeholder="Ej: Flow Rate">
           </div>
-          <div class="form-group">
-            <label>Unidad</label>
-            <input type="text" id="inputPropiedadUnidad" class="form-input" placeholder="Ej: gal/min">
+          <div class="form-grid-2cols">
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Unidad de Medida</label>
+              <input type="text" id="inputPropiedadUnidad" class="catalogos-input form-input" placeholder="Ej: gal/min">
+            </div>
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Orden de Visualización</label>
+              <input type="number" id="inputPropiedadOrden" class="catalogos-input form-input" placeholder="Ej: 1">
+            </div>
           </div>
-          <div class="form-group">
-            <label>Orden</label>
-            <input type="number" id="inputPropiedadOrden" class="form-input" placeholder="Ej: 1">
-          </div>
+          <div class="catalogos-error-msg field-error" id="errorPropiedad"></div>
         </div>
-        <span class="field-error" id="errorPropiedad" style="display:block; margin-top:8px;"></span>
-        <div class="form-footer-actions">
-          <button type="button" class="btn btn-cancelar" id="btnCancelarPropiedad">Cancelar</button>
-          <button type="button" class="btn btn-guardar" id="btnGuardarPropiedad">Guardar</button>
+        <div class="catalogos-form-footer form-footer-actions">
+          <button type="button" class="btn-form-cancel btn btn-cancelar" id="btnCancelarPropiedad">Cancelar</button>
+          <button type="button" class="btn-form-save btn btn-guardar" id="btnGuardarPropiedad">Guardar Propiedad</button>
         </div>
       </div>
     </div>
 
-    <!-- ===================== Parámetros de Benchmark ===================== -->
-    <div class="split-view" id="panelBenchmark" hidden>
-      <div class="left-column">
-        <div class="table-header-bar">
-          <span class="section-label">Parámetros de Benchmark</span>
-          <span class="table-stats" id="statsBenchmark">0 parámetros</span>
+    <!-- ===================== 4. PARÁMETROS DE BENCHMARK ===================== -->
+    <div class="split-view" id="panelBenchmark" hidden style="display:none;">
+      <!-- Columna Izquierda: Tabla -->
+      <div class="catalogos-left-col left-column">
+        <div class="catalogos-table-header table-header-bar">
+          <div class="catalogos-table-title-wrap">
+            <span class="catalogos-table-title section-label">Parámetros de Benchmark</span>
+            <span class="catalogos-table-badge table-stats" id="statsBenchmark">0 parámetros</span>
+          </div>
+          <button type="button" class="catalogos-btn-nuevo-top btn btn-nuevo" id="btnNuevoBenchmark">+ Nuevo Parámetro</button>
         </div>
-        <div class="table-wrapper">
-          <table class="custom-table">
-            <thead><tr><th>Grupo</th><th>Descripción</th><th>Unidad</th><th>Fluido</th><th>Tipo de Dato</th></tr></thead>
+        <div class="catalogos-table-wrap table-wrapper">
+          <table class="catalogos-table custom-table">
+            <thead>
+              <tr>
+                <th>Grupo</th>
+                <th>Descripción</th>
+                <th>Unidad</th>
+                <th>Fluido</th>
+                <th>Tipo Dato</th>
+              </tr>
+            </thead>
             <tbody id="tablaBenchmarkBody"></tbody>
           </table>
         </div>
-        <div class="left-actions-bar">
-          <div class="crud-btn-group">
-            <button type="button" class="btn btn-nuevo" id="btnNuevoBenchmark">+ Nuevo Parámetro</button>
-            <button type="button" class="btn btn-eliminar" id="btnEliminarBenchmark" disabled>Eliminar</button>
-          </div>
+        <div class="catalogos-table-footer left-actions-bar">
+          <span class="catalogos-table-tip">💡 Haz clic en una fila para editarla o pulsa "+ Nuevo"</span>
+          <button type="button" class="btn-eliminar-danger btn btn-eliminar" id="btnEliminarBenchmark" disabled>🗑️ Eliminar</button>
         </div>
       </div>
-      <div class="right-column">
-        <div class="form-header-title">
-          <span id="formTituloBenchmark">Nuevo Parámetro</span>
-          <span class="form-mode-tag" id="formModoBenchmark">Creando</span>
+
+      <!-- Columna Derecha: Formulario -->
+      <div class="catalogos-right-col right-column">
+        <div class="catalogos-form-header form-header-title">
+          <div class="catalogos-form-title-group">
+            <span class="catalogos-form-icon">📊</span>
+            <span class="catalogos-form-title" id="formTituloBenchmark">Nuevo Parámetro</span>
+          </div>
+          <span class="catalogos-mode-badge creando form-mode-tag" id="formModoBenchmark">Creando</span>
         </div>
-        <div class="product-form">
-          <div class="form-group">
-            <label>Grupo</label>
-            <input type="text" id="inputBenchmarkGrupo" class="form-input" placeholder="Ej: Mud Properties">
+        <div class="catalogos-form-body product-form">
+          <div class="form-grid-2cols">
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Grupo</label>
+              <input type="text" id="inputBenchmarkGrupo" class="catalogos-input form-input" placeholder="Ej: Mud Properties">
+            </div>
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Unidad de Medida</label>
+              <input type="text" id="inputBenchmarkUnidad" class="catalogos-input form-input" placeholder="Ej: lb/gal">
+            </div>
           </div>
-          <div class="form-group">
-            <label>Descripción</label>
-            <input type="text" id="inputBenchmarkDescripcion" class="form-input" placeholder="Ej: Mud Weight(WBM)">
+          <div class="catalogos-form-group form-group">
+            <label class="catalogos-label">Descripción del Parámetro</label>
+            <input type="text" id="inputBenchmarkDescripcion" class="catalogos-input form-input" placeholder="Ej: Mud Weight (WBM)">
           </div>
-          <div class="form-group">
-            <label>Unidad</label>
-            <input type="text" id="inputBenchmarkUnidad" class="form-input" placeholder="Ej: lb/gal">
+          <div class="form-grid-2cols">
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Tipo de Fluido</label>
+              <select id="inputBenchmarkFluido" class="catalogos-select form-select">
+                <option value="NA">No Aplica</option>
+                <option value="WBM">WBM (Base Agua)</option>
+                <option value="OBM">OBM (Base Aceite)</option>
+                <option value="AMBOS">Ambos</option>
+              </select>
+            </div>
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Tipo de Dato</label>
+              <select id="inputBenchmarkTipoDato" class="catalogos-select form-select">
+                <option value="MIN_MAX">Mínimo / Máximo</option>
+                <option value="NUMERICO">Numérico (valor único)</option>
+                <option value="TEXTO">Texto</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Tipo de Fluido</label>
-            <select id="inputBenchmarkFluido" class="form-select">
-              <option value="NA">No Aplica</option>
-              <option value="WBM">WBM (Base Agua)</option>
-              <option value="OBM">OBM (Base Aceite)</option>
-              <option value="AMBOS">Ambos</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Tipo de Dato</label>
-            <select id="inputBenchmarkTipoDato" class="form-select">
-              <option value="MIN_MAX">Mínimo / Máximo</option>
-              <option value="NUMERICO">Numérico (valor único)</option>
-              <option value="TEXTO">Texto</option>
-            </select>
-          </div>
+          <div class="catalogos-error-msg field-error" id="errorBenchmark"></div>
         </div>
-        <span class="field-error" id="errorBenchmark" style="display:block; margin-top:8px;"></span>
-        <div class="form-footer-actions">
-          <button type="button" class="btn btn-cancelar" id="btnCancelarBenchmark">Cancelar</button>
-          <button type="button" class="btn btn-guardar" id="btnGuardarBenchmark">Guardar</button>
+        <div class="catalogos-form-footer form-footer-actions">
+          <button type="button" class="btn-form-cancel btn btn-cancelar" id="btnCancelarBenchmark">Cancelar</button>
+          <button type="button" class="btn-form-save btn btn-guardar" id="btnGuardarBenchmark">Guardar Parámetro</button>
         </div>
       </div>
     </div>
 
-    <!-- ===================== Componentes de Sarta ===================== -->
-    <div class="split-view" id="panelComponentes" hidden>
-      <div class="left-column">
-        <div class="table-header-bar">
-          <span class="section-label">Componentes de Sarta de Perforación</span>
-          <span class="table-stats" id="statsComponentes">0 componentes</span>
+    <!-- ===================== 5. COMPONENTES DE SARTA ===================== -->
+    <div class="split-view" id="panelComponentes" hidden style="display:none;">
+      <!-- Columna Izquierda: Tabla -->
+      <div class="catalogos-left-col left-column">
+        <div class="catalogos-table-header table-header-bar">
+          <div class="catalogos-table-title-wrap">
+            <span class="catalogos-table-title section-label">Componentes de Sarta</span>
+            <span class="catalogos-table-badge table-stats" id="statsComponentes">0 componentes</span>
+          </div>
+          <button type="button" class="catalogos-btn-nuevo-top btn btn-nuevo" id="btnNuevoComponente">+ Nuevo Componente</button>
         </div>
-        <div class="table-wrapper">
-          <table class="custom-table">
-            <thead><tr><th>Código</th><th>Descripción</th><th>Tipo</th><th>OD (in)</th><th>ID (in)</th></tr></thead>
+        <div class="catalogos-table-wrap table-wrapper">
+          <table class="catalogos-table custom-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Tipo</th>
+                <th>OD (in)</th>
+                <th>ID (in)</th>
+              </tr>
+            </thead>
             <tbody id="tablaComponentesBody"></tbody>
           </table>
         </div>
-        <div class="left-actions-bar">
-          <div class="crud-btn-group">
-            <button type="button" class="btn btn-nuevo" id="btnNuevoComponente">+ Nuevo Componente</button>
-            <button type="button" class="btn btn-eliminar" id="btnEliminarComponente" disabled>Eliminar</button>
-          </div>
+        <div class="catalogos-table-footer left-actions-bar">
+          <span class="catalogos-table-tip">💡 Haz clic en una fila para editarla o pulsa "+ Nuevo"</span>
+          <button type="button" class="btn-eliminar-danger btn btn-eliminar" id="btnEliminarComponente" disabled>🗑️ Eliminar</button>
         </div>
       </div>
-      <div class="right-column">
-        <div class="form-header-title">
-          <span id="formTituloComponente">Nuevo Componente</span>
-          <span class="form-mode-tag" id="formModoComponente">Creando</span>
+
+      <!-- Columna Derecha: Formulario -->
+      <div class="catalogos-right-col right-column">
+        <div class="catalogos-form-header form-header-title">
+          <div class="catalogos-form-title-group">
+            <span class="catalogos-form-icon">🔩</span>
+            <span class="catalogos-form-title" id="formTituloComponente">Nuevo Componente</span>
+          </div>
+          <span class="catalogos-mode-badge creando form-mode-tag" id="formModoComponente">Creando</span>
         </div>
-        <div class="product-form">
-          <div class="form-group">
-            <label>Código del Componente</label>
-            <input type="text" id="inputComponenteCodigo" class="form-input" placeholder="Ej: DP-5-4276">
+        <div class="catalogos-form-body product-form">
+          <div class="form-grid-2cols">
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Código del Componente</label>
+              <input type="text" id="inputComponenteCodigo" class="catalogos-input form-input" placeholder="Ej: DP-5-4276">
+            </div>
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Tipo de Componente</label>
+              <select id="inputComponenteTipo" class="catalogos-select form-select">
+                <option value="MECHA">Mecha (Bit)</option>
+                <option value="MOTOR">Motor de Fondo / MWD</option>
+                <option value="DRILL_COLLAR">Portamecha (Drill Collar)</option>
+                <option value="HEAVY_WEIGHT">Tubería Pesada (Heavy Weight)</option>
+                <option value="DRILL_PIPE" selected>Tubería de Perforación (Drill Pipe)</option>
+                <option value="ESTABILIZADOR">Estabilizador</option>
+                <option value="CROSSOVER">Crossover / Nipple</option>
+                <option value="REVESTIDOR">Revestidor (bajando casing)</option>
+                <option value="OTROS">Otros</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Descripción</label>
-            <input type="text" id="inputComponenteDescripcion" class="form-input" placeholder="Ej: Tubería de Perforación 5&quot; x 4.276&quot;">
-          </div>
-          <div class="form-group">
-            <label>Tipo de Componente</label>
-            <select id="inputComponenteTipo" class="form-select">
-              <option value="MECHA">Mecha (Bit)</option>
-              <option value="MOTOR">Motor de Fondo / MWD</option>
-              <option value="DRILL_COLLAR">Portamecha (Drill Collar)</option>
-              <option value="HEAVY_WEIGHT">Tubería Pesada (Heavy Weight)</option>
-              <option value="DRILL_PIPE" selected>Tubería de Perforación (Drill Pipe)</option>
-              <option value="ESTABILIZADOR">Estabilizador</option>
-              <option value="CROSSOVER">Crossover / Nipple</option>
-              <option value="REVESTIDOR">Revestidor (bajando casing)</option>
-              <option value="OTROS">Otros</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Diámetro Externo — OD (in)</label>
-            <input type="number" step="any" id="inputComponenteOd" class="form-input" placeholder="Ej: 5">
-          </div>
-          <div class="form-group">
-            <label>Diámetro Interno — ID (in)</label>
-            <input type="number" step="any" id="inputComponenteId" class="form-input" placeholder="Ej: 4.276">
+          
+          <div class="catalogos-form-group form-group">
+            <label class="catalogos-label">Descripción</label>
+            <input type="text" id="inputComponenteDescripcion" class="catalogos-input form-input" placeholder="Ej: Tubería de Perforación 5&quot; x 4.276&quot;">
           </div>
 
-          <div class="form-group" style="margin-top:6px; border-top:1px solid #e2e8f0; padding-top:10px;">
-            <label style="font-weight:700;">Junta (Tool Joint)</label>
-            <small style="display:block; color:#64748b; font-size:11.5px; line-height:1.45; margin-bottom:6px;">
-              Solo aplica a tubería de perforación y tubería pesada. La junta tiene ID más
-              pequeño y OD más grande que el cuerpo del tubo, así que reduce tanto la
-              capacidad interna como la anular. Déjalo vacío en portamechas y mechas.
-            </small>
+          <div class="form-grid-2cols">
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Diámetro Externo &bull; OD (in)</label>
+              <input type="number" step="any" id="inputComponenteOd" class="catalogos-input form-input" placeholder="Ej: 5.0">
+            </div>
+            <div class="catalogos-form-group form-group">
+              <label class="catalogos-label">Diámetro Interno &bull; ID (in)</label>
+              <input type="number" step="any" id="inputComponenteId" class="catalogos-input form-input" placeholder="Ej: 4.276">
+            </div>
           </div>
-          <div class="form-group">
-            <label>OD de Junta (in)</label>
-            <input type="number" step="any" id="inputComponenteTjOd" class="form-input" placeholder="Ej: 6.375">
+
+          <!-- Agrupador de Junta (Tool Joint) -->
+          <div class="tool-joint-box">
+            <div class="tool-joint-title">
+              <span>🔧</span>
+              <span>Junta (Tool Joint) &bull; Opcional</span>
+            </div>
+            <p class="tool-joint-desc">
+              Aplica a tubería de perforación (Drill Pipe) y tubería pesada (HWDP) para ponderar capacidades volumétricas. Dejar en blanco para mechas y portamechas.
+            </p>
+            <div class="form-grid-2cols">
+              <div class="catalogos-form-group form-group">
+                <label class="catalogos-label">OD de Junta (in)</label>
+                <input type="number" step="any" id="inputComponenteTjOd" class="catalogos-input form-input" placeholder="Ej: 6.375">
+              </div>
+              <div class="catalogos-form-group form-group">
+                <label class="catalogos-label">ID de Junta (in)</label>
+                <input type="number" step="any" id="inputComponenteTjId" class="catalogos-input form-input" placeholder="Ej: 3.75">
+              </div>
+            </div>
+            <div class="form-grid-2cols">
+              <div class="catalogos-form-group form-group">
+                <label class="catalogos-label">Largo de Junta (in)</label>
+                <input type="number" step="any" id="inputComponenteTjLen" class="catalogos-input form-input" placeholder="Ej: 21">
+              </div>
+              <div class="catalogos-form-group form-group">
+                <label class="catalogos-label">Largo de Tramo (ft)</label>
+                <input type="number" step="any" id="inputComponenteLargoTramo" class="catalogos-input form-input" placeholder="31" value="31">
+              </div>
+            </div>
           </div>
-          <div class="form-group">
-            <label>ID de Junta (in)</label>
-            <input type="number" step="any" id="inputComponenteTjId" class="form-input" placeholder="Ej: 3.75">
-          </div>
-          <div class="form-group">
-            <label>Largo de Junta (in)</label>
-            <input type="number" step="any" id="inputComponenteTjLen" class="form-input" placeholder="Ej: 21">
-          </div>
-          <div class="form-group">
-            <label>Largo de Tramo (ft)</label>
-            <input type="number" step="any" id="inputComponenteLargoTramo" class="form-input" placeholder="31" value="31">
-          </div>
+
+          <div class="catalogos-error-msg field-error" id="errorComponente"></div>
         </div>
-        <span class="field-error" id="errorComponente" style="display:block; margin-top:8px;"></span>
-        <div class="form-footer-actions">
-          <button type="button" class="btn btn-cancelar" id="btnCancelarComponente">Cancelar</button>
-          <button type="button" class="btn btn-guardar" id="btnGuardarComponente">Guardar</button>
+        <div class="catalogos-form-footer form-footer-actions">
+          <button type="button" class="btn-form-cancel btn btn-cancelar" id="btnCancelarComponente">Cancelar</button>
+          <button type="button" class="btn-form-save btn btn-guardar" id="btnGuardarComponente">Guardar Componente</button>
         </div>
       </div>
     </div>
@@ -348,5 +468,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'operaciones/js/catalogos_maestros.js' %}"></script>
+<script src="{% static 'operaciones/js/catalogos_maestros.js' %}?v={% now 'YmdHis' %}"></script>
 {% endblock %}
