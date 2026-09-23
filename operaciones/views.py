@@ -1,4 +1,5 @@
 import json
+import os
 from decimal import Decimal
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
@@ -1352,6 +1353,29 @@ def api_mallas_activas_guardar(request, pk):
 # (pantalla de captura para los ingenieros; sin depender del admin)
 # ============================================================
 
+def _version_estaticos(*rutas):
+    """
+    Versión para invalidar la caché del navegador (?v=...) en CSS y JS.
+
+    Usa la fecha de modificación de los propios archivos: la versión cambia solo cuando
+    alguien edita el archivo. Así el navegador descarga la versión nueva apenas cambia
+    (el problema que motivó el anti-caché) pero sigue usando su caché el resto del
+    tiempo, en vez de descargarlo en cada visita como pasaba con {% now %}.
+    """
+    marcas = []
+    try:
+        from django.contrib.staticfiles import finders
+        for ruta in rutas:
+            encontrado = finders.find(ruta)
+            if isinstance(encontrado, (list, tuple)):
+                encontrado = encontrado[0] if encontrado else None
+            if encontrado:
+                marcas.append(int(os.path.getmtime(encontrado)))
+    except Exception:
+        pass
+    return str(max(marcas)) if marcas else "1"
+
+
 def catalogos_maestros_view(request):
     counts = {
         'equipos': Equipo.objects.count(),
@@ -1360,7 +1384,14 @@ def catalogos_maestros_view(request):
         'benchmark': ParametroBenchmark.objects.count(),
         'componentes': ComponenteSarta.objects.count(),
     }
-    return render(request, 'operaciones/catalogos_maestros.html', {'counts': counts})
+    version_estaticos = _version_estaticos(
+        'operaciones/css/catalogos_maestros.css',
+        'operaciones/js/catalogos_maestros.js',
+    )
+    return render(request, 'operaciones/catalogos_maestros.html', {
+        'counts': counts,
+        'version_estaticos': version_estaticos,
+    })
 
 
 @csrf_exempt

@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'operaciones/css/inventario.css' %}">
-<link rel="stylesheet" href="{% static 'operaciones/css/catalogos_maestros.css' %}?v={% now 'YmdHis' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/catalogos_maestros.css' %}?v={{ version_estaticos }}">
 {% endblock %}
 
 {% block content %}
@@ -468,5 +468,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'operaciones/js/catalogos_maestros.js' %}?v={% now 'YmdHis' %}"></script>
+<script src="{% static 'operaciones/js/catalogos_maestros.js' %}?v={{ version_estaticos }}"></script>
 {% endblock %}

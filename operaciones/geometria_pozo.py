@@ -411,7 +411,7 @@ def calcular_geometria(perfil_pozo, tramos, bit_depth_ft, fondo_hoyo_ft,
                     f"La sarta excede la profundidad de la mecha en {abs(diferencia):,.0f} ft."
                 )
     if bit_depth_ft <= 0:
-        avisos.append("La profundidad de la mecha es 0. Captúrala en la pestaña 2 (Bombas/Barrenas).")
+        avisos.append("La profundidad de la mecha es 0. Captúrala en la pestaña 1 (General).")
     if fondo_hoyo_ft > 0 and bit_depth_ft > fondo_hoyo_ft + 1.0:
         avisos.append("La mecha está más profunda que el fondo del hoyo registrado.")
 

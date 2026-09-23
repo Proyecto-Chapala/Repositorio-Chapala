@@ -191,18 +191,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         searchInput.placeholder = searchPlaceholders[tab];
         searchInput.value = '';
-
-        if (tab === 'equipos' && equipos.length > 0 && equipoSeleccionadoId === null) {
-            seleccionarEquipo(equipos[0].id);
-        } else if (tab === 'mallas' && mallas.length > 0 && mallaSeleccionadaId === null) {
-            seleccionarMalla(mallas[0].id);
-        } else if (tab === 'propiedades' && propiedades.length > 0 && propiedadSeleccionadaId === null) {
-            seleccionarPropiedad(propiedades[0].id);
-        } else if (tab === 'benchmark' && benchmarks.length > 0 && benchmarkSeleccionadoId === null) {
-            seleccionarBenchmark(benchmarks[0].id);
-        } else if (tab === 'componentes' && componentes.length > 0 && componenteSeleccionadoId === null) {
-            seleccionarComponente(componentes[0].id);
-        }
     }
 
     tabButtons.equipos.addEventListener('click', () => activarTab('equipos'));
@@ -218,9 +206,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await apiFetch(url);
             equipos = (data && data.equipos) || [];
             renderEquipos();
-            if (equipos.length > 0 && equipoSeleccionadoId === null && tabActiva === 'equipos') {
-                seleccionarEquipo(equipos[0].id);
-            }
         } catch (err) {
             showToast('Error al cargar el catálogo de equipos.', 'error');
         }
@@ -232,9 +217,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await apiFetch(url);
             mallas = (data && data.mallas) || [];
             renderMallas();
-            if (mallas.length > 0 && mallaSeleccionadaId === null && tabActiva === 'mallas') {
-                seleccionarMalla(mallas[0].id);
-            }
         } catch (err) {
             showToast('Error al cargar el catálogo de mallas.', 'error');
         }
@@ -246,9 +228,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await apiFetch(url);
             propiedades = (data && data.propiedades) || [];
             renderPropiedades();
-            if (propiedades.length > 0 && propiedadSeleccionadaId === null && tabActiva === 'propiedades') {
-                seleccionarPropiedad(propiedades[0].id);
-            }
         } catch (err) {
             showToast('Error al cargar las propiedades de equipo.', 'error');
         }
@@ -260,9 +239,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await apiFetch(url);
             benchmarks = (data && data.parametros) || [];
             renderBenchmarks();
-            if (benchmarks.length > 0 && benchmarkSeleccionadoId === null && tabActiva === 'benchmark') {
-                seleccionarBenchmark(benchmarks[0].id);
-            }
         } catch (err) {
             showToast('Error al cargar los parámetros de benchmark.', 'error');
         }
@@ -685,9 +661,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await apiFetch(url);
             componentes = (data && data.componentes) || [];
             renderComponentes();
-            if (componentes.length > 0 && componenteSeleccionadoId === null && tabActiva === 'componentes') {
-                seleccionarComponente(componentes[0].id);
-            }
         } catch (err) {
             showToast('Error al cargar el catálogo de componentes de sarta.', 'error');
         }
