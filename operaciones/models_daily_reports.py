@@ -742,3 +742,95 @@ class ReporteDiarioMudExtraValue(models.Model):
         return f"{self.mud_check} - {self.propiedad_extra.etiqueta}: {self.valor}"
 
 
+
+
+class ReporteDiarioTiempo(models.Model):
+    """
+    Distribución de Tiempo del día (Tab #7 - Time Distribution).
+
+    Guarda cuántas horas cubre el período del reporte. Casi siempre son 24, pero hay días
+    que no: el primer día del pozo (se empezó a perforar a mitad del período), el último
+    (se liberó el taladro) o cuando la operadora cambia la hora de corte. Por eso el total
+    de horas se compara contra este valor y no contra 24 fijo; si no coincide, la pantalla
+    avisa en rojo pero deja guardar (decisión del usuario: en campo siempre pasa algo distinto).
+    """
+
+    HORAS_PERIODO_ESTANDAR = 24
+
+    reporte = models.OneToOneField(
+        ReporteDiario, on_delete=models.CASCADE, related_name='distribucion_tiempo'
+    )
+    horas_periodo = models.DecimalField(
+        max_digits=5, decimal_places=2, default=HORAS_PERIODO_ESTANDAR,
+        verbose_name="Horas del Período",
+        help_text="24 por defecto. Se cambia solo en días especiales (inicio, fin o cambio de hora de corte)."
+    )
+
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Distribución de Tiempo del Reporte"
+        verbose_name_plural = "Distribuciones de Tiempo de Reportes"
+
+    def __str__(self):
+        return f"Distribución de tiempo - {self.reporte}"
+
+    @property
+    def total_horas(self):
+        return sum((a.horas for a in self.reporte.actividades_tiempo.all()), 0)
+
+    @property
+    def cuadra(self):
+        """True si el total de horas coincide con las horas del período (tolerancia de 0.01 h)."""
+        return abs(float(self.total_horas) - float(self.horas_periodo)) < 0.01
+
+    def to_dict(self):
+        return {
+            'horas_periodo': float(self.horas_periodo),
+            'total_horas': float(self.total_horas),
+            'cuadra': self.cuadra,
+        }
+
+
+class ReporteDiarioActividadTiempo(models.Model):
+    """
+    Horas dedicadas a una actividad del taladro durante el período del reporte.
+
+    La actividad sale del catálogo 'Time Distribution Setup' del pozo (TipoDistribucionTiempo),
+    pero se guarda por NÚMERO y con una copia de la descripción, no con una llave foránea:
+    ese catálogo se guarda reemplazando todas sus filas, así que una llave foránea se perdería
+    (o borraría el histórico) cada vez que alguien edita la configuración del pozo.
+    """
+
+    # Actividades que ONE-TRAX muestra siempre, en este orden, antes de las opcionales.
+    NUMEROS_FIJOS = (1, 2, 3, 4)
+
+    reporte = models.ForeignKey(
+        ReporteDiario, on_delete=models.CASCADE, related_name='actividades_tiempo'
+    )
+    orden = models.PositiveSmallIntegerField(default=0, verbose_name="Orden")
+    tipo_numero = models.PositiveIntegerField(verbose_name="Número de Actividad (catálogo del pozo)")
+    descripcion = models.CharField(max_length=120, verbose_name="Actividad")
+    horas = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name="Horas")
+
+    class Meta:
+        verbose_name = "Actividad de Distribución de Tiempo"
+        verbose_name_plural = "Actividades de Distribución de Tiempo"
+        ordering = ['orden', 'id']
+        unique_together = ('reporte', 'tipo_numero')
+
+    def __str__(self):
+        return f"{self.reporte} - {self.descripcion}: {self.horas} h"
+
+    @property
+    def es_fija(self):
+        return self.tipo_numero in self.NUMEROS_FIJOS
+
+    def to_dict(self):
+        return {
+            'tipo_numero': self.tipo_numero,
+            'descripcion': self.descripcion,
+            'horas': float(self.horas),
+            'es_fija': self.es_fija,
+        }

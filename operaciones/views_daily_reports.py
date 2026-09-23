@@ -13,12 +13,13 @@ from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 
-from .models import Pozo, IntervaloRevestimiento, ComponenteSarta
+from .models import Pozo, IntervaloRevestimiento, ComponenteSarta, TipoDistribucionTiempo
 from .models_daily_reports import (
     ReporteDiario, PropiedadExtraFluido, WellSurveyStation, WellFormationTop,
     ReporteDiarioBomba, ReporteDiarioBitData, ReporteDiarioBoquilla,
     ReporteDiarioMudConfig, ReporteDiarioMudCheck, ReporteDiarioMudExtraValue,
     TramoSarta, ReporteDiarioComentarios,
+    ReporteDiarioTiempo, ReporteDiarioActividadTiempo,
 )
 from .geometria_pozo import construir_perfil_confinamiento, calcular_geometria
 
@@ -343,7 +344,15 @@ def reporte_diario_detalle_view(request, pk, reporte_pk):
     # Datos para Tab 4: Well Geometry
     intervalos_pozo = pozo.intervalos_revestimiento.all().order_by('numero_intervalo')
 
+    # Anti-caché de los CSS/JS propios de cada pestaña (cambia solo al editar los archivos).
+    from .views import _version_estaticos
+    version_estaticos = _version_estaticos(
+        'operaciones/css/reporte_tiempo.css',
+        'operaciones/js/reporte_tiempo.js',
+    )
+
     return render(request, 'operaciones/avances_19_sep/reporte_diario_detalle.html', {
+        'version_estaticos': version_estaticos,
         'intervalos_pozo': intervalos_pozo,
         'pozo': pozo,
         'reporte': reporte,
@@ -1904,3 +1913,175 @@ def api_comentarios_guardar(request, pk, reporte_pk):
         })
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+
+
+# =====================================================================
+# API: Pestaña 7 - Time Distribution (ONE-TRAX Daily Data Input)
+# =====================================================================
+
+# Límite de sanidad para un período: el más largo razonable es un cambio de hora de corte
+# (hasta 48 h). Más que eso casi seguro es un error de captura.
+TIEMPO_HORAS_MAXIMAS = 48
+
+
+def _catalogo_tiempo_pozo(pozo):
+    """
+    Actividades del catálogo del pozo que aplican a Fluidos de Perforación (DF y DF/CF).
+    Si el pozo todavía no tiene catálogo (pozos viejos), se siembra el estándar.
+    """
+    if not pozo.tipos_distribucion_tiempo.exists():
+        TipoDistribucionTiempo.sembrar_estandar(pozo)
+    return list(
+        pozo.tipos_distribucion_tiempo
+        .filter(tipo__in=('DF', 'DF/CF'))
+        .order_by('numero')
+    )
+
+
+def _descripcion_estandar(numero):
+    for num, descripcion, _tipo in TipoDistribucionTiempo.TIPOS_ESTANDAR:
+        if num == numero:
+            return descripcion
+    return f"Actividad {numero}"
+
+
+def obtener_o_crear_tiempo(reporte):
+    """Devuelve la distribución de tiempo del reporte, creándola (24 h) si es la primera vez."""
+    tiempo = getattr(reporte, 'distribucion_tiempo', None)
+    if tiempo:
+        return tiempo
+    return ReporteDiarioTiempo.objects.create(reporte=reporte)
+
+
+def _estado_tiempo(reporte, tiempo):
+    """Arma la respuesta completa de la pestaña: período, filas (fijas siempre presentes) y catálogo."""
+    catalogo = _catalogo_tiempo_pozo(reporte.pozo)
+    por_numero = {t.numero: t.descripcion for t in catalogo}
+
+    guardadas = {a.tipo_numero: a for a in reporte.actividades_tiempo.all()}
+
+    filas = []
+    for numero in ReporteDiarioActividadTiempo.NUMEROS_FIJOS:
+        fila = guardadas.pop(numero, None)
+        filas.append({
+            'tipo_numero': numero,
+            'descripcion': fila.descripcion if fila else por_numero.get(numero, _descripcion_estandar(numero)),
+            'horas': float(fila.horas) if fila else 0.0,
+            'es_fija': True,
+        })
+    for fila in sorted(guardadas.values(), key=lambda a: (a.orden, a.id)):
+        filas.append(fila.to_dict())
+
+    total = round(sum(f['horas'] for f in filas), 2)
+    horas_periodo = float(tiempo.horas_periodo)
+
+    return {
+        'horas_periodo': horas_periodo,
+        'total_horas': total,
+        'cuadra': abs(total - horas_periodo) < 0.01,
+        'actividades': filas,
+        'catalogo': [
+            {'numero': t.numero, 'descripcion': t.descripcion}
+            for t in catalogo
+            if t.numero not in ReporteDiarioActividadTiempo.NUMEROS_FIJOS
+        ],
+    }
+
+
+@require_http_methods(["GET"])
+def api_tiempo_detail(request, pk, reporte_pk):
+    """Devuelve la distribución de tiempo del día y el catálogo de actividades del pozo."""
+    pozo = get_object_or_404(Pozo, pk=pk)
+    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+    tiempo = obtener_o_crear_tiempo(reporte)
+    return JsonResponse({'ok': True, **_estado_tiempo(reporte, tiempo)})
+
+
+def _a_horas(valor, etiqueta):
+    """Convierte a número de horas; acepta coma decimal. Lanza ValueError con mensaje en español."""
+    if valor in (None, ''):
+        return 0.0
+    try:
+        horas = float(str(valor).replace(',', '.'))
+    except (TypeError, ValueError):
+        raise ValueError(f"{etiqueta}: '{valor}' no es un número válido.")
+    if math.isnan(horas) or horas < 0:
+        raise ValueError(f"{etiqueta}: las horas no pueden ser negativas.")
+    if horas > TIEMPO_HORAS_MAXIMAS:
+        raise ValueError(f"{etiqueta}: {horas:g} h supera el máximo de {TIEMPO_HORAS_MAXIMAS} h.")
+    return round(horas, 2)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_tiempo_guardar(request, pk, reporte_pk):
+    """
+    Guarda las horas del período y las actividades del día.
+
+    Si el total no coincide con las horas del período se guarda igual: la pantalla lo
+    marca en rojo, pero en campo hay días que no cuadran y el ingeniero decide.
+    """
+    pozo = get_object_or_404(Pozo, pk=pk)
+    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+
+    try:
+        body = json.loads(request.body)
+    except (TypeError, ValueError):
+        return JsonResponse({'ok': False, 'error': 'Datos inválidos.'}, status=400)
+
+    try:
+        horas_periodo = _a_horas(body.get('horas_periodo'), 'Horas del período')
+        if horas_periodo <= 0:
+            raise ValueError('Horas del período: debe ser mayor que cero.')
+
+        catalogo = {t.numero: t.descripcion for t in _catalogo_tiempo_pozo(pozo)}
+        # Las actividades ya guardadas se aceptan aunque luego se hayan quitado del
+        # catálogo del pozo: el histórico no se pierde por editar la configuración.
+        previas = {a.tipo_numero: a.descripcion for a in reporte.actividades_tiempo.all()}
+
+        nuevas = []
+        vistos = set()
+        for i, item in enumerate(body.get('actividades') or []):
+            try:
+                numero = int(item.get('tipo_numero'))
+            except (TypeError, ValueError, AttributeError):
+                raise ValueError(f"Fila {i + 1}: actividad inválida.")
+            if numero in vistos:
+                nombre = catalogo.get(numero) or previas.get(numero) or numero
+                raise ValueError(f"La actividad '{nombre}' está repetida.")
+            vistos.add(numero)
+
+            es_fija = numero in ReporteDiarioActividadTiempo.NUMEROS_FIJOS
+            if numero in catalogo:
+                descripcion = catalogo[numero]
+            elif numero in previas:
+                descripcion = previas[numero]
+            elif es_fija:
+                descripcion = _descripcion_estandar(numero)
+            else:
+                raise ValueError(f"Fila {i + 1}: la actividad {numero} no existe en la configuración del pozo.")
+
+            horas = _a_horas(item.get('horas'), descripcion)
+            # Las filas opcionales sin horas no se guardan; las fijas se muestran siempre.
+            if horas == 0:
+                continue
+            nuevas.append(ReporteDiarioActividadTiempo(
+                reporte=reporte, orden=i, tipo_numero=numero,
+                descripcion=descripcion[:120], horas=horas,
+            ))
+    except ValueError as e:
+        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+
+    with transaction.atomic():
+        tiempo = obtener_o_crear_tiempo(reporte)
+        tiempo.horas_periodo = horas_periodo
+        tiempo.save()
+        reporte.actividades_tiempo.all().delete()
+        ReporteDiarioActividadTiempo.objects.bulk_create(nuevas)
+
+    estado = _estado_tiempo(reporte, tiempo)
+    return JsonResponse({
+        'ok': True,
+        'mensaje': 'Distribución de tiempo guardada correctamente.',
+        **estado,
+    })

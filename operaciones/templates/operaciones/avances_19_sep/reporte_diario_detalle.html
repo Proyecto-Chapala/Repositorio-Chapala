@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
 <link rel="stylesheet" href="{% static 'operaciones/css/daily_reports.css' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/reporte_tiempo.css' %}?v={{ version_estaticos }}">
 {% endblock %}
 
 {% block content %}
@@ -1640,6 +1641,97 @@
 
   </div>
 
+  <!-- TAB 7 CONTENT: DISTRIBUCIÓN DE TIEMPO (TIME DISTRIBUTION) -->
+  <div id="tabContent-tiempo" style="display:none;"
+       data-url-config="{% url 'operaciones:general_setup' pozo.pk %}">
+
+    <!-- Período del reporte -->
+    <div class="report-section-title">
+      <span>&#9201;</span>
+      <span>Período del Reporte &bull; Las horas registradas deben cubrir el período</span>
+    </div>
+
+    <div class="report-card-modern tt-periodo">
+      <div class="tt-periodo-datos">
+        <div class="tt-dato">
+          <label class="tt-dato-label" for="ttHorasPeriodo">Horas del período</label>
+          <div class="tt-input-horas-wrap">
+            <input type="number" id="ttHorasPeriodo" class="report-input tt-input-periodo" min="0.25" max="48" step="0.25" value="24">
+            <span class="tt-unidad">h</span>
+          </div>
+        </div>
+        <div class="tt-dato">
+          <span class="tt-dato-label">Total registrado</span>
+          <span class="tt-dato-valor" id="ttTotal">0.00 h</span>
+        </div>
+        <div class="tt-dato">
+          <span class="tt-dato-label">Estado</span>
+          <span class="tt-chip tt-chip-neutro" id="ttEstado">Cargando&hellip;</span>
+        </div>
+        <p class="tt-periodo-ayuda">
+          Casi siempre son 24&nbsp;h. Cámbialo solo en días especiales: el primer o el último día
+          del pozo, o cuando la operadora cambia la hora de corte. Si el total no coincide se
+          marca en rojo, pero se puede guardar igual.
+        </p>
+      </div>
+
+      <div class="tt-barra" id="ttBarra" aria-label="Distribución del período"></div>
+      <div class="tt-leyenda" id="ttLeyenda"></div>
+    </div>
+
+    <!-- Actividades del taladro -->
+    <div class="report-section-title">
+      <span>&#128736;</span>
+      <span>Actividades del Taladro &bull; Según la hoja IADC del día</span>
+    </div>
+
+    <div class="report-card-modern">
+      <div class="tt-tabla-wrapper">
+        <table class="tt-tabla">
+          <thead>
+            <tr>
+              <th class="tt-col-color"></th>
+              <th>Actividad</th>
+              <th class="tt-col-horas">Horas</th>
+              <th class="tt-col-pct">% del período</th>
+              <th class="tt-col-dist">Distribución</th>
+              <th class="tt-col-acciones"></th>
+            </tr>
+          </thead>
+          <tbody id="ttFilas">
+            <tr class="tt-fila-vacia"><td colspan="6">Cargando actividades&hellip;</td></tr>
+          </tbody>
+          <tfoot>
+            <tr class="tt-fila-total">
+              <td></td>
+              <td>Total</td>
+              <td class="tt-td-num" id="ttTotalPie">0.00</td>
+              <td class="tt-td-num" id="ttPctPie">0.0 %</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="tt-acciones">
+        <button type="button" class="btn-modern-secondary btn-sm" id="ttBtnAgregar">
+          <span>&#10133;</span><span>Agregar actividad</span>
+        </button>
+        <a class="tt-link-config" id="ttLinkConfig" href="#" target="_blank" rel="noopener"
+           title="Las actividades disponibles se definen en la Configuración General del pozo">
+          Configurar actividades del pozo &rarr;
+        </a>
+        <span class="tt-separador"></span>
+        <button type="button" class="btn-modern-secondary btn-sm" disabled
+                title="Módulo opcional: se construirá junto con los intervalos de revestimiento.">
+          <span>&#9888;</span><span>Eventos No Programados</span>
+        </button>
+        <span class="tt-pendiente">Opcional &bull; pendiente</span>
+      </div>
+    </div>
+
+  </div>
+
   <!-- Placeholder for Other Tabs (4 to 8) -->
   <div id="tabContent-placeholder" class="report-card-modern" style="display:none; text-align:center; padding:60px 20px;">
     <h3 id="placeholder-title" style="color:#0f172a; margin-bottom:12px; font-weight:800; font-size:18px;"></h3>
@@ -2296,6 +2388,7 @@ function switchTab(tabNum){
     else if(prevTab === 3) guardarMudProperties(true);
     else if(prevTab === 4 && wgListo) guardarWellGeometry(true);
     else if(prevTab === 5 && cmListo) guardarComentarios(true);
+    else if(prevTab === 7 && typeof ttListo !== 'undefined' && ttListo) guardarTiempo(true);
   }
 
   currentTabNum = tabNum;
@@ -2307,6 +2400,7 @@ function switchTab(tabNum){
   const mudPropsContent = document.getElementById('tabContent-mud-properties');
   const wellGeometryContent = document.getElementById('tabContent-well-geometry');
   const comentariosContent = document.getElementById('tabContent-comentarios');
+  const tiempoContent = document.getElementById('tabContent-tiempo');
   const placeholderContent = document.getElementById('tabContent-placeholder');
   const placeholderTitle = document.getElementById('placeholder-title');
 
@@ -2343,6 +2437,7 @@ function switchTab(tabNum){
     if(mudPropsContent) mudPropsContent.style.display = 'none';
     if(wellGeometryContent) wellGeometryContent.style.display = 'none';
     if(comentariosContent) comentariosContent.style.display = 'none';
+    if(tiempoContent) tiempoContent.style.display = 'none';
     if(placeholderContent) placeholderContent.style.display = 'none';
   };
 
@@ -2361,6 +2456,9 @@ function switchTab(tabNum){
   } else if(tabNum === 5){
     if(comentariosContent) comentariosContent.style.display = 'block';
     inicializarComentarios();
+  } else if(tabNum === 7){
+    if(tiempoContent) tiempoContent.style.display = 'block';
+    inicializarTiempo();
   } else {
     if(placeholderContent) {
       placeholderContent.style.display = 'block';
@@ -2384,6 +2482,8 @@ async function guardarPestanaActiva() {
     await guardarGeneral(true);
   } else if (currentTabNum === 5) {
     await guardarComentarios();
+  } else if (currentTabNum === 7) {
+    await guardarTiempo();
   } else {
     showToast('Pestaña en desarrollo.');
   }
@@ -4374,4 +4474,5 @@ async function guardarExtraPropertiesModal(){
   }
 }
 </script>
+<script src="{% static 'operaciones/js/reporte_tiempo.js' %}?v={{ version_estaticos }}"></script>
 {% endblock %}

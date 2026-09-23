@@ -67,6 +67,8 @@ urlpatterns = [
     # --- Pestaña 5: Comentarios (Comments) ---
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/comentarios/', views_daily_reports.api_comentarios_detail, name='api_comentarios_detail'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/comentarios/guardar/', views_daily_reports.api_comentarios_guardar, name='api_comentarios_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/tiempo/', views_daily_reports.api_tiempo_detail, name='api_tiempo_detail'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/tiempo/guardar/', views_daily_reports.api_tiempo_guardar, name='api_tiempo_guardar'),
 
     # --- Well Header Information ---
 
