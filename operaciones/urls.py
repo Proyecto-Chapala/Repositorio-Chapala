@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import views_daily_reports
+from . import views_control_solidos
 
 app_name = 'operaciones'
 
@@ -69,6 +70,14 @@ urlpatterns = [
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/comentarios/guardar/', views_daily_reports.api_comentarios_guardar, name='api_comentarios_guardar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/tiempo/', views_daily_reports.api_tiempo_detail, name='api_tiempo_detail'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/tiempo/guardar/', views_daily_reports.api_tiempo_guardar, name='api_tiempo_guardar'),
+    # Pestaña 6 — Control de Sólidos (mallas de zaranda)
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/', views_control_solidos.api_control_solidos_detail, name='api_control_solidos_detail'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/transaccion/', views_control_solidos.api_transaccion_malla_crear, name='api_transaccion_malla_crear'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/transaccion/deshacer/', views_control_solidos.api_transaccion_malla_deshacer, name='api_transaccion_malla_deshacer'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/ticket/guardar/', views_control_solidos.api_ticket_malla_guardar, name='api_ticket_malla_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/ticket/<int:ticket_pk>/eliminar/', views_control_solidos.api_ticket_malla_eliminar, name='api_ticket_malla_eliminar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/tipo-ticket/guardar/', views_control_solidos.api_tipo_ticket_malla_guardar, name='api_tipo_ticket_malla_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/tipo-ticket/<int:tipo_pk>/eliminar/', views_control_solidos.api_tipo_ticket_malla_eliminar, name='api_tipo_ticket_malla_eliminar'),
 
     # --- Well Header Information ---
 

@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
 <link rel="stylesheet" href="{% static 'operaciones/css/daily_reports.css' %}">
 <link rel="stylesheet" href="{% static 'operaciones/css/reporte_tiempo.css' %}?v={{ version_estaticos }}">
+<link rel="stylesheet" href="{% static 'operaciones/css/reporte_control_solidos.css' %}?v={{ version_estaticos }}">
 {% endblock %}
 
 {% block content %}
@@ -1641,6 +1642,261 @@
 
   </div>
 
+  <!-- TAB 6 CONTENT: CONTROL DE SÓLIDOS (SOLIDS EQUIPMENT) -->
+  <div id="tabContent-solidos" style="display:none;" data-fecha="{{ reporte.fecha|date:'d/m/Y' }}">
+
+    <!-- Indicadores API RP 13C (dependen de la volumetría de la pestaña 8) -->
+    <div class="report-section-title">
+      <span>&#128200;</span>
+      <span>Indicadores de Control de Sólidos &bull; Según API RP 13C</span>
+    </div>
+
+    <div class="report-card-modern cs-kpis">
+      <div class="cs-kpi">
+        <span class="cs-kpi-label">Sólidos perforados promedio (para SP)</span>
+        <span class="cs-kpi-valor">&mdash;</span>
+      </div>
+      <div class="cs-kpi">
+        <span class="cs-kpi-label">Desempeño del sistema de remoción (SP)</span>
+        <span class="cs-kpi-valor">&mdash;</span>
+      </div>
+      <div class="cs-kpi">
+        <span class="cs-kpi-label">Lodo agregado / volumen de hoyo perforado</span>
+        <span class="cs-kpi-valor">&mdash;</span>
+      </div>
+      <p class="cs-kpi-nota">Se calcularán cuando esté la volumetría de la pestaña 8 (lodo agregado).</p>
+    </div>
+
+    <!-- Sub-pantallas, en el orden de captura del manual -->
+    <nav class="cs-subnav" aria-label="Secciones de control de sólidos">
+      <div class="cs-subnav-grupo">
+        <button type="button" class="cs-subnav-btn is-active" data-vista="inventario">
+          <span class="cs-subnav-num">1</span><span>Inventario de mallas</span>
+        </button>
+        <button type="button" class="cs-subnav-btn" data-vista="transacciones">
+          <span class="cs-subnav-num">2</span><span>Transacciones de mallas</span>
+        </button>
+        <button type="button" class="cs-subnav-btn" disabled title="Se construye en el siguiente segmento">
+          <span class="cs-subnav-num">3</span><span>Detalle y uso de equipos</span>
+          <span class="cs-subnav-tag">Próximamente</span>
+        </button>
+      </div>
+      <div class="cs-subnav-grupo cs-subnav-opcionales">
+        <span class="cs-subnav-titulo">Opcionales</span>
+        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional, pendiente">Análisis de sólidos por equipo</button>
+        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional, pendiente">Retención en recortes</button>
+        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional, pendiente">Pruebas SUS</button>
+        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional, pendiente">Observaciones IFE</button>
+      </div>
+    </nav>
+
+    <div class="cs-alerta" id="csAlerta" hidden></div>
+
+    <!-- ============ 1. INVENTARIO DE MALLAS ============ -->
+    <section class="cs-vista" id="csVistaInventario">
+      <div class="report-card-modern">
+        <div class="cs-toolbar">
+          <div class="cs-resumen" id="csResumenInventario"></div>
+          <button type="button" class="btn-modern-secondary btn-sm" id="csBtnTickets">
+            <span>&#127915;</span><span>Tickets de entrega / devolución</span>
+            <span class="cs-badge" id="csBadgeTickets" hidden>0</span>
+          </button>
+        </div>
+
+        <div class="cs-tabla-wrapper">
+          <table class="cs-tabla cs-tabla-inv">
+            <thead>
+              <tr class="cs-cabecera-grupo">
+                <th colspan="3">Malla</th>
+                <th colspan="5" class="cs-grupo-nuevas">Nuevas</th>
+                <th colspan="4" class="cs-grupo-usadas">Usadas en almacén</th>
+                <th class="cs-grupo-equipos">En equipos</th>
+                <th colspan="3" class="cs-grupo-costos">Costos</th>
+              </tr>
+              <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th class="cs-num">Mesh</th>
+                <th class="cs-num cs-grupo-nuevas">Inicial</th>
+                <th class="cs-num cs-grupo-nuevas">Recibidas</th>
+                <th class="cs-num cs-grupo-nuevas">Devueltas</th>
+                <th class="cs-num cs-grupo-nuevas">Instaladas</th>
+                <th class="cs-num cs-grupo-nuevas">Final</th>
+                <th class="cs-num cs-grupo-usadas">Inicial</th>
+                <th class="cs-num cs-grupo-usadas">Entradas</th>
+                <th class="cs-num cs-grupo-usadas">Salidas</th>
+                <th class="cs-num cs-grupo-usadas">Final</th>
+                <th class="cs-num cs-grupo-equipos">Instaladas</th>
+                <th class="cs-num cs-grupo-costos">Precio neto</th>
+                <th class="cs-num cs-grupo-costos">Diario</th>
+                <th class="cs-num cs-grupo-costos">Acumulado</th>
+              </tr>
+            </thead>
+            <tbody id="csFilasInventario">
+              <tr class="cs-fila-vacia"><td colspan="16">Cargando inventario&hellip;</td></tr>
+            </tbody>
+            <tfoot id="csPieInventario"></tfoot>
+          </table>
+        </div>
+        <p class="cs-nota">
+          El inventario se calcula solo a partir de los tickets y de las transacciones de mallas:
+          el final del día anterior es el inicial de hoy. Las mallas nuevas se cargan al costo
+          cuando se instalan, con el precio neto del pozo en ese momento.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 2. TRANSACCIONES DE MALLAS ============ -->
+    <section class="cs-vista" id="csVistaTransacciones" hidden>
+      <div class="cs-tr-grid">
+        <div class="report-card-modern cs-tr-equipos">
+          <div class="cs-card-titulo">Equipos con mallas</div>
+          <div class="cs-equipos-lista" id="csListaEquipos"></div>
+        </div>
+
+        <div class="report-card-modern cs-tr-detalle" id="csDetalleEquipo"></div>
+      </div>
+
+      <div class="cs-tr-grid-inferior">
+        <div class="report-card-modern">
+          <div class="cs-card-cabecera">
+            <span class="cs-card-titulo">Movimientos del día</span>
+            <button type="button" class="btn-modern-secondary btn-sm" id="csBtnDeshacer">
+              <span>&#8630;</span><span>Deshacer último</span>
+            </button>
+          </div>
+          <div class="cs-tabla-wrapper">
+            <table class="cs-tabla">
+              <thead>
+                <tr>
+                  <th class="cs-num">N°</th>
+                  <th>Acción</th>
+                  <th>Malla</th>
+                  <th>Código</th>
+                  <th>Serie</th>
+                  <th>Equipo</th>
+                  <th class="cs-num">Posición</th>
+                </tr>
+              </thead>
+              <tbody id="csFilasMovimientos"></tbody>
+            </table>
+          </div>
+          <p class="cs-nota" id="csNotaDeshacer"></p>
+        </div>
+
+        <div class="report-card-modern">
+          <div class="cs-card-titulo">Almacén de mallas usadas</div>
+          <div id="csAlmacenUsadas"></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- MODAL: TICKETS DE ENTREGA / DEVOLUCIÓN DE MALLAS (pestaña 6) -->
+  <div class="cs-modal" id="csModalTickets" hidden>
+    <div class="cs-modal-caja" role="dialog" aria-modal="true" aria-labelledby="csModalTicketsTitulo">
+      <header class="cs-modal-cabecera">
+        <div>
+          <h3 class="cs-modal-titulo" id="csModalTicketsTitulo">Tickets de entrega y devolución</h3>
+          <span class="cs-modal-subtitulo" id="csModalTicketsFecha"></span>
+        </div>
+        <button type="button" class="cs-modal-cerrar" id="csCerrarTickets" title="Cerrar">&times;</button>
+      </header>
+
+      <div class="cs-modal-cuerpo cs-tk-grid">
+        <aside class="cs-tk-lista">
+          <button type="button" class="btn-modern-primary btn-sm cs-tk-nuevo" id="csBtnNuevoTicket">
+            <span>&#10133;</span><span>Nuevo ticket</span>
+          </button>
+          <div id="csListaTickets"></div>
+          <button type="button" class="cs-link-boton" id="csBtnTiposTicket">Administrar tipos de ticket</button>
+        </aside>
+
+        <section class="cs-tk-form">
+          <div class="cs-tk-encabezado">
+            <label class="cs-campo">
+              <span class="cs-campo-label">Tipo de ticket</span>
+              <select id="csTkTipo" class="report-input"></select>
+            </label>
+            <label class="cs-campo">
+              <span class="cs-campo-label">N° de ticket</span>
+              <input type="text" id="csTkNumero" class="report-input" maxlength="40" placeholder="Ej: 0001234">
+            </label>
+            <label class="cs-campo">
+              <span class="cs-campo-label">Pedido por</span>
+              <input type="text" id="csTkPedido" class="report-input" maxlength="100">
+            </label>
+            <label class="cs-campo">
+              <span class="cs-campo-label">Recibido por</span>
+              <input type="text" id="csTkRecibido" class="report-input" maxlength="100">
+            </label>
+            <label class="cs-campo">
+              <span class="cs-campo-label">Almacén</span>
+              <select id="csTkAlmacen" class="report-input"></select>
+            </label>
+          </div>
+
+          <div class="cs-tabla-wrapper">
+            <table class="cs-tabla cs-tabla-ticket">
+              <thead>
+                <tr class="cs-cabecera-grupo">
+                  <th colspan="2">Malla</th>
+                  <th colspan="2" class="cs-grupo-nuevas">Nuevas</th>
+                  <th colspan="2" class="cs-grupo-usadas">Usadas</th>
+                </tr>
+                <tr>
+                  <th>Descripción</th>
+                  <th class="cs-num">Mesh</th>
+                  <th class="cs-num cs-grupo-nuevas">Según ticket</th>
+                  <th class="cs-num cs-grupo-nuevas">Real</th>
+                  <th class="cs-num cs-grupo-usadas">Según ticket</th>
+                  <th class="cs-num cs-grupo-usadas">Real</th>
+                </tr>
+              </thead>
+              <tbody id="csFilasTicket"></tbody>
+            </table>
+          </div>
+          <p class="cs-nota">
+            "Según ticket" es lo que dice el papel; "Real" es lo que llegó o salió de verdad. El
+            inventario usa siempre la cantidad real y las diferencias se marcan en ámbar.
+          </p>
+
+          <div class="cs-tk-acciones">
+            <button type="button" class="btn-modern-secondary btn-sm cs-btn-peligro" id="csBtnEliminarTicket" hidden>
+              <span>&#128465;</span><span>Eliminar ticket</span>
+            </button>
+            <span class="cs-flex"></span>
+            <button type="button" class="btn-modern-primary btn-sm" id="csBtnGuardarTicket">
+              <span>&#128190;</span><span>Guardar ticket</span>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Tipos de ticket (catálogo editable del pozo) -->
+      <div class="cs-tipos" id="csPanelTipos" hidden>
+        <div class="cs-card-cabecera">
+          <span class="cs-card-titulo">Tipos de ticket del pozo</span>
+          <button type="button" class="cs-modal-cerrar" id="csCerrarTipos" title="Cerrar">&times;</button>
+        </div>
+        <p class="cs-nota">
+          Todavía son ejemplos: renómbralos o agrega los que use AOS. "Entrada" suma mallas al
+          pozo y "Salida" las resta. Un tipo que ya se usó en tickets no se puede eliminar.
+        </p>
+        <div id="csListaTipos"></div>
+        <div class="cs-tipo-fila cs-tipo-nuevo">
+          <input type="text" id="csTipoNuevoNombre" class="report-input" maxlength="80" placeholder="Nombre del nuevo tipo">
+          <select id="csTipoNuevoSentido" class="report-input">
+            <option value="ENTRADA">Entrada al pozo</option>
+            <option value="SALIDA">Salida del pozo</option>
+          </select>
+          <button type="button" class="btn-modern-secondary btn-sm" id="csBtnAgregarTipo">Agregar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- TAB 7 CONTENT: DISTRIBUCIÓN DE TIEMPO (TIME DISTRIBUTION) -->
   <div id="tabContent-tiempo" style="display:none;"
        data-url-config="{% url 'operaciones:general_setup' pozo.pk %}">
@@ -2401,6 +2657,7 @@ function switchTab(tabNum){
   const wellGeometryContent = document.getElementById('tabContent-well-geometry');
   const comentariosContent = document.getElementById('tabContent-comentarios');
   const tiempoContent = document.getElementById('tabContent-tiempo');
+  const solidosContent = document.getElementById('tabContent-solidos');
   const placeholderContent = document.getElementById('tabContent-placeholder');
   const placeholderTitle = document.getElementById('placeholder-title');
 
@@ -2438,6 +2695,7 @@ function switchTab(tabNum){
     if(wellGeometryContent) wellGeometryContent.style.display = 'none';
     if(comentariosContent) comentariosContent.style.display = 'none';
     if(tiempoContent) tiempoContent.style.display = 'none';
+    if(solidosContent) solidosContent.style.display = 'none';
     if(placeholderContent) placeholderContent.style.display = 'none';
   };
 
@@ -2456,6 +2714,9 @@ function switchTab(tabNum){
   } else if(tabNum === 5){
     if(comentariosContent) comentariosContent.style.display = 'block';
     inicializarComentarios();
+  } else if(tabNum === 6){
+    if(solidosContent) solidosContent.style.display = 'block';
+    inicializarControlSolidos();
   } else if(tabNum === 7){
     if(tiempoContent) tiempoContent.style.display = 'block';
     inicializarTiempo();
@@ -2482,6 +2743,8 @@ async function guardarPestanaActiva() {
     await guardarGeneral(true);
   } else if (currentTabNum === 5) {
     await guardarComentarios();
+  } else if (currentTabNum === 6) {
+    showToast('En Control de Sólidos cada movimiento y cada ticket se guardan al registrarlos.');
   } else if (currentTabNum === 7) {
     await guardarTiempo();
   } else {
@@ -4475,4 +4738,5 @@ async function guardarExtraPropertiesModal(){
 }
 </script>
 <script src="{% static 'operaciones/js/reporte_tiempo.js' %}?v={{ version_estaticos }}"></script>
+<script src="{% static 'operaciones/js/reporte_control_solidos.js' %}?v={{ version_estaticos }}"></script>
 {% endblock %}

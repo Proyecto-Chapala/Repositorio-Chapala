@@ -863,6 +863,13 @@ class Equipo(models.Model):
         max_length=25, choices=TIPO_EQUIPO_CHOICES, default='OTROS', verbose_name="Tipo de Equipo",
         help_text="Agrupa el equipo para 'Equipment Properties Setup' (Centrífuga, Mud Cleaner, Shale Shaker, etc.)."
     )
+    posiciones_malla = models.PositiveSmallIntegerField(
+        default=0, verbose_name="Posiciones de Malla",
+        help_text="Cuántas mallas lleva el equipo (0 = no usa mallas; máximo 12). "
+                  "Ej.: zaranda BEM 3 = 3, BEM 600 = 5. La posición 1 es la más cercana a la línea de flujo."
+    )
+
+    POSICIONES_MALLA_MAX = 12
 
     class Meta:
         verbose_name = "Equipo (Catálogo Maestro)"
@@ -877,6 +884,7 @@ class Equipo(models.Model):
             "id": self.id, "codigo": self.codigo, "nombre": self.nombre,
             "tipo_equipo": self.tipo_equipo,
             "tipo_equipo_display": self.get_tipo_equipo_display(),
+            "posiciones_malla": self.posiciones_malla,
         }
 
 
@@ -1326,3 +1334,4 @@ class BenchmarkTarget(models.Model):
 
 
 from .models_daily_reports import *
+from .models_control_solidos import *

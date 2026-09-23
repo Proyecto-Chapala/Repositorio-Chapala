@@ -349,6 +349,8 @@ def reporte_diario_detalle_view(request, pk, reporte_pk):
     version_estaticos = _version_estaticos(
         'operaciones/css/reporte_tiempo.css',
         'operaciones/js/reporte_tiempo.js',
+        'operaciones/css/reporte_control_solidos.css',
+        'operaciones/js/reporte_control_solidos.js',
     )
 
     return render(request, 'operaciones/avances_19_sep/reporte_diario_detalle.html', {

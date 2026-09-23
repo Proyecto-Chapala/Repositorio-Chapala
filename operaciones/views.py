@@ -1394,6 +1394,20 @@ def catalogos_maestros_view(request):
     })
 
 
+def _leer_posiciones_malla(data, actual=0):
+    """Posiciones de malla de un equipo (0 a 12). Devuelve (valor, error)."""
+    valor = data.get('posiciones_malla', actual)
+    if valor in (None, ''):
+        return 0, None
+    try:
+        valor = int(str(valor).strip())
+    except (TypeError, ValueError):
+        return actual, "Las posiciones de malla deben ser un número entero."
+    if valor < 0 or valor > Equipo.POSICIONES_MALLA_MAX:
+        return actual, f"Las posiciones de malla van de 0 a {Equipo.POSICIONES_MALLA_MAX}."
+    return valor, None
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_equipo_create(request):
@@ -1415,11 +1429,16 @@ def api_equipo_create(request):
         errores['nombre'] = "El nombre oficial es obligatorio."
     if tipo_equipo not in dict(Equipo.TIPO_EQUIPO_CHOICES):
         errores['tipo_equipo'] = "Selecciona un tipo de equipo válido."
+    posiciones_malla, error_pos = _leer_posiciones_malla(data)
+    if error_pos:
+        errores['posiciones_malla'] = error_pos
 
     if errores:
         return JsonResponse({"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
 
-    equipo = Equipo.objects.create(codigo=codigo, nombre=nombre, tipo_equipo=tipo_equipo)
+    equipo = Equipo.objects.create(
+        codigo=codigo, nombre=nombre, tipo_equipo=tipo_equipo, posiciones_malla=posiciones_malla
+    )
     return JsonResponse({
         "success": True, "mensaje": f"Equipo '{equipo.codigo}' creado.",
         "equipo": equipo.to_dict()
@@ -1448,6 +1467,9 @@ def api_equipo_update(request, pk):
         errores['nombre'] = "El nombre oficial es obligatorio."
     if tipo_equipo not in dict(Equipo.TIPO_EQUIPO_CHOICES):
         errores['tipo_equipo'] = "Selecciona un tipo de equipo válido."
+    posiciones_malla, error_pos = _leer_posiciones_malla(data, equipo.posiciones_malla)
+    if error_pos:
+        errores['posiciones_malla'] = error_pos
 
     if errores:
         return JsonResponse({"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
@@ -1455,6 +1477,7 @@ def api_equipo_update(request, pk):
     equipo.codigo = codigo
     equipo.nombre = nombre
     equipo.tipo_equipo = tipo_equipo
+    equipo.posiciones_malla = posiciones_malla
     equipo.save()
     return JsonResponse({
         "success": True, "mensaje": f"Equipo '{equipo.codigo}' actualizado.",

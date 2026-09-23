@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputEquipoCodigo = document.getElementById('inputEquipoCodigo');
     const inputEquipoNombre = document.getElementById('inputEquipoNombre');
     const inputEquipoTipo = document.getElementById('inputEquipoTipo');
+    const inputEquipoPosiciones = document.getElementById('inputEquipoPosiciones');
     const errorEquipo = document.getElementById('errorEquipo');
     const btnCancelarEquipo = document.getElementById('btnCancelarEquipo');
     const btnGuardarEquipo = document.getElementById('btnGuardarEquipo');
@@ -258,7 +259,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const tr = document.createElement('tr');
             tr.dataset.id = eq.id;
             if (eq.id === equipoSeleccionadoId) tr.classList.add('selected');
-            tr.innerHTML = '<td><strong>' + escapeHtml(eq.codigo) + '</strong></td><td>' + escapeHtml(eq.nombre) + '</td><td><span class="badge-cat">' + escapeHtml(eq.tipo_equipo_display) + '</span></td>';
+            tr.innerHTML = '<td><strong>' + escapeHtml(eq.codigo) + '</strong></td><td>' + escapeHtml(eq.nombre) + '</td><td><span class="badge-cat">' + escapeHtml(eq.tipo_equipo_display) + '</span>' +
+                (eq.posiciones_malla > 0
+                    ? ' <span class="catalogos-chip-mallas" title="Posiciones de malla">' + eq.posiciones_malla + (eq.posiciones_malla === 1 ? ' malla' : ' mallas') + '</span>'
+                    : '') + '</td>';
             tr.addEventListener('click', function () {
                 seleccionarEquipo(eq.id);
             });
@@ -337,6 +341,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputEquipoCodigo.value = eq.codigo;
         inputEquipoNombre.value = eq.nombre;
         inputEquipoTipo.value = eq.tipo_equipo;
+        inputEquipoPosiciones.value = eq.posiciones_malla || 0;
         formTituloEquipo.textContent = eq.nombre;
         formModoEquipo.textContent = 'Editando';
         formModoEquipo.className = 'catalogos-mode-badge editando form-mode-tag';
@@ -398,6 +403,7 @@ document.addEventListener('DOMContentLoaded', function () {
         inputEquipoCodigo.value = '';
         inputEquipoNombre.value = '';
         inputEquipoTipo.value = 'CENTRIFUGA';
+        inputEquipoPosiciones.value = 0;
         formTituloEquipo.textContent = 'Nuevo Equipo';
         formModoEquipo.textContent = 'Creando';
         formModoEquipo.className = 'catalogos-mode-badge creando form-mode-tag';
@@ -463,7 +469,10 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const payload = { codigo: codigo, nombre: nombre, tipo_equipo: tipoEquipo };
+        const payload = {
+            codigo: codigo, nombre: nombre, tipo_equipo: tipoEquipo,
+            posiciones_malla: inputEquipoPosiciones.value || 0,
+        };
         const esEdicion = equipoSeleccionadoId !== null;
         const url = esEdicion
             ? '/api/equipos/' + equipoSeleccionadoId + '/modificar/'
