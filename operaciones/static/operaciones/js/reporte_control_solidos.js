@@ -120,6 +120,8 @@ function csCambiarVista(vista){
     b.classList.toggle('is-active', b.dataset.vista === vista));
   document.getElementById('csVistaInventario').hidden = vista !== 'inventario';
   document.getElementById('csVistaTransacciones').hidden = vista !== 'transacciones';
+  document.getElementById('csVistaEquipos').hidden = vista !== 'equipos';
+  if(vista === 'equipos') inicializarUsoEquipos();
 }
 
 /* ---------- 1. Inventario ---------- */
@@ -605,6 +607,542 @@ document.addEventListener('DOMContentLoaded', function(){
     if(data){
       nombre.value = '';
       csCargarTicketEnFormulario(csTicketSel);
+    }
+  });
+});
+
+
+/* =====================================================================
+   3. DETALLE Y USO DE EQUIPOS (Equipment Details and Usage)
+
+   Formulario del día para todos los equipos del pozo: rendimiento (datos
+   clave para el volumen descargado y el lodo perdido), costos de renta y
+   paradas. Se guarda con "Guardar equipos" (o el Guardar general, o al salir
+   de la pestaña si hay cambios).
+
+   El cálculo en vivo replica control_solidos.calcular_rendimiento (Python).
+   ===================================================================== */
+
+const CS_EQ_CONSTANTE = 1029.4;
+const CS_EQ_GAL_BBL = 42;
+const CS_EQ_POR_RECORTES = ['ZARANDA', 'LIMPIADOR_LODO', 'SECADOR_RECORTES'];
+
+let csEqCargado = false;
+let csEqListo = false;
+let csEqDatos = null;       // respuesta del servidor
+let csEqSel = null;         // serie seleccionada en Rendimiento
+let csEqVista = 'rendimiento';
+let csEqSucio = false;
+
+function csEqPendiente(){
+  return csEqListo && csEqSucio;
+}
+
+function csNum(v){
+  if(v === null || v === undefined || v === '') return null;
+  const n = parseFloat(String(v).replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+
+function csFmt(n, dec = 2){
+  if(n === null || n === undefined || !Number.isFinite(n)) return '—';
+  return n.toLocaleString('es-VE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+function csValor(v){
+  return v === null || v === undefined ? '' : String(v);
+}
+
+function csCalcularRendimiento(fila, volHoyo){
+  const d = fila.datos;
+  const moc = csNum(d.mud_on_cuttings) || 0;
+  const horas = csNum(d.horas) || 0;
+  const r = { recortes: null, descargado: null, lodo: null, qDescarte: null, qSalida: null };
+
+  if(CS_EQ_POR_RECORTES.includes(fila.tipo_equipo)){
+    const pct = csNum(d.porcentaje_recortes);
+    if(pct === null) return r;
+    r.recortes = volHoyo * pct / 100;
+    r.descargado = r.recortes * (1 + moc);
+    r.lodo = r.recortes * moc;
+  } else if(fila.tipo_equipo === 'CENTRIFUGA'){
+    const qIn = csNum(d.caudal_entrada_gpm);
+    const re = csNum(d.densidad_entrada), rs = csNum(d.densidad_salida), rd = csNum(d.densidad_descarte);
+    if([qIn, re, rs, rd].includes(null) || rd <= rs) return r;
+    let q = qIn * (re - rs) / (rd - rs);
+    q = Math.min(Math.max(q, 0), qIn);
+    r.qDescarte = q;
+    r.qSalida = qIn - q;
+    r.descargado = q * horas * 60 / CS_EQ_GAL_BBL;
+    r.lodo = r.descargado * moc / (1 + moc);
+    r.recortes = r.descargado - r.lodo;
+  }
+  return r;
+}
+
+function csCostoDiario(fila){
+  if(fila.datos.codigo_cobro === 'SIN_COBRO') return 0;
+  return (csNum(fila.datos.cantidad_usada) || 0) * (fila.tarifa || 0);
+}
+
+function csMarcarSucio(){
+  csEqSucio = true;
+  document.getElementById('csEqTagCambios').hidden = false;
+  document.getElementById('csEqEstado').textContent = 'Hay cambios sin guardar';
+}
+
+/* ---------- Carga ---------- */
+
+async function inicializarUsoEquipos(){
+  if(csEqCargado) return;
+  csEqCargado = true;
+  try {
+    const res = await fetch(CS_BASE + 'equipos/');
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'respuesta inválida');
+    csEqAplicar(data);
+    csEqListo = true;
+  } catch(e){
+    csEqCargado = false;
+    document.getElementById('csEqContexto').innerHTML = '<div class="cs-vacio">No se pudo cargar el detalle de equipos.</div>';
+    showToast('No se pudo cargar el detalle de equipos.', false);
+  }
+}
+
+function csEqAplicar(data){
+  csEqDatos = data;
+  if(csEqSel && !data.equipos.some(e => e.serie === csEqSel)) csEqSel = null;
+  if(!csEqSel && data.equipos.length) csEqSel = data.equipos[0].serie;
+  csEqSucio = false;
+  document.getElementById('csEqTagCambios').hidden = true;
+  const heredados = data.equipos.some(e => e.heredado);
+  document.getElementById('csEqEstado').textContent = data.hay_guardado
+    ? 'Guardado'
+    : (heredados ? 'Sin guardar · datos precargados del reporte anterior' : 'Sin guardar');
+  csEqRenderContexto();
+  csEqRenderTodo();
+}
+
+function csEqRenderTodo(){
+  csEqRenderAvisos();
+  if(csEqVista === 'rendimiento'){
+    csEqRenderArbol();
+    csEqRenderFicha();
+    csEqRenderResumen();
+  } else if(csEqVista === 'costos'){
+    csEqRenderCostos();
+  } else {
+    csEqRenderUso();
+  }
+}
+
+function csEqCambiarVista(vista){
+  csEqVista = vista;
+  document.querySelectorAll('.cs-eq-tab').forEach(b => b.classList.toggle('is-active', b.dataset.eqVista === vista));
+  document.getElementById('csEqPanelRendimiento').hidden = vista !== 'rendimiento';
+  document.getElementById('csEqPanelCostos').hidden = vista !== 'costos';
+  document.getElementById('csEqPanelUso').hidden = vista !== 'uso';
+  csEqRenderTodo();
+}
+
+/* ---------- Contexto del hoyo ---------- */
+
+function csEqRenderContexto(){
+  const c = csEqDatos.contexto;
+  const sinDiametro = c.diametro_in <= 0;
+  document.getElementById('csEqContexto').innerHTML = `
+    <div class="cs-eq-dato"><span>Profundidad hoy</span><strong>${csFmt(c.profundidad_ft, 0)} ft</strong></div>
+    <div class="cs-eq-dato"><span>Avance del día</span><strong>${csFmt(c.avance_ft, 0)} ft</strong>
+      <small>${c.hay_reporte_anterior ? `desde ${csFmt(c.profundidad_anterior_ft, 0)} ft` : 'primer reporte: desde superficie'}</small></div>
+    <div class="cs-eq-dato ${sinDiametro ? 'cs-eq-dato-alerta' : ''}"><span>Diámetro del hoyo</span>
+      <strong>${sinDiametro ? 'Sin dato' : csFmt(c.diametro_in, 3) + ' in'}</strong>
+      <small>${sinDiametro ? 'Captúralo en la pestaña 2' : csEsc(c.fuente_diametro)}</small></div>
+    <div class="cs-eq-dato cs-eq-dato-destacado"><span>Volumen de hoyo perforado</span><strong>${csFmt(c.volumen_hoyo_bbl)} bbl</strong>
+      <small>base para el % de recortes</small></div>
+    <div class="cs-eq-dato"><span>Horas del período</span><strong>${csFmt(c.horas_periodo)} h</strong><small>pestaña 7</small></div>`;
+}
+
+/* ---------- Avisos ---------- */
+
+function csEqRenderAvisos(){
+  const avisos = [];
+  const c = csEqDatos.contexto;
+  const filas = csEqDatos.equipos;
+
+  const zarandas = filas.filter(f => f.tipo_equipo === 'ZARANDA' || f.tipo_equipo === 'LIMPIADOR_LODO');
+  const sumaZarandas = zarandas.reduce((a, f) => a + (csNum(f.datos.porcentaje_recortes) || 0), 0);
+  if(sumaZarandas > 100.001){
+    avisos.push(`Las zarandas y el limpiador de lodo suman ${csFmt(sumaZarandas, 1)} % de recortes; no pueden descargar más del 100 % de lo perforado.`);
+  }
+  filas.filter(f => f.tipo_equipo === 'SECADOR_RECORTES').forEach(f => {
+    const pct = csNum(f.datos.porcentaje_recortes);
+    if(pct !== null && zarandas.length && pct > sumaZarandas + 0.001){
+      avisos.push(`El secador ${csEsc(f.descripcion)} (${csFmt(pct, 1)} %) no puede descargar más que lo que le entregan las zarandas (${csFmt(sumaZarandas, 1)} %). Lo normal está entre 55 y 70 %.`);
+    }
+  });
+  filas.forEach(f => {
+    const h = csNum(f.datos.horas);
+    if(h !== null && h > c.horas_periodo + 0.001){
+      avisos.push(`${csEsc(f.descripcion)} (${csEsc(f.serie)}): ${csFmt(h)} h en operación supera las ${csFmt(c.horas_periodo)} h del período.`);
+    }
+    const hp = csNum(f.datos.horas_parada);
+    if(h !== null && hp !== null && h + hp > c.horas_periodo + 0.001){
+      avisos.push(`${csEsc(f.descripcion)} (${csEsc(f.serie)}): operación + parada (${csFmt(h + hp)} h) supera el período.`);
+    }
+    if(f.es_centrifuga){
+      const rs = csNum(f.datos.densidad_salida), rd = csNum(f.datos.densidad_descarte), re = csNum(f.datos.densidad_entrada);
+      if(rs !== null && rd !== null && rd <= rs){
+        avisos.push(`${csEsc(f.descripcion)} (${csEsc(f.serie)}): la densidad de descarte debe ser mayor que la de salida.`);
+      }
+      if(rs !== null && re !== null && rs > re){
+        avisos.push(`${csEsc(f.descripcion)} (${csEsc(f.serie)}): la densidad de salida es mayor que la de entrada; revisa las lecturas.`);
+      }
+    }
+  });
+  if(c.diametro_in <= 0 && filas.some(f => f.usa_recortes)){
+    avisos.push('Sin diámetro del hoyo no se puede calcular lo que descargan zarandas y secadores. Captura la mecha en la pestaña 2.');
+  }
+
+  document.getElementById('csEqAvisos').innerHTML = avisos.map(a => `<div class="cs-aviso-item">${a}</div>`).join('');
+}
+
+/* ---------- Rendimiento: árbol y ficha ---------- */
+
+function csEqRenderArbol(){
+  const cont = document.getElementById('csEqArbol');
+  const filas = csEqDatos.equipos;
+  if(!filas.length){
+    cont.innerHTML = `<div class="cs-vacio">El pozo no tiene equipos activos.
+      <a href="${csEqDatos.enlaces.equipos_activos}" target="_blank" rel="noopener">Agrégalos en Productos, Equipos y Mallas Activos &rarr;</a></div>`;
+    return;
+  }
+  let html = '';
+  let tipoActual = null;
+  filas.forEach(f => {
+    if(f.tipo_equipo !== tipoActual){
+      if(tipoActual !== null) html += '</div>';
+      tipoActual = f.tipo_equipo;
+      html += `<div class="cs-arbol-grupo"><div class="cs-arbol-tipo">${csEsc(f.tipo_display)}</div>`;
+    }
+    const completo = csNum(f.datos.horas) !== null;
+    html += `<button type="button" class="cs-arbol-item ${f.serie === csEqSel ? 'is-active' : ''} ${f.activo ? '' : 'is-inactivo'}" data-eq-serie="${csEsc(f.serie)}">
+      <span class="cs-arbol-punto ${completo ? 'is-completo' : ''}"></span>
+      <span class="cs-arbol-texto"><strong>${csEsc(f.serie)}</strong> &middot; ${csEsc(f.descripcion)}</span>
+    </button>`;
+  });
+  html += '</div>';
+  cont.innerHTML = html;
+}
+
+function csEqFila(serie){
+  return csEqDatos.equipos.find(e => e.serie === serie) || null;
+}
+
+function csCampo(fila, campo, etiqueta, unidad, opciones = {}){
+  const paso = opciones.paso || 'any';
+  const ayuda = opciones.ayuda ? `<small class="cs-campo-ayuda">${opciones.ayuda}</small>` : '';
+  return `<label class="cs-campo">
+    <span class="cs-campo-label">${etiqueta}${unidad ? ` <em>(${unidad})</em>` : ''}</span>
+    <input type="number" class="report-input cs-eq-input" step="${paso}" min="0"
+           data-eq-serie="${csEsc(fila.serie)}" data-campo="${campo}" value="${csValor(fila.datos[campo])}">
+    ${ayuda}
+  </label>`;
+}
+
+function csEqRenderFicha(){
+  const cont = document.getElementById('csEqFicha');
+  const f = csEqFila(csEqSel);
+  if(!f){
+    cont.innerHTML = '<div class="cs-vacio cs-vacio-centrado">Selecciona un equipo.</div>';
+    return;
+  }
+  const perdidas = '<option value="">— Sin asignar —</option>' + csEqDatos.categorias_perdida.map(cat =>
+    `<option value="${cat.codigo}" ${cat.codigo === f.datos.tipo_perdida_codigo ? 'selected' : ''}>${cat.codigo} · ${csEsc(cat.descripcion)}</option>`
+  ).join('');
+
+  let campos = csCampo(f, 'horas', f.es_centrifuga ? 'Horas centrifugando' : 'Horas en operación', 'h', { paso: '0.25' });
+  if(f.usa_recortes || f.es_centrifuga){
+    campos += csCampo(f, 'mud_on_cuttings', 'Lodo en recortes', 'bbl/bbl',
+      { ayuda: 'De la prueba de retención en recortes o de pozos vecinos.' });
+  }
+  if(f.usa_recortes){
+    campos += csCampo(f, 'porcentaje_recortes', '% de recortes', '%',
+      { ayuda: f.tipo_equipo === 'SECADOR_RECORTES'
+        ? 'Menor que lo que suman las zarandas (normal 55-70 %).'
+        : 'Parte de lo perforado hoy que descarga este equipo. Ej.: 4 zarandas con 80 % → 20 % cada una.' });
+  }
+  if(f.es_centrifuga){
+    campos += csCampo(f, 'caudal_entrada_gpm', 'Caudal de entrada', 'gpm');
+    campos += csCampo(f, 'densidad_entrada', 'Densidad de entrada', 'lb/gal', { paso: '0.01' });
+    campos += csCampo(f, 'densidad_salida', 'Densidad de salida', 'lb/gal', { paso: '0.01' });
+    campos += csCampo(f, 'densidad_descarte', 'Densidad de descarte', 'lb/gal', { paso: '0.01' });
+  }
+  if(f.usa_recortes || f.es_centrifuga){
+    campos += `<label class="cs-campo">
+      <span class="cs-campo-label">Tipo de pérdida</span>
+      <select class="report-input cs-eq-input" data-eq-serie="${csEsc(f.serie)}" data-campo="tipo_perdida_codigo">${perdidas}</select>
+      <small class="cs-campo-ayuda">Categoría en la que entra este lodo en la volumetría (pestaña 8).</small>
+    </label>`;
+  }
+
+  const props = f.propiedades.length
+    ? `<div class="cs-props">${f.propiedades.map((p, i) => `
+        <label class="cs-campo">
+          <span class="cs-campo-label">${csEsc(p.descripcion)}${p.unidad ? ` <em>(${csEsc(p.unidad)})</em>` : ''}${p.fuera_de_configuracion ? ' <em class="cs-tenue">· ya no está en la configuración</em>' : ''}</span>
+          <input type="text" class="report-input cs-eq-prop" maxlength="60" data-eq-serie="${csEsc(f.serie)}" data-prop="${i}" value="${csEsc(p.valor)}">
+        </label>`).join('')}</div>`
+    : `<div class="cs-accion-ayuda">Este tipo de equipo no tiene propiedades adicionales configuradas.
+        <a class="cs-enlace" href="${csEqDatos.enlaces.propiedades}" target="_blank" rel="noopener">Configurarlas en Propiedades de Equipos &rarr;</a></div>`;
+
+  cont.innerHTML = `
+    <div class="cs-card-cabecera">
+      <div>
+        <span class="cs-card-titulo">${csEsc(f.descripcion)}</span>
+        <span class="cs-card-subtitulo">${csEsc(f.tipo_display)} &bull; ${csEsc(f.equipo_nombre)} &bull; Serie ${csEsc(f.serie)}${f.activo ? '' : ' &bull; <strong>ya no está activo en el pozo</strong>'}</span>
+      </div>
+      ${f.heredado ? '<span class="cs-chip-heredado" title="Lodo en recortes, % de recortes, tipo de pérdida y datos de cobro vienen del reporte anterior">Precargado de ayer</span>' : ''}
+    </div>
+    <div class="cs-subtitulo">Datos clave del día</div>
+    <div class="cs-campos">${campos}</div>
+    <div class="cs-resultados" id="csEqResultados"></div>
+    <div class="cs-subtitulo">Propiedades adicionales</div>
+    ${props}`;
+  csEqRenderResultados();
+}
+
+function csEqRenderResultados(){
+  const cont = document.getElementById('csEqResultados');
+  const f = csEqFila(csEqSel);
+  if(!cont || !f) return;
+  const calc = csCalcularRendimiento(f, csEqDatos.contexto.volumen_hoyo_bbl);
+  const horas = csNum(f.datos.horas) || 0;
+  const tile = (etiqueta, dia, acumulado, unidad) => `
+    <div class="cs-resultado">
+      <span>${etiqueta}</span>
+      <strong>${csFmt(dia)} <em>${unidad}</em></strong>
+      ${acumulado !== undefined ? `<small>Acumulado: ${csFmt(acumulado)} ${unidad}</small>` : ''}
+    </div>`;
+  if(f.usa_recortes || f.es_centrifuga){
+    cont.innerHTML =
+      tile('Volumen descargado', calc.descargado, (f.previo.descargado_bbl || 0) + (calc.descargado || 0), 'bbl') +
+      tile('Lodo perdido en los sólidos', calc.lodo, (f.previo.lodo_bbl || 0) + (calc.lodo || 0), 'bbl') +
+      tile('Recortes descargados', calc.recortes, undefined, 'bbl') +
+      (f.es_centrifuga ? tile('Caudal de descarte', calc.qDescarte, undefined, 'gpm') + tile('Caudal de salida', calc.qSalida, undefined, 'gpm') : '') +
+      tile('Horas en el día', horas, (f.previo.horas || 0) + horas, 'h');
+  } else {
+    cont.innerHTML = tile('Horas en el día', horas, (f.previo.horas || 0) + horas, 'h');
+  }
+}
+
+function csEqRenderResumen(){
+  const c = csEqDatos.contexto;
+  const filas = csEqDatos.equipos.filter(f => f.usa_recortes || f.es_centrifuga || csNum(f.datos.horas) !== null);
+  const tbody = document.getElementById('csEqResumen');
+  const porPerdida = {};
+  let totalDesc = 0, totalLodo = 0;
+
+  if(!filas.length){
+    tbody.innerHTML = '<tr class="cs-fila-vacia"><td colspan="8">Sin equipos de control de sólidos.</td></tr>';
+  } else {
+    tbody.innerHTML = filas.map(f => {
+      const r = csCalcularRendimiento(f, c.volumen_hoyo_bbl);
+      totalDesc += r.descargado || 0;
+      totalLodo += r.lodo || 0;
+      const cat = csEqDatos.categorias_perdida.find(x => x.codigo === f.datos.tipo_perdida_codigo);
+      if(r.lodo){
+        const k = cat ? cat.descripcion : 'Sin asignar';
+        porPerdida[k] = (porPerdida[k] || 0) + r.lodo;
+      }
+      return `<tr class="cs-fila-click" data-eq-serie="${csEsc(f.serie)}">
+        <td>${csEsc(f.descripcion)}</td>
+        <td class="cs-codigo">${csEsc(f.serie)}</td>
+        <td class="cs-num">${csFmt(csNum(f.datos.horas))}</td>
+        <td class="cs-num">${f.usa_recortes ? csFmt(csNum(f.datos.porcentaje_recortes), 1) : '—'}</td>
+        <td class="cs-num">${csFmt(csNum(f.datos.mud_on_cuttings), 3)}</td>
+        <td class="cs-num cs-final">${csFmt(r.descargado)}</td>
+        <td class="cs-num cs-final">${csFmt(r.lodo)}</td>
+        <td>${cat ? csEsc(cat.descripcion) : '<span class="cs-tenue">Sin asignar</span>'}</td>
+      </tr>`;
+    }).join('');
+  }
+  document.getElementById('csEqResumenPie').innerHTML = `<tr class="cs-fila-total">
+    <td colspan="5">Total del día</td>
+    <td class="cs-num">${csFmt(totalDesc)}</td>
+    <td class="cs-num">${csFmt(totalLodo)}</td>
+    <td></td></tr>`;
+  document.getElementById('csEqPerdidas').innerHTML = Object.keys(porPerdida).map(k =>
+    `<span class="cs-chip-perdida">${csEsc(k)}: <strong>${csFmt(porPerdida[k])} bbl</strong></span>`).join('');
+}
+
+/* ---------- Costos ---------- */
+
+function csEqRenderCostos(){
+  const soloFluidos = document.getElementById('csEqSoloFluidos').checked;
+  const filas = csEqDatos.equipos.filter(f => !soloFluidos || f.datos.es_fluidos);
+  const tbody = document.getElementById('csEqCostos');
+  if(!filas.length){
+    tbody.innerHTML = `<tr class="cs-fila-vacia"><td colspan="8">${soloFluidos ? 'Ningún equipo está marcado como de fluidos de perforación.' : 'El pozo no tiene equipos activos.'}</td></tr>`;
+  } else {
+    tbody.innerHTML = filas.map(f => {
+      const dia = csCostoDiario(f);
+      const s = csEsc(f.serie);
+      const tarifaNueva = f.tarifas_pozo && f.guardado && f.tarifas_pozo[f.datos.codigo_cobro] !== undefined
+        && Math.abs(f.tarifas_pozo[f.datos.codigo_cobro] - f.tarifa) > 0.004;
+      return `<tr class="${f.datos.codigo_cobro === 'SIN_COBRO' ? 'cs-fila-sin-cobro' : ''}">
+        <td class="cs-codigo">${s}</td>
+        <td>${csEsc(f.descripcion)}${f.activo ? '' : ' <span class="cs-tenue">(inactivo)</span>'}</td>
+        <td class="cs-num"><input type="number" class="cs-input-cant cs-eq-input" min="0" step="1" data-eq-serie="${s}" data-campo="cantidad_usada" value="${csValor(f.datos.cantidad_usada)}"></td>
+        <td><select class="report-input cs-eq-input cs-select-cobro" data-eq-serie="${s}" data-campo="codigo_cobro">
+          <option value="COMPLETO" ${f.datos.codigo_cobro === 'COMPLETO' ? 'selected' : ''}>Cobro completo</option>
+          <option value="STANDBY" ${f.datos.codigo_cobro === 'STANDBY' ? 'selected' : ''}>Stand-by</option>
+          <option value="SIN_COBRO" ${f.datos.codigo_cobro === 'SIN_COBRO' ? 'selected' : ''}>Sin cobro</option>
+        </select></td>
+        <td class="cs-centro"><input type="checkbox" class="cs-eq-input" data-eq-serie="${s}" data-campo="es_fluidos" ${f.datos.es_fluidos ? 'checked' : ''}></td>
+        <td class="cs-num">${csDinero(f.tarifa)}${tarifaNueva ? ` <span class="cs-tenue" title="La tarifa actual del pozo es distinta; este día conserva la tarifa con la que se registró">(pozo: ${csDinero(f.tarifas_pozo[f.datos.codigo_cobro])})</span>` : ''}</td>
+        <td class="cs-num cs-final" data-eq-dia="${s}">${csDinero(dia)}</td>
+        <td class="cs-num" data-eq-acum="${s}">${csDinero((f.previo.costo || 0) + dia)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  csEqRenderCostosTotales();
+}
+
+function csEqRenderCostosTotales(){
+  let totalDia = 0, totalAcum = 0, fluDia = 0, fluAcum = 0;
+  csEqDatos.equipos.forEach(f => {
+    const dia = csCostoDiario(f);
+    const acum = (f.previo.costo || 0) + dia;
+    totalDia += dia; totalAcum += acum;
+    if(f.datos.es_fluidos){ fluDia += dia; fluAcum += acum; }
+    const celdaDia = document.querySelector(`[data-eq-dia="${CSS.escape(f.serie)}"]`);
+    if(celdaDia) celdaDia.textContent = csDinero(dia);
+    const celdaAcum = document.querySelector(`[data-eq-acum="${CSS.escape(f.serie)}"]`);
+    if(celdaAcum) celdaAcum.textContent = csDinero(acum);
+  });
+  document.getElementById('csEqCostosPie').innerHTML = `
+    <tr class="cs-fila-total cs-fila-subtotal"><td colspan="6">Fluidos de perforación</td>
+      <td class="cs-num">${csDinero(fluDia)}</td><td class="cs-num">${csDinero(fluAcum)}</td></tr>
+    <tr class="cs-fila-total"><td colspan="6">Total</td>
+      <td class="cs-num">${csDinero(totalDia)}</td><td class="cs-num">${csDinero(totalAcum)}</td></tr>`;
+}
+
+/* ---------- Uso y paradas ---------- */
+
+function csEqRenderUso(){
+  const tbody = document.getElementById('csEqUso');
+  const filas = csEqDatos.equipos;
+  if(!filas.length){
+    tbody.innerHTML = '<tr class="cs-fila-vacia"><td colspan="5">El pozo no tiene equipos activos.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filas.map(f => {
+    const s = csEsc(f.serie);
+    return `<tr>
+      <td class="cs-codigo">${s}</td>
+      <td>${csEsc(f.descripcion)}</td>
+      <td class="cs-num">${csFmt(csNum(f.datos.horas))}</td>
+      <td class="cs-num"><input type="number" class="cs-input-cant cs-eq-input" min="0" max="48" step="0.25" data-eq-serie="${s}" data-campo="horas_parada" value="${csValor(f.datos.horas_parada)}"></td>
+      <td><input type="text" class="report-input cs-eq-input cs-input-obs" maxlength="500" data-eq-serie="${s}" data-campo="observaciones" value="${csEsc(f.datos.observaciones || '')}" placeholder="Ej.: cambio de rodamientos, espera de repuesto"></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ---------- Guardar ---------- */
+
+async function guardarUsoEquipos(silent = false){
+  if(!csEqListo){
+    if(!silent) showToast('El detalle de equipos todavía no terminó de cargar.', false);
+    return;
+  }
+  const payload = {
+    equipos: csEqDatos.equipos.map(f => Object.assign({ serie: f.serie, propiedades: f.propiedades }, f.datos))
+  };
+  try {
+    const res = await fetch(CS_BASE + 'equipos/guardar/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(data.ok){
+      csEqAplicar(data);
+      if(!silent) showToast(data.mensaje || 'Detalle de equipos guardado.');
+    } else {
+      showToast(data.error || 'No se pudo guardar el detalle de equipos.', false);
+    }
+  } catch(e){
+    showToast('Error de conexión al guardar el detalle de equipos.', false);
+  }
+}
+
+/* ---------- Eventos ---------- */
+
+document.addEventListener('DOMContentLoaded', function(){
+  const vista = document.getElementById('csVistaEquipos');
+  if(!vista) return;
+
+  document.querySelectorAll('.cs-eq-tab').forEach(b =>
+    b.addEventListener('click', () => csEqCambiarVista(b.dataset.eqVista)));
+  document.getElementById('csEqGuardar').addEventListener('click', () => guardarUsoEquipos());
+  document.getElementById('csEqSoloFluidos').addEventListener('change', csEqRenderCostos);
+
+  vista.addEventListener('click', function(ev){
+    const item = ev.target.closest('.cs-arbol-item, .cs-fila-click');
+    if(item && item.dataset.eqSerie){
+      csEqSel = item.dataset.eqSerie;
+      csEqRenderArbol();
+      csEqRenderFicha();
+    }
+  });
+
+  function actualizarCampo(el, alTerminar){
+    const fila = csEqFila(el.dataset.eqSerie);
+    if(!fila) return;
+    if(el.classList.contains('cs-eq-prop')){
+      fila.propiedades[parseInt(el.dataset.prop, 10)].valor = el.value;
+      csMarcarSucio();
+      return;
+    }
+    const campo = el.dataset.campo;
+    if(!campo) return;
+    let valor;
+    if(el.type === 'checkbox') valor = el.checked;
+    else if(campo === 'tipo_perdida_codigo') valor = el.value ? parseInt(el.value, 10) : null;
+    else if(campo === 'codigo_cobro' || campo === 'observaciones') valor = el.value;
+    else valor = el.value === '' ? null : el.value;
+    fila.datos[campo] = valor;
+    if(campo === 'codigo_cobro'){
+      // Al cambiar el código, la tarifa pasa a la vigente del pozo para ese código.
+      fila.tarifa = valor === 'SIN_COBRO' ? 0 : (fila.tarifas_pozo ? (fila.tarifas_pozo[valor] || 0) : fila.tarifa);
+    }
+    csMarcarSucio();
+    if(alTerminar) alTerminar(campo);
+  }
+
+  // Mientras se escribe solo se recalculan resultados y totales: el campo activo no se redibuja.
+  vista.addEventListener('input', function(ev){
+    const el = ev.target;
+    if(el.tagName === 'SELECT' || el.type === 'checkbox') return;  // esos se atienden en 'change'
+    if(!el.classList.contains('cs-eq-input') && !el.classList.contains('cs-eq-prop')) return;
+    actualizarCampo(el, function(){
+      csEqRenderAvisos();
+      if(csEqVista === 'rendimiento'){
+        csEqRenderResultados();
+        csEqRenderResumen();
+      } else if(csEqVista === 'costos'){
+        csEqRenderCostosTotales();
+      }
+    });
+  });
+
+  vista.addEventListener('change', function(ev){
+    const el = ev.target;
+    if(el.tagName === 'SELECT' || el.type === 'checkbox'){
+      if(!el.classList.contains('cs-eq-input')) return;
+      actualizarCampo(el, function(){ csEqRenderTodo(); });
+    } else if(el.classList.contains('cs-eq-input') && el.dataset.campo === 'horas'){
+      csEqRenderArbol();
     }
   });
 });

@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
         CENTRIFUGA: 'Centrífuga',
         LIMPIADOR_LODO: 'Limpiador de Lodo (Mud Cleaner)',
         ZARANDA: 'Zaranda (Shale Shaker)',
+        SECADOR_RECORTES: 'Secador de Recortes (Cuttings Dryer)',
         SISTEMA_VACIO: 'Sistema de Vacío',
         CONTENEDOR_RECORTES: 'Contenedor de Recortes',
         OTROS: 'Otros',

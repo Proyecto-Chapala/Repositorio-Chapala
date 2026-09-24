@@ -78,6 +78,8 @@ urlpatterns = [
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/ticket/<int:ticket_pk>/eliminar/', views_control_solidos.api_ticket_malla_eliminar, name='api_ticket_malla_eliminar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/tipo-ticket/guardar/', views_control_solidos.api_tipo_ticket_malla_guardar, name='api_tipo_ticket_malla_guardar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/tipo-ticket/<int:tipo_pk>/eliminar/', views_control_solidos.api_tipo_ticket_malla_eliminar, name='api_tipo_ticket_malla_eliminar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/equipos/', views_control_solidos.api_uso_equipos_detail, name='api_uso_equipos_detail'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/equipos/guardar/', views_control_solidos.api_uso_equipos_guardar, name='api_uso_equipos_guardar'),
 
     # --- Well Header Information ---
 

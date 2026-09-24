@@ -200,3 +200,81 @@ def simular(reportes, reporte_objetivo_id=None, nombres_malla=None):
             'usadas': dict(usadas),
         }
     return resultado
+
+
+# =====================================================================
+# Fase 2 — Rendimiento de los equipos de control de sólidos
+#
+# Fórmulas verificadas con los tres ejemplos del manual (págs. 118-120):
+#   - Lo que descarga un equipo son recortes + el lodo pegado a ellos. Con
+#     MOC = lodo / recortes:  lodo = descargado × MOC / (1 + MOC)
+#     (1 → 0.6 con MOC 1.463; 9.2 → 4.2 con 0.855; 2.2 → 0.4 con 0.214).
+#   - Zarandas, limpiador de lodo y secador: recortes = volumen de hoyo perforado
+#     en el día × % de recortes; descargado = recortes × (1 + MOC).
+#   - Centrífuga, por balance de masa: Q_descarte = Q_entrada × (ρe − ρs) / (ρd − ρs);
+#     descargado = Q_descarte × horas (18.9 × 0.07 / 0.72 = 1.84 gpm; × 22 h = 9.2 m³).
+# Espejo en JavaScript: reporte_control_solidos.js (csCalcularRendimiento).
+# =====================================================================
+
+CAPACIDAD_CONSTANTE = 1029.4       # in² → bbl/ft
+GALONES_POR_BARRIL = 42.0
+
+TIPOS_POR_RECORTES = ('ZARANDA', 'LIMPIADOR_LODO', 'SECADOR_RECORTES')
+TIPOS_CENTRIFUGA = ('CENTRIFUGA',)
+
+
+def volumen_hoyo_perforado(diametro_in, avance_ft):
+    """Volumen (bbl) del hoyo abierto perforado en el día."""
+    d = float(diametro_in or 0)
+    avance = float(avance_ft or 0)
+    if d <= 0 or avance <= 0:
+        return 0.0
+    return d * d / CAPACIDAD_CONSTANTE * avance
+
+
+def _f(valor):
+    try:
+        return float(valor) if valor not in (None, '') else None
+    except (TypeError, ValueError):
+        return None
+
+
+def calcular_rendimiento(tipo_equipo, datos, vol_hoyo_bbl):
+    """
+    datos: dict con horas, mud_on_cuttings, porcentaje_recortes, caudal_entrada_gpm,
+    densidad_entrada, densidad_salida, densidad_descarte (pueden venir vacíos).
+    Devuelve los volúmenes del día en bbl (None cuando falta un dato para calcular).
+    """
+    moc = _f(datos.get('mud_on_cuttings')) or 0.0
+    horas = _f(datos.get('horas')) or 0.0
+    r = {
+        'recortes_bbl': None, 'descargado_bbl': None, 'lodo_bbl': None,
+        'caudal_descarte_gpm': None, 'caudal_salida_gpm': None,
+    }
+
+    if tipo_equipo in TIPOS_POR_RECORTES:
+        pct = _f(datos.get('porcentaje_recortes'))
+        if pct is None:
+            return r
+        recortes = vol_hoyo_bbl * pct / 100.0
+        r['recortes_bbl'] = recortes
+        r['descargado_bbl'] = recortes * (1.0 + moc)
+        r['lodo_bbl'] = recortes * moc
+
+    elif tipo_equipo in TIPOS_CENTRIFUGA:
+        q_in = _f(datos.get('caudal_entrada_gpm'))
+        rho_e = _f(datos.get('densidad_entrada'))
+        rho_s = _f(datos.get('densidad_salida'))
+        rho_d = _f(datos.get('densidad_descarte'))
+        if None in (q_in, rho_e, rho_s, rho_d) or rho_d <= rho_s:
+            return r
+        q_desc = q_in * (rho_e - rho_s) / (rho_d - rho_s)
+        q_desc = min(max(q_desc, 0.0), q_in)
+        descargado = q_desc * horas * 60.0 / GALONES_POR_BARRIL
+        r['caudal_descarte_gpm'] = q_desc
+        r['caudal_salida_gpm'] = q_in - q_desc
+        r['descargado_bbl'] = descargado
+        r['lodo_bbl'] = descargado * moc / (1.0 + moc)
+        r['recortes_bbl'] = descargado - r['lodo_bbl']
+
+    return r

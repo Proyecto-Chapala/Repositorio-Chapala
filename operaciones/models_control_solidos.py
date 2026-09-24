@@ -212,3 +212,105 @@ class TransaccionMalla(models.Model):
             'posicion': self.posicion,
             'precio_unitario': float(self.precio_unitario),
         }
+
+
+# =====================================================================
+# Fase 2 — Detalle y uso de equipos (ONE-TRAX: Equipment Details and Usage)
+# =====================================================================
+
+class UsoEquipoDia(models.Model):
+    """
+    Lo que hizo un equipo del pozo en el día: rendimiento, costo de renta y paradas.
+
+    Solo se guardan los datos que captura el ingeniero; los volúmenes descargados, el lodo
+    perdido en los sólidos y todos los acumulados se CALCULAN (control_solidos.py), porque
+    dependen de la profundidad y del diámetro del hoyo, que pueden corregirse después en
+    las pestañas 1 y 2.
+
+    El equipo se identifica por el catálogo maestro + su número de serie (la lista de equipos
+    activos del pozo se guarda recreando filas). El tipo de pérdida se guarda por código del
+    catálogo de pérdidas del pozo, con copia de la descripción, por la misma razón.
+    """
+
+    COBRO_COMPLETO = 'COMPLETO'
+    COBRO_STANDBY = 'STANDBY'
+    COBRO_SIN = 'SIN_COBRO'
+    COBRO_CHOICES = [
+        (COBRO_COMPLETO, 'Cobro completo'),
+        (COBRO_STANDBY, 'Stand-by'),
+        (COBRO_SIN, 'Sin cobro'),
+    ]
+
+    reporte = models.ForeignKey(ReporteDiario, on_delete=models.CASCADE, related_name='usos_equipo')
+    equipo = models.ForeignKey(Equipo, on_delete=models.PROTECT, related_name='usos_diarios')
+    equipo_serie = models.CharField(max_length=30, verbose_name="N° de Serie")
+    equipo_descripcion = models.CharField(max_length=150, blank=True, verbose_name="Equipo")
+    tipo_equipo = models.CharField(max_length=25, blank=True, verbose_name="Tipo de Equipo")
+
+    # --- Rendimiento (datos clave del día) ---
+    horas = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Horas en operación")
+    mud_on_cuttings = models.DecimalField(
+        max_digits=8, decimal_places=3, null=True, blank=True, verbose_name="Lodo en recortes (bbl/bbl)",
+        help_text="Volumen de lodo que sale pegado a cada volumen de recortes descargados."
+    )
+    porcentaje_recortes = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="% de recortes",
+        help_text="Qué parte del hoyo perforado en el día descarga este equipo (100 % = todo)."
+    )
+    tipo_perdida_codigo = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Tipo de pérdida (código)")
+    tipo_perdida_descripcion = models.CharField(max_length=100, blank=True, verbose_name="Tipo de pérdida")
+    # Solo centrífugas
+    caudal_entrada_gpm = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, verbose_name="Caudal de entrada (gpm)")
+    densidad_entrada = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True, verbose_name="Densidad de entrada (lb/gal)")
+    densidad_salida = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True, verbose_name="Densidad de salida (lb/gal)")
+    densidad_descarte = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True, verbose_name="Densidad de descarte (lb/gal)")
+
+    # --- Costos ---
+    cantidad_usada = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name="Cantidad usada")
+    codigo_cobro = models.CharField(max_length=10, choices=COBRO_CHOICES, default=COBRO_COMPLETO, verbose_name="Código de cobro")
+    tarifa = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0, verbose_name="Tarifa aplicada",
+        help_text="Copia de la tarifa del pozo (renta o stand-by) el día que se registró."
+    )
+    es_fluidos = models.BooleanField(default=False, verbose_name="¿Equipo de fluidos de perforación?")
+
+    # --- Uso y paradas ---
+    horas_parada = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Horas de parada")
+    observaciones = models.TextField(blank=True, verbose_name="Observaciones de uso")
+
+    class Meta:
+        verbose_name = "Uso Diario de Equipo"
+        verbose_name_plural = "Usos Diarios de Equipos"
+        unique_together = ('reporte', 'equipo_serie')
+        ordering = ['tipo_equipo', 'equipo_serie']
+
+    def __str__(self):
+        return f"{self.reporte} - {self.equipo_serie}"
+
+    @property
+    def costo_diario(self):
+        if self.codigo_cobro == self.COBRO_SIN:
+            return 0.0
+        return round(float(self.cantidad_usada or 0) * float(self.tarifa or 0), 2)
+
+
+class UsoEquipoPropiedad(models.Model):
+    """
+    Valor del día de una propiedad adicional del equipo (las definidas en Equipment
+    Properties Setup: ángulo de la canasta, fuerza G, velocidad del tazón, etc.).
+    Se guarda por descripción: esa configuración también se guarda recreando filas.
+    """
+
+    uso = models.ForeignKey(UsoEquipoDia, on_delete=models.CASCADE, related_name='propiedades')
+    orden = models.PositiveSmallIntegerField(default=0)
+    descripcion = models.CharField(max_length=100, verbose_name="Propiedad")
+    unidad = models.CharField(max_length=30, blank=True, verbose_name="Unidad")
+    valor = models.CharField(max_length=60, blank=True, verbose_name="Valor")
+
+    class Meta:
+        verbose_name = "Propiedad Diaria de Equipo"
+        verbose_name_plural = "Propiedades Diarias de Equipos"
+        ordering = ['orden', 'id']
+
+    def __str__(self):
+        return f"{self.uso} - {self.descripcion}: {self.valor}"

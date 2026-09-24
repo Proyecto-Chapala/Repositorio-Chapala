@@ -984,6 +984,361 @@
   color: var(--color-red);
 }
 
+/* =====================================================================
+   3. DETALLE Y USO DE EQUIPOS
+   ===================================================================== */
+
+.cs-tag-pendiente {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* Contexto del hoyo */
+.cs-eq-contexto {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  padding: 10px 14px;
+}
+
+.cs-eq-dato {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-border);
+}
+
+.cs-eq-dato span {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.cs-eq-dato strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cs-eq-dato small {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.cs-eq-dato-destacado {
+  border-left-color: var(--color-orange);
+  background: var(--color-orange-soft-bg);
+  border-radius: 0 8px 8px 0;
+}
+
+.cs-eq-dato-alerta {
+  border-left-color: var(--color-red);
+}
+
+.cs-eq-dato-alerta strong {
+  color: var(--stock-bajo-text);
+}
+
+/* Barra con sub-pestañas y guardar */
+.cs-eq-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.cs-eq-tabs {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 9px;
+  background: #e9edf3;
+}
+
+.cs-eq-tab {
+  height: 30px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cs-eq-tab.is-active {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-btn-outline);
+}
+
+.cs-eq-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cs-eq-estado {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* Avisos */
+.cs-avisos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.cs-aviso-item {
+  padding: 6px 12px;
+  border: 1px solid #fde68a;
+  border-left: 3px solid #f59e0b;
+  border-radius: 6px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 12px;
+}
+
+/* Árbol de equipos */
+.cs-eq-arbol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cs-arbol-tipo {
+  margin-bottom: 3px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.cs-arbol-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.cs-arbol-item:hover {
+  background: #f8fafc;
+  border-color: var(--color-border);
+}
+
+.cs-arbol-item.is-active {
+  border-color: var(--color-orange);
+  background: var(--color-orange-soft-bg);
+}
+
+.cs-arbol-item.is-inactivo {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.cs-arbol-punto {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border-dark);
+}
+
+.cs-arbol-punto.is-completo {
+  border-color: #16a34a;
+  background: #16a34a;
+}
+
+.cs-arbol-texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ficha del equipo */
+.cs-subtitulo {
+  margin: 12px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.cs-campos,
+.cs-props {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px 14px;
+}
+
+.cs-campo-label em {
+  font-style: normal;
+  font-weight: 600;
+  text-transform: none;
+  color: var(--color-text-muted);
+}
+
+.cs-campo-ayuda {
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+.cs-resultados {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cs-resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid #fde7c8;
+  border-radius: 8px;
+  background: #fffaf3;
+}
+
+.cs-resultado span {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #9a5b1e;
+}
+
+.cs-resultado strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cs-resultado strong em {
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.cs-resultado small {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.cs-chip-heredado {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cs-enlace {
+  color: var(--color-orange);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cs-enlace:hover {
+  text-decoration: underline;
+}
+
+/* Resumen y pérdidas */
+.cs-eq-perdidas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.cs-chip-perdida {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--stock-bajo-bg);
+  color: var(--stock-bajo-text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cs-fila-click {
+  cursor: pointer;
+}
+
+/* Costos y uso */
+.cs-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cs-centro {
+  text-align: center !important;
+}
+
+.cs-select-cobro {
+  min-width: 140px;
+  height: 28px;
+}
+
+.cs-fila-sin-cobro td {
+  color: var(--color-text-muted);
+}
+
+.cs-fila-subtotal td {
+  background: #fffaf3;
+  border-top-width: 1px;
+}
+
+.cs-input-obs {
+  min-width: 320px;
+  height: 28px;
+}
+
+@media (max-width: 1100px) {
+  .cs-eq-contexto {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .cs-eq-contexto {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* ---------- Responsivo ---------- */
 @media (max-width: 1100px) {
   .cs-tr-grid,

@@ -1676,9 +1676,9 @@
         <button type="button" class="cs-subnav-btn" data-vista="transacciones">
           <span class="cs-subnav-num">2</span><span>Transacciones de mallas</span>
         </button>
-        <button type="button" class="cs-subnav-btn" disabled title="Se construye en el siguiente segmento">
+        <button type="button" class="cs-subnav-btn" data-vista="equipos">
           <span class="cs-subnav-num">3</span><span>Detalle y uso de equipos</span>
-          <span class="cs-subnav-tag">Próximamente</span>
+          <span class="cs-subnav-tag cs-tag-pendiente" id="csEqTagCambios" hidden>Sin guardar</span>
         </button>
       </div>
       <div class="cs-subnav-grupo cs-subnav-opcionales">
@@ -1787,6 +1787,124 @@
         <div class="report-card-modern">
           <div class="cs-card-titulo">Almacén de mallas usadas</div>
           <div id="csAlmacenUsadas"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3. DETALLE Y USO DE EQUIPOS ============ -->
+    <section class="cs-vista" id="csVistaEquipos" hidden>
+
+      <div class="report-card-modern cs-eq-contexto" id="csEqContexto"></div>
+
+      <div class="cs-eq-barra">
+        <div class="cs-eq-tabs" role="tablist">
+          <button type="button" class="cs-eq-tab is-active" data-eq-vista="rendimiento">Rendimiento</button>
+          <button type="button" class="cs-eq-tab" data-eq-vista="costos">Costos de renta</button>
+          <button type="button" class="cs-eq-tab" data-eq-vista="uso">Uso y paradas</button>
+        </div>
+        <div class="cs-eq-acciones">
+          <span class="cs-eq-estado" id="csEqEstado"></span>
+          <button type="button" class="btn-modern-primary btn-sm" id="csEqGuardar">
+            <span>&#128190;</span><span>Guardar equipos</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="cs-avisos" id="csEqAvisos"></div>
+
+      <!-- Rendimiento -->
+      <div class="cs-eq-panel" id="csEqPanelRendimiento">
+        <div class="cs-tr-grid">
+          <div class="report-card-modern">
+            <div class="cs-card-titulo">Equipos del pozo</div>
+            <div class="cs-eq-arbol" id="csEqArbol"></div>
+          </div>
+          <div class="report-card-modern" id="csEqFicha"></div>
+        </div>
+
+        <div class="report-card-modern">
+          <div class="cs-card-cabecera">
+            <span class="cs-card-titulo">Resumen del día por equipo</span>
+            <span class="cs-eq-perdidas" id="csEqPerdidas"></span>
+          </div>
+          <div class="cs-tabla-wrapper">
+            <table class="cs-tabla">
+              <thead>
+                <tr>
+                  <th>Equipo</th>
+                  <th>Serie</th>
+                  <th class="cs-num">Horas</th>
+                  <th class="cs-num">% recortes</th>
+                  <th class="cs-num">Lodo en recortes</th>
+                  <th class="cs-num">Descargado (bbl)</th>
+                  <th class="cs-num">Lodo perdido (bbl)</th>
+                  <th>Tipo de pérdida</th>
+                </tr>
+              </thead>
+              <tbody id="csEqResumen"></tbody>
+              <tfoot id="csEqResumenPie"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Costos de renta -->
+      <div class="cs-eq-panel" id="csEqPanelCostos" hidden>
+        <div class="report-card-modern">
+          <div class="cs-card-cabecera">
+            <div>
+              <span class="cs-card-titulo">Costos de renta del día</span>
+              <span class="cs-card-subtitulo">Costo diario = cantidad usada &times; tarifa del código de cobro. Las tarifas vienen de los equipos activos del pozo.</span>
+            </div>
+            <label class="cs-check">
+              <input type="checkbox" id="csEqSoloFluidos">
+              <span>Solo equipos de fluidos de perforación</span>
+            </label>
+          </div>
+          <div class="cs-tabla-wrapper">
+            <table class="cs-tabla">
+              <thead>
+                <tr>
+                  <th>Serie</th>
+                  <th>Equipo</th>
+                  <th class="cs-num">Cantidad usada</th>
+                  <th>Código de cobro</th>
+                  <th class="cs-centro">Fluidos</th>
+                  <th class="cs-num">Tarifa</th>
+                  <th class="cs-num">Diario</th>
+                  <th class="cs-num">Acumulado</th>
+                </tr>
+              </thead>
+              <tbody id="csEqCostos"></tbody>
+              <tfoot id="csEqCostosPie"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Uso y paradas -->
+      <div class="cs-eq-panel" id="csEqPanelUso" hidden>
+        <div class="report-card-modern">
+          <div class="cs-card-cabecera">
+            <div>
+              <span class="cs-card-titulo">Uso y tiempo de parada</span>
+              <span class="cs-card-subtitulo">Horas que el equipo estuvo parado y el motivo (falla, mantenimiento, espera).</span>
+            </div>
+          </div>
+          <div class="cs-tabla-wrapper">
+            <table class="cs-tabla">
+              <thead>
+                <tr>
+                  <th>Serie</th>
+                  <th>Equipo</th>
+                  <th class="cs-num">Horas en operación</th>
+                  <th class="cs-num">Horas de parada</th>
+                  <th>Observaciones</th>
+                </tr>
+              </thead>
+              <tbody id="csEqUso"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -2644,6 +2762,7 @@ function switchTab(tabNum){
     else if(prevTab === 3) guardarMudProperties(true);
     else if(prevTab === 4 && wgListo) guardarWellGeometry(true);
     else if(prevTab === 5 && cmListo) guardarComentarios(true);
+    else if(prevTab === 6 && typeof csEqPendiente === 'function' && csEqPendiente()) guardarUsoEquipos(true);
     else if(prevTab === 7 && typeof ttListo !== 'undefined' && ttListo) guardarTiempo(true);
   }
 
@@ -2744,7 +2863,12 @@ async function guardarPestanaActiva() {
   } else if (currentTabNum === 5) {
     await guardarComentarios();
   } else if (currentTabNum === 6) {
-    showToast('En Control de Sólidos cada movimiento y cada ticket se guardan al registrarlos.');
+    // Las mallas y los tickets se guardan al registrarlos; el detalle de equipos es un formulario.
+    if (typeof csEqPendiente === 'function' && (csEqPendiente() || csVista === 'equipos')) {
+      await guardarUsoEquipos();
+    } else {
+      showToast('En Control de Sólidos cada movimiento y cada ticket se guardan al registrarlos.');
+    }
   } else if (currentTabNum === 7) {
     await guardarTiempo();
   } else {

@@ -21,12 +21,16 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from .models import Pozo, MallaZaranda
+from .models import Pozo, MallaZaranda, Equipo, PropiedadEquipoTipo
 from .models_daily_reports import ReporteDiario
 from .models_control_solidos import (
     TipoTicketMalla, TicketMalla, TicketMallaDetalle, TransaccionMalla,
+    UsoEquipoDia, UsoEquipoPropiedad,
 )
-from .control_solidos import simular, ErrorMallas
+from .control_solidos import (
+    simular, ErrorMallas, volumen_hoyo_perforado, calcular_rendimiento,
+    TIPOS_POR_RECORTES, TIPOS_CENTRIFUGA,
+)
 
 
 class _Rechazo(Exception):
@@ -529,3 +533,335 @@ def api_tipo_ticket_malla_eliminar(request, pk, reporte_pk, tipo_pk):
     except (ProtectedError, RestrictedError):
         return _error(f"El tipo '{tipo.nombre}' ya se usa en tickets; no se puede eliminar.")
     return _respuesta(pozo, reporte, 'Tipo de ticket eliminado.')
+
+
+# =====================================================================
+# Fase 2 — Detalle y uso de equipos
+# =====================================================================
+
+# Orden del árbol de equipos (el mismo de ONE-TRAX: centrífugas, limpiador, zarandas...).
+ORDEN_TIPOS = ['CENTRIFUGA', 'LIMPIADOR_LODO', 'ZARANDA', 'SECADOR_RECORTES',
+               'OTROS', 'SISTEMA_VACIO', 'CONTENEDOR_RECORTES']
+
+# Tipo de pérdida sugerido por tipo de equipo (códigos estándar de Configuración de Pérdidas).
+PERDIDA_SUGERIDA = {'ZARANDA': 1, 'SECADOR_RECORTES': 2, 'CENTRIFUGA': 3, 'LIMPIADOR_LODO': 12}
+
+# Datos que se heredan del día anterior al abrir un reporte nuevo (casi no cambian).
+CAMPOS_HEREDADOS = ('mud_on_cuttings', 'porcentaje_recortes', 'tipo_perdida_codigo',
+                    'cantidad_usada', 'codigo_cobro', 'es_fluidos')
+
+# (campo, etiqueta, mínimo, máximo) de los datos numéricos del día.
+CAMPOS_NUMERICOS = (
+    ('horas', 'Horas en operación', 0, 48),
+    ('mud_on_cuttings', 'Lodo en recortes', 0, 20),
+    ('porcentaje_recortes', '% de recortes', 0, 100),
+    ('caudal_entrada_gpm', 'Caudal de entrada', 0, 5000),
+    ('densidad_entrada', 'Densidad de entrada', 0, 30),
+    ('densidad_salida', 'Densidad de salida', 0, 30),
+    ('densidad_descarte', 'Densidad de descarte', 0, 30),
+    ('horas_parada', 'Horas de parada', 0, 48),
+)
+
+
+def _num(valor):
+    return float(valor) if valor is not None else None
+
+
+def _contexto_hoyo(reporte, anterior):
+    """Avance del día, diámetro del hoyo y volumen de hoyo perforado (bbl)."""
+    profundidad = float(reporte.profundidad_actual or 0)
+    profundidad_anterior = float(anterior.profundidad_actual or 0) if anterior else 0.0
+    avance = max(profundidad - profundidad_anterior, 0.0)
+
+    diametro = 0.0
+    fuente = ''
+    bit = getattr(reporte, 'bit_data', None)
+    if bit:
+        diametro = float(bit.washout_hole_size or 0) or float(bit.bit_size or 0)
+        fuente = 'pestaña 2 (mecha con lavado)' if diametro else ''
+    if diametro <= 0 and reporte.intervalo_costo_id:
+        diametro = float(reporte.intervalo_costo.hole_size_in or 0)
+        fuente = 'intervalo de revestimiento' if diametro else ''
+
+    return {
+        'profundidad_ft': profundidad,
+        'profundidad_anterior_ft': profundidad_anterior,
+        'hay_reporte_anterior': anterior is not None,
+        'avance_ft': avance,
+        'diametro_in': diametro,
+        'fuente_diametro': fuente,
+        'volumen_hoyo_bbl': volumen_hoyo_perforado(diametro, avance),
+    }
+
+
+def _datos_uso(uso):
+    return {
+        'horas': _num(uso.horas),
+        'mud_on_cuttings': _num(uso.mud_on_cuttings),
+        'porcentaje_recortes': _num(uso.porcentaje_recortes),
+        'tipo_perdida_codigo': uso.tipo_perdida_codigo,
+        'caudal_entrada_gpm': _num(uso.caudal_entrada_gpm),
+        'densidad_entrada': _num(uso.densidad_entrada),
+        'densidad_salida': _num(uso.densidad_salida),
+        'densidad_descarte': _num(uso.densidad_descarte),
+        'cantidad_usada': float(uso.cantidad_usada or 0),
+        'codigo_cobro': uso.codigo_cobro,
+        'es_fluidos': uso.es_fluidos,
+        'horas_parada': _num(uso.horas_parada),
+        'observaciones': uso.observaciones,
+    }
+
+
+def _tarifa_actual(equipo_activo, codigo_cobro):
+    if equipo_activo is None or codigo_cobro == UsoEquipoDia.COBRO_SIN:
+        return 0.0
+    if codigo_cobro == UsoEquipoDia.COBRO_STANDBY:
+        return float(equipo_activo.precio_standby or 0)
+    return float(equipo_activo.precio_renta or 0)
+
+
+def _acumulados_previos(pozo, reporte):
+    """Horas, volúmenes y costos de los días ANTERIORES, por número de serie."""
+    previos = {}
+    anterior = None
+    reportes = (
+        pozo.reportes_diarios.filter(fecha__lt=reporte.fecha).order_by('fecha')
+        .select_related('bit_data', 'intervalo_costo').prefetch_related('usos_equipo')
+    )
+    for rep in reportes:
+        vol = _contexto_hoyo(rep, anterior)['volumen_hoyo_bbl']
+        for uso in rep.usos_equipo.all():
+            calc = calcular_rendimiento(uso.tipo_equipo, _datos_uso(uso), vol)
+            acc = previos.setdefault(uso.equipo_serie, {'horas': 0.0, 'descargado_bbl': 0.0,
+                                                         'lodo_bbl': 0.0, 'costo': 0.0})
+            acc['horas'] += float(uso.horas or 0)
+            acc['descargado_bbl'] += calc['descargado_bbl'] or 0.0
+            acc['lodo_bbl'] += calc['lodo_bbl'] or 0.0
+            acc['costo'] += uso.costo_diario
+        anterior = rep
+    return previos
+
+
+def _propiedades_por_tipo(pozo):
+    """Propiedades adicionales configuradas en Equipment Properties Setup, por tipo."""
+    por_tipo = {}
+    seleccionadas = (
+        pozo.propiedades_equipo_seleccionadas.select_related('propiedad')
+        .order_by('tipo_equipo', 'propiedad__orden', 'propiedad__descripcion')
+    )
+    for sel in seleccionadas:
+        por_tipo.setdefault(sel.tipo_equipo, []).append(
+            {'descripcion': sel.propiedad.descripcion, 'unidad': sel.propiedad.unidad})
+    for extra in pozo.propiedades_equipo_extra.all():
+        por_tipo.setdefault(extra.tipo_equipo, []).append(
+            {'descripcion': extra.descripcion, 'unidad': extra.unidad})
+    return por_tipo
+
+
+def _resumen_equipos(pozo, reporte):
+    anterior = pozo.reportes_diarios.filter(fecha__lt=reporte.fecha).order_by('-fecha').first()
+    contexto = _contexto_hoyo(reporte, anterior)
+    tiempo = getattr(reporte, 'distribucion_tiempo', None)
+    contexto['horas_periodo'] = float(tiempo.horas_periodo) if tiempo else 24.0
+
+    categorias = [{'codigo': c.codigo, 'descripcion': c.descripcion}
+                  for c in pozo.categorias_perdida.all().order_by('codigo')]
+    codigos_perdida = {c['codigo'] for c in categorias}
+
+    previos = _acumulados_previos(pozo, reporte)
+    propiedades_tipo = _propiedades_por_tipo(pozo)
+    tipos_display = dict(Equipo.TIPO_EQUIPO_CHOICES)
+
+    hoy = {u.equipo_serie: u for u in reporte.usos_equipo.prefetch_related('propiedades')}
+    ultimo_previo = {}
+    if anterior:
+        for uso in UsoEquipoDia.objects.filter(
+                reporte__pozo=pozo, reporte__fecha__lt=reporte.fecha).order_by('reporte__fecha'):
+            ultimo_previo[uso.equipo_serie] = uso
+
+    def fila(serie, equipo, descripcion, equipo_activo, uso):
+        tipo = equipo.tipo_equipo
+        if uso:
+            datos = _datos_uso(uso)
+            tarifa = float(uso.tarifa or 0)
+            valores_prop = {p.descripcion: p.valor for p in uso.propiedades.all()}
+            heredado = False
+        else:
+            base = ultimo_previo.get(serie)
+            datos = {
+                'horas': None, 'mud_on_cuttings': None, 'porcentaje_recortes': None,
+                'tipo_perdida_codigo': PERDIDA_SUGERIDA.get(tipo) if PERDIDA_SUGERIDA.get(tipo) in codigos_perdida else None,
+                'caudal_entrada_gpm': None, 'densidad_entrada': None, 'densidad_salida': None,
+                'densidad_descarte': None, 'cantidad_usada': 1.0,
+                'codigo_cobro': UsoEquipoDia.COBRO_COMPLETO, 'es_fluidos': False,
+                'horas_parada': None, 'observaciones': '',
+            }
+            if base:
+                previo = _datos_uso(base)
+                for campo in CAMPOS_HEREDADOS:
+                    datos[campo] = previo[campo]
+            tarifa = _tarifa_actual(equipo_activo, datos['codigo_cobro'])
+            valores_prop = {}
+            heredado = base is not None
+
+        propiedades = [
+            dict(p, valor=valores_prop.get(p['descripcion'], ''))
+            for p in propiedades_tipo.get(tipo, [])
+        ]
+        # Propiedades guardadas que ya no están en la configuración: se conservan al final.
+        configuradas = {p['descripcion'] for p in propiedades}
+        if uso:
+            for p in uso.propiedades.all():
+                if p.descripcion not in configuradas and p.valor:
+                    propiedades.append({'descripcion': p.descripcion, 'unidad': p.unidad,
+                                        'valor': p.valor, 'fuera_de_configuracion': True})
+
+        return {
+            'serie': serie,
+            'descripcion': descripcion,
+            'equipo_nombre': equipo.nombre,
+            'tipo_equipo': tipo,
+            'tipo_display': tipos_display.get(tipo, tipo),
+            'usa_recortes': tipo in TIPOS_POR_RECORTES,
+            'es_centrifuga': tipo in TIPOS_CENTRIFUGA,
+            'activo': equipo_activo is not None,
+            'guardado': uso is not None,
+            'heredado': heredado,
+            'datos': datos,
+            'tarifa': tarifa,
+            'tarifas_pozo': {
+                'COMPLETO': _tarifa_actual(equipo_activo, UsoEquipoDia.COBRO_COMPLETO),
+                'STANDBY': _tarifa_actual(equipo_activo, UsoEquipoDia.COBRO_STANDBY),
+            } if equipo_activo else None,
+            'propiedades': propiedades,
+            'previo': previos.get(serie, {'horas': 0.0, 'descargado_bbl': 0.0, 'lodo_bbl': 0.0, 'costo': 0.0}),
+        }
+
+    filas = []
+    vistos = set()
+    for ea in pozo.equipos_activos.select_related('equipo').all():
+        vistos.add(ea.numero_serie)
+        filas.append(fila(ea.numero_serie, ea.equipo, ea.descripcion or ea.equipo.nombre,
+                          ea, hoy.get(ea.numero_serie)))
+    for serie, uso in hoy.items():
+        if serie not in vistos:
+            filas.append(fila(serie, uso.equipo, uso.equipo_descripcion or uso.equipo.nombre, None, uso))
+
+    filas.sort(key=lambda f: (ORDEN_TIPOS.index(f['tipo_equipo']) if f['tipo_equipo'] in ORDEN_TIPOS else 99,
+                              f['serie']))
+
+    return {
+        'ok': True,
+        'contexto': contexto,
+        'equipos': filas,
+        'categorias_perdida': categorias,
+        'hay_guardado': bool(hoy),
+        'enlaces': {
+            'equipos_activos': reverse('operaciones:active_items', args=[pozo.pk]),
+            'propiedades': reverse('operaciones:equipment_properties_setup', args=[pozo.pk]),
+            'perdidas': reverse('operaciones:loss_setup', args=[pozo.pk]),
+        },
+    }
+
+
+@require_http_methods(["GET"])
+def api_uso_equipos_detail(request, pk, reporte_pk):
+    pozo, reporte = _obtener(pk, reporte_pk)
+    return JsonResponse(_resumen_equipos(pozo, reporte))
+
+
+def _decimal_rango(valor, etiqueta, minimo, maximo):
+    if valor in (None, ''):
+        return None
+    try:
+        n = float(str(valor).replace(',', '.'))
+    except (TypeError, ValueError):
+        raise _Rechazo(f"{etiqueta}: '{valor}' no es un número válido.")
+    if n != n or n < minimo or n > maximo:
+        raise _Rechazo(f"{etiqueta}: debe estar entre {minimo:g} y {maximo:g}.")
+    return Decimal(str(round(n, 3)))
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_uso_equipos_guardar(request, pk, reporte_pk):
+    """Guarda el rendimiento, los costos y las paradas del día de todos los equipos."""
+    pozo, reporte = _obtener(pk, reporte_pk)
+    try:
+        body = _leer_json(request)
+        activos = {e.numero_serie: e for e in pozo.equipos_activos.select_related('equipo')}
+        previos_hoy = {u.equipo_serie: u for u in reporte.usos_equipo.select_related('equipo')}
+        categorias = {c.codigo: c.descripcion for c in pozo.categorias_perdida.all()}
+
+        nuevos = []
+        vistos = set()
+        for item in body.get('equipos') or []:
+            serie = str(item.get('serie') or '').strip()
+            if not serie or serie in vistos:
+                continue
+            vistos.add(serie)
+            activo = activos.get(serie)
+            previo = previos_hoy.get(serie)
+            if activo is None and previo is None:
+                raise _Rechazo(f"El equipo {serie} no está en los equipos activos del pozo.")
+            equipo = activo.equipo if activo else previo.equipo
+            nombre = (activo.descripcion or activo.equipo.nombre) if activo else previo.equipo_descripcion
+            etiqueta = f"{nombre} ({serie})"
+
+            uso = UsoEquipoDia(
+                reporte=reporte, equipo=equipo, equipo_serie=serie[:30],
+                equipo_descripcion=(nombre or '')[:150], tipo_equipo=equipo.tipo_equipo,
+            )
+            for campo, texto, minimo, maximo in CAMPOS_NUMERICOS:
+                setattr(uso, campo, _decimal_rango(item.get(campo), f"{etiqueta} — {texto}", minimo, maximo))
+
+            codigo_perdida = item.get('tipo_perdida_codigo')
+            if codigo_perdida not in (None, ''):
+                codigo_perdida = _entero(codigo_perdida, f"{etiqueta} — tipo de pérdida", minimo=1)
+                if codigo_perdida in categorias:
+                    uso.tipo_perdida_descripcion = categorias[codigo_perdida][:100]
+                elif previo and previo.tipo_perdida_codigo == codigo_perdida:
+                    uso.tipo_perdida_descripcion = previo.tipo_perdida_descripcion
+                else:
+                    raise _Rechazo(f"{etiqueta}: el tipo de pérdida no existe en la configuración del pozo.")
+                uso.tipo_perdida_codigo = codigo_perdida
+
+            cantidad = _decimal_rango(item.get('cantidad_usada'), f"{etiqueta} — cantidad usada", 0, 9999)
+            uso.cantidad_usada = cantidad if cantidad is not None else Decimal('0')
+            codigo = str(item.get('codigo_cobro') or UsoEquipoDia.COBRO_COMPLETO)
+            if codigo not in dict(UsoEquipoDia.COBRO_CHOICES):
+                raise _Rechazo(f"{etiqueta}: código de cobro no válido.")
+            uso.codigo_cobro = codigo
+            # La tarifa se copia del pozo al registrar el día y se conserva mientras no
+            # cambie el código de cobro: editar un día viejo no le cambia el precio.
+            if previo and previo.codigo_cobro == codigo:
+                uso.tarifa = previo.tarifa
+            else:
+                uso.tarifa = Decimal(str(_tarifa_actual(activo, codigo)))
+            uso.es_fluidos = bool(item.get('es_fluidos'))
+            uso.observaciones = str(item.get('observaciones') or '').strip()
+
+            propiedades = []
+            for i, prop in enumerate(item.get('propiedades') or []):
+                descripcion = str(prop.get('descripcion') or '').strip()[:100]
+                valor = str(prop.get('valor') or '').strip()[:60]
+                if descripcion and valor:
+                    propiedades.append(UsoEquipoPropiedad(
+                        orden=i, descripcion=descripcion,
+                        unidad=str(prop.get('unidad') or '').strip()[:30], valor=valor))
+            nuevos.append((uso, propiedades))
+
+        with transaction.atomic():
+            # Los equipos guardados que no vinieron en el envío se conservan.
+            reporte.usos_equipo.filter(equipo_serie__in=vistos).delete()
+            for uso, propiedades in nuevos:
+                uso.save()
+                for p in propiedades:
+                    p.uso = uso
+                UsoEquipoPropiedad.objects.bulk_create(propiedades)
+    except _Rechazo as e:
+        return _error(str(e))
+
+    datos = _resumen_equipos(pozo, reporte)
+    datos['mensaje'] = 'Detalle y uso de equipos guardado.'
+    return JsonResponse(datos)
