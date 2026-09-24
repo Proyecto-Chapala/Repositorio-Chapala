@@ -491,6 +491,8 @@ def _estado_volumetria(pozo, reporte):
             en_pedido=float(m.en_pedido) if m else 0.0,
             no_imprimir=bool(base_ni.no_imprimir) if base_ni else False,
             final=round(s.get('final', 0.0), 3), usado_dia=round(s.get('usado_dia', 0.0), 3),
+            usado_acum=round(s.get('usado_acum', 0.0), 3), recibido_acum=round(s.get('recibido_acum', 0.0), 3),
+            devuelto_acum=round(s.get('devuelto_acum', 0.0), 3),
             costo_diario=s.get('costo_diario', 0.0), costo_acumulado=s.get('costo_acumulado', 0.0),
             peso_lb=round(peso, 1) if peso is not None else None,
         ))

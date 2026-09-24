@@ -129,6 +129,9 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
     stock = defaultdict(float)
     costo_acum_cat = defaultdict(float)
     costo_acum_prod = defaultdict(float)
+    acum_usado = defaultdict(float)      # acumulados del pozo por producto (reporte de inventario)
+    acum_recibido = defaultdict(float)
+    acum_devuelto = defaultdict(float)
     masa = defaultdict(lambda: defaultdict(float))   # compartimento → producto → lb
     comp_prev = {}                    # fosa → compartimento del día anterior
     vol_comp_prev = {}                # compartimento → volumen final del día anterior
@@ -270,6 +273,7 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 if g != gd:
                     flujos[g]['sale'] += vol
                     flujos[gd]['entra'] += vol
+                    flujos[g]['hacia_' + gd] += vol
 
             elif tipo in ('DEVOLUCION', 'PERDIDA'):
                 quitar_masa(c, vol)
@@ -330,6 +334,9 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                     f"{usado_fluido[p] + otro + devuelto[p] - ajuste:g}. Registra primero el ticket de recepción.")
             stock[p] = fin
             costo_acum_prod[p] += costo_dia_prod[p]
+            acum_usado[p] += usado_fluido[p] + otro
+            acum_recibido[p] += recibido[p]
+            acum_devuelto[p] += devuelto[p]
             inventario[p] = {
                 'inicial': ini, 'recibido': recibido[p], 'devuelto': devuelto[p],
                 'recibido_ticket': recibido_ticket[p], 'devuelto_ticket': devuelto_ticket[p],
@@ -337,6 +344,8 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 'final': fin, 'usado_dia': usado_fluido[p] + otro,
                 'costo_diario': round(costo_dia_prod[p], 2),
                 'costo_acumulado': round(costo_acum_prod[p], 2),
+                'usado_acum': acum_usado[p], 'recibido_acum': acum_recibido[p],
+                'devuelto_acum': acum_devuelto[p],
             }
         for cat, v in costo_dia_cat.items():
             costo_acum_cat[cat] += v

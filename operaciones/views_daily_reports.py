@@ -793,189 +793,20 @@ def api_cost_overview_detail(request, pk, reporte_pk):
 
 
 # =====================================================================
-# Exportación a Excel (.xlsx): Official M-I SWACO ONE-TRAX Report
+# Exportación a Excel (.xlsx): reporte con el formato de ONE-TRAX (ver reporte_excel.py)
 # =====================================================================
 
 def reporte_diario_excel_view(request, pk, reporte_pk):
-    """Genera y descarga el reporte diario oficial en formato Excel (.xlsx)."""
+    """
+    Descarga el reporte diario en Excel con el formato del libro de ONE-TRAX (en español):
+    reporte de lodo, propiedades extra, contabilidad de volumen, inventario químico, equipos y mallas.
+    """
+    from .reporte_excel import generar_reporte_excel
     pozo = get_object_or_404(Pozo, pk=pk)
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
-
-    spud_date_str = "-"
-    if hasattr(pozo, 'well_header_info') and pozo.well_header_info and pozo.well_header_info.spud_date:
-        spud_date_str = pozo.well_header_info.spud_date.strftime('%d/%m/%Y')
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = f"Reporte #{reporte.numero_reporte}"
-
-    # Configuración de estilos
-    color_navy = "0F172A"
-    color_orange = "F26419"
-    color_light_gray = "F8FAFC"
-    color_border = "CBD5E1"
-
-    font_title = Font(name="Calibri", size=15, bold=True, color="FFFFFF")
-    font_section = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-    font_header = Font(name="Calibri", size=10, bold=True, color="334155")
-    font_bold = Font(name="Calibri", size=10, bold=True, color="0F172A")
-    font_regular = Font(name="Calibri", size=10, color="0F172A")
-    font_cost_num = Font(name="Calibri", size=10, bold=True, color="0F172A")
-
-    fill_title = PatternFill(start_color=color_navy, end_color=color_navy, fill_type="solid")
-    fill_section = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
-    fill_cost_header = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
-    fill_total_head = PatternFill(start_color="FFF7ED", end_color="FFF7ED", fill_type="solid")
-    fill_row_alt = PatternFill(start_color=color_light_gray, end_color=color_light_gray, fill_type="solid")
-
-    thin_border = Border(
-        left=Side(style='thin', color=color_border),
-        right=Side(style='thin', color=color_border),
-        top=Side(style='thin', color=color_border),
-        bottom=Side(style='thin', color=color_border)
-    )
-
-    # 1. Título y Banner Superior
-    ws.merge_cells("A1:G1")
-    cell_title = ws["A1"]
-    cell_title.value = f"M-I SWACO • ONE-TRAX DAILY DRILLING FLUIDS & EQUIPMENT REPORT"
-    cell_title.font = font_title
-    cell_title.fill = fill_title
-    cell_title.alignment = Alignment(horizontal="center", vertical="center")
-    ws.row_dimensions[1].height = 36
-
-    # 2. Información del Pozo y Cabecera
-    operador_nombre = "M-I SWACO"
-    if hasattr(pozo, 'well_header_info') and pozo.well_header_info and pozo.well_header_info.operador:
-        operador_nombre = pozo.well_header_info.operador
-
-    ws.merge_cells("A2:C2")
-    ws["A2"] = f"Pozo: {pozo.nombre}  |  Operador: {operador_nombre}"
-    ws["A2"].font = font_bold
-    ws["A2"].alignment = Alignment(vertical="center")
-
-    ws.merge_cells("D2:G2")
-    ws["D2"] = f"Fecha: {reporte.fecha.strftime('%d/%m/%Y')}  |  Reporte #: {reporte.numero_reporte}"
-    ws["D2"].font = font_bold
-    ws["D2"].alignment = Alignment(horizontal="right", vertical="center")
-    ws.row_dimensions[2].height = 22
-
-    # 3. Sección: Parámetros Operacionales
-    ws.merge_cells("A4:G4")
-    ws["A4"] = "1. PARÁMETROS DE OPERACIÓN Y GEOMETRÍA"
-    ws["A4"].font = font_section
-    ws["A4"].fill = fill_section
-    ws["A4"].alignment = Alignment(vertical="center", indent=1)
-    ws.row_dimensions[4].height = 24
-
-    op_fields = [
-        ("Fecha del Reporte (Date)", reporte.fecha.strftime('%d/%m/%Y'), "Profundidad Medida (Depth)", f"{reporte.profundidad_actual} ft"),
-        ("Fecha de Spud (Spud Date)", spud_date_str, "Profundidad Vertical (TVD)", f"{reporte.profundidad_tvd} ft"),
-        ("Número de Reporte (Report #)", f"#{reporte.numero_reporte}", "Profundidad de Mecha (Bit Depth)", f"{reporte.bit_depth} ft"),
-        ("Actividad Actual (Activity)", reporte.actividad_actual or "-", "Tipo de Fluido (Fluid Type)", reporte.tipo_fluido_display or "-"),
-        ("Litología / Formación", reporte.litologia or "-", "Tipo de Chequeo (Mud Check)", reporte.get_tipo_lodo_display()),
-    ]
-
-    current_row = 5
-    for lbl1, val1, lbl2, val2 in op_fields:
-        ws.cell(row=current_row, column=1, value=lbl1).font = font_header
-        ws.cell(row=current_row, column=2, value=val1).font = font_bold
-        ws.cell(row=current_row, column=4, value=lbl2).font = font_header
-        ws.cell(row=current_row, column=5, value=val2).font = font_bold
-        for c in range(1, 8):
-            ws.cell(row=current_row, column=c).border = thin_border
-        current_row += 1
-
-    # 4. Sección: Representantes y Contactos
-    current_row += 1
-    ws.merge_cells(f"A{current_row}:G{current_row}")
-    ws[f"A{current_row}"] = "2. PERSONAL DE GUARDIA Y CONTACTOS"
-    ws[f"A{current_row}"].font = font_section
-    ws[f"A{current_row}"].fill = fill_section
-    ws[f"A{current_row}"].alignment = Alignment(vertical="center", indent=1)
-    ws.row_dimensions[current_row].height = 24
-    current_row += 1
-
-    rep_fields = [
-        ("Representante Operador (Operator Rep)", reporte.operador_representante or "-", "Teléfono del Taladro (Rig Phone)", reporte.telefono_taladro or "-"),
-        ("Representante Contratista (Contractor)", reporte.contratista_representante or "-", "Teléfono de Almacén (Whse Phone)", reporte.telefono_almacen or "-"),
-        ("Ing. M-I SWACO 1 (Primary Mud Eng)", reporte.mi_representante_1 or "-", "Teléfonos Generales (Telephones)", reporte.telefonos or "-"),
-        ("Ing. M-I SWACO 2 (Night Mud Eng)", reporte.mi_representante_2 or "-", "Pagers / Números FAX", reporte.fax_numbers or "-"),
-    ]
-
-    for lbl1, val1, lbl2, val2 in rep_fields:
-        ws.cell(row=current_row, column=1, value=lbl1).font = font_header
-        ws.cell(row=current_row, column=2, value=val1).font = font_regular
-        ws.cell(row=current_row, column=4, value=lbl2).font = font_header
-        ws.cell(row=current_row, column=5, value=val2).font = font_regular
-        for c in range(1, 8):
-            ws.cell(row=current_row, column=c).border = thin_border
-        current_row += 1
-
-    # 5. Sección: Balance de Costos (Resumen Común)
-    current_row += 1
-    ws.merge_cells(f"A{current_row}:G{current_row}")
-    ws[f"A{current_row}"] = f"3. BALANCE ECONÓMICO DE FLUIDOS Y EQUIPOS ({pozo.moneda_simbolo or 'USD'})"
-    ws[f"A{current_row}"].font = font_section
-    ws[f"A{current_row}"].fill = fill_section
-    ws[f"A{current_row}"].alignment = Alignment(vertical="center", indent=1)
-    ws.row_dimensions[current_row].height = 24
-    current_row += 1
-
-    cost_headers = [
-        "Concepto",
-        "DF Chem /Personnel",
-        "IFE/SC Engineer",
-        "Drilling Total",
-        "DF Equip. /Screens",
-        "Other Cost (DWM/CF)",
-        "TOTAL"
-    ]
-    for col_idx, h in enumerate(cost_headers, start=1):
-        cell = ws.cell(row=current_row, column=col_idx, value=h)
-        cell.font = font_header
-        cell.fill = fill_total_head if col_idx == 7 else fill_cost_header
-        cell.alignment = Alignment(horizontal="center" if col_idx > 1 else "left", vertical="center")
-        cell.border = thin_border
-    ws.row_dimensions[current_row].height = 22
-    current_row += 1
-
-    from .views_inventario import resumen_costos
-    _dia, _acum, _ = resumen_costos(pozo, reporte)
-    _orden = ('df_chem', 'ife_sc', 'drilling_total', 'df_equip', 'other_cost', 'total')
-    cost_rows = [
-        ("Costo Diario", *[_dia[k] for k in _orden]),
-        ("Costo Acumulado", *[_acum[k] for k in _orden]),
-    ]
-
-    for label, c1, c2, c3, c4, c5, c_tot in cost_rows:
-        ws.cell(row=current_row, column=1, value=label).font = font_bold
-        ws.cell(row=current_row, column=1).border = thin_border
-
-        for c_idx, val in enumerate([c1, c2, c3, c4, c5, c_tot], start=2):
-            cell = ws.cell(row=current_row, column=c_idx, value=val)
-            cell.font = font_cost_num
-            cell.number_format = "$#,##0.00"
-            cell.alignment = Alignment(horizontal="right", vertical="center")
-            cell.border = thin_border
-            if c_idx == 7:
-                cell.fill = fill_total_head
-        current_row += 1
-
-    # Ajuste automático de ancho de columnas
-    col_widths = {1: 32, 2: 24, 3: 20, 4: 26, 5: 22, 6: 22, 7: 20}
-    for col_idx, width in col_widths.items():
-        col_letter = get_column_letter(col_idx)
-        ws.column_dimensions[col_letter].width = width
-
-    # Salida en memoria
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-
-    filename = f"Reporte_Diario_{pozo.nombre}_{reporte.fecha.strftime('%Y%m%d')}.xlsx"
+    contenido, filename = generar_reporte_excel(pozo, reporte)
     response = HttpResponse(
-        output.getvalue(),
+        contenido,
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
     response['Content-Disposition'] = f'attachment; filename="{filename}"'

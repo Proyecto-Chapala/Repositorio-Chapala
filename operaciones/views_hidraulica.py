@@ -93,8 +93,15 @@ def _r(v, n=2):
 def api_hidraulica_detail(request, pk, reporte_pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
-    edicion = '4' if request.GET.get('edicion') == '4' else '5'
+    edicion = request.GET.get('edicion')
+    if edicion not in ('4', '5'):
+        edicion = '5' if pozo.usar_api_5ta_edicion_hidraulica else '4'
+    return JsonResponse(calcular_hidraulica_reporte(pozo, reporte, edicion))
 
+
+def calcular_hidraulica_reporte(pozo, reporte, edicion='5'):
+    """Hidráulica del reporte como diccionario (la usan la API y el reporte Excel)."""
+    edicion = '4' if str(edicion) == '4' else '5'
     faltan = []
     bit = getattr(reporte, 'bit_data', None)
     q = sum(b.caudal_gpm for b in reporte.bombas.all())
@@ -133,14 +140,14 @@ def api_hidraulica_detail(request, pk, reporte_pk):
         },
     }
     if faltan:
-        return JsonResponse(base)
+        return base
 
     datos_check = {k: _f(getattr(check, k)) for k in ('pv', 'yp', 'r600', 'r300', 'r200', 'r100', 'r6', 'r3')}
     try:
         reo = hid.reologia(datos_check, edicion)
     except ValueError as e:
         base['faltan'] = [str(e)]
-        return JsonResponse(base)
+        return base
 
     tvd_de, fuente_tvd = _funcion_tvd(pozo, reporte)
     temp_de = _funcion_temperatura(pozo) if edicion == '5' else None
@@ -197,4 +204,4 @@ def api_hidraulica_detail(request, pk, reporte_pk):
             'pct': _r(res['pct']['mecha'], 1),
         },
     })
-    return JsonResponse(base)
+    return base
