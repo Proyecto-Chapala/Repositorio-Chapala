@@ -351,6 +351,8 @@ def reporte_diario_detalle_view(request, pk, reporte_pk):
         'operaciones/js/reporte_tiempo.js',
         'operaciones/css/reporte_control_solidos.css',
         'operaciones/js/reporte_control_solidos.js',
+        'operaciones/css/reporte_inventario.css',
+        'operaciones/js/reporte_inventario.js',
     )
 
     return render(request, 'operaciones/avances_19_sep/reporte_diario_detalle.html', {

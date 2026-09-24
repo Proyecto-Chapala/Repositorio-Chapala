@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import views_daily_reports
 from . import views_control_solidos
+from . import views_inventario
 
 app_name = 'operaciones'
 
@@ -80,6 +81,9 @@ urlpatterns = [
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/tipo-ticket/<int:tipo_pk>/eliminar/', views_control_solidos.api_tipo_ticket_malla_eliminar, name='api_tipo_ticket_malla_eliminar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/equipos/', views_control_solidos.api_uso_equipos_detail, name='api_uso_equipos_detail'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/control-solidos/equipos/guardar/', views_control_solidos.api_uso_equipos_guardar, name='api_uso_equipos_guardar'),
+    # Pestaña 8 — Inventario / Hidráulica / Concentraciones
+    path('api/pozos/<int:pk>/perdidas-reporte/', views_inventario.api_perdidas_reporte_detail, name='api_perdidas_reporte_detail'),
+    path('api/pozos/<int:pk>/perdidas-reporte/guardar/', views_inventario.api_perdidas_reporte_guardar, name='api_perdidas_reporte_guardar'),
 
     # --- Well Header Information ---
 

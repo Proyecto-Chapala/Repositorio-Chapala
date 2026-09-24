@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="{% static 'operaciones/css/daily_reports.css' %}">
 <link rel="stylesheet" href="{% static 'operaciones/css/reporte_tiempo.css' %}?v={{ version_estaticos }}">
 <link rel="stylesheet" href="{% static 'operaciones/css/reporte_control_solidos.css' %}?v={{ version_estaticos }}">
+<link rel="stylesheet" href="{% static 'operaciones/css/reporte_inventario.css' %}?v={{ version_estaticos }}">
 {% endblock %}
 
 {% block content %}
@@ -2106,6 +2107,80 @@
 
   </div>
 
+  <!-- TAB 8 CONTENT: INVENTARIO / HIDRÁULICA / CONCENTRACIONES -->
+  <div id="tabContent-inventario" style="display:none;">
+
+    <!-- Sub-pantallas en el orden del manual: captura, consultas y configuración -->
+    <nav class="cs-subnav" aria-label="Secciones de la pestaña 8">
+      <div class="cs-subnav-grupo">
+        <span class="cs-subnav-titulo">Captura</span>
+        <button type="button" class="cs-subnav-btn" disabled title="Se construye al revisar las páginas 131 en adelante del manual">
+          <span class="cs-subnav-num">1</span><span>Volumetría e inventario de productos</span>
+          <span class="cs-subnav-tag">Próximamente</span>
+        </button>
+      </div>
+      <div class="cs-subnav-grupo">
+        <span class="cs-subnav-titulo">Consultas</span>
+        <button type="button" class="cs-chip-opcional" disabled title="Pendiente: definir edición API RP 13D">Hidráulica</button>
+        <button type="button" class="cs-chip-opcional" disabled title="Depende de la volumetría">Concentración de productos</button>
+        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional">Retención en recortes</button>
+        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional">Evaluación de benchmark</button>
+      </div>
+      <div class="cs-subnav-grupo">
+        <span class="cs-subnav-titulo">Configuración</span>
+        <button type="button" class="cs-subnav-btn is-active" data-iv-vista="perdidas">
+          <span class="cs-subnav-num">&#9881;</span><span>Pérdidas del reporte</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ============ PÉRDIDAS DEL REPORTE (Daily Loss Print Selection) ============ -->
+    <section class="report-card-modern" id="ivVistaPerdidas">
+      <div class="cs-card-cabecera">
+        <div>
+          <span class="cs-card-titulo">Pérdidas que se muestran en el reporte diario</span>
+          <span class="cs-card-subtitulo">
+            El pozo puede tener hasta 20 categorías de pérdida, pero el reporte diario muestra como máximo 10.
+            Estas mismas categorías son las que usan la volumetría y el tipo de pérdida de los equipos (pestaña 6).
+            La selección es del pozo: vale para todos sus reportes.
+          </span>
+        </div>
+        <a class="cs-enlace iv-link-config" id="ivLinkConfigPerdidas" href="#" target="_blank" rel="noopener">Configuración de pérdidas &rarr;</a>
+      </div>
+
+      <div class="iv-selector">
+        <div class="iv-lista-caja">
+          <div class="iv-lista-titulo">Disponibles en el pozo <span class="iv-contador" id="ivContDisponibles"></span></div>
+          <ul class="iv-lista" id="ivDisponibles"></ul>
+        </div>
+
+        <div class="iv-botones">
+          <button type="button" class="btn-modern-secondary btn-sm" id="ivAgregar" title="Agregar la categoría marcada">Agregar &rarr;</button>
+          <button type="button" class="btn-modern-secondary btn-sm" id="ivQuitar" title="Quitar la categoría marcada">&larr; Quitar</button>
+          <button type="button" class="btn-modern-secondary btn-sm" id="ivAgregarTodas" title="Agregar las primeras hasta completar 10">Agregar todas</button>
+        </div>
+
+        <div class="iv-lista-caja">
+          <div class="iv-lista-titulo">En el reporte diario <span class="iv-contador" id="ivContSeleccionadas"></span></div>
+          <ul class="iv-lista iv-lista-seleccion" id="ivSeleccionadas"></ul>
+          <div class="iv-orden">
+            <button type="button" class="btn-modern-secondary btn-sm" id="ivSubir" title="Subir en el orden del reporte">&uarr; Subir</button>
+            <button type="button" class="btn-modern-secondary btn-sm" id="ivBajar" title="Bajar en el orden del reporte">&darr; Bajar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="iv-pie">
+        <span class="cs-nota" id="ivNotaPerdidas"></span>
+        <span class="cs-flex"></span>
+        <button type="button" class="btn-modern-primary btn-sm" id="ivGuardarPerdidas">
+          <span>&#128190;</span><span>Guardar selección</span>
+        </button>
+      </div>
+    </section>
+
+  </div>
+
   <!-- Placeholder for Other Tabs (4 to 8) -->
   <div id="tabContent-placeholder" class="report-card-modern" style="display:none; text-align:center; padding:60px 20px;">
     <h3 id="placeholder-title" style="color:#0f172a; margin-bottom:12px; font-weight:800; font-size:18px;"></h3>
@@ -2764,6 +2839,7 @@ function switchTab(tabNum){
     else if(prevTab === 5 && cmListo) guardarComentarios(true);
     else if(prevTab === 6 && typeof csEqPendiente === 'function' && csEqPendiente()) guardarUsoEquipos(true);
     else if(prevTab === 7 && typeof ttListo !== 'undefined' && ttListo) guardarTiempo(true);
+    else if(prevTab === 8 && typeof ivSucio !== 'undefined' && ivSucio) guardarPerdidasReporte(true);
   }
 
   currentTabNum = tabNum;
@@ -2777,6 +2853,7 @@ function switchTab(tabNum){
   const comentariosContent = document.getElementById('tabContent-comentarios');
   const tiempoContent = document.getElementById('tabContent-tiempo');
   const solidosContent = document.getElementById('tabContent-solidos');
+  const inventarioContent = document.getElementById('tabContent-inventario');
   const placeholderContent = document.getElementById('tabContent-placeholder');
   const placeholderTitle = document.getElementById('placeholder-title');
 
@@ -2815,6 +2892,7 @@ function switchTab(tabNum){
     if(comentariosContent) comentariosContent.style.display = 'none';
     if(tiempoContent) tiempoContent.style.display = 'none';
     if(solidosContent) solidosContent.style.display = 'none';
+    if(inventarioContent) inventarioContent.style.display = 'none';
     if(placeholderContent) placeholderContent.style.display = 'none';
   };
 
@@ -2839,6 +2917,9 @@ function switchTab(tabNum){
   } else if(tabNum === 7){
     if(tiempoContent) tiempoContent.style.display = 'block';
     inicializarTiempo();
+  } else if(tabNum === 8){
+    if(inventarioContent) inventarioContent.style.display = 'block';
+    inicializarInventario();
   } else {
     if(placeholderContent) {
       placeholderContent.style.display = 'block';
@@ -2871,6 +2952,8 @@ async function guardarPestanaActiva() {
     }
   } else if (currentTabNum === 7) {
     await guardarTiempo();
+  } else if (currentTabNum === 8) {
+    await guardarPerdidasReporte();
   } else {
     showToast('Pestaña en desarrollo.');
   }
@@ -4863,4 +4946,5 @@ async function guardarExtraPropertiesModal(){
 </script>
 <script src="{% static 'operaciones/js/reporte_tiempo.js' %}?v={{ version_estaticos }}"></script>
 <script src="{% static 'operaciones/js/reporte_control_solidos.js' %}?v={{ version_estaticos }}"></script>
+<script src="{% static 'operaciones/js/reporte_inventario.js' %}?v={{ version_estaticos }}"></script>
 {% endblock %}

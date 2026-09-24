@@ -1336,3 +1336,4 @@ class BenchmarkTarget(models.Model):
 
 from .models_daily_reports import *
 from .models_control_solidos import *
+from .models_inventario import *
