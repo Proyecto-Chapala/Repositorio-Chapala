@@ -163,3 +163,306 @@
   font-size: 12px;
   white-space: nowrap;
 }
+
+/* =====================================================================
+   1. VOLUMETRÍA E INVENTARIO DE PRODUCTOS
+   Reutiliza tablas, modales, campos y avisos de reporte_control_solidos.css
+   (.cs-tabla, .cs-modal, .cs-campo, .cs-aviso-item, .cs-eq-tabs...) y la
+   mini barra de reporte_tiempo.css (.tt-mini-barra).
+   ===================================================================== */
+
+/* KPIs de cierre */
+.va-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  padding: 10px 14px;
+}
+
+.va-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  border-left-width: 4px;
+}
+
+.va-kpi span {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.va-kpi strong {
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.va-kpi small {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.va-kpi-ok        { border-left-color: #16a34a; background: var(--stock-alto-bg); }
+.va-kpi-ok strong { color: var(--stock-alto-text); }
+.va-kpi-error     { border-left-color: var(--color-red); background: var(--stock-bajo-bg); }
+.va-kpi-error strong { color: var(--stock-bajo-text); }
+.va-kpi-pendiente { border-left-color: #f59e0b; background: #fffbeb; }
+.va-kpi-neutro    { border-left-color: var(--color-navy); background: #fcfcfd; }
+
+/* Barra de acciones */
+.va-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.va-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.va-tabs {
+  margin-bottom: 8px;
+}
+
+.va-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.va-grid-balance {
+  grid-template-columns: 1.15fr 1fr;
+}
+
+/* Tabla de fosas */
+.va-tabla-fosas .report-input {
+  height: 28px;
+  min-width: 130px;
+}
+
+.va-input-vol {
+  width: 90px;
+}
+
+.va-col-llenado {
+  width: 120px;
+}
+
+.va-relleno {
+  background: var(--color-orange);
+}
+
+.va-punto {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 8px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.va-grupo-activo    { background: var(--color-orange); }
+.va-grupo-reserva   { background: #0ea5e9; }
+.va-grupo-premezcla { background: #8b5cf6; }
+.va-grupo-otras     { background: #64748b; }
+.va-grupo-ninguno   { background: #e2e8f0; }
+
+.va-fila-ninguno td {
+  color: var(--color-text-muted);
+}
+
+.va-fila-sub td {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.va-fila-base td {
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.va-fila-na td {
+  background: #fffaf3;
+  font-weight: 800;
+}
+
+.va-ok    { color: var(--stock-alto-text); font-weight: 800; }
+.va-error { color: var(--stock-bajo-text); font-weight: 800; }
+.va-dif   { color: #b45309; font-weight: 800; }
+
+/* Inventario */
+.va-tabla-inv .cs-input-cant {
+  width: 76px;
+}
+
+.va-no-imprimir td {
+  opacity: 0.55;
+}
+
+.va-chip-servicio {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.va-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.va-datos-fila {
+  margin-bottom: 10px;
+}
+
+.va-campo-inline {
+  min-width: 260px;
+}
+
+/* Modal */
+.va-modal-caja {
+  width: min(720px, 100%);
+}
+
+.va-modal-ancho {
+  width: min(1100px, 100%);
+}
+
+.va-modal-pie {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--color-border);
+  background: #fcfcfd;
+}
+
+.va-pie-nota {
+  margin: 0;
+}
+
+.va-form-fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.va-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 460px;
+}
+
+.va-form-col .report-input,
+.va-form-fila .report-input,
+.va-grid-lodo .report-input {
+  height: 30px;
+}
+
+.va-grid-lodo .cs-campo {
+  margin-bottom: 10px;
+}
+
+.va-tabla-scroll {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.va-tabla-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.va-resumen-mov {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.va-opciones {
+  margin-bottom: 14px;
+}
+
+/* Registro de movimientos */
+.va-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.va-log > li {
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--color-text-primary);
+}
+
+.va-log ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.va-log-num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-navy);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 26px;
+  text-align: center;
+}
+
+.va-mov-quimicos      { background: var(--stock-alto-bg); color: var(--stock-alto-text); }
+.va-mov-lodo_entero   { background: #e0f2fe; color: #0369a1; }
+.va-mov-transferencia { background: #f3edfc; color: #6d28d9; }
+.va-mov-devolucion    { background: #fef3c7; color: #b45309; }
+.va-mov-perdida       { background: var(--stock-bajo-bg); color: var(--stock-bajo-text); }
+
+@media (max-width: 1100px) {
+  .va-grid-2,
+  .va-grid-balance {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .va-resumen-mov {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Los campos del modal se muestran u ocultan con el atributo hidden. */
+.cs-campo[hidden] {
+  display: none;
+}

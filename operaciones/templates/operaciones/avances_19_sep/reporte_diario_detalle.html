@@ -2114,28 +2114,230 @@
     <nav class="cs-subnav" aria-label="Secciones de la pestaña 8">
       <div class="cs-subnav-grupo">
         <span class="cs-subnav-titulo">Captura</span>
-        <button type="button" class="cs-subnav-btn" disabled title="Se construye al revisar las páginas 131 en adelante del manual">
+        <button type="button" class="cs-subnav-btn is-active" data-iv-vista="volumetria">
           <span class="cs-subnav-num">1</span><span>Volumetría e inventario de productos</span>
-          <span class="cs-subnav-tag">Próximamente</span>
+          <span class="cs-subnav-tag cs-tag-pendiente" id="vaTagCambios" hidden>Sin guardar</span>
         </button>
       </div>
       <div class="cs-subnav-grupo">
         <span class="cs-subnav-titulo">Consultas</span>
+        <button type="button" class="cs-subnav-btn" data-iv-vista="concentracion">
+          <span class="cs-subnav-num">2</span><span>Concentración de productos</span>
+        </button>
         <button type="button" class="cs-chip-opcional" disabled title="Pendiente: definir edición API RP 13D">Hidráulica</button>
-        <button type="button" class="cs-chip-opcional" disabled title="Depende de la volumetría">Concentración de productos</button>
         <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional">Retención en recortes</button>
         <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional">Evaluación de benchmark</button>
       </div>
       <div class="cs-subnav-grupo">
         <span class="cs-subnav-titulo">Configuración</span>
-        <button type="button" class="cs-subnav-btn is-active" data-iv-vista="perdidas">
+        <button type="button" class="cs-subnav-btn" data-iv-vista="perdidas">
           <span class="cs-subnav-num">&#9881;</span><span>Pérdidas del reporte</span>
         </button>
       </div>
     </nav>
 
+    <div class="cs-alerta" id="vaAlerta" hidden></div>
+
+    <!-- ============ 1. VOLUMETRÍA E INVENTARIO DE PRODUCTOS ============ -->
+    <section id="ivVistaVolumetria">
+      <div class="report-card-modern va-kpis" id="vaKpis"></div>
+
+      <div class="va-barra">
+        <div class="va-acciones">
+          <button type="button" class="btn-modern-secondary btn-sm" data-va-modal="quimicos"><span>&#9879;</span><span>Agregar químicos</span></button>
+          <button type="button" class="btn-modern-secondary btn-sm" data-va-modal="lodo"><span>&#128738;</span><span>Agregar lodo entero</span></button>
+          <button type="button" class="btn-modern-secondary btn-sm" data-va-modal="transferencia"><span>&#8646;</span><span>Transferencia / pérdida</span></button>
+          <button type="button" class="btn-modern-secondary btn-sm" data-va-modal="movimientos"><span>&#128220;</span><span>Movimientos del día</span><span class="cs-badge" id="vaBadgeMov" hidden>0</span></button>
+        </div>
+        <div class="cs-eq-acciones">
+          <span class="cs-eq-estado" id="vaEstado"></span>
+          <button type="button" class="btn-modern-primary btn-sm" id="vaGuardar"><span>&#128190;</span><span>Guardar volumetría</span></button>
+        </div>
+      </div>
+
+      <div class="cs-eq-tabs va-tabs" role="tablist">
+        <button type="button" class="cs-eq-tab is-active" data-va-tab="fosas">Volúmenes de fosas</button>
+        <button type="button" class="cs-eq-tab" data-va-tab="balance">Balance de volumen</button>
+        <button type="button" class="cs-eq-tab" data-va-tab="inventario">Inventario de productos</button>
+      </div>
+
+      <div class="cs-avisos" id="vaAvisos"></div>
+
+      <!-- Volúmenes de fosas -->
+      <div class="va-panel" id="vaPanelFosas">
+        <div class="report-card-modern">
+          <div class="cs-card-cabecera">
+            <div>
+              <span class="cs-card-titulo">Volúmenes de fosas (bbl)</span>
+              <span class="cs-card-subtitulo">Escribe el volumen REAL que ves en cada fosa al cierre del día. No lo cambies para cuadrar el balance: la diferencia se corrige con los movimientos.</span>
+            </div>
+            <a class="cs-enlace iv-link-config" id="vaLinkFosas" href="#" target="_blank" rel="noopener">Fosas del pozo &rarr;</a>
+          </div>
+          <div class="cs-tabla-wrapper">
+            <table class="cs-tabla va-tabla-fosas">
+              <thead>
+                <tr>
+                  <th>Fosa</th>
+                  <th class="cs-num">Capacidad</th>
+                  <th>Tipo</th>
+                  <th class="cs-num">Inicial</th>
+                  <th class="cs-num">Calculado</th>
+                  <th class="cs-num">Final real</th>
+                  <th class="va-col-llenado">Llenado</th>
+                  <th class="cs-num">Peso (lb/gal)</th>
+                  <th class="cs-num">Temp. (°F)</th>
+                </tr>
+              </thead>
+              <tbody id="vaFilasFosas"></tbody>
+            </table>
+          </div>
+          <p class="cs-nota">En las fosas activas el calculado se ve en el sistema activo, que incluye el volumen del hoyo. Por eso el calculado del sistema y lo real de las fosas activas no tienen que ser iguales.</p>
+        </div>
+
+        <div class="va-grid-2">
+          <div class="report-card-modern">
+            <div class="cs-card-titulo">Resumen al cierre (bbl)</div>
+            <div class="cs-tabla-wrapper">
+              <table class="cs-tabla">
+                <thead><tr><th>Grupo</th><th class="cs-num">Calculado</th><th class="cs-num">Real</th><th class="cs-num">No contabilizado</th></tr></thead>
+                <tbody id="vaResumen"></tbody>
+              </table>
+            </div>
+            <p class="cs-nota">Al cierre de cada día el "No contabilizado" debe ser cero.</p>
+          </div>
+          <div class="report-card-modern">
+            <div class="cs-card-titulo">Otras fosas por tipo (bbl)</div>
+            <div id="vaOtras"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Balance de volumen -->
+      <div class="va-panel" id="vaPanelBalance" hidden>
+        <div class="va-grid-2 va-grid-balance">
+          <div>
+            <div class="report-card-modern">
+              <div class="cs-card-titulo">Fluido en el hoyo (bbl)</div>
+              <div class="cs-tabla-wrapper">
+                <table class="cs-tabla">
+                  <thead><tr><th></th><th class="cs-num">Anular</th><th class="cs-num">Sarta</th><th class="cs-num">Bajo la mecha</th><th class="cs-num">Total</th></tr></thead>
+                  <tbody id="vaHoyo"></tbody>
+                </table>
+              </div>
+              <p class="cs-nota">El volumen del hoyo viene de la pestaña 4. Indica cuánto de ese volumen NO ocupa el fluido del sistema activo (por ejemplo, cemento o un espaciador).</p>
+            </div>
+            <div class="report-card-modern">
+              <div class="cs-card-titulo">Balance de fluidos (bbl)</div>
+              <div class="cs-tabla-wrapper">
+                <table class="cs-tabla va-tabla-balance">
+                  <thead><tr><th></th><th class="cs-num">Sistema activo</th><th class="cs-num">Reserva</th><th class="cs-num">Premezcla</th><th class="cs-num">Otras</th><th class="cs-num">Total</th></tr></thead>
+                  <tbody id="vaBalance"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="report-card-modern">
+            <div class="cs-card-cabecera">
+              <div>
+                <span class="cs-card-titulo">Pérdidas por categoría (bbl)</span>
+                <span class="cs-card-subtitulo">"Descargado por equipos" es el lodo perdido en los sólidos que calculó la pestaña 6. Úsalo como referencia al registrar las pérdidas.</span>
+              </div>
+            </div>
+            <div class="cs-tabla-wrapper">
+              <table class="cs-tabla">
+                <thead><tr><th>Categoría</th><th class="cs-num">Activo</th><th class="cs-num">Reserva</th><th class="cs-num">Premezcla</th><th class="cs-num">Subtotal</th><th class="cs-num">Descargado por equipos</th></tr></thead>
+                <tbody id="vaPerdidas"></tbody>
+                <tfoot id="vaPerdidasPie"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventario de productos -->
+      <div class="va-panel" id="vaPanelInventario" hidden>
+        <div class="report-card-modern">
+          <div class="cs-card-cabecera">
+            <div>
+              <span class="cs-card-titulo">Inventario diario de productos</span>
+              <span class="cs-card-subtitulo">Lo recibido y devuelto viene de los tickets; lo usado en fluidos, de los químicos y el lodo entero agregados. Solo las celdas blancas se escriben aquí.</span>
+            </div>
+            <div class="cs-eq-acciones">
+              <label class="cs-check"><input type="checkbox" id="vaSoloMovimiento"><span>Solo con existencia o movimiento</span></label>
+              <button type="button" class="btn-modern-secondary btn-sm" data-va-modal="tickets"><span>&#127915;</span><span>Tickets de entrega / devolución</span><span class="cs-badge" id="vaBadgeTickets" hidden>0</span></button>
+            </div>
+          </div>
+          <div class="cs-tabla-wrapper">
+            <table class="cs-tabla va-tabla-inv">
+              <thead>
+                <tr class="cs-cabecera-grupo">
+                  <th colspan="4">Producto</th>
+                  <th colspan="7" class="cs-grupo-nuevas">Existencias</th>
+                  <th colspan="3" class="cs-grupo-costos">Costos</th>
+                  <th colspan="3">Otros</th>
+                </tr>
+                <tr>
+                  <th>Código</th><th>Descripción</th><th>Unidad</th><th class="cs-num">Precio</th>
+                  <th class="cs-num cs-grupo-nuevas">Inicial</th>
+                  <th class="cs-num cs-grupo-nuevas">Recibido</th>
+                  <th class="cs-num cs-grupo-nuevas">Devuelto</th>
+                  <th class="cs-num cs-grupo-nuevas">Usado en fluidos</th>
+                  <th class="cs-num cs-grupo-nuevas">Usado otro módulo</th>
+                  <th class="cs-num cs-grupo-nuevas">Ajuste (±)</th>
+                  <th class="cs-num cs-grupo-nuevas">Final</th>
+                  <th class="cs-num cs-grupo-costos">Usado hoy</th>
+                  <th class="cs-num cs-grupo-costos">Diario</th>
+                  <th class="cs-num cs-grupo-costos">Acumulado</th>
+                  <th class="cs-num">Peso (lb)</th>
+                  <th class="cs-num">En pedido</th>
+                  <th class="cs-centro">No imprimir</th>
+                </tr>
+              </thead>
+              <tbody id="vaFilasInv"></tbody>
+            </table>
+          </div>
+          <p class="cs-nota">"Usado otro módulo" sirve para el personal (días de ingeniero de fluidos, de control de sólidos, IFE). Los productos sin unidad se tratan como servicios: generan costo pero no llevan existencias. El ajuste suma si es positivo y resta si es negativo.</p>
+        </div>
+
+        <div class="va-grid-2">
+          <div class="report-card-modern">
+            <div class="cs-card-titulo">Resumen de costos</div>
+            <div class="cs-tabla-wrapper">
+              <table class="cs-tabla">
+                <thead><tr><th>Categoría</th><th class="cs-num">Diario</th><th class="cs-num">Acumulado</th></tr></thead>
+                <tbody id="vaCostos"></tbody>
+                <tfoot id="vaCostosPie"></tfoot>
+              </table>
+            </div>
+            <p class="cs-nota">La categoría sale del "Código de Costo Diario" de cada producto activo: 1 Químicos, 2 Ingeniero de fluidos, 3 Ingeniero de control de sólidos, 4 Ingeniero IFE.</p>
+          </div>
+          <div class="report-card-modern">
+            <div class="cs-card-titulo">Datos del inventario</div>
+            <div class="va-datos" id="vaDatosInv"></div>
+            <div class="cs-subtitulo">Último N° de ticket</div>
+            <div class="va-datos" id="vaUltimosTickets"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2. CONCENTRACIÓN DE PRODUCTOS ============ -->
+    <section class="report-card-modern" id="ivVistaConcentracion" hidden>
+      <div class="cs-card-cabecera">
+        <div>
+          <span class="cs-card-titulo">Concentración de productos (lb/bbl)</span>
+          <span class="cs-card-subtitulo">Inicial y final del día, calculadas con los químicos y el lodo entero agregados, las transferencias y las pérdidas. Solo cuentan los productos que se miden en peso y tienen marcado "¿Calcular concentración?".</span>
+        </div>
+        <label class="cs-campo va-campo-inline">
+          <span class="cs-campo-label">Fosa</span>
+          <select id="vaConcFosa" class="report-input"></select>
+        </label>
+      </div>
+      <div id="vaConcentracion"></div>
+    </section>
+
     <!-- ============ PÉRDIDAS DEL REPORTE (Daily Loss Print Selection) ============ -->
-    <section class="report-card-modern" id="ivVistaPerdidas">
+    <section class="report-card-modern" id="ivVistaPerdidas" hidden>
       <div class="cs-card-cabecera">
         <div>
           <span class="cs-card-titulo">Pérdidas que se muestran en el reporte diario</span>
@@ -2179,6 +2381,21 @@
       </div>
     </section>
 
+  </div>
+
+  <!-- MODAL GENÉRICO DE VOLUMETRÍA (pestaña 8) -->
+  <div class="cs-modal" id="vaModal" hidden>
+    <div class="cs-modal-caja va-modal-caja" role="dialog" aria-modal="true" aria-labelledby="vaModalTitulo">
+      <header class="cs-modal-cabecera">
+        <div>
+          <h3 class="cs-modal-titulo" id="vaModalTitulo"></h3>
+          <span class="cs-modal-subtitulo" id="vaModalSubtitulo"></span>
+        </div>
+        <button type="button" class="cs-modal-cerrar" id="vaModalCerrar" title="Cerrar">&times;</button>
+      </header>
+      <div class="cs-modal-cuerpo" id="vaModalCuerpo"></div>
+      <footer class="va-modal-pie" id="vaModalPie"></footer>
+    </div>
   </div>
 
   <!-- Placeholder for Other Tabs (4 to 8) -->
@@ -2839,7 +3056,7 @@ function switchTab(tabNum){
     else if(prevTab === 5 && cmListo) guardarComentarios(true);
     else if(prevTab === 6 && typeof csEqPendiente === 'function' && csEqPendiente()) guardarUsoEquipos(true);
     else if(prevTab === 7 && typeof ttListo !== 'undefined' && ttListo) guardarTiempo(true);
-    else if(prevTab === 8 && typeof ivSucio !== 'undefined' && ivSucio) guardarPerdidasReporte(true);
+    else if(prevTab === 8 && typeof guardarPestanaInventario === 'function') guardarPestanaInventario(true);
   }
 
   currentTabNum = tabNum;
@@ -2953,7 +3170,7 @@ async function guardarPestanaActiva() {
   } else if (currentTabNum === 7) {
     await guardarTiempo();
   } else if (currentTabNum === 8) {
-    await guardarPerdidasReporte();
+    await guardarPestanaInventario(false);
   } else {
     showToast('Pestaña en desarrollo.');
   }

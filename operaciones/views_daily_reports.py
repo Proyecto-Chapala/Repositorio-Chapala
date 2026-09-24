@@ -772,36 +772,9 @@ def api_cost_overview_detail(request, pk, reporte_pk):
 
     moneda = pozo.moneda_simbolo or "USD"
 
-    # Datos estructurados del desglose
-    daily_data = {
-        'df_chem': 48430.00,
-        'ife_sc': 1450.00,
-        'drilling_total': 49880.00,
-        'df_equip': 1774.00,
-        'other_cost': 7565.06,
-        'total': 59219.06,
-    }
-    cumulative_data = {
-        'df_chem': 345735.50,
-        'ife_sc': 5825.00,
-        'drilling_total': 351560.50,
-        'df_equip': 6622.00,
-        'other_cost': 10464.29,
-        'total': 368646.79,
-    }
-
-    desglose_items = [
-        {'categoria': 'DF Chemicals', 'descripcion': 'Barite (Sacos 100 lb)', 'cantidad': 120, 'unidad': 'SX', 'costo_unitario': 25.50, 'costo_total': 3060.00},
-        {'categoria': 'DF Chemicals', 'descripcion': 'Bentonite Premium Gel', 'cantidad': 40, 'unidad': 'SX', 'costo_unitario': 32.00, 'costo_total': 1280.00},
-        {'categoria': 'DF Chemicals', 'descripcion': 'Caustic Soda Flakes', 'cantidad': 15, 'unidad': 'SX', 'costo_unitario': 45.00, 'costo_total': 675.00},
-        {'categoria': 'DF Chemicals', 'descripcion': 'VersaClean Base Oil Makeup', 'cantidad': 85, 'unidad': 'BBL', 'costo_unitario': 142.00, 'costo_total': 12070.00},
-        {'categoria': 'DF Chemicals', 'descripcion': 'Otros Aditivos y Polímeros', 'cantidad': 1, 'unidad': 'GLO', 'costo_unitario': 30495.00, 'costo_total': 30495.00},
-        {'categoria': 'DF Personnel', 'descripcion': 'Primary Mud Engineer Day Rate', 'cantidad': 1, 'unidad': 'DAY', 'costo_unitario': 850.00, 'costo_total': 850.00},
-        {'categoria': 'IFE/SC Engineer', 'descripcion': 'Solids Control Specialist', 'cantidad': 1, 'unidad': 'DAY', 'costo_unitario': 1450.00, 'costo_total': 1450.00},
-        {'categoria': 'DF Equip. /Screens', 'descripcion': 'Shaker Screens API 140 Mesh', 'cantidad': 4, 'unidad': 'EA', 'costo_unitario': 240.00, 'costo_total': 960.00},
-        {'categoria': 'DF Equip. /Screens', 'descripcion': 'Centrifuge CD-500 Rental', 'cantidad': 1, 'unidad': 'DAY', 'costo_unitario': 814.00, 'costo_total': 814.00},
-        {'categoria': 'Other Cost (DWM/CF)', 'descripcion': 'Cuttings Haul-off / Disposal Box', 'cantidad': 2, 'unidad': 'BOX', 'costo_unitario': 3782.53, 'costo_total': 7565.06},
-    ]
+    # Costos reales: químicos y personal (pestaña 8), equipos y mallas (pestaña 6).
+    from .views_inventario import resumen_costos
+    daily_data, cumulative_data, desglose_items = resumen_costos(pozo, reporte)
 
     return JsonResponse({
         'ok': True,
@@ -963,9 +936,12 @@ def reporte_diario_excel_view(request, pk, reporte_pk):
     ws.row_dimensions[current_row].height = 22
     current_row += 1
 
+    from .views_inventario import resumen_costos
+    _dia, _acum, _ = resumen_costos(pozo, reporte)
+    _orden = ('df_chem', 'ife_sc', 'drilling_total', 'df_equip', 'other_cost', 'total')
     cost_rows = [
-        ("Daily Cost", 48430.00, 1450.00, 49880.00, 1774.00, 7565.06, 59219.06),
-        ("Cumulative Cost", 345735.50, 5825.00, 351560.50, 6622.00, 10464.29, 368646.79),
+        ("Costo Diario", *[_dia[k] for k in _orden]),
+        ("Costo Acumulado", *[_acum[k] for k in _orden]),
     ]
 
     for label, c1, c2, c3, c4, c5, c_tot in cost_rows:

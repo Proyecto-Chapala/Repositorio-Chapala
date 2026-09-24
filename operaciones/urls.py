@@ -84,6 +84,12 @@ urlpatterns = [
     # Pestaña 8 — Inventario / Hidráulica / Concentraciones
     path('api/pozos/<int:pk>/perdidas-reporte/', views_inventario.api_perdidas_reporte_detail, name='api_perdidas_reporte_detail'),
     path('api/pozos/<int:pk>/perdidas-reporte/guardar/', views_inventario.api_perdidas_reporte_guardar, name='api_perdidas_reporte_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/', views_inventario.api_volumetria_detail, name='api_volumetria_detail'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/guardar/', views_inventario.api_volumetria_guardar, name='api_volumetria_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/', views_inventario.api_volumetria_transaccion, name='api_volumetria_transaccion'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/deshacer/', views_inventario.api_volumetria_deshacer, name='api_volumetria_deshacer'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/ticket/guardar/', views_inventario.api_ticket_producto_guardar, name='api_ticket_producto_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/ticket/<int:ticket_pk>/eliminar/', views_inventario.api_ticket_producto_eliminar, name='api_ticket_producto_eliminar'),
 
     # --- Well Header Information ---
 
