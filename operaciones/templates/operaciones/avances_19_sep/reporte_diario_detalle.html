@@ -10,6 +10,8 @@
 <link rel="stylesheet" href="{% static 'operaciones/css/reporte_tiempo.css' %}?v={{ version_estaticos }}">
 <link rel="stylesheet" href="{% static 'operaciones/css/reporte_control_solidos.css' %}?v={{ version_estaticos }}">
 <link rel="stylesheet" href="{% static 'operaciones/css/reporte_inventario.css' %}?v={{ version_estaticos }}">
+<link rel="stylesheet" href="{% static 'operaciones/css/reporte_hidraulica.css' %}?v={{ version_estaticos }}">
+<link rel="stylesheet" href="{% static 'operaciones/css/reporte_opcionales.css' %}?v={{ version_estaticos }}">
 {% endblock %}
 
 {% block content %}
@@ -1633,11 +1635,10 @@
       </div>
 
       <div class="cm-acciones">
-        <button type="button" class="btn-modern-secondary btn-sm" disabled
-                title="Pendiente: esta pantalla se comparte con los intervalos de revestimiento y se construirá cuando revisemos sus páginas del manual.">
-          <span>&#9888;</span><span>Eventos No Programados</span>
+        <button type="button" class="btn-modern-secondary btn-sm" data-en-abrir title="Registro de eventos no programados del pozo (módulo opcional)">
+          <span>&#9888;</span><span>Eventos No Programados</span><span class="cs-badge" data-en-badge hidden>0</span>
         </button>
-        <span class="cm-pendiente">Pendiente de construir</span>
+        <span class="cm-pendiente">Opcional</span>
       </div>
     </div>
 
@@ -1684,17 +1685,17 @@
       </div>
       <div class="cs-subnav-grupo cs-subnav-opcionales">
         <span class="cs-subnav-titulo">Opcionales</span>
-        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional, pendiente">Análisis de sólidos por equipo</button>
-        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional, pendiente">Retención en recortes</button>
-        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional, pendiente">Pruebas SUS</button>
-        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional, pendiente">Observaciones IFE</button>
+        <button type="button" class="cs-chip-opcional is-habilitado cs-subnav-btn" data-vista="solidos_eq">Análisis de sólidos por equipo</button>
+        <button type="button" class="cs-chip-opcional is-habilitado cs-subnav-btn" data-vista="retencion">Retención en recortes</button>
+        <button type="button" class="cs-chip-opcional is-habilitado cs-subnav-btn" data-vista="ife">Observaciones IFE</button>
+        <button type="button" class="cs-chip-opcional" disabled title="El manual no muestra esta pantalla: se construirá cuando haya información">Pruebas SUS</button>
       </div>
     </nav>
 
     <div class="cs-alerta" id="csAlerta" hidden></div>
 
     <!-- ============ 1. INVENTARIO DE MALLAS ============ -->
-    <section class="cs-vista" id="csVistaInventario">
+    <section class="cs-vista" id="csVistaInventario" data-vista="inventario">
       <div class="report-card-modern">
         <div class="cs-toolbar">
           <div class="cs-resumen" id="csResumenInventario"></div>
@@ -1748,7 +1749,7 @@
     </section>
 
     <!-- ============ 2. TRANSACCIONES DE MALLAS ============ -->
-    <section class="cs-vista" id="csVistaTransacciones" hidden>
+    <section class="cs-vista" id="csVistaTransacciones" data-vista="transacciones" hidden>
       <div class="cs-tr-grid">
         <div class="report-card-modern cs-tr-equipos">
           <div class="cs-card-titulo">Equipos con mallas</div>
@@ -1793,7 +1794,7 @@
     </section>
 
     <!-- ============ 3. DETALLE Y USO DE EQUIPOS ============ -->
-    <section class="cs-vista" id="csVistaEquipos" hidden>
+    <section class="cs-vista" id="csVistaEquipos" data-vista="equipos" hidden>
 
       <div class="report-card-modern cs-eq-contexto" id="csEqContexto"></div>
 
@@ -1907,6 +1908,59 @@
             </table>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- ============ OPCIONAL: OBSERVACIONES IFE ============ -->
+    <section class="cs-vista" data-vista="ife" hidden>
+      <div class="report-card-modern">
+        <div class="cs-card-cabecera">
+          <div>
+            <span class="cs-card-titulo">Observaciones IFE</span>
+            <span class="cs-card-subtitulo">Módulo opcional. Resumen del día y plan siguiente para fluidos de perforación y para control de sólidos.</span>
+          </div>
+          <button type="button" class="btn-modern-primary btn-sm" id="opIfeGuardar"><span>&#128190;</span><span>Guardar observaciones</span></button>
+        </div>
+        <div class="op-ife-grid">
+          <div class="op-ife-grupo">
+            <div class="cs-subtitulo">Fluidos de perforación</div>
+            <label class="cs-campo"><span class="cs-campo-label">Resumen</span><textarea class="cm-textarea op-ife" data-campo="fluidos_resumen" rows="6"></textarea></label>
+            <label class="cs-campo"><span class="cs-campo-label">Plan siguiente</span><textarea class="cm-textarea op-ife" data-campo="fluidos_plan" rows="6"></textarea></label>
+          </div>
+          <div class="op-ife-grupo">
+            <div class="cs-subtitulo">Control de sólidos</div>
+            <label class="cs-campo"><span class="cs-campo-label">Resumen</span><textarea class="cm-textarea op-ife" data-campo="solidos_resumen" rows="6"></textarea></label>
+            <label class="cs-campo"><span class="cs-campo-label">Plan siguiente</span><textarea class="cm-textarea op-ife" data-campo="solidos_plan" rows="6"></textarea></label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ OPCIONAL: ANÁLISIS DE SÓLIDOS POR EQUIPO ============ -->
+    <section class="cs-vista" data-vista="solidos_eq" hidden>
+      <div class="cs-tr-grid">
+        <div class="report-card-modern">
+          <div class="cs-card-cabecera">
+            <span class="cs-card-titulo">Muestras del día</span>
+            <button type="button" class="btn-modern-secondary btn-sm" data-op-nueva="solidos"><span>&#10133;</span><span>Nueva</span></button>
+          </div>
+          <div id="opListaSolidos"></div>
+        </div>
+        <div class="report-card-modern" id="opFichaSolidos"></div>
+      </div>
+    </section>
+
+    <!-- ============ OPCIONAL: RETENCIÓN EN RECORTES ============ -->
+    <section class="cs-vista" data-vista="retencion" hidden>
+      <div class="cs-tr-grid">
+        <div class="report-card-modern">
+          <div class="cs-card-cabecera">
+            <span class="cs-card-titulo">Pruebas del día</span>
+            <button type="button" class="btn-modern-secondary btn-sm" data-op-nueva="retencion"><span>&#10133;</span><span>Nueva</span></button>
+          </div>
+          <div id="opListaRetencion"></div>
+        </div>
+        <div class="report-card-modern" id="opFichaRetencion"></div>
       </div>
     </section>
 
@@ -2097,11 +2151,10 @@
           Configurar actividades del pozo &rarr;
         </a>
         <span class="tt-separador"></span>
-        <button type="button" class="btn-modern-secondary btn-sm" disabled
-                title="Módulo opcional: se construirá junto con los intervalos de revestimiento.">
-          <span>&#9888;</span><span>Eventos No Programados</span>
+        <button type="button" class="btn-modern-secondary btn-sm" data-en-abrir title="Registro de eventos no programados del pozo (módulo opcional)">
+          <span>&#9888;</span><span>Eventos No Programados</span><span class="cs-badge" data-en-badge hidden>0</span>
         </button>
-        <span class="tt-pendiente">Opcional &bull; pendiente</span>
+        <span class="tt-pendiente">Opcional</span>
       </div>
     </div>
 
@@ -2124,9 +2177,13 @@
         <button type="button" class="cs-subnav-btn" data-iv-vista="concentracion">
           <span class="cs-subnav-num">2</span><span>Concentración de productos</span>
         </button>
-        <button type="button" class="cs-chip-opcional" disabled title="Pendiente: definir edición API RP 13D">Hidráulica</button>
-        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional">Retención en recortes</button>
-        <button type="button" class="cs-chip-opcional" disabled title="Módulo opcional">Evaluación de benchmark</button>
+        <button type="button" class="cs-subnav-btn" data-iv-vista="hidraulica">
+          <span class="cs-subnav-num">3</span><span>Hidráulica</span>
+        </button>
+        <button type="button" class="cs-subnav-btn" data-iv-vista="benchmark">
+          <span class="cs-subnav-num">4</span><span>Evaluación de benchmark</span>
+        </button>
+        <button type="button" class="cs-chip-opcional is-habilitado" id="opIrRetencion" title="La retención en recortes se captura en la pestaña 6">Retención en recortes &rarr;</button>
       </div>
       <div class="cs-subnav-grupo">
         <span class="cs-subnav-titulo">Configuración</span>
@@ -2321,6 +2378,24 @@
       </div>
     </section>
 
+    <!-- ============ 3. HIDRÁULICA (API RP 13D) ============ -->
+    <section id="ivVistaHidraulica" hidden>
+      <div class="report-card-modern">
+        <div class="cs-card-cabecera">
+          <div>
+            <span class="cs-card-titulo">Hidráulica del día &bull; API RP 13D</span>
+            <span class="cs-card-subtitulo">Solo consulta: usa el caudal y las boquillas de la pestaña 2, el peso y la reología del chequeo principal de la pestaña 3 y la geometría de la pestaña 4.</span>
+          </div>
+          <div class="cs-condicion hd-edicion" role="radiogroup" aria-label="Edición de la norma">
+            <button type="button" class="cs-condicion-btn" data-hd-edicion="4">API 4ª edición</button>
+            <button type="button" class="cs-condicion-btn is-active" data-hd-edicion="5">API 5ª edición</button>
+          </div>
+        </div>
+        <div id="hdEntrada"></div>
+      </div>
+      <div id="hdResultado"></div>
+    </section>
+
     <!-- ============ 2. CONCENTRACIÓN DE PRODUCTOS ============ -->
     <section class="report-card-modern" id="ivVistaConcentracion" hidden>
       <div class="cs-card-cabecera">
@@ -2337,6 +2412,17 @@
     </section>
 
     <!-- ============ PÉRDIDAS DEL REPORTE (Daily Loss Print Selection) ============ -->
+    <!-- ============ 4. EVALUACIÓN DE BENCHMARK (opcional) ============ -->
+    <section class="report-card-modern" id="ivVistaBenchmark" hidden>
+      <div class="cs-card-cabecera">
+        <div>
+          <span class="cs-card-titulo">Evaluación de benchmark &bull; objetivo contra lo real</span>
+          <span class="cs-card-subtitulo">Módulo opcional. El objetivo viene del Benchmark Setup del pozo; lo real, de los chequeos de lodo de la pestaña 3 hasta esta fecha, agrupados por intervalo de costo. Se muestra el rango medido (mínimo – máximo) y el % de chequeos dentro del objetivo.</span>
+        </div>
+      </div>
+      <div id="opBenchmark"></div>
+    </section>
+
     <section class="report-card-modern" id="ivVistaPerdidas" hidden>
       <div class="cs-card-cabecera">
         <div>
@@ -2381,6 +2467,21 @@
       </div>
     </section>
 
+  </div>
+
+  <!-- MODAL: EVENTOS NO PROGRAMADOS (pestañas 5 y 7, opcional) -->
+  <div class="cs-modal" id="enModal" hidden>
+    <div class="cs-modal-caja va-modal-ancho" role="dialog" aria-modal="true" aria-labelledby="enModalTitulo">
+      <header class="cs-modal-cabecera">
+        <div>
+          <h3 class="cs-modal-titulo" id="enModalTitulo">Eventos no programados del pozo</h3>
+          <span class="cs-modal-subtitulo">Módulo opcional. Los eventos se editan desde el reporte en que se registraron.</span>
+        </div>
+        <button type="button" class="cs-modal-cerrar" id="enCerrar" title="Cerrar">&times;</button>
+      </header>
+      <div class="cs-modal-cuerpo cs-tk-grid" id="enCuerpo"></div>
+      <footer class="va-modal-pie" id="enPie"></footer>
+    </div>
   </div>
 
   <!-- MODAL GENÉRICO DE VOLUMETRÍA (pestaña 8) -->
@@ -5164,4 +5265,6 @@ async function guardarExtraPropertiesModal(){
 <script src="{% static 'operaciones/js/reporte_tiempo.js' %}?v={{ version_estaticos }}"></script>
 <script src="{% static 'operaciones/js/reporte_control_solidos.js' %}?v={{ version_estaticos }}"></script>
 <script src="{% static 'operaciones/js/reporte_inventario.js' %}?v={{ version_estaticos }}"></script>
+<script src="{% static 'operaciones/js/reporte_hidraulica.js' %}?v={{ version_estaticos }}"></script>
+<script src="{% static 'operaciones/js/reporte_opcionales.js' %}?v={{ version_estaticos }}"></script>
 {% endblock %}

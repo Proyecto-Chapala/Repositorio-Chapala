@@ -3,6 +3,8 @@ from . import views
 from . import views_daily_reports
 from . import views_control_solidos
 from . import views_inventario
+from . import views_hidraulica
+from . import views_opcionales
 
 app_name = 'operaciones'
 
@@ -85,6 +87,16 @@ urlpatterns = [
     path('api/pozos/<int:pk>/perdidas-reporte/', views_inventario.api_perdidas_reporte_detail, name='api_perdidas_reporte_detail'),
     path('api/pozos/<int:pk>/perdidas-reporte/guardar/', views_inventario.api_perdidas_reporte_guardar, name='api_perdidas_reporte_guardar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/', views_inventario.api_volumetria_detail, name='api_volumetria_detail'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/hidraulica/', views_hidraulica.api_hidraulica_detail, name='api_hidraulica_detail'),
+    # Módulos opcionales
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/ife/', views_opcionales.api_ife, name='api_ife'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/muestras/<str:clave>/', views_opcionales.api_muestras_detail, name='api_muestras_detail'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/muestras/<str:clave>/guardar/', views_opcionales.api_muestras_guardar, name='api_muestras_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/muestras/<str:clave>/<int:muestra_pk>/eliminar/', views_opcionales.api_muestras_eliminar, name='api_muestras_eliminar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/eventos/', views_opcionales.api_eventos_detail, name='api_eventos_detail'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/eventos/guardar/', views_opcionales.api_eventos_guardar, name='api_eventos_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/eventos/<int:evento_pk>/eliminar/', views_opcionales.api_eventos_eliminar, name='api_eventos_eliminar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/benchmark/', views_opcionales.api_benchmark_evaluacion, name='api_benchmark_evaluacion'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/guardar/', views_inventario.api_volumetria_guardar, name='api_volumetria_guardar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/', views_inventario.api_volumetria_transaccion, name='api_volumetria_transaccion'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/deshacer/', views_inventario.api_volumetria_deshacer, name='api_volumetria_deshacer'),

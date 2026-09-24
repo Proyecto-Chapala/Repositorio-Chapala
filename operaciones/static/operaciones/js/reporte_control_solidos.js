@@ -118,10 +118,9 @@ function csCambiarVista(vista){
   csVista = vista;
   document.querySelectorAll('.cs-subnav-btn[data-vista]').forEach(b =>
     b.classList.toggle('is-active', b.dataset.vista === vista));
-  document.getElementById('csVistaInventario').hidden = vista !== 'inventario';
-  document.getElementById('csVistaTransacciones').hidden = vista !== 'transacciones';
-  document.getElementById('csVistaEquipos').hidden = vista !== 'equipos';
+  document.querySelectorAll('#tabContent-solidos .cs-vista[data-vista]').forEach(sec => { sec.hidden = sec.dataset.vista !== vista; });
   if(vista === 'equipos') inicializarUsoEquipos();
+  if(typeof inicializarOpcionalSolidos === 'function') inicializarOpcionalSolidos(vista);
 }
 
 /* ---------- 1. Inventario ---------- */

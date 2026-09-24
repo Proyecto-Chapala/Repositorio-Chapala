@@ -1,0 +1,93 @@
+/* =====================================================================
+   PESTAÑA 8 — HIDRÁULICA
+   Reutiliza .va-kpi, .va-datos, .va-grid-2 (reporte_inventario.css),
+   .cs-tabla y .cs-condicion (reporte_control_solidos.css) y la leyenda
+   de reporte_tiempo.css.
+   ===================================================================== */
+
+.hd-edicion {
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+.hd-entrada {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.hd-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  padding: 10px 14px;
+}
+
+.hd-tabla td,
+.hd-tabla th {
+  white-space: nowrap;
+}
+
+.hd-turbulento {
+  color: var(--stock-alto-text);
+  font-weight: 800;
+}
+
+.hd-regimen {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hd-regimen-laminar    { background: #e0f2fe; color: #0369a1; }
+.hd-regimen-transicion { background: #fef3c7; color: #b45309; }
+.hd-regimen-turbulento { background: var(--stock-alto-bg); color: var(--stock-alto-text); }
+
+.hd-barra {
+  display: flex;
+  gap: 2px;
+  height: 16px;
+  margin-top: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.hd-seg {
+  flex-basis: 0;
+  min-width: 3px;
+}
+
+.hd-seg-sarta  { background: var(--color-navy); }
+.hd-seg-anular { background: #f2994a; }
+.hd-seg-mecha  { background: #06b6d4; }
+
+.hd-reograma {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  margin-bottom: 8px;
+}
+
+.hd-grid {
+  stroke: #e2e8f0;
+  stroke-width: 1;
+}
+
+.hd-eje {
+  fill: var(--color-text-muted);
+  font-size: 10px;
+}
+
+.hd-curva {
+  fill: none;
+  stroke: var(--color-orange);
+  stroke-width: 2.5;
+}
+
+.hd-punto {
+  fill: var(--color-navy);
+  stroke: #fff;
+  stroke-width: 1.5;
+}

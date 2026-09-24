@@ -199,14 +199,20 @@ function ivCambiarVista(vista){
   document.getElementById('ivVistaVolumetria').hidden = vista !== 'volumetria';
   document.getElementById('ivVistaConcentracion').hidden = vista !== 'concentracion';
   document.getElementById('ivVistaPerdidas').hidden = vista !== 'perdidas';
+  const hid = document.getElementById('ivVistaHidraulica');
+  if(hid) hid.hidden = vista !== 'hidraulica';
+  const bm = document.getElementById('ivVistaBenchmark');
+  if(bm) bm.hidden = vista !== 'benchmark';
+  if(vista === 'benchmark' && typeof cargarBenchmark === 'function') cargarBenchmark();
   if(vista === 'concentracion' && vaDatos) vaRenderConcentracion();
+  if(vista === 'hidraulica' && typeof cargarHidraulica === 'function') cargarHidraulica();
 }
 
 async function guardarPestanaInventario(silent = false){
   const algo = (typeof vaSucio !== 'undefined' && vaSucio) || ivSucio;
   if(vaSucio || (!silent && ivVista === 'volumetria')) await guardarVolumetria(silent);
   if(ivSucio || (!silent && ivVista === 'perdidas')) await guardarPerdidasReporte(silent);
-  if(!silent && !algo && ivVista === 'concentracion') showToast('La concentración de productos es solo de consulta.');
+  if(!silent && !algo && (ivVista === 'concentracion' || ivVista === 'hidraulica' || ivVista === 'benchmark')) showToast('Esta sección es solo de consulta.');
 }
 
 /* =====================================================================

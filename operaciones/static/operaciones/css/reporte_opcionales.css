@@ -1,0 +1,108 @@
+/* =====================================================================
+   MÓDULOS OPCIONALES (IFE, análisis de sólidos por equipo, retención en
+   recortes, benchmark, eventos no programados). Reutiliza las clases de
+   reporte_control_solidos.css y reporte_inventario.css.
+   ===================================================================== */
+
+/* Botones "Opcionales" ya disponibles */
+.cs-chip-opcional.is-habilitado {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px dashed var(--color-orange);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: #c2410c;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cs-chip-opcional.is-habilitado:hover,
+.cs-chip-opcional.is-habilitado.is-active {
+  border-style: solid;
+  background: var(--color-orange-soft-bg);
+  box-shadow: none;
+}
+
+/* Observaciones IFE */
+.op-ife-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.op-ife-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.op-ife-grupo .cm-textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Fichas de muestras */
+.op-cabecera {
+  margin-bottom: 10px;
+}
+
+.op-cabecera .report-input,
+.cs-campos .report-input {
+  height: 30px;
+}
+
+.op-comentarios {
+  margin-bottom: 4px;
+}
+
+/* Benchmark */
+.op-bm-tabla td {
+  vertical-align: top;
+  white-space: normal;
+  min-width: 150px;
+}
+
+.op-bm-obj,
+.op-bm-real {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.op-bm-obj strong,
+.op-bm-real strong {
+  color: var(--color-text-primary);
+}
+
+.op-pct {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.op-pct-ok    { background: var(--stock-alto-bg); color: var(--stock-alto-text); }
+.op-pct-medio { background: #fef3c7; color: #b45309; }
+.op-pct-bajo  { background: var(--stock-bajo-bg); color: var(--stock-bajo-text); }
+
+.op-sin-vinculo {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #b45309;
+}
+
+/* Eventos no programados: los textos ocupan todo el ancho */
+#enCuerpo .cm-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 900px) {
+  .op-ife-grid {
+    grid-template-columns: 1fr;
+  }
+}
