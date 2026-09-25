@@ -15,7 +15,7 @@ echo Para detener el servidor presione Ctrl + C en esta ventana.
 echo ==============================================================================
 echo.
 
-".\env\Scripts\python.exe" manage.py runserver 127.0.0.1:8000
+".\.venv\Scripts\python.exe" manage.py runserver 127.0.0.1:8000
 
 if %ERRORLEVEL% NEQ 0 (
     echo.

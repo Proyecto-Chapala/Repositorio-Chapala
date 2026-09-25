@@ -16,12 +16,13 @@ oficiales de la planilla AOS (All Oil Services, C.A.) con sus especificaciones:
 import os
 import sys
 import django
+from decimal import Decimal
 
 # Configuración del entorno de Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'chapala.settings')
 django.setup()
 
-from mychapala.models import Producto, ReporteDiario
+from operaciones.models import Producto
 
 PRODUCTOS_AOS = [
     {
@@ -550,104 +551,58 @@ PRODUCTOS_WELLSITE = [
 ]
 
 
+def _numero(texto, defecto):
+    """'55 LBS' -> 55; 'N/A' o vacío -> defecto."""
+    import re
+    m = re.search(r"\d+(?:[.,]\d+)?", str(texto or ""))
+    return Decimal(m.group(0).replace(",", ".")) if m else Decimal(str(defecto))
+
+
+def _categoria(item, por_defecto):
+    unidad = str(item.get("unidad", "")).upper()
+    if any(p in unidad for p in ("GLS", "GAL", "TAMBOR", "TOTE", "LTS", "BBL")):
+        return "LIQUIDO"
+    return por_defecto
+
+
 def seed_database():
-    """Ejecuta la carga inicial de productos en la base de datos divididos por categorías."""
-    print("Iniciando inyección de datos para Proyecto Chapala...")
+    """
+    Carga los productos del catálogo AOS en operaciones.Producto.
+
+    Solo CREA los productos que no existen (por código). Los que ya existen no se tocan,
+    para no pisar existencias ni precios cargados después desde la pantalla de Inventario.
+    """
+    print("Iniciando carga de productos para Proyecto Chapala...")
     creados = 0
-    actualizados = 0
+    existentes = 0
 
-    # 1. Productos Químicos AOS
-    for item in PRODUCTOS_AOS:
-        prod, created = Producto.objects.update_or_create(
-            codigo=item["codigo"],
-            defaults={
-                "descripcion": item["descripcion"],
-                "unidad": item["unidad"],
-                "libraje": item.get("libraje", "N/A"),
-                "gravedad_especifica": item.get("gravedad_especifica", "N/A"),
-                "cantidad": item["cantidad"],
-                "stock_inicial": item["cantidad"],
-                "categoria": "quimico",
-                "precio_unitario": item.get("precio_unitario", 45.00),
-                "activo": True
-            }
-        )
-        if created:
-            creados += 1
-        else:
-            actualizados += 1
+    grupos = (
+        (PRODUCTOS_AOS, "SOLIDO", 45.00),
+        (PRODUCTOS_LIQUIDOS, "LIQUIDO", 65.00),
+        (PRODUCTOS_WELLSITE, "SOLIDO", 0.00),
+    )
+    for lista, categoria, precio_defecto in grupos:
+        for item in lista:
+            _, creado = Producto.objects.get_or_create(
+                codigo=item["codigo"],
+                defaults={
+                    "descripcion": item["descripcion"],
+                    "unidad": item["unidad"],
+                    "libraje": _numero(item.get("libraje"), 0),
+                    "gravedad": _numero(item.get("gravedad_especifica"), 1) or Decimal("1"),
+                    "costo": Decimal(str(item.get("precio_unitario", precio_defecto))),
+                    "cantidad": Decimal(str(item.get("cantidad", 0))),
+                    "categoria": _categoria(item, categoria),
+                },
+            )
+            if creado:
+                creados += 1
+            else:
+                existentes += 1
 
-    # 2. Productos Líquidos AOS (Imagen 1)
-    for item in PRODUCTOS_LIQUIDOS:
-        prod, created = Producto.objects.update_or_create(
-            codigo=item["codigo"],
-            defaults={
-                "descripcion": item["descripcion"],
-                "unidad": item["unidad"],
-                "libraje": item.get("libraje", "N/A"),
-                "gravedad_especifica": item.get("gravedad_especifica", "N/A"),
-                "cantidad": item["cantidad"],
-                "stock_inicial": item["cantidad"],
-                "categoria": "liquido",
-                "precio_unitario": item.get("precio_unitario", 65.00),
-                "activo": True
-            }
-        )
-        if created:
-            creados += 1
-        else:
-            actualizados += 1
-
-    # 3. Wellsite Chemical Inventory (Imagen 2)
-    for item in PRODUCTOS_WELLSITE:
-        prod, created = Producto.objects.update_or_create(
-            codigo=item["codigo"],
-            defaults={
-                "descripcion": item["descripcion"],
-                "unidad": item["unidad"],
-                "libraje": item.get("libraje", "N/A"),
-                "gravedad_especifica": item.get("gravedad_especifica", "N/A"),
-                "cantidad": item["cantidad"],
-                "stock_inicial": item.get("stock_inicial", item["cantidad"]),
-                "categoria": "wellsite",
-                "precio_unitario": item.get("precio_unitario", 0.00),
-                "cum_used": item.get("cum_used", 0),
-                "daily_received": item.get("daily_received", 0),
-                "cum_received": item.get("cum_received", 0),
-                "daily_return": item.get("daily_return", 0),
-                "cum_return": item.get("cum_return", 0),
-                "activo": True
-            }
-        )
-        if created:
-            creados += 1
-        else:
-            actualizados += 1
-
-    # Asegura reporte diario inicial con metadatos Wellsite
-    reporte = ReporteDiario.objects.filter(
-        departamento="ALMACÉN",
-        encargado="LUIS BRICEÑO"
-    ).first()
-    if not reporte:
-        reporte = ReporteDiario.objects.create(
-            departamento="ALMACÉN",
-            encargado="LUIS BRICEÑO",
-            elaborado_por_nombre="Lusneila Franceschi",
-            elaborado_por_cargo="Administración",
-            revisado_por_nombre="Luis Briceño",
-            revisado_por_cargo="Encargado de Almacen",
-            operador="Cardon IV",
-            pozo="Perla-1X",
-            locacion="Offshore",
-            reporte_no_wellsite="16"
-        )
-
-    print(f"Éxito: {creados} productos creados, {actualizados} actualizados.")
+    print(f"Listo: {creados} productos creados, {existentes} ya existían (no se modificaron).")
     print(f"Total de productos en base de datos: {Producto.objects.count()}")
 
 
 if __name__ == "__main__":
     seed_database()
-
-

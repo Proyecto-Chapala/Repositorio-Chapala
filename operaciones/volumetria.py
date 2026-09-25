@@ -94,7 +94,8 @@ def _flujos():
     return {g: defaultdict(float) for g in GRUPOS}
 
 
-def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, servicios=None):
+def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, servicios=None,
+            validar_stock=True):
     """
     dias: lista ordenada por fecha de dicts
       {
@@ -112,6 +113,9 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
       }
     servicios: ids de productos que son servicios (unidad vacía, como los días de ingeniero):
     solo generan costo, no llevan existencias.
+    validar_stock: si es False no se rechaza un inventario negativo del pozo. Con el inventario
+    unificado la existencia real es Producto.cantidad y se valida al descontarla
+    (views_inventario._mover_stock); aquí solo se calculan usos, costos y concentraciones.
     Devuelve el estado del día objetivo (ver final de la función).
     """
     servicios = set(servicios or ())
@@ -327,7 +331,7 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 fin = ini
             else:
                 fin = ini + recibido[p] - devuelto[p] - usado_fluido[p] - otro + ajuste
-            if fin < -EPS:
+            if validar_stock and fin < -EPS:
                 raise ErrorVolumetria(
                     f"El {fecha}: el inventario de {np(p)} queda en {fin:g}. "
                     f"Hay {ini + recibido[p]:g} disponibles y se usan o devuelven "

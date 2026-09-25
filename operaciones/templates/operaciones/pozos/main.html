@@ -69,13 +69,14 @@
       </span>
     </a>
 
-    <div class="project-card is-disabled" title="Próximamente">
+    <a class="project-card" href="{% url 'operaciones:daily_reports_hub' pozo.pk %}" title="Las estaciones se capturan desde la pestaña 1 del reporte diario (botón Registro Direccional)">
       <div class="project-card-icon">📐</div>
       <div>
         <div class="project-card-title">Registro Direccional del Pozo</div>
-        <div class="project-card-sub">Próximamente</div>
+        <div class="project-card-sub">Se captura en el reporte diario (pestaña 1)</div>
       </div>
-    </div>
+      <span class="project-card-badge badge-ready">{{ pozo.survey_stations.count }} estaci{{ pozo.survey_stations.count|pluralize:"ón,ones" }}</span>
+    </a>
 
     <a class="project-card" href="{% url 'operaciones:benchmark_setup' pozo.pk %}">
       <div class="project-card-icon">📊</div>

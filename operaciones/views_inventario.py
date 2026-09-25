@@ -192,6 +192,79 @@ def _completar_productos(datos, ids):
     return datos
 
 
+# ---------- Inventario unificado (Producto.cantidad) ----------
+#
+# La existencia de cada producto es UNA: Producto.cantidad, la de la pantalla Inventario.
+# Cada consumo del reporte diario la descuenta al guardarse y la devuelve al deshacerse o al
+# borrar el reporte. Los campos `stock_aplicado` guardan cuánto se descontó.
+
+from django.db.models import Sum
+
+
+def _mover_stock(consumos):
+    """
+    Aplica consumos al inventario general. consumos: {producto_id: cantidad}; positivo = se
+    usa (resta), negativo = se devuelve (suma). Rechaza si alguna existencia queda negativa.
+    Debe llamarse dentro de transaction.atomic() para que un rechazo deshaga todo.
+    """
+    ids = [pid for pid, c in consumos.items() if abs(c) > 1e-9]
+    if not ids:
+        return
+    for prod in Producto.objects.select_for_update().filter(id__in=ids).order_by('id'):
+        consumo = Decimal(str(round(consumos[prod.id], 3)))
+        disponible = prod.cantidad or Decimal('0')
+        nuevo = disponible - consumo
+        if nuevo < Decimal('-0.0005'):
+            raise _Rechazo(
+                f"Inventario de {prod.descripcion} ({prod.codigo}): hay {disponible:g} {prod.unidad} "
+                f"y se necesitan {consumo:g}. Actualiza la existencia en la pantalla Inventario."
+            )
+        prod.cantidad = max(nuevo, Decimal('0'))
+        prod.save()
+
+
+def _sumar(destino, filas):
+    for pid, cant in filas:
+        if cant:
+            destino[pid] = destino.get(pid, 0.0) + float(cant)
+
+
+def consumo_aplicado_reporte(reporte):
+    """Todo lo que el reporte descontó del inventario general, por producto."""
+    total = {}
+    _sumar(total, TransaccionVolumenProducto.objects.filter(transaccion__reporte=reporte)
+           .values_list('producto_id', 'stock_aplicado'))
+    _sumar(total, TransaccionVolumen.objects.filter(reporte=reporte, lodo_producto__isnull=False)
+           .values_list('lodo_producto_id', 'lodo_stock_aplicado'))
+    _sumar(total, InventarioProductoDia.objects.filter(reporte=reporte)
+           .values_list('producto_id', 'stock_aplicado'))
+    return total
+
+
+def devolver_stock_reporte(reporte):
+    """Devuelve al inventario general lo que consumió el reporte (antes de borrarlo)."""
+    _mover_stock({pid: -c for pid, c in consumo_aplicado_reporte(reporte).items()})
+
+
+def _consumo_aplicado_por_fecha(fecha, ids):
+    """(consumo de ese día, consumo de días posteriores) en TODOS los pozos, por producto."""
+    del_dia, despues = {}, {}
+    consultas = (
+        (TransaccionVolumenProducto.objects.filter(producto_id__in=ids),
+         'producto_id', 'stock_aplicado', 'transaccion__reporte__fecha'),
+        (TransaccionVolumen.objects.filter(lodo_producto_id__in=ids),
+         'lodo_producto_id', 'lodo_stock_aplicado', 'reporte__fecha'),
+        (InventarioProductoDia.objects.filter(producto_id__in=ids),
+         'producto_id', 'stock_aplicado', 'reporte__fecha'),
+    )
+    for qs, campo_p, campo_c, campo_f in consultas:
+        _sumar(del_dia, qs.filter(**{campo_f: fecha}).values(campo_p)
+               .annotate(s=Sum(campo_c)).values_list(campo_p, 's'))
+        _sumar(despues, qs.filter(**{f"{campo_f}__gt": fecha}).values(campo_p)
+               .annotate(s=Sum(campo_c)).values_list(campo_p, 's'))
+    return del_dia, despues
+
+
 # ---------- Línea de tiempo del pozo ----------
 
 def _hoyo_del_reporte(pozo, reporte):
@@ -332,7 +405,7 @@ def _simular_pozo(pozo, reporte):
     nombres_p = {i: f"{p['descripcion']} ({p['codigo']})" for i, p in productos.items()}
     nombres_f = {f['numero']: f['descripcion'] for f in extra.get('fosas', [])}
     servicios = {i for i, p in productos.items() if p['servicio']}
-    sim = vol.simular(dias, reporte.id, nombres_p, nombres_f, servicios)
+    sim = vol.simular(dias, reporte.id, nombres_p, nombres_f, servicios, validar_stock=False)
     return sim, extra, tipos, productos
 
 
@@ -344,7 +417,8 @@ def _validar(pozo, reporte):
         productos = _completar_productos(_productos_pozo(pozo), ids)
         nombres_p = {i: f"{p['descripcion']} ({p['codigo']})" for i, p in productos.items()}
         servicios = {i for i, p in productos.items() if p['servicio']}
-        vol.simular(dias, ultimo.id, nombres_p, {f.numero: f.descripcion for f in pozo.fosas.all()}, servicios)
+        vol.simular(dias, ultimo.id, nombres_p, {f.numero: f.descripcion for f in pozo.fosas.all()}, servicios,
+                    validar_stock=False)
     except ErrorVolumetria as e:
         raise _Rechazo(str(e))
 
@@ -468,12 +542,22 @@ def _estado_volumetria(pozo, reporte):
     inv_sim = (sim or {}).get('inventario', {})
     inventario = []
     ids_inv = [i for i, p in productos.items() if p['activo']] + [i for i in inv_sim if not productos.get(i, {}).get('activo')]
+    # Existencia: inventario general (Producto.cantidad) llevado a la fecha del reporte.
+    #   final del día  = existencia actual + lo consumido en días posteriores (todos los pozos)
+    #   inicial        = final + lo consumido ese día (todos los pozos)
+    ids_stock = [pid for pid in ids_inv if pid in productos and not productos[pid]['servicio']]
+    existencia = dict(Producto.objects.filter(id__in=ids_stock).values_list('id', 'cantidad'))
+    consumo_dia, consumo_despues = _consumo_aplicado_por_fecha(reporte.fecha, ids_stock)
     peso_total = 0.0
     for pid in ids_inv:
         p = productos.get(pid)
         if not p:
             continue
-        s = inv_sim.get(pid, {})
+        s = dict(inv_sim.get(pid, {}))
+        if pid in existencia:
+            fin_general = float(existencia[pid] or 0) + consumo_despues.get(pid, 0.0)
+            s['final'] = fin_general
+            s['inicial'] = fin_general + consumo_dia.get(pid, 0.0)
         m = manual_hoy.get(pid)
         base_ni = m or ultimo_manual.get(pid)
         peso = vol.masa_lb(s.get('final', 0.0), p['unidad'], p['tamano'])
@@ -673,6 +757,7 @@ def api_volumetria_guardar(request, pk, reporte_pk):
                 reporte=reporte, producto_id=pid, usado_otro=_dec(otro), ajuste=_dec(ajuste),
                 en_pedido=_dec(pedido), no_imprimir=no_imp, precio=_dec(p['precio'], 2),
                 categoria_costo=p['categoria'],
+                stock_aplicado=_dec(0 if p['servicio'] else otro - ajuste),
             ))
 
         with transaction.atomic():
@@ -684,6 +769,11 @@ def api_volumetria_guardar(request, pk, reporte_pk):
                 'no_fluido_sarta': _dec(no_fluido['sarta'], 2),
                 'no_fluido_bajo_mecha': _dec(no_fluido['bajo_mecha'], 2),
             })
+            # Inventario general: se aplica solo la diferencia contra lo ya descontado.
+            consumos = {}
+            _sumar(consumos, [(m.producto_id, -m.stock_aplicado) for m in reporte.inventario_productos.all()])
+            _sumar(consumos, [(m.producto_id, m.stock_aplicado) for m in filas_inv])
+            _mover_stock(consumos)
             reporte.inventario_productos.all().delete()
             InventarioProductoDia.objects.bulk_create(filas_inv)
             _validar(pozo, reporte)
@@ -743,6 +833,7 @@ def api_volumetria_transaccion(request, pk, reporte_pk):
             if lp is None:
                 raise _Rechazo('Elige el producto de lodo entero (de los productos activos del pozo).')
             t.lodo_producto_id = lp['producto_id']
+            lodo_servicio = lp['servicio']
             t.lodo_producto_texto = f"{lp['descripcion']}"[:255]
             t.lodo_cantidad = _dec(vol.consumo_lodo_entero(v, lp['unidad'], lp['tamano']))
             t.lodo_precio = _dec(lp['precio'], 2)
@@ -776,7 +867,16 @@ def api_volumetria_transaccion(request, pk, reporte_pk):
                     raise _Rechazo('Elige el tipo de pérdida.')
                 t.perdida_codigo, t.perdida_descripcion = cat.codigo, cat.descripcion[:100]
 
+        if tipo == TransaccionVolumen.LODO_ENTERO and not lodo_servicio:
+            t.lodo_stock_aplicado = t.lodo_cantidad
+        consumos = {}
+        if tipo == TransaccionVolumen.QUIMICOS:
+            _sumar(consumos, [(p['producto_id'], c) for p, c in lineas if not p['servicio']])
+        elif t.lodo_producto_id:
+            _sumar(consumos, [(t.lodo_producto_id, t.lodo_stock_aplicado)])
+
         with transaction.atomic():
+            _mover_stock(consumos)
             ultima = TransaccionVolumen.objects.filter(reporte__pozo=pozo).aggregate(m=Max('secuencia'))['m'] or 0
             t.secuencia = ultima + 1
             t.save()
@@ -787,6 +887,7 @@ def api_volumetria_transaccion(request, pk, reporte_pk):
                     unidad=p['unidad'][:30], tamano=_dec(p['tamano']), gravedad=_dec(p['gravedad'], 4),
                     precio=_dec(p['precio'], 2), categoria_costo=p['categoria'],
                     calcula_concentracion=p['concentracion'],
+                    stock_aplicado=_dec(c if (tipo == TransaccionVolumen.QUIMICOS and not p['servicio']) else 0),
                 ) for p, c in lineas
             ])
             _validar(pozo, reporte)
@@ -809,7 +910,12 @@ def api_volumetria_deshacer(request, pk, reporte_pk):
         return _error(f"El último movimiento del pozo (#{ultima.secuencia}) es del reporte del "
                       f"{ultima.reporte.fecha.strftime('%d/%m/%Y')}. Deshazlo desde ese reporte.")
     try:
+        devuelto = {}
+        _sumar(devuelto, [(p.producto_id, -p.stock_aplicado) for p in ultima.productos.all()])
+        if ultima.lodo_producto_id:
+            _sumar(devuelto, [(ultima.lodo_producto_id, -ultima.lodo_stock_aplicado)])
         with transaction.atomic():
+            _mover_stock(devuelto)
             ultima.delete()
             _validar(pozo, reporte)
     except _Rechazo as e:

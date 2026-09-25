@@ -2317,7 +2317,7 @@
           <div class="cs-card-cabecera">
             <div>
               <span class="cs-card-titulo">Inventario diario de productos</span>
-              <span class="cs-card-subtitulo">Lo recibido y devuelto viene de los tickets; lo usado en fluidos, de los químicos y el lodo entero agregados. Solo las celdas blancas se escriben aquí.</span>
+              <span class="cs-card-subtitulo">La existencia es la del Inventario general (una sola para todos los pozos): lo usado en fluidos, en otro módulo y los ajustes la descuentan al guardar. Recibido y devuelto vienen de los tickets y son solo registro. Solo las celdas blancas se escriben aquí.</span>
             </div>
             <div class="cs-eq-acciones">
               <label class="cs-check"><input type="checkbox" id="vaSoloMovimiento"><span>Solo con existencia o movimiento</span></label>
@@ -3143,6 +3143,24 @@ function showToast(msg, ok=true){
 }
 
 let currentTabNum = 1;
+
+// Marca y modelo de bombas: el <datalist> solo sugiere lo que coincide con el texto ya
+// escrito. Al entrar al campo se vacía para mostrar todas las opciones; si el usuario no
+// elige ni escribe nada, al salir se restaura el valor anterior.
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('input[list="lista-modelos-bombas"]').forEach(function (inp) {
+    inp.addEventListener('focus', function () {
+      inp.dataset.valorPrevio = inp.value;
+      inp.placeholder = inp.value || inp.placeholder;
+      inp.value = '';
+    });
+    inp.addEventListener('blur', function () {
+      if (inp.value.trim() === '' && inp.dataset.valorPrevio) {
+        inp.value = inp.dataset.valorPrevio;
+      }
+    });
+  });
+});
 
 /* Switch between the 8 Tabs */
 function switchTab(tabNum){

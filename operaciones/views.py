@@ -276,7 +276,21 @@ def api_producto_delete(request, pk):
         }, status=400)
 
     codigo = producto.codigo
-    producto.delete()
+    try:
+        producto.delete()
+    except ProtectedError:
+        pozos = sorted(set(
+            producto.activos_en_pozos.values_list('pozo__nombre', flat=True)
+        ))
+        if pozos:
+            motivo = (f"está activo en: {', '.join(pozos)}. "
+                      "Quítelo primero de los productos activos de esos pozos.")
+        else:
+            motivo = "tiene movimientos, tickets o inventarios registrados en reportes diarios."
+        return JsonResponse({
+            "success": False,
+            "error": f"No se puede eliminar el producto '{codigo}' porque {motivo}"
+        }, status=400)
 
     return JsonResponse({
         "success": True,
@@ -378,6 +392,8 @@ def api_pozo_paso1(request, pk=None):
         pozo.unidades_personalizadas.all().delete()
         pozo.categorias_perdida.all().delete()
         pozo.clonar_unidades_personalizadas()
+        # Productos, equipos y mallas activos (lo que promete la pantalla del paso 1).
+        pozo.clonar_listas_activas()
 
     # Categorías de pérdida (Loss Setup): se clonan de la plantilla si existe, o
     # se siembran las estándar de ONE-TRAX si el pozo aún no tiene ninguna.

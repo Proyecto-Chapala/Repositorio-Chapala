@@ -303,7 +303,8 @@ class Pozo(models.Model):
             return
         origen = self.pozo_plantilla
         self.sistema_unidades = origen.sistema_unidades
-        self.unidades_personalizadas = origen.unidades_personalizadas
+        # Las unidades personalizadas (relación inversa) se copian en
+        # clonar_unidades_personalizadas(); asignarlas aquí lanzaba TypeError.
         self.moneda_simbolo = origen.moneda_simbolo
         self.moneda_decimales = origen.moneda_decimales
         self.tasa_impuesto = origen.tasa_impuesto
@@ -356,6 +357,40 @@ class Pozo(models.Model):
                 )
         if not self.tipos_fosa.exists():
             TipoFosa.sembrar_estandar(self)
+
+    def clonar_listas_activas(self):
+        """
+        Copia desde la plantilla los productos, equipos y mallas activos del pozo
+        (con sus precios y datos del proyecto). Reemplaza las listas actuales del
+        pozo, igual que el guardado de la pantalla de listas activas.
+        """
+        if not self.pozo_plantilla:
+            return
+        origen = self.pozo_plantilla
+        campos_producto = [
+            'producto_id', 'abreviatura', 'unit_size', 'unidad', 'empaque', 'precio',
+            'gravedad_especifica', 'calcular_concentracion', 'es_producto_mi',
+            'grupo_producto', 'codigo_costo_diario', 'calcular_wmgt_conc',
+            'categoria_costo_wmgt', 'categoria_costo_cf',
+        ]
+        self.productos_activos.all().delete()
+        ProductoActivoPozo.objects.bulk_create([
+            ProductoActivoPozo(pozo=self, **{c: getattr(a, c) for c in campos_producto})
+            for a in origen.productos_activos.all()
+        ])
+        self.equipos_activos.all().delete()
+        EquipoActivoPozo.objects.bulk_create([
+            EquipoActivoPozo(pozo=self, equipo_id=e.equipo_id, numero_serie=e.numero_serie,
+                             descripcion=e.descripcion, precio_renta=e.precio_renta,
+                             precio_standby=e.precio_standby)
+            for e in origen.equipos_activos.all()
+        ])
+        self.mallas_activas.all().delete()
+        MallaActivaPozo.objects.bulk_create([
+            MallaActivaPozo(pozo=self, malla_id=m.malla_id, precio=m.precio,
+                            descuento_porcentaje=m.descuento_porcentaje)
+            for m in origen.mallas_activas.all()
+        ])
 
     def activar(self):
         """Confirma el paso 4: bloquea unidades y pasa el pozo a ACTIVO."""

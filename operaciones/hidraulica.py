@@ -30,7 +30,10 @@ import math
 
 C_PERDIDA = 1.076e-5
 C_MECHA = 10858.0
-EQUIV_SUPERFICIE_FT = {'1': 2600.0, '2': 946.0, '3': 610.0, '4': 424.0}   # de tubería de 3.826" ID
+# Código de superficie de la pestaña 2: 1 = presión manual; 2 a 5 = casos API 1 a 4
+# (longitud equivalente de tubería de 3.826" ID).
+EQUIV_SUPERFICIE_FT = {'2': 2600.0, '3': 946.0, '4': 610.0, '5': 424.0}
+CASO_API = {'2': 1, '3': 2, '4': 3, '5': 4}
 ID_EQUIV_SUPERFICIE = 3.826
 
 
@@ -227,12 +230,16 @@ def calcular(secciones, q, rho, reo, tfa, bit_size, tvd_de, superficie=None, tem
     if sup.get('presion_ref') and sup.get('caudal_ref'):
         dp_sup = sup['presion_ref'] * (q / sup['caudal_ref']) ** 1.86
         nota_sup = f"Escalada de {sup['presion_ref']:g} psi a {sup['caudal_ref']:g} gpm (pestaña 2)."
+    elif codigo == '1' and sup.get('presion_ref'):
+        dp_sup = sup['presion_ref']
+        nota_sup = f"Presión manual de la pestaña 2: {sup['presion_ref']:g} psi."
     elif codigo in EQUIV_SUPERFICIE_FT:
         r = _flujo(q, ID_EQUIV_SUPERFICIE, 0.0, rho, reo['tuberia'], edicion, False)
         dp_sup = r['grad'] * EQUIV_SUPERFICIE_FT[codigo]
-        nota_sup = f"Caso de equipo de superficie {codigo}: {EQUIV_SUPERFICIE_FT[codigo]:g} ft equivalentes de tubería de 3.826\"."
+        nota_sup = (f"Código {codigo} (caso API {CASO_API[codigo]}): "
+                    f"{EQUIV_SUPERFICIE_FT[codigo]:g} ft equivalentes de tubería de 3.826\".")
     else:
-        nota_sup = 'Sin datos de equipo de superficie (código 1-4 o presión de referencia en la pestaña 2).'
+        nota_sup = 'Sin datos de equipo de superficie (código 2-5, o código 1 con la presión en la pestaña 2).'
 
     # Mecha
     mecha = {'perdida': 0.0, 'hhp': 0.0, 'hsi': 0.0, 'vel_chorro': 0.0, 'fuerza_impacto': 0.0}

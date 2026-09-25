@@ -673,6 +673,7 @@ def _hoja_equipos(ws, d):
     ws['E48'].value = round(grupos[1], 2)
     ws['E49'].value = round(grupos[3], 2)
     ws['E50'].value = round(sum(grupos.values()), 2)
+    return len(filas)
 
 
 def _hoja_mallas(ws, d):
@@ -700,6 +701,7 @@ def _hoja_mallas(ws, d):
         ws[f'{col}49'].value = round(v, 2)
     ws['B51'].value = (d['mallas'].get('totales') or {}).get('costo_diario')
     ws['B52'].value = (d['mallas'].get('totales') or {}).get('costo_acumulado')
+    return len(inv)
 
 
 # ---------------------------------------------------------------- libro completo
@@ -719,11 +721,20 @@ def generar_reporte_excel(pozo, reporte):
     _hoja_extra(wb[hoja_extra], d, variante)
     _hoja_volumen(wb['Contabilidad de Volumen'], d)
     df, por_nombre, completo = _listas_inventario(d)
-    _hoja_inventario(wb['Inv Quimico (DF)'], d, df)
-    _hoja_inventario(wb['Inv Quimico (por nombre)'], d, por_nombre)
-    _hoja_inventario(wb['Inv Quimico (completo)'], d, completo)
-    _hoja_equipos(wb['Equipos'], d)
-    _hoja_mallas(wb['Inventario de Mallas'], d)
+    # Las hojas sin datos se quitan del libro: antes salían vacías y parecían repetidas.
+    vacias = []
+    for hoja, productos in (('Inv Quimico (DF)', df), ('Inv Quimico (por nombre)', por_nombre),
+                            ('Inv Quimico (completo)', completo)):
+        if productos:
+            _hoja_inventario(wb[hoja], d, productos)
+        else:
+            vacias.append(hoja)
+    if not _hoja_equipos(wb['Equipos'], d):
+        vacias.append('Equipos')
+    if not _hoja_mallas(wb['Inventario de Mallas'], d):
+        vacias.append('Inventario de Mallas')
+    for hoja in vacias:
+        wb.remove(wb[hoja])
 
     if os.path.exists(LOGO):
         from openpyxl.drawing.image import Image

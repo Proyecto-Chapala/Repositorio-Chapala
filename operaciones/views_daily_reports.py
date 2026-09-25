@@ -1,7 +1,7 @@
 import json
 import math
 import io
-from datetime import timedelta
+from datetime import date, timedelta
 
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -550,7 +550,11 @@ def api_reporte_diario_crear(request, pk):
 def api_reporte_diario_eliminar(request, pk, reporte_pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
-    reporte.delete()
+    # Inventario unificado: lo que el reporte consumió vuelve al inventario general.
+    from .views_inventario import devolver_stock_reporte
+    with transaction.atomic():
+        devolver_stock_reporte(reporte)
+        reporte.delete()
     return JsonResponse({'ok': True})
 
 
@@ -571,7 +575,21 @@ def api_reporte_diario_general_guardar(request, pk, reporte_pk):
             except (ValueError, TypeError):
                 return default
 
-        reporte.fecha = body.get('fecha', reporte.fecha)
+        # Fecha: validar formato y que no exista otro reporte ese día.
+        fecha_anterior = reporte.fecha
+        fecha_texto = body.get('fecha')
+        if fecha_texto not in (None, ''):
+            try:
+                nueva_fecha = date.fromisoformat(str(fecha_texto)[:10])
+            except ValueError:
+                return JsonResponse({'ok': False, 'error': f"Fecha inválida: '{fecha_texto}'."}, status=400)
+            if nueva_fecha != fecha_anterior and ReporteDiario.objects.filter(
+                    pozo=pozo, fecha=nueva_fecha).exclude(pk=reporte.pk).exists():
+                return JsonResponse({
+                    'ok': False,
+                    'error': f"Ya existe otro reporte del pozo con fecha {nueva_fecha.strftime('%d/%m/%Y')}."
+                }, status=400)
+            reporte.fecha = nueva_fecha
         reporte.profundidad_actual = parse_float(body.get('profundidad_actual'), reporte.profundidad_actual)
         reporte.profundidad_tvd = parse_float(body.get('profundidad_tvd'), reporte.profundidad_tvd)
         reporte.bit_depth = parse_float(body.get('bit_depth'), reporte.bit_depth)
@@ -587,8 +605,28 @@ def api_reporte_diario_general_guardar(request, pk, reporte_pk):
         reporte.telefono_almacen = body.get('telefono_almacen', reporte.telefono_almacen)
         reporte.telefonos = body.get('telefonos', reporte.telefonos)
         reporte.fax_numbers = body.get('fax_numbers', reporte.fax_numbers)
-        reporte.save()
-        return JsonResponse({'ok': True})
+
+        if reporte.fecha == fecha_anterior:
+            reporte.save()
+            return JsonResponse({'ok': True})
+
+        # Cambió la fecha: el reporte se mueve en la línea de tiempo del pozo. Se guarda y
+        # se revalidan mallas (pestaña 6) y volumetría (pestaña 8); si algún día deja de
+        # cuadrar, se deshace todo.
+        from .views_control_solidos import _simular as simular_mallas
+        from .control_solidos import ErrorMallas
+        from .views_inventario import _validar as validar_volumetria, _Rechazo
+        try:
+            with transaction.atomic():
+                reporte.save()
+                simular_mallas(pozo, reporte)
+                validar_volumetria(pozo, reporte)
+        except (ErrorMallas, _Rechazo) as e:
+            return JsonResponse({
+                'ok': False,
+                'error': f"No se puede cambiar la fecha: {e}"
+            }, status=400)
+        return JsonResponse({'ok': True, 'fecha_cambiada': True})
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=400)
 

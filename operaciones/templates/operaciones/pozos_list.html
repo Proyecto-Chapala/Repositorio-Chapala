@@ -24,8 +24,8 @@
       <div>
         <div class="project-card-title">{{ pozo.nombre }}</div>
         <div class="project-card-sub">
-          {{ pozo.operador|default:"Operador no definido" }}
-          {% if pozo.spud_date %} · Spud: {{ pozo.spud_date|date:"d/M/Y" }}{% endif %}
+          {{ pozo.well_header_info.operador|default:"Operador no definido" }}
+          {% if pozo.well_header_info.spud_date %} · Spud: {{ pozo.well_header_info.spud_date|date:"d/M/Y" }}{% endif %}
         </div>
       </div>
       <span class="project-card-badge badge-ready">{{ pozo.get_estado_display }}</span>
