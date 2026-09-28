@@ -1,0 +1,262 @@
+/* =====================================================================
+   REPORTE FINAL DEL POZO (recap)
+   1) Pantalla de configuración (pozos/recap.html, dentro del layout)
+   2) Página imprimible (pozos/recap_imprimible.html, se guarda como PDF)
+   ===================================================================== */
+
+:root {
+  --rc-naranja: var(--color-orange, #f2994a);
+  --rc-texto: #1f2937;
+  --rc-suave: #64748b;
+  --rc-borde: #e7e5e4;
+  --rc-fondo: #faf8f6;
+}
+
+/* ---------- 1. Configuración ---------- */
+.rc-volver { display: inline-block; margin-bottom: 4px; font-size: 12px; color: var(--rc-suave); text-decoration: none; }
+.rc-volver:hover { color: var(--rc-naranja); }
+
+.rc-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; align-items: start; }
+
+.rc-tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 22px 22px 20px;
+  background: #fff;
+  border: 1px solid var(--rc-borde);
+  border-radius: 14px;
+  box-shadow: var(--shadow-tarjeta, 0 2px 10px rgba(0, 0, 0, 0.05));
+}
+
+.rc-paso {
+  position: absolute;
+  top: -12px;
+  left: 18px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--rc-naranja);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.rc-titulo { margin: 4px 0 0; font-size: 16px; font-weight: 800; color: var(--rc-texto); }
+.rc-nota { margin: 0 0 6px; font-size: 12px; color: var(--rc-suave); line-height: 1.45; }
+.rc-nota a { color: var(--rc-naranja); }
+.rc-nota-chica { font-size: 11px; }
+
+.rc-label {
+  margin-top: 8px;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rc-suave);
+}
+
+.rc-tarjeta textarea, .rc-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border: 1px solid var(--rc-borde);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--rc-texto);
+  background: #fff;
+  resize: vertical;
+}
+
+.rc-tarjeta textarea:focus, .rc-input:focus { outline: none; border-color: var(--rc-naranja); box-shadow: 0 0 0 3px rgba(242, 153, 74, 0.15); }
+
+.rc-acciones { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+
+.rc-btn {
+  padding: 9px 18px;
+  border: 1px solid var(--rc-naranja);
+  border-radius: 9px;
+  background: var(--rc-naranja);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.rc-btn-sec { background: #fff; color: var(--rc-naranja); }
+
+.rc-secciones { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin-bottom: 6px; }
+.rc-check { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--rc-texto); cursor: pointer; }
+.rc-check input { accent-color: var(--rc-naranja); }
+
+.rc-formatos { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+
+.rc-formato {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--rc-borde);
+  border-radius: 11px;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.rc-formato:hover { border-color: var(--rc-naranja); background: #fff8f1; }
+.rc-formato-icono { font-size: 24px; }
+.rc-formato strong { display: block; font-size: 13.5px; color: var(--rc-texto); }
+.rc-formato small { display: block; font-size: 11.5px; color: var(--rc-suave); }
+
+.rc-aviso {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 12.5px;
+}
+
+.rc-aviso-ok { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+
+@media (max-width: 900px) {
+  .rc-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- 2. Página imprimible ---------- */
+.rc-imprimible {
+  margin: 0;
+  background: var(--rc-fondo);
+  color: var(--rc-texto);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+}
+
+.rc-barra {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--rc-borde);
+}
+
+.rc-barra-nota { flex: 1; font-size: 12px; color: var(--rc-suave); }
+
+.rc-hoja {
+  max-width: 1100px;
+  margin: 20px auto;
+  padding: 30px 34px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.rc-portada {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 4px solid var(--rc-naranja);
+}
+
+.rc-portada h1 { margin: 2px 0; font-size: 24px; font-weight: 800; }
+.rc-portada-empresa { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--rc-naranja); }
+.rc-portada-pozo { font-size: 18px; font-weight: 700; }
+.rc-portada-sub, .rc-portada-fecha { color: var(--rc-suave); }
+.rc-portada-fecha { text-align: right; font-size: 11.5px; line-height: 1.6; }
+
+.rc-seccion { margin-bottom: 22px; break-inside: auto; }
+.rc-seccion h2 {
+  margin: 0 0 10px;
+  padding-bottom: 5px;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rc-naranja);
+  border-bottom: 1px solid var(--rc-borde);
+  break-after: avoid;
+}
+
+.rc-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 12px; }
+.rc-kpis div { padding: 9px 11px; border: 1px solid var(--rc-borde); border-radius: 9px; background: #fcfbfa; }
+.rc-kpis span { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-suave); }
+.rc-kpis strong { display: block; margin-top: 3px; font-size: 14px; font-variant-numeric: tabular-nums; }
+
+.rc-tabla { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.rc-tabla th, .rc-tabla td { padding: 5px 8px; border-bottom: 1px solid var(--rc-borde); text-align: left; vertical-align: top; }
+.rc-tabla thead th { background: #f8fafc; font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--rc-suave); }
+.rc-tabla tbody tr:nth-child(even) { background: #fcfbfa; }
+.rc-tabla tfoot td { font-weight: 800; border-top: 2px solid var(--rc-borde); }
+.rc-tabla thead { display: table-header-group; }
+.rc-tabla tr { break-inside: avoid; }
+.rc-tabla .n { text-align: right; white-space: nowrap; }
+.rc-tabla .nw { white-space: nowrap; }
+.rc-tabla-chica { font-size: 11px; }
+.rc-tabla-datos th { width: 16%; color: var(--rc-suave); font-weight: 700; background: none; font-size: 11px; text-transform: none; }
+.rc-fila-nota td { font-size: 11px; color: var(--rc-suave); background: #fff !important; }
+
+.rc-recap { color: var(--rc-suave); }
+.rc-etiqueta {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #fff1e6;
+  color: #c2410c;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.rc-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+
+.rc-textos { display: grid; gap: 12px; }
+.rc-textos h3 { margin: 0 0 4px; font-size: 12px; font-weight: 800; }
+.rc-textos p { margin: 0; line-height: 1.55; }
+
+.rc-col-barra { width: 34%; }
+.rc-meter { width: 100%; height: 10px; }
+.rc-meter::-webkit-meter-optimum-value { background: var(--rc-naranja); }
+.rc-meter::-moz-meter-bar { background: var(--rc-naranja); }
+
+.rc-vacio { color: var(--rc-suave); font-style: italic; }
+
+.rc-pie {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rc-borde);
+  font-size: 10.5px;
+  color: var(--rc-suave);
+}
+
+@media (max-width: 800px) {
+  .rc-hoja { margin: 0; padding: 18px 16px; border-radius: 0; }
+  .rc-kpis { grid-template-columns: repeat(2, 1fr); }
+  .rc-dos { grid-template-columns: 1fr; }
+  .rc-portada { flex-direction: column; align-items: flex-start; }
+  .rc-portada-fecha { text-align: left; }
+}
+
+@media print {
+  .rc-imprimible { background: #fff; }
+  .no-imprimir { display: none !important; }
+  .rc-hoja { max-width: none; margin: 0; padding: 0; box-shadow: none; border-radius: 0; }
+  .rc-salto { break-before: page; }
+  @page { size: A4 landscape; margin: 12mm; }
+}

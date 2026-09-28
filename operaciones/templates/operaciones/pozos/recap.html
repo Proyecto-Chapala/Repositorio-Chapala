@@ -1,0 +1,89 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Reporte Final &bull; {{ pozo.nombre }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/recap.css' %}?v={{ version_estaticos }}">
+{% endblock %}
+
+{% block content %}
+<div class="project-page rc-pagina">
+
+  <header class="project-header">
+    <div>
+      <a class="rc-volver" href="{% url 'operaciones:pozo_main' pozo.pk %}">&larr; {{ pozo.nombre }}</a>
+      <h1 class="project-header-title">Reporte Final del Pozo</h1>
+      <div class="project-header-sub">Recap consolidado de todo el pozo &middot; Excel o PDF</div>
+    </div>
+    <div class="project-header-chips">
+      <span class="project-chip chip-accent">{{ total_reportes }} reporte{{ total_reportes|pluralize }}</span>
+      {% if primero %}<span class="project-chip">{{ primero.fecha|date:"d/m/Y" }} &rarr; {{ ultimo.fecha|date:"d/m/Y" }}</span>{% endif %}
+    </div>
+  </header>
+
+  {% if guardado %}<div class="rc-aviso rc-aviso-ok">Conclusiones y recomendaciones guardadas.</div>{% endif %}
+  {% if not total_reportes %}<div class="rc-aviso">El pozo todavía no tiene reportes diarios: el reporte final saldrá vacío.</div>{% endif %}
+
+  <div class="rc-grid">
+
+    <!-- 1. Textos del ingeniero -->
+    <form method="post" class="rc-tarjeta">
+      {% csrf_token %}
+      <div class="rc-paso">1</div>
+      <h2 class="rc-titulo">Conclusiones y recomendaciones</h2>
+      <p class="rc-nota">Lo escribe el ingeniero al cierre. Se guarda en el pozo y sale en el reporte. Las observaciones de cada intervalo se toman de <a href="{% url 'operaciones:casing_intervals' pozo.pk %}">Intervalos de Revestimiento</a>.</p>
+
+      <label class="rc-label" for="rcResumen">Resumen del pozo</label>
+      <textarea id="rcResumen" name="resumen" rows="4" placeholder="Cómo se desarrolló el pozo en general…">{{ recap.resumen }}</textarea>
+
+      <label class="rc-label" for="rcConclusiones">Conclusiones</label>
+      <textarea id="rcConclusiones" name="conclusiones" rows="4" placeholder="Qué funcionó, qué no, resultados del sistema de fluidos…">{{ recap.conclusiones }}</textarea>
+
+      <label class="rc-label" for="rcRecomendaciones">Recomendaciones</label>
+      <textarea id="rcRecomendaciones" name="recomendaciones" rows="4" placeholder="Para el próximo pozo o la próxima fase…">{{ recap.recomendaciones }}</textarea>
+
+      <label class="rc-label" for="rcLecciones">Lecciones aprendidas / buenas prácticas</label>
+      <textarea id="rcLecciones" name="lecciones" rows="3" placeholder="Opcional">{{ recap.lecciones }}</textarea>
+
+      <div class="rc-acciones">
+        {% if recap.actualizado_en %}<span class="rc-nota">Última edición: {{ recap.actualizado_en|date:"d/m/Y H:i" }}</span>{% endif %}
+        <button type="submit" class="rc-btn">Guardar textos</button>
+      </div>
+    </form>
+
+    <!-- 2. Qué descargar -->
+    <form method="get" class="rc-tarjeta" action="{% url 'operaciones:recap_imprimible' pozo.pk %}">
+      <div class="rc-paso">2</div>
+      <h2 class="rc-titulo">Generar el reporte</h2>
+      <p class="rc-nota">Guarda primero los textos. Elige hasta qué fecha y qué secciones incluir.</p>
+
+      <label class="rc-label" for="rcHasta">Hasta la fecha (opcional)</label>
+      <input type="date" id="rcHasta" name="hasta" class="rc-input"
+             {% if primero %}min="{{ primero.fecha|date:'Y-m-d' }}" max="{{ ultimo.fecha|date:'Y-m-d' }}"{% endif %}>
+      <p class="rc-nota rc-nota-chica">Vacío = todo el pozo, hasta el último reporte.</p>
+
+      <div class="rc-label">Secciones</div>
+      <div class="rc-secciones">
+        {% for clave, titulo in secciones.items %}
+        <label class="rc-check"><input type="checkbox" name="s" value="{{ clave }}" checked> {{ titulo }}</label>
+        {% endfor %}
+      </div>
+
+      <div class="rc-formatos">
+        <button type="submit" class="rc-formato" formaction="{% url 'operaciones:recap_excel' pozo.pk %}">
+          <span class="rc-formato-icono">&#128202;</span>
+          <span><strong>Descargar Excel</strong><small>Una hoja por sección (.xlsx)</small></span>
+        </button>
+        <button type="submit" class="rc-formato" formtarget="_blank">
+          <span class="rc-formato-icono">&#128196;</span>
+          <span><strong>Ver / Guardar PDF</strong><small>Se abre listo para imprimir o guardar como PDF</small></span>
+        </button>
+      </div>
+      <p class="rc-nota rc-nota-chica">Con muchos reportes puede tardar unos segundos: se recalcula todo el pozo.</p>
+    </form>
+
+  </div>
+</div>
+{% endblock %}

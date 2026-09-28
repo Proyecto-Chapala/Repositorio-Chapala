@@ -7,8 +7,12 @@ propio: toma los resultados de los mismos motores que usan las pestañas (volume
 sólidos, geometría, hidráulica y costos), así el Excel siempre coincide con la pantalla.
 
 Hojas: reporte de lodo (la variante del tipo de lodo del reporte: base agua, CALDRIL, base aceite
-o base sintética), propiedades extra, contabilidad de volumen, inventario químico (DF, por nombre
-y completo), uso y costo de equipos e inventario de mallas.
+o base sintética), propiedades extra, contabilidad de volumen, concentraciones (sistema activo y
+cada fosa, en lb/bbl y kg/m³), inventario químico (DF, por nombre y completo), uso y costo de
+equipos e inventario de mallas.
+
+Redondeo: los volúmenes del balance y del hoyo se imprimen sin decimales (así se reportan en
+campo); los volúmenes de fosas con 1 decimal; los costos no se redondean más allá de centavos.
 """
 
 import io
@@ -212,7 +216,11 @@ def _volumen_y_circulacion(ws, d):
     total = hoyo + activas
     ws['E12'].value = round(total, 0)
     anterior = d['anterior']
-    avance = max((_f(d['reporte'].profundidad_actual) or 0) - (_f(anterior.profundidad_actual) or 0 if anterior else 0), 0)
+    contexto = d['equipos'].get('contexto') or {}
+    if 'avance_ft' in contexto:          # incluye side track (kick-off) y ampliación de piloto
+        avance = _f(contexto.get('avance_ft')) or 0.0
+    else:
+        avance = max((_f(d['reporte'].profundidad_actual) or 0) - (_f(anterior.profundidad_actual) or 0 if anterior else 0), 0)
     if not anterior:
         avance = 0.0
     ws['E14'].value = round(avance, 0)
@@ -550,12 +558,12 @@ def _hoja_volumen(ws, d):
     hoyo = vol.get('hoyo') or {}
     vtot, vnf = hoyo.get('volumen') or {}, hoyo.get('no_fluido') or {}
     for col, k in (('B', 'anular'), ('C', 'sarta'), ('E', 'bajo_mecha')):
-        ws[f'{col}43'].value = _num(vtot.get(k), 1)
-        ws[f'{col}44'].value = _num(vnf.get(k), 1)
-        ws[f'{col}45'].value = _num((_f(vtot.get(k)) or 0) - (_f(vnf.get(k)) or 0), 1)
-    ws['G43'].value = _num(hoyo.get('total_volumen'), 1)
-    ws['G44'].value = _num(hoyo.get('total_no_fluido'), 1)
-    ws['G45'].value = _num(hoyo.get('total_fluido'), 1)
+        ws[f'{col}43'].value = _num(vtot.get(k), 0)
+        ws[f'{col}44'].value = _num(vnf.get(k), 0)
+        ws[f'{col}45'].value = _num((_f(vtot.get(k)) or 0) - (_f(vnf.get(k)) or 0), 0)
+    ws['G43'].value = _num(hoyo.get('total_volumen'), 0)
+    ws['G44'].value = _num(hoyo.get('total_no_fluido'), 0)
+    ws['G45'].value = _num(hoyo.get('total_fluido'), 0)
 
     cols = {'ACTIVO': 'C', 'RESERVA': 'D', 'PREMEZCLA': 'E'}
     tot = {}
@@ -569,7 +577,7 @@ def _hoja_volumen(ws, d):
         filas = {50: g['inicio'], 51: v('aceite'), 52: v('agua'), 53: v('quimicos'), 54: 0.0,
                  55: construido, 56: v('recibido'), 57: v('devuelto'), 61: v('perdida'), 62: g['calculado']}
         for fila, valor in filas.items():
-            ws[f'{col}{fila}'].value = _num(valor, 1)
+            ws[f'{col}{fila}'].value = _num(valor, 0)
             tot[fila] = tot.get(fila, 0.0) + (_f(valor) or 0.0)
     # Transferencias entre grupos: fila = grupo de origen, columna = grupo destino
     for fila, origen in ((58, 'ACTIVO'), (59, 'RESERVA'), (60, 'PREMEZCLA')):
@@ -581,17 +589,158 @@ def _hoja_volumen(ws, d):
             if destino == origen:
                 continue
             valor = _f(g['flujos'].get('hacia_' + destino)) or 0.0
-            ws[f'{col}{fila}'].value = _num(valor, 1)
+            ws[f'{col}{fila}'].value = _num(valor, 0)
             suma += valor
-        ws[f'F{fila}'].value = _num(suma, 1)
+        ws[f'F{fila}'].value = _num(suma, 0)
     for fila, valor in tot.items():
-        ws[f'F{fila}'].value = _num(valor, 1)
+        ws[f'F{fila}'].value = _num(valor, 0)
 
     perdidas = vol.get('perdidas', [])
     for i, p in enumerate(perdidas[:14]):
         ws[f'G{48 + i}'].value = p['descripcion']
-        ws[f'H{48 + i}'].value = _num(p['subtotal'], 1)
-    ws['H62'].value = _num((vol.get('perdidas_totales') or {}).get('total'), 1)
+        ws[f'H{48 + i}'].value = _num(p['subtotal'], 0)
+    ws['H62'].value = _num((vol.get('perdidas_totales') or {}).get('total'), 0)
+
+
+# ---------------------------------------------------------------- concentraciones
+
+LBBBL_A_KGM3 = 2.853010   # 1 lb/bbl = 2.85301 kg/m³
+BBL_A_M3 = 0.158987
+
+
+def _hoja_concentraciones(wb, d, despues_de):
+    """
+    Reporte de concentración de productos (ONE-TRAX: Product Concentration / Reporte Diario
+    Sistema Activo). Un bloque por compartimento: primero el sistema activo (fosas activas +
+    hoyo) y luego cada fosa aparte. La hoja se arma por código (no está en la plantilla).
+    """
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    from openpyxl.worksheet.pagebreak import Break
+
+    idx = wb.sheetnames.index(despues_de) + 1 if despues_de in wb.sheetnames else len(wb.sheetnames)
+    ws = wb.create_sheet('Concentraciones', idx)
+    pozo, rep, h = d['pozo'], d['reporte'], d['header']
+
+    fino = Side(style='thin', color='808080')
+    borde = Border(left=fino, right=fino, top=fino, bottom=fino)
+    titulo_f = Font(bold=True, size=14)
+    neg = Font(bold=True, size=9)
+    normal = Font(size=9)
+    gris = PatternFill('solid', fgColor='E7E6E6')
+    centro = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    derecha = Alignment(horizontal='right')
+
+    for col, ancho in zip('ABCDEFGHIJ', (34, 16, 12, 11, 11, 11, 11, 11, 11, 4)):
+        ws.column_dimensions[col].width = ancho
+
+    principal = next((c for c in d['checks'] if c.is_primary), d['checks'][0] if d['checks'] else None)
+    spud = (h.spud_date if h and h.spud_date else None) or getattr(pozo, 'fecha_primera_captura', None)
+
+    def celda(ref, valor, fuente=normal, alin=None, relleno=None, con_borde=False, formato=None):
+        c = ws[ref]
+        c.value = valor
+        c.font = fuente
+        if alin:
+            c.alignment = alin
+        if relleno:
+            c.fill = relleno
+        if con_borde:
+            c.border = borde
+        if formato:
+            c.number_format = formato
+        return c
+
+    bloques = [c for c in d['vol'].get('concentraciones', []) if c.get('productos')]
+    fila = 3                      # filas 1-2 libres para el logo
+    if not bloques:
+        celda('A3', 'REPORTE DE CONCENTRACIONES', titulo_f)
+        celda('A5', 'Sin productos con concentración: se calculan al agregar químicos medidos en peso '
+                    'o lodo entero con su concentración (pestaña 8).')
+        return
+
+    for nb, b in enumerate(bloques):
+        if nb:
+            ws.row_breaks.append(Break(id=fila - 1))
+        activo = b['clave'] == 'ACTIVO'
+        celda(f'A{fila}', 'REPORTE DE CONCENTRACIONES — ' + ('SISTEMA ACTIVO' if activo else b['etiqueta'].upper()), titulo_f)
+        fila += 2
+        cab = [
+            ('Operador', h.operador if h else '', 'N° de Reporte', rep.numero_reporte),
+            ('Pozo', pozo.nombre, 'Fecha', datetime(rep.fecha.year, rep.fecha.month, rep.fecha.day)),
+            ('Ubicación', h.ubicacion if h else '', 'Fecha de inicio (spud)',
+             datetime(spud.year, spud.month, spud.day) if spud else ''),
+            ('Profundidad (ft)', _num(rep.profundidad_actual, 0), 'Peso del lodo (lb/gal)',
+             _num(principal.mud_weight, 1) if principal else ''),
+        ]
+        for et1, v1, et2, v2 in cab:
+            celda(f'A{fila}', et1, neg)
+            celda(f'B{fila}', v1, normal, formato='DD/MM/YYYY' if isinstance(v1, datetime) else None)
+            celda(f'E{fila}', et2, neg)
+            celda(f'G{fila}', v2, normal, formato='DD/MM/YYYY' if isinstance(v2, datetime) else None)
+            fila += 1
+        fila += 1
+
+        cambio = (b['vol_fin'] or 0) - (b['vol_inicio'] or 0)
+        resumen = [
+            ('Fluido base agregado', b.get('aceite'), 'Volumen inicial de fluido', b['vol_inicio']),
+            ('Agua agregada', b.get('agua'), 'Volumen final de fluido', b['vol_fin']),
+            ('Aumento de volumen por material', b.get('vol_quimicos'), 'Cambio en volumen', cambio),
+            ('Lodo entero recibido', b.get('lodo'), '', None),
+        ]
+        celda(f'A{fila}', 'VOLÚMENES DEL DÍA', neg)
+        celda(f'C{fila}', 'bbl', neg, centro)
+        celda(f'D{fila}', 'm³', neg, centro)
+        celda(f'G{fila}', 'bbl', neg, centro)
+        celda(f'H{fila}', 'm³', neg, centro)
+        fila += 1
+        for et1, v1, et2, v2 in resumen:
+            celda(f'A{fila}', et1)
+            celda(f'C{fila}', round(v1 or 0, 1), con_borde=True, formato='0.0')
+            celda(f'D{fila}', round((v1 or 0) * BBL_A_M3, 1), con_borde=True, formato='0.0')
+            if et2:
+                celda(f'E{fila}', et2)
+                celda(f'G{fila}', round(v2 or 0, 1), con_borde=True, formato='0.0')
+                celda(f'H{fila}', round((v2 or 0) * BBL_A_M3, 1), con_borde=True, formato='0.0')
+            fila += 1
+        fila += 1
+
+        # Tabla de productos
+        celda(f'A{fila}', 'Producto', neg, centro, gris, True)
+        celda(f'B{fila}', 'Tamaño', neg, centro, gris, True)
+        celda(f'C{fila}', 'Cantidad agregada', neg, centro, gris, True)
+        ws.merge_cells(f'D{fila}:F{fila}')
+        celda(f'D{fila}', 'Concentración estimada (lb/bbl)', neg, centro, gris, True)
+        ws.merge_cells(f'G{fila}:I{fila}')
+        celda(f'G{fila}', 'Concentración estimada (kg/m³)', neg, centro, gris, True)
+        fila += 1
+        for col, texto in zip('ABCDEFGHI', ('', '', '(unidades)', 'Inicial', 'Cambio', 'Final',
+                                            'Inicial', 'Cambio', 'Final')):
+            celda(f'{col}{fila}', texto, neg, centro, gris, True)
+        fila += 1
+
+        tot = [0.0, 0.0, 0.0]
+        for p in b['productos']:
+            ini, fin = p['inicio'] or 0.0, p['fin'] or 0.0
+            valores = [ini, fin - ini, fin]
+            celda(f'A{fila}', p['descripcion'], con_borde=True)
+            celda(f'B{fila}', _texto_tamano(p), con_borde=True)
+            celda(f'C{fila}', round(p.get('agregado') or 0, 2), con_borde=True, formato='0.00')
+            for i, v in enumerate(valores):
+                celda(f"{'DEF'[i]}{fila}", round(v, 2), con_borde=True, formato='0.00')
+                celda(f"{'GHI'[i]}{fila}", round(v * LBBBL_A_KGM3, 2), con_borde=True, formato='0.00')
+                tot[i] += v
+            fila += 1
+        celda(f'A{fila}', 'Total', neg, derecha)
+        for i, v in enumerate(tot):
+            celda(f"{'DEF'[i]}{fila}", round(v, 2), neg, con_borde=True, formato='0.00')
+            celda(f"{'GHI'[i]}{fila}", round(v * LBBBL_A_KGM3, 2), neg, con_borde=True, formato='0.00')
+        fila += 3
+
+    ws.print_area = f'A1:I{fila}'
+    ws.page_setup.orientation = 'portrait'
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
 
 
 # ---------------------------------------------------------------- inventario químico
@@ -720,6 +869,7 @@ def generar_reporte_excel(pozo, reporte):
     _hoja_lodo(wb[hoja_lodo], d, variante)
     _hoja_extra(wb[hoja_extra], d, variante)
     _hoja_volumen(wb['Contabilidad de Volumen'], d)
+    _hoja_concentraciones(wb, d, 'Contabilidad de Volumen')
     df, por_nombre, completo = _listas_inventario(d)
     # Las hojas sin datos se quitan del libro: antes salían vacías y parecían repetidas.
     vacias = []

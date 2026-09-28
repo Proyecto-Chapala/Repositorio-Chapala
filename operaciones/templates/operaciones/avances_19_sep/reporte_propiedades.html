@@ -1,0 +1,82 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propiedades del lodo · {{ pozo.nombre }} · {{ reporte.fecha|date:"d/m/Y" }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'operaciones/css/reporte_propiedades.css' %}?v={{ version_estaticos }}">
+</head>
+<body>
+
+<div class="rp-barra no-imprimir">
+  <a href="{% url 'operaciones:reporte_diario_detalle' pozo.pk reporte.pk %}" class="rp-btn rp-btn-sec">&larr; Volver al reporte</a>
+  <span class="rp-barra-nota">Escribe el comentario y luego imprime o guarda como PDF.</span>
+  <button type="button" class="rp-btn" onclick="window.print()">Imprimir / Guardar PDF</button>
+</div>
+
+<main class="rp-hoja">
+  <header class="rp-encabezado">
+    <div>
+      <div class="rp-titulo">Reporte de Propiedades del Lodo</div>
+      <div class="rp-subtitulo">{% if base_agua %}Base agua{% else %}Base aceite / sintético{% endif %}{% if reporte.tipo_fluido_display %} · {{ reporte.tipo_fluido_display }}{% endif %}</div>
+    </div>
+    <div class="rp-empresa">All Oil Services, C.A.</div>
+  </header>
+
+  <section class="rp-datos">
+    <div><span>Pozo</span><strong>{{ pozo.nombre }}</strong></div>
+    <div><span>Operador</span><strong>{{ header.operador|default:"—" }}</strong></div>
+    <div><span>Fecha</span><strong>{{ reporte.fecha|date:"d/m/Y" }}</strong></div>
+    <div><span>Reporte N°</span><strong>{{ reporte.numero_reporte }}</strong></div>
+    <div><span>Profundidad</span><strong>{{ reporte.profundidad_actual|floatformat:"0" }} ft</strong></div>
+    <div><span>Actividad</span><strong>{{ reporte.actividad_actual|default:"—" }}</strong></div>
+  </section>
+
+  {% if filas %}
+  <table class="rp-tabla">
+    <thead>
+      <tr>
+        <th>Propiedad</th>
+        <th>Unidad</th>
+        {% for c in checks %}<th class="rp-num">Chequeo #{{ c.check_number }}{% if c.is_primary %} (principal){% endif %}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in filas %}
+      <tr>
+        <td>{{ f.etiqueta }}</td>
+        <td class="rp-unidad">{{ f.unidad }}</td>
+        {% for v in f.valores %}<td class="rp-num">{{ v }}</td>{% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="rp-vacio">Todavía no hay chequeos de lodo guardados en la pestaña 3 para este día.</p>
+  {% endif %}
+
+  {% if comentarios and comentarios.spec_mud_weight or comentarios.spec_viscosidad or comentarios.spec_filtrado %}
+  <section class="rp-spec">
+    <div class="rp-seccion">Especificación del lodo</div>
+    <div class="rp-spec-fila">
+      <div><span>Densidad</span><strong>{{ comentarios.spec_mud_weight|default:"—" }}</strong></div>
+      <div><span>Viscosidad</span><strong>{{ comentarios.spec_viscosidad|default:"—" }}</strong></div>
+      <div><span>Filtrado</span><strong>{{ comentarios.spec_filtrado|default:"—" }}</strong></div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section>
+    <div class="rp-seccion">Comentario</div>
+    <div class="rp-comentario" contenteditable="true" data-placeholder="Escribe aquí el comentario para el compañero (tratamiento, tendencia, recomendaciones)…"></div>
+  </section>
+
+  <footer class="rp-pie">
+    <span>Ingeniero: {{ reporte.mi_representante_1|default:"—" }}{% if reporte.mi_representante_2 %} / {{ reporte.mi_representante_2 }}{% endif %}</span>
+    <span>Generado: {% now "d/m/Y H:i" %}</span>
+  </footer>
+</main>
+
+</body>
+</html>

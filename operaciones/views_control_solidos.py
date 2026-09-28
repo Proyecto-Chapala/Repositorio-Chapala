@@ -28,7 +28,7 @@ from .models_control_solidos import (
     UsoEquipoDia, UsoEquipoPropiedad,
 )
 from .control_solidos import (
-    simular, ErrorMallas, volumen_hoyo_perforado, calcular_rendimiento,
+    simular, ErrorMallas, volumen_hoyo_perforado, hoyo_perforado, calcular_rendimiento,
     TIPOS_POR_RECORTES, TIPOS_CENTRIFUGA,
 )
 
@@ -567,11 +567,24 @@ def _num(valor):
     return float(valor) if valor is not None else None
 
 
+def _zapata_mas_profunda(reporte, hasta_ft):
+    """Profundidad del revestidor más profundo por encima de 'hasta_ft' (0 si no hay)."""
+    zapata = 0.0
+    for iv in reporte.pozo.intervalos_revestimiento.all():
+        p = float(iv.profundidad_ft or 0)
+        if iv.casing_id_in and p and p <= hasta_ft + 0.5:
+            zapata = max(zapata, p)
+    return zapata
+
+
 def _contexto_hoyo(reporte, anterior):
-    """Avance del día, diámetro del hoyo y volumen de hoyo perforado (bbl)."""
+    """Avance del día, diámetro del hoyo y volumen de hoyo perforado (bbl).
+
+    Considera los casos especiales del manual: día de kick-off de un side track y
+    ampliación de un hoyo piloto (control_solidos.hoyo_perforado).
+    """
     profundidad = float(reporte.profundidad_actual or 0)
     profundidad_anterior = float(anterior.profundidad_actual or 0) if anterior else 0.0
-    avance = max(profundidad - profundidad_anterior, 0.0)
 
     diametro = 0.0
     fuente = ''
@@ -583,14 +596,26 @@ def _contexto_hoyo(reporte, anterior):
         diametro = float(reporte.intervalo_costo.hole_size_in or 0)
         fuente = 'intervalo de revestimiento' if diametro else ''
 
+    kickoff = float(getattr(reporte, 'kickoff_sidetrack_ft', 0) or 0)
+    piloto_ft = float(reporte.pilot_hole_depth_ft or 0)
+    r = hoyo_perforado(
+        profundidad, profundidad_anterior, anterior is not None, diametro,
+        kickoff_ft=kickoff,
+        piloto_in=float(reporte.pilot_hole_size_in or 0), piloto_ft=piloto_ft,
+        piloto_anterior_ft=float(anterior.pilot_hole_depth_ft or 0) if anterior else 0.0,
+        zapata_ft=_zapata_mas_profunda(reporte, profundidad) if piloto_ft else 0.0,
+    )
+
     return {
         'profundidad_ft': profundidad,
         'profundidad_anterior_ft': profundidad_anterior,
         'hay_reporte_anterior': anterior is not None,
-        'avance_ft': avance,
+        'avance_ft': r['avance_ft'],
+        'inicio_avance_ft': r['inicio_ft'],
+        'motivo_avance': r['motivo'],
         'diametro_in': diametro,
         'fuente_diametro': fuente,
-        'volumen_hoyo_bbl': volumen_hoyo_perforado(diametro, avance),
+        'volumen_hoyo_bbl': r['volumen_bbl'],
     }
 
 

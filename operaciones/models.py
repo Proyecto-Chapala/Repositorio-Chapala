@@ -670,6 +670,7 @@ class IntervaloRevestimiento(models.Model):
         ('LINER', 'Liner'),
         ('CASING', 'Revestimiento'),
         ('HOYO_ABIERTO', 'Hoyo Abierto'),
+        ('SIDETRACK', 'Side Track (desvío)'),
     ]
 
     pozo = models.ForeignKey(
@@ -1373,3 +1374,4 @@ from .models_daily_reports import *
 from .models_control_solidos import *
 from .models_inventario import *
 from .models_opcionales import *
+from .models_recap import *

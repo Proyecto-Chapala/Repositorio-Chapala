@@ -145,6 +145,17 @@
       </div>
     </a>
 
+    <a class="project-card" href="{% url 'operaciones:recap_pozo' pozo.pk %}">
+      <div class="project-card-icon">📑</div>
+      <div>
+        <div class="project-card-title">Reporte Final del Pozo</div>
+        <div class="project-card-sub">Recap consolidado &middot; Excel o PDF</div>
+      </div>
+      <span class="project-card-badge {% if pozo.recap.conclusiones %}badge-ready{% endif %}">
+        {% if pozo.recap.conclusiones %}Con conclusiones{% else %}Sin conclusiones{% endif %}
+      </span>
+    </a>
+
     <div class="project-card is-disabled" title="Próximamente">
       <div class="project-card-icon">♻️</div>
       <div>

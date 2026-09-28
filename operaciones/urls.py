@@ -5,6 +5,7 @@ from . import views_control_solidos
 from . import views_inventario
 from . import views_hidraulica
 from . import views_opcionales
+from . import views_recap
 
 app_name = 'operaciones'
 
@@ -39,6 +40,9 @@ urlpatterns = [
 
     # --- Project Main Screen ---
     path('pozos/<int:pk>/', views.pozo_main_view, name='pozo_main'),
+    path('pozos/<int:pk>/reporte-final/', views_recap.recap_view, name='recap_pozo'),
+    path('pozos/<int:pk>/reporte-final/excel/', views_recap.recap_excel_view, name='recap_excel'),
+    path('pozos/<int:pk>/reporte-final/pdf/', views_recap.recap_imprimible_view, name='recap_imprimible'),
 
 # --- Drilling Fluids and Equipment (Avances) ---
     path('pozos/<int:pk>/drilling-fluids-equipment/', views_daily_reports.daily_reports_hub_view, name='daily_reports_hub'),
@@ -50,6 +54,7 @@ urlpatterns = [
     path('api/pozos/<int:pk>/reportes-diarios/<int:reporte_pk>/eliminar/', views_daily_reports.api_reporte_diario_eliminar, name='api_reporte_diario_eliminar'),
     path('api/pozos/<int:pk>/reportes-diarios/<int:reporte_pk>/general/guardar/', views_daily_reports.api_reporte_diario_general_guardar, name='api_reporte_diario_general_guardar'),
     path('pozos/<int:pk>/daily-report/<int:reporte_pk>/excel/', views_daily_reports.reporte_diario_excel_view, name='reporte_diario_excel'),
+    path('pozos/<int:pk>/daily-report/<int:reporte_pk>/propiedades/', views_daily_reports.reporte_propiedades_view, name='reporte_propiedades'),
     path('api/pozos/<int:pk>/survey-stations/', views_daily_reports.api_well_survey_list, name='api_well_survey_list'),
     path('api/pozos/<int:pk>/survey-stations/guardar/', views_daily_reports.api_well_survey_guardar, name='api_well_survey_guardar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/cost-overview/', views_daily_reports.api_cost_overview_detail, name='api_cost_overview_detail'),

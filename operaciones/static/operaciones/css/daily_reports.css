@@ -2633,3 +2633,11 @@
   .cm-bloques{ grid-template-columns:1fr; }
   .cm-spec-grid{ grid-template-columns:1fr; gap:0; }
 }
+
+/* ---------- Pestaña 4: Side track (caso especial) ---------- */
+.wg-subtitulo-separado{ margin-top:18px; padding-top:14px; border-top:1px dashed #e7e5e4; }
+.wg-check{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:#334155; margin-bottom:8px; cursor:pointer; }
+.wg-check input{ accent-color:#f2994a; width:15px; height:15px; }
+.wg-ayuda{ margin-top:8px; font-size:11.5px; color:#475569; }
+.wg-ayuda summary{ cursor:pointer; font-weight:700; color:#f2994a; }
+.wg-ayuda ol{ margin:8px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:6px; line-height:1.45; }

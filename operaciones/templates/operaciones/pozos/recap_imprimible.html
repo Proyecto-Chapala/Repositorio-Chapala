@@ -1,0 +1,244 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reporte Final · {{ pozo.nombre }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'operaciones/css/recap.css' %}?v={{ version_estaticos }}">
+</head>
+<body class="rc-imprimible">
+
+<div class="rc-barra no-imprimir">
+  <a href="{% url 'operaciones:recap_pozo' pozo.pk %}" class="rc-btn rc-btn-sec">&larr; Volver</a>
+  <span class="rc-barra-nota">En el diálogo de impresión elige <strong>Guardar como PDF</strong>. Recomendado: orientación horizontal.</span>
+  <button type="button" class="rc-btn" onclick="window.print()">Imprimir / Guardar PDF</button>
+</div>
+
+<main class="rc-hoja">
+  <header class="rc-portada">
+    <div>
+      <div class="rc-portada-empresa">All Oil Services, C.A.</div>
+      <h1>Reporte Final del Pozo</h1>
+      <div class="rc-portada-pozo">{{ pozo.nombre }}</div>
+      <div class="rc-portada-sub">{{ header.operador|default:"" }}{% if header.field_area %} · {{ header.field_area }}{% endif %}{% if header.ubicacion %} · {{ header.ubicacion }}{% endif %}</div>
+    </div>
+    <div class="rc-portada-fecha">
+      {% if kpi %}{{ kpi.desde|date:"d/m/Y" }} &rarr; {{ kpi.hasta_fecha|date:"d/m/Y" }}<br>{% endif %}
+      Generado {{ generado|date:"d/m/Y H:i" }}
+    </div>
+  </header>
+
+  {% for a in avisos %}<div class="rc-aviso">{{ a }}</div>{% endfor %}
+
+  {% if not hay_reportes %}
+    <p class="rc-vacio">El pozo todavía no tiene reportes diarios{% if hasta %} hasta el {{ hasta|date:"d/m/Y" }}{% endif %}.</p>
+  {% else %}
+
+  {% if 'resumen' in secciones %}
+  <section class="rc-seccion">
+    <h2>{{ titulos.resumen }}</h2>
+    <div class="rc-kpis">
+      <div><span>Días con reporte</span><strong>{{ kpi.dias }}</strong></div>
+      <div><span>Profundidad final</span><strong>{{ kpi.profundidad_final|floatformat:"0g" }} ft</strong></div>
+      <div><span>Hoyo perforado</span><strong>{{ kpi.perforado|floatformat:"0g" }} ft</strong></div>
+      <div><span>Volumen de hoyo perforado</span><strong>{{ kpi.hoyo_bbl|floatformat:"0g" }} bbl</strong></div>
+      <div><span>Densidad mín. – máx.</span><strong>{% if kpi.densidad_max %}{{ kpi.densidad_min|floatformat:1 }} – {{ kpi.densidad_max|floatformat:1 }} lb/gal{% else %}—{% endif %}</strong></div>
+      <div><span>Pérdidas totales</span><strong>{{ total_perdidas|floatformat:"0g" }} bbl</strong></div>
+      <div><span>Costo total</span><strong>{{ costos.total|floatformat:"2g" }} {{ moneda }}</strong></div>
+      <div><span>Costo por pie</span><strong>{% if kpi.costo_por_ft %}{{ kpi.costo_por_ft|floatformat:"2g" }} {{ moneda }}/ft{% else %}—{% endif %}</strong></div>
+      <div><span>Side tracks</span><strong>{{ kpi.sidetracks }}</strong></div>
+      <div><span>Eventos no programados</span><strong>{{ kpi.eventos }}</strong></div>
+    </div>
+    <table class="rc-tabla rc-tabla-datos">
+      <tr><th>Contratista</th><td>{{ header.contratista|default:"—" }}</td><th>Taladro</th><td>{{ header.nombre_taladro|default:"—" }}</td></tr>
+      <tr><th>Ingenieros</th><td>{{ header.ingeniero_miswaco_1|default:"—" }}{% if header.ingeniero_miswaco_2 %} / {{ header.ingeniero_miswaco_2 }}{% endif %}</td>
+          <th>Lodo principal</th><td>{{ header.primary_mud_type_descripcion|default:"—" }}</td></tr>
+    </table>
+  </section>
+  {% endif %}
+
+  {% if 'conclusiones' in secciones %}
+  <section class="rc-seccion">
+    <h2>{{ titulos.conclusiones }}</h2>
+    <div class="rc-textos">
+      <div><h3>Resumen del pozo</h3><p>{{ recap.resumen|default:"—"|linebreaksbr }}</p></div>
+      <div><h3>Conclusiones</h3><p>{{ recap.conclusiones|default:"—"|linebreaksbr }}</p></div>
+      <div><h3>Recomendaciones</h3><p>{{ recap.recomendaciones|default:"—"|linebreaksbr }}</p></div>
+      {% if recap.lecciones %}<div><h3>Lecciones aprendidas / buenas prácticas</h3><p>{{ recap.lecciones|linebreaksbr }}</p></div>{% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if 'intervalos' in secciones %}
+  <section class="rc-seccion">
+    <h2>{{ titulos.intervalos }}</h2>
+    <table class="rc-tabla">
+      <thead><tr><th>N°</th><th>Tipo</th><th class="n">OD rev.</th><th class="n">Hoyo</th><th>Período</th><th class="n">Días</th>
+        <th class="n">Prof. final (ft)</th><th class="n">Perforado (ft)</th><th class="n">Dens. máx.</th><th class="n">Pérdidas (bbl)</th>
+        <th class="n">Costo ({{ moneda }})</th><th class="n">Planeado</th></tr></thead>
+      <tbody>
+      {% for iv in intervalos %}
+        <tr>
+          <td>{{ iv.iv.numero_intervalo }}</td><td>{{ iv.tipo|default:"—" }}</td>
+          <td class="n">{% if iv.iv.casing_od_in %}{{ iv.iv.casing_od_in|floatformat:"-3" }}"{% endif %}</td>
+          <td class="n">{% if iv.iv.hole_size_in %}{{ iv.iv.hole_size_in|floatformat:"-3" }}"{% endif %}</td>
+          <td>{% if iv.desde %}{{ iv.desde|date:"d/m" }} – {{ iv.hasta|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+          <td class="n">{{ iv.dias }}</td><td class="n">{{ iv.prof_final|floatformat:"0g" }}</td>
+          <td class="n">{{ iv.perforado|floatformat:"0g" }}</td>
+          <td class="n">{% if iv.densidad_max %}{{ iv.densidad_max|floatformat:1 }}{% else %}—{% endif %}</td>
+          <td class="n">{{ iv.perdidas|floatformat:"0g" }}</td><td class="n">{{ iv.costo|floatformat:"2g" }}</td>
+          <td class="n">{% if iv.costo_planeado %}{{ iv.costo_planeado|floatformat:"2g" }}{% else %}—{% endif %}</td>
+        </tr>
+        {% if iv.observaciones or iv.comentarios %}
+        <tr class="rc-fila-nota"><td></td><td colspan="11">{% if iv.observaciones %}{{ iv.observaciones|linebreaksbr }}{% endif %}{% if iv.observaciones and iv.comentarios %}<br>{% endif %}{% if iv.comentarios %}{{ iv.comentarios|linebreaksbr }}{% endif %}</td></tr>
+        {% endif %}
+      {% empty %}
+        <tr><td colspan="12" class="rc-vacio">El pozo no tiene intervalos de revestimiento.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if dias_sin_intervalo %}<p class="rc-nota">{{ dias_sin_intervalo }} día{{ dias_sin_intervalo|pluralize }} sin intervalo de costo asignado en la pestaña 4.</p>{% endif %}
+  </section>
+  {% endif %}
+
+  {% if 'diario' in secciones %}
+  <section class="rc-seccion rc-salto">
+    <h2>{{ titulos.diario }}</h2>
+    <table class="rc-tabla rc-tabla-chica">
+      <thead><tr><th>Fecha</th><th class="n">N°</th><th class="n">Prof. (ft)</th><th class="n">Avance</th><th class="n">Dens.</th>
+        <th class="n">PV/YP</th><th class="n">Filtr.</th><th class="n">Activo (bbl)</th><th class="n">Pérd. (bbl)</th>
+        <th class="n">Costo día</th><th class="n">Acumulado</th><th>Actividad / resumen del día</th></tr></thead>
+      <tbody>
+      {% for f in filas %}
+        <tr>
+          <td class="nw">{{ f.fecha|date:"d/m/Y" }}</td><td class="n">{{ f.numero }}</td>
+          <td class="n">{{ f.profundidad|floatformat:"0g" }}</td><td class="n">{{ f.avance|floatformat:"0g" }}</td>
+          <td class="n">{% if f.densidad is not None %}{{ f.densidad|floatformat:1 }}{% endif %}</td>
+          <td class="n nw">{% if f.pv is not None %}{{ f.pv|floatformat:0 }}/{{ f.yp|floatformat:0 }}{% endif %}</td>
+          <td class="n">{% if f.filtrado is not None %}{{ f.filtrado|floatformat:1 }}{% endif %}</td>
+          <td class="n">{% if f.vol_activo is not None %}{{ f.vol_activo|floatformat:"0g" }}{% endif %}</td>
+          <td class="n">{% if f.perdidas is not None %}{{ f.perdidas|floatformat:"0g" }}{% endif %}</td>
+          <td class="n">{{ f.costo_dia|floatformat:"2g" }}</td><td class="n">{{ f.costo_acum|floatformat:"2g" }}</td>
+          <td>{% if f.sidetrack %}<span class="rc-etiqueta">Side track</span> {% endif %}<strong>{{ f.actividad }}</strong>{% if f.recap %}<br><span class="rc-recap">{{ f.recap }}</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  {% if 'volumenes' in secciones %}
+  <section class="rc-seccion">
+    <h2>{{ titulos.volumenes }}</h2>
+    <div class="rc-dos">
+      <table class="rc-tabla">
+        <thead><tr><th>Concepto</th><th class="n">bbl</th></tr></thead>
+        <tbody>
+          <tr><td>Fluido base agregado</td><td class="n">{{ volumenes.aceite|default:0|floatformat:"0g" }}</td></tr>
+          <tr><td>Agua agregada</td><td class="n">{{ volumenes.agua|default:0|floatformat:"0g" }}</td></tr>
+          <tr><td>Volumen de químicos</td><td class="n">{{ volumenes.quimicos|default:0|floatformat:"0g" }}</td></tr>
+          <tr><td>Lodo entero recibido</td><td class="n">{{ volumenes.recibido|default:0|floatformat:"0g" }}</td></tr>
+          <tr><td>Devuelto</td><td class="n">{{ volumenes.devuelto|default:0|floatformat:"0g" }}</td></tr>
+          <tr><td>Perdido y descartado</td><td class="n">{{ volumenes.perdida|default:0|floatformat:"0g" }}</td></tr>
+        </tbody>
+      </table>
+      <table class="rc-tabla">
+        <thead><tr><th>Pérdida por categoría</th><th>Tipo</th><th class="n">bbl</th><th class="n">%</th></tr></thead>
+        <tbody>
+        {% for p in perdidas %}
+          <tr><td>{{ p.descripcion }}</td><td>{{ p.tipo }}</td><td class="n">{{ p.volumen|floatformat:"0g" }}</td>
+            <td class="n">{% widthratio p.volumen total_perdidas 100 %}</td></tr>
+        {% empty %}<tr><td colspan="4" class="rc-vacio">Sin pérdidas registradas.</td></tr>{% endfor %}
+        </tbody>
+        {% if perdidas %}<tfoot><tr><td colspan="2">Total</td><td class="n">{{ total_perdidas|floatformat:"0g" }}</td><td class="n">100</td></tr></tfoot>{% endif %}
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if 'productos' in secciones %}
+  <section class="rc-seccion">
+    <h2>{{ titulos.productos }}</h2>
+    <table class="rc-tabla">
+      <thead><tr><th>Código</th><th>Producto</th><th>Tamaño</th><th class="n">Cantidad usada</th><th class="n">Costo ({{ moneda }})</th></tr></thead>
+      <tbody>
+      {% for p in consumo %}
+        <tr><td>{{ p.codigo }}</td><td>{{ p.descripcion }}</td>
+          <td>{% if p.tamano %}{{ p.tamano|floatformat:"-2" }} {{ p.unidad }} {{ p.empaque|default:"" }}{% else %}{{ p.unidad }}{% endif %}</td>
+          <td class="n">{{ p.usado|floatformat:"-2" }}</td><td class="n">{{ p.costo|floatformat:"2g" }}</td></tr>
+      {% empty %}<tr><td colspan="5" class="rc-vacio">Sin consumo de productos registrado.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  {% if 'tiempo' in secciones %}
+  <section class="rc-seccion">
+    <h2>{{ titulos.tiempo }}</h2>
+    <table class="rc-tabla">
+      <thead><tr><th>Actividad</th><th class="n">Horas</th><th class="n">%</th><th class="rc-col-barra"></th></tr></thead>
+      <tbody>
+      {% for t in tiempo %}
+        <tr><td>{{ t.actividad }}</td><td class="n">{{ t.horas|floatformat:"-2" }}</td><td class="n">{{ t.pct|floatformat:1 }}</td>
+          <td class="rc-col-barra"><meter class="rc-meter" min="0" max="100" value="{{ t.pct|stringformat:'.1f' }}"></meter></td></tr>
+      {% empty %}<tr><td colspan="4" class="rc-vacio">Sin distribución de tiempo registrada.</td></tr>{% endfor %}
+      </tbody>
+      {% if tiempo %}<tfoot><tr><td>Total</td><td class="n">{{ total_tiempo|floatformat:"-2" }}</td><td class="n">100</td><td></td></tr></tfoot>{% endif %}
+    </table>
+  </section>
+  {% endif %}
+
+  {% if 'eventos' in secciones %}
+  <section class="rc-seccion">
+    <h2>{{ titulos.eventos }}</h2>
+    <table class="rc-tabla">
+      <thead><tr><th>Fecha</th><th>Categoría</th><th>Problema</th><th>Descripción / causa</th><th class="n">Horas</th><th class="n">bbl</th><th class="n">Costo</th></tr></thead>
+      <tbody>
+      {% for e in eventos %}
+        <tr><td class="nw">{{ e.reporte.fecha|date:"d/m/Y" }}</td><td>{{ e.get_categoria_display }}</td><td>{{ e.tipo_problema }}</td>
+          <td>{{ e.descripcion|linebreaksbr }}{% if e.causa %}<br><em>Causa:</em> {{ e.causa }}{% endif %}</td>
+          <td class="n">{{ e.horas_perdidas|default_if_none:""|floatformat:"-1" }}</td>
+          <td class="n">{{ e.volumen_perdido_bbl|default_if_none:""|floatformat:"0" }}</td>
+          <td class="n">{{ e.costo|default_if_none:""|floatformat:"2g" }}</td></tr>
+      {% empty %}<tr><td colspan="7" class="rc-vacio">Sin eventos no programados.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  {% if 'costos' in secciones %}
+  <section class="rc-seccion">
+    <h2>{{ titulos.costos }}</h2>
+    <div class="rc-dos">
+      <table class="rc-tabla">
+        <thead><tr><th>Concepto</th><th class="n">{{ moneda }}</th></tr></thead>
+        <tbody>
+          <tr><td>Químicos / Personal DF</td><td class="n">{{ costos.quimicos|floatformat:"2g" }}</td></tr>
+          <tr><td>Ingeniero IFE / Control de sólidos</td><td class="n">{{ costos.ingenieria|floatformat:"2g" }}</td></tr>
+          <tr><td>Equipos y mallas</td><td class="n">{{ costos.equipos|floatformat:"2g" }}</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td class="n">{{ costos.total|floatformat:"2g" }}</td></tr></tfoot>
+      </table>
+      <table class="rc-tabla">
+        <thead><tr><th>Intervalo</th><th class="n">Real</th><th class="n">Planeado</th></tr></thead>
+        <tbody>
+        {% for iv in intervalos %}
+          <tr><td>{{ iv.iv.numero_intervalo }} {{ iv.tipo }}</td><td class="n">{{ iv.costo|floatformat:"2g" }}</td>
+            <td class="n">{% if iv.costo_planeado %}{{ iv.costo_planeado|floatformat:"2g" }}{% else %}—{% endif %}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% endif %}
+
+  <footer class="rc-pie">
+    <span>CHAPALA · All Oil Services, C.A.</span>
+    <span>{{ pozo.nombre }}{% if hasta %} · hasta {{ hasta|date:"d/m/Y" }}{% endif %}</span>
+  </footer>
+</main>
+</body>
+</html>

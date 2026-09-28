@@ -6,7 +6,7 @@
 {% block extra_css %}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
-<link rel="stylesheet" href="{% static 'operaciones/css/daily_reports.css' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/daily_reports.css' %}?v={{ version_estaticos }}">
 <link rel="stylesheet" href="{% static 'operaciones/css/reporte_tiempo.css' %}?v={{ version_estaticos }}">
 <link rel="stylesheet" href="{% static 'operaciones/css/reporte_control_solidos.css' %}?v={{ version_estaticos }}">
 <link rel="stylesheet" href="{% static 'operaciones/css/reporte_inventario.css' %}?v={{ version_estaticos }}">
@@ -593,6 +593,9 @@
             <i class="fas fa-oil-can" style="color:#d97706;"></i> Base Aceite / Sint&eacute;tico (OBM/SBF)
           </button>
         </div>
+        <a href="{% url 'operaciones:reporte_propiedades' pozo.pk reporte.pk %}" target="_blank" rel="noopener" class="btn-modern-secondary btn-compact" title="Reporte corto solo con las propiedades del lodo y un comentario (guarda primero)">
+          <i class="fas fa-file-alt"></i> Reporte de Propiedades
+        </a>
         <button type="button" class="btn-modern-primary btn-compact" onclick="guardarMudProperties()">
           <i class="fas fa-save"></i> Guardar Propiedades
         </button>
@@ -1379,7 +1382,7 @@
     <!-- ============ BLOQUE B: CONTEXTO DEL POZO ============ -->
     <div class="report-section-title">
       <span>&#127981;</span>
-      <span>Contexto del Pozo &bull; Intervalo de Costo, Hoyo Piloto y Perfil</span>
+      <span>Contexto del Pozo &bull; Intervalo de Costo, Hoyo Piloto, Side Track y Perfil</span>
     </div>
 
     <div class="report-card-modern">
@@ -1422,6 +1425,31 @@
             El hoyo piloto ocupa el tramo más profundo del pozo, desde el fondo del hoyo
             principal hasta su propia profundidad. Déjalo en 0 si no aplica.
           </p>
+
+          <!-- Side track (caso especial del manual) -->
+          <div class="wg-subtitulo wg-subtitulo-separado">Side Track</div>
+          <label class="wg-check">
+            <input type="checkbox" id="wgSidetrackActivo" {% if reporte.kickoff_sidetrack_ft %}checked{% endif %}>
+            <span>Hoy arranca un side track (día de kick-off)</span>
+          </label>
+          <div class="report-field-row" id="wgKickoffFila" {% if not reporte.kickoff_sidetrack_ft %}hidden{% endif %}>
+            <label class="report-field-label" title="Profundidad desde donde sale el desvío">Prof. de kick-off (ft)</label>
+            <input type="number" step="any" min="0" id="wgKickoff" class="report-input" value="{% if reporte.kickoff_sidetrack_ft %}{{ reporte.kickoff_sidetrack_ft|unlocalize }}{% endif %}" placeholder="ej. 8515">
+          </div>
+          <details class="wg-ayuda">
+            <summary>¿Cómo se registra un side track?</summary>
+            <ol>
+              <li><strong>Día anterior (abandono):</strong> en la pestaña 1 pon la profundidad de la mecha en el tope
+                del tapón de cemento; la profundidad del pozo no se cambia. En la pestaña 8 registra como
+                <em>Volumen no fluido &rarr; bajo la mecha</em> el volumen que quedó debajo del tapón, y haz la
+                pérdida por ese volumen con el tipo <em>Detrás del Revestimiento / En el Hoyo</em> (código 7, el "Dejado en el hoyo" del curso).</li>
+              <li><strong>Día del kick-off:</strong> en la pestaña 1 la profundidad es la nueva del side track.
+                Aquí marca la casilla y escribe la profundidad de kick-off: el hoyo perforado del día se cuenta
+                desde ese punto. En <em>Gestionar intervalos del pozo</em> crea el intervalo de tipo
+                <em>Side Track</em> para llevar sus costos.</li>
+              <li><strong>Día siguiente:</strong> no hay que hacer nada; la casilla solo se marca el día del kick-off.</li>
+            </ol>
+          </details>
         </div>
 
         <!-- Perfil del pozo -->
@@ -1496,6 +1524,11 @@
           <span class="wg-tarjeta-label">Longitud Total de Sarta</span>
           <span class="wg-tarjeta-valor" id="wgTotLongitud">0</span>
           <span class="wg-tarjeta-unidad">ft</span>
+        </div>
+        <div class="wg-tarjeta" title="Hoyo nuevo del día; base de los recortes del control de sólidos (pestaña 6). Se actualiza al guardar.">
+          <span class="wg-tarjeta-label">Hoyo Perforado</span>
+          <span class="wg-tarjeta-valor" id="wgHoyoPerfVol">&mdash;</span>
+          <span class="wg-tarjeta-unidad" id="wgHoyoPerfDetalle">bbl</span>
         </div>
       </div>
 
@@ -3542,6 +3575,15 @@ function wgCalcular(){
 }
 
 /* ---------- Formato ---------- */
+/* Tarjetas de volumen: enteros, como el "Hole Volume Summary" de ONE-TRAX y como se
+   reporta en campo; el valor exacto queda en el tooltip y en el desglose por sección. */
+function wgVolTarjeta(id, valor){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = wgFmt(valor, 0);
+  el.title = wgFmt(valor, 2) + ' bbl';
+}
+
 function wgFmt(valor, decimales){
   const n = parseFloat(valor) || 0;
   return n.toLocaleString('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
@@ -3578,6 +3620,7 @@ async function inicializarWellGeometry(){
       wgBblPorEmbolada = parseFloat(resGeo.bbl_por_embolada) || 0;
       wgCaudalGpm = parseFloat(resGeo.caudal_gpm) || 0;
       renderContinuidad(resGeo.continuidad);
+      renderHoyoPerforado(resGeo.hoyo_perforado);
     }
 
     wgCatalogo = (resCat && resCat.componentes) || [];
@@ -3597,6 +3640,23 @@ function renderCatalogoComponentes(){
   dl.innerHTML = wgCatalogo.map(c =>
     `<option value="${wgEsc(c.descripcion)}">${wgEsc(c.codigo)} · ${wgEsc(c.tipo_display)}</option>`
   ).join('');
+}
+
+function renderHoyoPerforado(h){
+  const vol = document.getElementById('wgHoyoPerfVol');
+  const det = document.getElementById('wgHoyoPerfDetalle');
+  if(!vol || !det) return;
+  if(!h){ vol.textContent = '—'; det.textContent = 'bbl'; return; }
+  vol.textContent = wgFmt(h.volumen_bbl, 0);
+  const motivo = { SIDETRACK: ' desde el kick-off', PILOTO_INICIO: ' desde la zapata (ampliando piloto)' }[h.motivo] || '';
+  det.textContent = `bbl · ${wgFmt(h.avance_ft, 0)} ft${motivo}`;
+}
+
+function wgToggleSidetrack(){
+  const activo = document.getElementById('wgSidetrackActivo').checked;
+  const fila = document.getElementById('wgKickoffFila');
+  fila.hidden = !activo;
+  if(activo) document.getElementById('wgKickoff').focus();
 }
 
 function renderContinuidad(cont){
@@ -3758,13 +3818,13 @@ function recalcularWellGeometry(){
 
   // Tarjetas
   const t = r.totales;
-  document.getElementById('wgTotSarta').textContent = wgFmt(t.sarta, 2);
-  document.getElementById('wgTotAnular').textContent = wgFmt(t.anular, 2);
-  document.getElementById('wgTotBajoMecha').textContent = wgFmt(t.bajoMecha, 2);
-  document.getElementById('wgTotTotal').textContent = wgFmt(t.total, 2);
+  wgVolTarjeta('wgTotSarta', t.sarta);
+  wgVolTarjeta('wgTotAnular', t.anular);
+  wgVolTarjeta('wgTotBajoMecha', t.bajoMecha);
+  wgVolTarjeta('wgTotTotal', t.total);
   document.getElementById('wgBottomUpStks').textContent = wgFmt(t.bottomUpStks, 0);
   document.getElementById('wgBottomUpMin').textContent = wgFmt(t.bottomUpMin, 1);
-  document.getElementById('wgDesplazamiento').textContent = wgFmt(t.desplazamiento, 2);
+  wgVolTarjeta('wgDesplazamiento', t.desplazamiento);
   document.getElementById('wgTotLongitud').textContent = wgFmt(r.longitudSarta, 0);
 
   // Avisos
@@ -3945,6 +4005,8 @@ async function guardarWellGeometry(silent = false){
     orden_impresion_intervalo: document.getElementById('wgOrdenImpresion').value || null,
     pilot_hole_size_in: document.getElementById('wgPilotSize').value || 0,
     pilot_hole_depth_ft: document.getElementById('wgPilotDepth').value || 0,
+    kickoff_sidetrack_ft: document.getElementById('wgSidetrackActivo').checked
+      ? (document.getElementById('wgKickoff').value || 0) : 0,
     tramos: wgTramos.map((t, i) => ({
       orden: i + 1,
       componente_id: t.componente_id || null,
@@ -3970,6 +4032,7 @@ async function guardarWellGeometry(silent = false){
       wgTramos = data.tramos || wgTramos;
       renderSartaTabla();
       recalcularWellGeometry();
+      renderHoyoPerforado(data.hoyo_perforado);
       if(!silent) showToast('Geometría del pozo guardada correctamente');
     } else {
       showToast(data.error || 'Error al guardar la geometría', false);
@@ -3987,6 +4050,8 @@ document.addEventListener('DOMContentLoaded', function(){
   });
   const sel = document.getElementById('wgIntervaloCosto');
   if(sel) sel.addEventListener('change', renderAvanceIntervalo);
+  const st = document.getElementById('wgSidetrackActivo');
+  if(st) st.addEventListener('change', wgToggleSidetrack);
 });
 
 /* =====================================================================

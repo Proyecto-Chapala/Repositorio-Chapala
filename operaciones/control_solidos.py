@@ -232,6 +232,48 @@ def volumen_hoyo_perforado(diametro_in, avance_ft):
     return d * d / CAPACIDAD_CONSTANTE * avance
 
 
+def hoyo_perforado(profundidad, profundidad_anterior, hay_anterior, diametro_in,
+                   kickoff_ft=0.0, piloto_in=0.0, piloto_ft=0.0, piloto_anterior_ft=0.0,
+                   zapata_ft=0.0):
+    """
+    Longitud y volumen de hoyo perforado en el día (ONE-TRAX: Drilled Depth / Drilled Hole).
+    Base de los recortes del control de sólidos (pestaña 6).
+
+    - Normal: profundidad de hoy − profundidad de ayer.
+    - Día de kick-off de un side track: profundidad de hoy − profundidad de kick-off
+      (la de ayer era la del hoyo abandonado). Manual, "Special Cases: Side-Track".
+    - Ampliando un hoyo piloto: dentro del piloto solo se corta el anillo entre la mecha
+      grande y el piloto: (D² − d²)/1029.4. El primer día de ampliación (ayer no había
+      piloto cargado) se empieza a contar desde la zapata del último revestidor, porque la
+      profundidad de ayer era la del piloto. Manual, "Special Cases: Pilot hole"
+      (ejemplo: 1358 − 920.11 m = 438 m y 109 bbl).
+    Si la profundidad baja sin kick-off (ej. se registró un tapón), el avance es 0.
+    """
+    prof = float(profundidad or 0)
+    d = float(diametro_in or 0)
+    kickoff = float(kickoff_ft or 0)
+    p_in, p_ft = float(piloto_in or 0), float(piloto_ft or 0)
+    hay_piloto = p_in > 0 and p_ft > 0 and p_in < d
+
+    if kickoff > 0:
+        inicio, motivo = kickoff, 'SIDETRACK'
+    elif hay_piloto and not float(piloto_anterior_ft or 0):
+        inicio, motivo = float(zapata_ft or 0), 'PILOTO_INICIO'
+    else:
+        inicio, motivo = float(profundidad_anterior or 0), 'NORMAL'
+
+    avance = max(prof - inicio, 0.0)
+    volumen = 0.0
+    if d > 0 and avance > 0:
+        if hay_piloto:
+            dentro = max(min(prof, p_ft) - inicio, 0.0)       # tramo que ya tenía piloto
+            fuera = avance - dentro
+            volumen = (d * d - p_in * p_in) / CAPACIDAD_CONSTANTE * dentro + d * d / CAPACIDAD_CONSTANTE * fuera
+        else:
+            volumen = d * d / CAPACIDAD_CONSTANTE * avance
+    return {'inicio_ft': inicio, 'avance_ft': avance, 'volumen_bbl': volumen, 'motivo': motivo}
+
+
 def _f(valor):
     try:
         return float(valor) if valor not in (None, '') else None

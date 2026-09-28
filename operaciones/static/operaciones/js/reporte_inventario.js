@@ -258,6 +258,11 @@ function vaVolumenQuimico(cantidad, unidad, tamano, gravedad){
   return m === null || g <= 0 ? 0 : m / (g * VA_LB_POR_BBL);
 }
 
+/* Redondeo de volúmenes (pedido del ingeniero): en campo el volumen se reporta sin
+   decimales. Los "no contabilizados" y las fosas conservan 1 decimal para no ocultar
+   diferencias pequeñas. */
+function vaVol(n){ return csFmt(n, 0); }
+
 function vaCant(n, dec = 2){
   return n ? csFmt(n, dec) : '<span class="cs-cero">0</span>';
 }
@@ -406,14 +411,14 @@ function vaRenderKpis(){
     if(!x.tiene) return '';
     let clase = 'va-kpi-ok', valor = '0,00 bbl', nota = 'Cuadra';
     if(x.na === null){ clase = 'va-kpi-pendiente'; valor = '—'; nota = `Falta el volumen real de ${x.sin.length} fosa(s)`; }
-    else if(Math.abs(x.na) >= 0.005){ clase = 'va-kpi-error'; valor = `${csFmt(x.na)} bbl`; nota = x.na > 0 ? 'Sobra fluido real' : 'Falta fluido real'; }
+    else if(Math.abs(x.na) >= 0.005){ clase = 'va-kpi-error'; valor = `${csFmt(x.na, 1)} bbl`; nota = x.na > 0 ? 'Sobra fluido real' : 'Falta fluido real'; }
     return `<div class="va-kpi ${clase}"><span>No contabilizado · ${nombre}</span><strong>${valor}</strong><small>${nota}</small></div>`;
   };
   const act = c.ACTIVO;
   document.getElementById('vaKpis').innerHTML =
     chip('ACTIVO', 'Sistema activo') + chip('RESERVA', 'Reserva') + chip('PREMEZCLA', 'Premezcla') +
-    `<div class="va-kpi va-kpi-neutro"><span>Sistema activo calculado</span><strong>${csFmt(act.calculado)} bbl</strong><small>real: ${act.real === null ? '—' : csFmt(act.real) + ' bbl'}</small></div>` +
-    `<div class="va-kpi va-kpi-neutro"><span>Fluido en el hoyo</span><strong>${csFmt(vaFluidoHoyo())} bbl</strong><small>de ${csFmt(vaDatos.hoyo.total_volumen)} bbl de hoyo (pestaña 4)</small></div>`;
+    `<div class="va-kpi va-kpi-neutro"><span>Sistema activo calculado</span><strong>${vaVol(act.calculado)} bbl</strong><small>real: ${act.real === null ? '—' : vaVol(act.real) + ' bbl'}</small></div>` +
+    `<div class="va-kpi va-kpi-neutro"><span>Fluido en el hoyo</span><strong>${vaVol(vaFluidoHoyo())} bbl</strong><small>de ${vaVol(vaDatos.hoyo.total_volumen)} bbl de hoyo (pestaña 4)</small></div>`;
 }
 
 function vaRenderAvisos(){
@@ -442,12 +447,12 @@ function vaRenderFosas(){
     const g = vaGrupoDeTipo(f._tipo_guardado);
     const r = csNum(f.real);
     const pct = f.capacidad > 0 && r !== null ? Math.min(r / f.capacidad * 100, 100) : 0;
-    const calc = g === 'ACTIVO' ? '<span class="cs-tenue" title="Se calcula en el sistema activo, junto con el hoyo">en el sistema</span>' : (f.calculado === null ? '—' : csFmt(f.calculado));
+    const calc = g === 'ACTIVO' ? '<span class="cs-tenue" title="Se calcula en el sistema activo, junto con el hoyo">en el sistema</span>' : (f.calculado === null ? '—' : csFmt(f.calculado, 1));
     return `<tr class="va-fila-${(g || 'ninguno').toLowerCase()}">
       <td><span class="va-punto va-grupo-${(g || 'ninguno').toLowerCase()}"></span>${csEsc(f.descripcion)}${f.en_pozo ? '' : ' <span class="cs-tenue">(ya no está en el pozo)</span>'}</td>
       <td class="cs-num">${csFmt(f.capacidad, 0)}</td>
       <td><select class="report-input va-input va-select-tipo" data-fosa="${f.numero}" data-campo="tipo_codigo">${opciones(f.tipo_codigo)}</select></td>
-      <td class="cs-num">${f.inicio === null ? '—' : csFmt(f.inicio)}</td>
+      <td class="cs-num">${f.inicio === null ? '—' : csFmt(f.inicio, 1)}</td>
       <td class="cs-num">${calc}</td>
       <td class="cs-num"><input type="number" class="cs-input-cant va-input va-input-vol" min="0" step="any" data-fosa="${f.numero}" data-campo="real" value="${f.real ?? ''}" placeholder="—"></td>
       <td class="va-col-llenado"><div class="tt-mini-barra"><span class="tt-mini-relleno va-relleno" data-fosa-barra="${f.numero}" style="width:${pct}%"></span></div></td>
@@ -460,16 +465,16 @@ function vaRenderFosas(){
 function vaRenderResumen(){
   const c = vaCierre();
   const na = (x) => x.na === null ? `<span class="cs-tenue" title="Falta el volumen real de: ${csEsc(x.sin.join(', '))}">falta real</span>`
-    : `<span class="${Math.abs(x.na) < 0.005 ? 'va-ok' : 'va-error'}">${csFmt(x.na)}</span>`;
-  const real = (x) => x.real === null ? '—' : csFmt(x.real);
+    : `<span class="${Math.abs(x.na) < 0.005 ? 'va-ok' : 'va-error'}">${csFmt(x.na, 1)}</span>`;
+  const real = (x) => x.real === null ? '—' : vaVol(x.real);
   const act = c.ACTIVO;
   const realPits = vaDatos.fosas.filter(f => vaGrupoDeTipo(f._tipo_guardado) === 'ACTIVO').reduce((a, f) => a + (csNum(f.real) || 0), 0);
   let html = '';
-  if(c.RESERVA.tiene) html += `<tr><td>Fosas de reserva</td><td class="cs-num">${csFmt(c.RESERVA.calculado)}</td><td class="cs-num">${real(c.RESERVA)}</td><td class="cs-num">${na(c.RESERVA)}</td></tr>`;
-  if(c.PREMEZCLA.tiene) html += `<tr><td>Fosas de premezcla</td><td class="cs-num">${csFmt(c.PREMEZCLA.calculado)}</td><td class="cs-num">${real(c.PREMEZCLA)}</td><td class="cs-num">${na(c.PREMEZCLA)}</td></tr>`;
-  html += `<tr class="va-fila-sub"><td>Fosas activas (sin hoyo)</td><td></td><td class="cs-num">${csFmt(realPits)}</td><td></td></tr>`;
-  html += `<tr class="va-fila-sub"><td>Fluido en el hoyo</td><td></td><td class="cs-num">${csFmt(vaFluidoHoyo())}</td><td></td></tr>`;
-  html += `<tr class="cs-fila-total"><td>Sistema activo (con hoyo)</td><td class="cs-num">${csFmt(act.calculado)}</td><td class="cs-num">${real(act)}</td><td class="cs-num">${na(act)}</td></tr>`;
+  if(c.RESERVA.tiene) html += `<tr><td>Fosas de reserva</td><td class="cs-num">${vaVol(c.RESERVA.calculado)}</td><td class="cs-num">${real(c.RESERVA)}</td><td class="cs-num">${na(c.RESERVA)}</td></tr>`;
+  if(c.PREMEZCLA.tiene) html += `<tr><td>Fosas de premezcla</td><td class="cs-num">${vaVol(c.PREMEZCLA.calculado)}</td><td class="cs-num">${real(c.PREMEZCLA)}</td><td class="cs-num">${na(c.PREMEZCLA)}</td></tr>`;
+  html += `<tr class="va-fila-sub"><td>Fosas activas (sin hoyo)</td><td></td><td class="cs-num">${vaVol(realPits)}</td><td></td></tr>`;
+  html += `<tr class="va-fila-sub"><td>Fluido en el hoyo</td><td></td><td class="cs-num">${vaVol(vaFluidoHoyo())}</td><td></td></tr>`;
+  html += `<tr class="cs-fila-total"><td>Sistema activo (con hoyo)</td><td class="cs-num">${vaVol(act.calculado)}</td><td class="cs-num">${real(act)}</td><td class="cs-num">${na(act)}</td></tr>`;
   document.getElementById('vaResumen').innerHTML = html;
 }
 
@@ -477,7 +482,7 @@ function vaRenderOtras(){
   const cont = document.getElementById('vaOtras');
   const filas = vaDatos.otras_por_tipo || [];
   cont.innerHTML = filas.length
-    ? `<ul class="cs-almacen">${filas.map(o => `<li><span class="cs-almacen-texto">${csEsc(o.tipo)}</span><strong>${csFmt(o.volumen)} bbl</strong></li>`).join('')}</ul>`
+    ? `<ul class="cs-almacen">${filas.map(o => `<li><span class="cs-almacen-texto">${csEsc(o.tipo)}</span><strong>${vaVol(o.volumen)} bbl</strong></li>`).join('')}</ul>`
     : '<div class="cs-vacio">No hay fosas de otros tipos (fluido base, salmuera, píldora, espaciador...).</div>';
 }
 
@@ -489,9 +494,9 @@ function vaRenderHoyo(){
   const inp = k => `<input type="number" class="cs-input-cant va-input" min="0" step="any" data-hoyo="${k}" value="${h.no_fluido[k] || ''}" placeholder="0">`;
   const fl = k => Math.max((h.volumen[k] || 0) - (csNum(h.no_fluido[k]) || 0), 0);
   document.getElementById('vaHoyo').innerHTML = `
-    <tr><td>Volumen del hoyo</td>${ks.map(k => `<td class="cs-num">${csFmt(h.volumen[k])}</td>`).join('')}<td class="cs-num cs-final">${csFmt(h.total_volumen)}</td></tr>
-    <tr><td>No ocupado por fluido</td>${ks.map(k => `<td class="cs-num">${inp(k)}</td>`).join('')}<td class="cs-num" id="vaHoyoNoFluido">${csFmt(ks.reduce((a, k) => a + (csNum(h.no_fluido[k]) || 0), 0))}</td></tr>
-    <tr class="cs-fila-total"><td>Fluido en el hoyo</td>${ks.map(k => `<td class="cs-num" data-hoyo-fluido="${k}">${csFmt(fl(k))}</td>`).join('')}<td class="cs-num" id="vaHoyoFluido">${csFmt(vaFluidoHoyo())}</td></tr>`;
+    <tr><td>Volumen del hoyo</td>${ks.map(k => `<td class="cs-num">${vaVol(h.volumen[k])}</td>`).join('')}<td class="cs-num cs-final">${vaVol(h.total_volumen)}</td></tr>
+    <tr><td>No ocupado por fluido</td>${ks.map(k => `<td class="cs-num">${inp(k)}</td>`).join('')}<td class="cs-num" id="vaHoyoNoFluido">${vaVol(ks.reduce((a, k) => a + (csNum(h.no_fluido[k]) || 0), 0))}</td></tr>
+    <tr class="cs-fila-total"><td>Fluido en el hoyo</td>${ks.map(k => `<td class="cs-num" data-hoyo-fluido="${k}">${vaVol(fl(k))}</td>`).join('')}<td class="cs-num" id="vaHoyoFluido">${vaVol(vaFluidoHoyo())}</td></tr>`;
 }
 
 function vaRenderBalance(){
@@ -508,7 +513,7 @@ function vaRenderBalance(){
   const nas = VA_GRUPOS.map(g => c[g].na);
   const filaNullable = (etq, vals, clase) => {
     const total = vals.some(x => x === null) ? null : vals.reduce((a, x) => a + x, 0);
-    const celda = x => x === null ? '<span class="cs-tenue">—</span>' : csFmt(x);
+    const celda = x => x === null ? '<span class="cs-tenue">—</span>' : vaVol(x);
     return `<tr class="${clase}"><td>${etq}</td>${vals.map(x => `<td class="cs-num">${celda(x)}</td>`).join('')}<td class="cs-num cs-final">${celda(total)}</td></tr>`;
   };
   document.getElementById('vaBalance').innerHTML =
@@ -540,9 +545,9 @@ function vaRenderPerdidas(){
     </tr>`).join('') : '<tr class="cs-fila-vacia"><td colspan="6">No hay categorías de pérdida.</td></tr>';
   const t = vaDatos.perdidas_totales;
   document.getElementById('vaPerdidasPie').innerHTML = `
-    <tr class="cs-fila-total cs-fila-subtotal"><td colspan="4">Pérdida de subsuelo</td><td class="cs-num">${csFmt(t.subsuelo)}</td><td></td></tr>
-    <tr class="cs-fila-total cs-fila-subtotal"><td colspan="4">Pérdida de superficie</td><td class="cs-num">${csFmt(t.superficie)}</td><td></td></tr>
-    <tr class="cs-fila-total"><td colspan="4">Pérdida total</td><td class="cs-num">${csFmt(t.total)}</td><td></td></tr>`;
+    <tr class="cs-fila-total cs-fila-subtotal"><td colspan="4">Pérdida de subsuelo</td><td class="cs-num">${vaVol(t.subsuelo)}</td><td></td></tr>
+    <tr class="cs-fila-total cs-fila-subtotal"><td colspan="4">Pérdida de superficie</td><td class="cs-num">${vaVol(t.superficie)}</td><td></td></tr>
+    <tr class="cs-fila-total"><td colspan="4">Pérdida total</td><td class="cs-num">${vaVol(t.total)}</td><td></td></tr>`;
 }
 
 /* ---------- Inventario ---------- */
@@ -602,12 +607,15 @@ function vaRenderCostos(){
   document.getElementById('vaCostosPie').innerHTML = `<tr class="cs-fila-total"><td>Subtotal (${csEsc(vaDatos.moneda)})</td><td class="cs-num">${csDinero(diario)}</td><td class="cs-num">${csDinero(acum)}</td></tr>`;
   document.getElementById('vaDatosInv').innerHTML = `
     <div class="cs-eq-dato"><span>Peso de químicos en inventario</span><strong>${csFmt(vaDatos.peso_quimicos_lb, 0)} lb</strong></div>
-    <div class="cs-eq-dato"><span>Volumen de químicos para fluidos (hoy)</span><strong>${csFmt(vaDatos.volumen_quimicos_bbl)} bbl</strong></div>`;
+    <div class="cs-eq-dato"><span>Volumen de químicos para fluidos (hoy)</span><strong>${csFmt(vaDatos.volumen_quimicos_bbl, 1)} bbl</strong></div>`;
   document.getElementById('vaUltimosTickets').innerHTML = vaDatos.ultimos_tickets.map(t =>
     `<div class="cs-eq-dato"><span>${csEsc(t.tipo)}</span><strong>${t.numero ? csEsc(t.numero) : '—'}</strong></div>`).join('');
 }
 
 /* ---------- Concentración ---------- */
+
+let vaConcUnidad = 'lbbbl';   // 'lbbbl' | 'kgm3'
+const VA_LBBBL_A_KGM3 = 2.85301;
 
 function vaRenderConcentracion(){
   const sel = document.getElementById('vaConcFosa');
@@ -620,22 +628,54 @@ function vaRenderConcentracion(){
     cont.innerHTML = '<div class="cs-vacio">Todavía no hay productos con concentración. Aparecen al agregar químicos medidos en peso o lodo entero con su concentración.</div>';
     return;
   }
+  const kg = vaConcUnidad === 'kgm3';
+  const f = kg ? VA_LBBBL_A_KGM3 : 1;
+  const u = kg ? 'kg/m³' : 'lb/bbl';
+  const cambioVol = (c.vol_fin || 0) - (c.vol_inicio || 0);
+  let tIni = 0, tFin = 0;
+  const filas = c.productos.map(p => {
+    const ini = p.inicio * f, fin = p.fin * f, d = fin - ini;
+    tIni += ini; tFin += fin;
+    const tam = p.unidad ? `${csFmt(p.tamano)} ${csEsc(p.unidad)} ${csEsc(p.empaque || '')}` : '—';
+    return `<tr><td>${csEsc(p.descripcion)}</td><td class="cs-codigo">${csEsc(p.codigo)}</td><td>${tam}</td>
+      <td class="cs-num">${p.agregado ? vaCant(p.agregado, 2) : '—'}</td>
+      <td class="cs-num">${vaCant(ini, 2)}</td>
+      <td class="cs-num ${d > 0.005 ? 'cs-mas' : (d < -0.005 ? 'cs-menos' : '')}">${Math.abs(d) < 0.005 ? '—' : (d > 0 ? '+' : '') + csFmt(d, 2)}</td>
+      <td class="cs-num cs-final">${vaCant(fin, 2)}</td></tr>`;
+  }).join('');
+  const dT = tFin - tIni;
   cont.innerHTML = `
+    <div class="va-conc-unidad" role="group" aria-label="Unidad de concentración">
+      <span>Unidad:</span>
+      <button type="button" class="va-conc-btn ${kg ? '' : 'activo'}" data-unidad="lbbbl">lb/bbl</button>
+      <button type="button" class="va-conc-btn ${kg ? 'activo' : ''}" data-unidad="kgm3">kg/m³</button>
+    </div>
     <div class="va-datos va-datos-fila">
-      <div class="cs-eq-dato"><span>Volumen inicial</span><strong>${csFmt(c.vol_inicio)} bbl</strong></div>
-      <div class="cs-eq-dato"><span>Volumen final calculado</span><strong>${csFmt(c.vol_fin)} bbl</strong></div>
+      <div class="cs-eq-dato"><span>Volumen inicial</span><strong>${csFmt(c.vol_inicio, 1)} bbl</strong></div>
+      <div class="cs-eq-dato"><span>Volumen final calculado</span><strong>${csFmt(c.vol_fin, 1)} bbl</strong></div>
+      <div class="cs-eq-dato"><span>Cambio en volumen</span><strong>${(cambioVol > 0 ? '+' : '') + csFmt(cambioVol, 1)} bbl</strong></div>
+    </div>
+    <div class="va-datos va-datos-fila">
+      <div class="cs-eq-dato"><span>Fluido base agregado</span><strong>${csFmt(c.aceite || 0, 1)} bbl</strong></div>
+      <div class="cs-eq-dato"><span>Agua agregada</span><strong>${csFmt(c.agua || 0, 1)} bbl</strong></div>
+      <div class="cs-eq-dato"><span>Aumento de volumen por material</span><strong>${csFmt(c.vol_quimicos || 0, 1)} bbl</strong></div>
+      <div class="cs-eq-dato"><span>Lodo entero recibido</span><strong>${csFmt(c.lodo || 0, 1)} bbl</strong></div>
     </div>
     <div class="cs-tabla-wrapper">
       <table class="cs-tabla">
-        <thead><tr><th>Producto</th><th>Código</th><th class="cs-num">Inicial (lb/bbl)</th><th class="cs-num">Final (lb/bbl)</th><th class="cs-num">Cambio</th></tr></thead>
-        <tbody>${c.productos.map(p => {
-          const d = p.fin - p.inicio;
-          return `<tr><td>${csEsc(p.descripcion)}</td><td class="cs-codigo">${csEsc(p.codigo)}</td>
-            <td class="cs-num">${vaCant(p.inicio, 3)}</td><td class="cs-num cs-final">${vaCant(p.fin, 3)}</td>
-            <td class="cs-num ${d > 0.0005 ? 'cs-mas' : (d < -0.0005 ? 'cs-menos' : '')}">${Math.abs(d) < 0.0005 ? '—' : (d > 0 ? '+' : '') + csFmt(d, 3)}</td></tr>`;
-        }).join('')}</tbody>
+        <thead><tr><th>Producto</th><th>Código</th><th>Tamaño</th><th class="cs-num">Cantidad agregada</th>
+          <th class="cs-num">Inicial (${u})</th><th class="cs-num">Cambio</th><th class="cs-num">Final (${u})</th></tr></thead>
+        <tbody>${filas}</tbody>
+        <tfoot><tr><td colspan="4"><strong>Total</strong></td><td class="cs-num"><strong>${vaCant(tIni, 2)}</strong></td>
+          <td class="cs-num"><strong>${Math.abs(dT) < 0.005 ? '—' : (dT > 0 ? '+' : '') + csFmt(dT, 2)}</strong></td>
+          <td class="cs-num cs-final"><strong>${vaCant(tFin, 2)}</strong></td></tr></tfoot>
       </table>
-    </div>`;
+    </div>
+    <p class="cs-nota">Las concentraciones salen de los movimientos de la volumetría: el agua o el fluido base diluyen, los productos concentran, el lodo entero y las transferencias mezclan, y las pérdidas no cambian la concentración.</p>`;
+  cont.querySelectorAll('.va-conc-btn').forEach(btn => btn.addEventListener('click', () => {
+    vaConcUnidad = btn.dataset.unidad;
+    vaRenderConcentracion();
+  }));
 }
 
 /* ---------- Guardar ---------- */
@@ -991,10 +1031,10 @@ document.addEventListener('DOMContentLoaded', function(){
       const ks = ['anular', 'sarta', 'bajo_mecha'];
       ks.forEach(k => {
         const c = document.querySelector(`[data-hoyo-fluido="${k}"]`);
-        if(c) c.textContent = csFmt(Math.max((vaDatos.hoyo.volumen[k] || 0) - (csNum(vaDatos.hoyo.no_fluido[k]) || 0), 0));
+        if(c) c.textContent = vaVol(Math.max((vaDatos.hoyo.volumen[k] || 0) - (csNum(vaDatos.hoyo.no_fluido[k]) || 0), 0));
       });
-      document.getElementById('vaHoyoFluido').textContent = csFmt(vaFluidoHoyo());
-      document.getElementById('vaHoyoNoFluido').textContent = csFmt(ks.reduce((a, k) => a + (csNum(vaDatos.hoyo.no_fluido[k]) || 0), 0));
+      document.getElementById('vaHoyoFluido').textContent = vaVol(vaFluidoHoyo());
+      document.getElementById('vaHoyoNoFluido').textContent = vaVol(ks.reduce((a, k) => a + (csNum(vaDatos.hoyo.no_fluido[k]) || 0), 0));
       vaRenderBalance();
     } else if(el.dataset.inv){
       const r = vaDatos.inventario.find(x => x.producto_id === Number(el.dataset.inv));

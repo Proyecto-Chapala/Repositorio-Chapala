@@ -597,17 +597,28 @@ def _estado_volumetria(pozo, reporte):
             else:
                 etiqueta, orden = nombres_fosa.get(clave[1], f"Fosa {clave[1]}"), (1, clave[1])
             filas = []
-            for pid in sorted(set(c['inicio']) | set(c['fin']), key=lambda i: productos.get(i, {}).get('descripcion', '')):
+            agregado = c.get('agregado', {})
+            ids_c = set(c['inicio']) | set(c['fin']) | {i for i, v in agregado.items() if v}
+            for pid in sorted(ids_c, key=lambda i: productos.get(i, {}).get('descripcion', '')):
                 ini, fin = c['inicio'].get(pid, 0.0), c['fin'].get(pid, 0.0)
-                if abs(ini) < 1e-4 and abs(fin) < 1e-4:
+                cant = agregado.get(pid, 0.0)
+                if abs(ini) < 1e-4 and abs(fin) < 1e-4 and not cant:
                     continue
                 p = productos.get(pid, {})
                 filas.append({'producto_id': pid, 'descripcion': p.get('descripcion', pid), 'codigo': p.get('codigo', ''),
+                              'unidad': p.get('unidad', ''), 'tamano': p.get('tamano', 0.0),
+                              'empaque': p.get('empaque', ''), 'agregado': round(cant, 3),
                               'inicio': round(ini, 3), 'fin': round(fin, 3)})
             if filas:
+                ent = c.get('entradas', {})
                 concentraciones.append({'clave': 'ACTIVO' if clave == ACTIVO else f"F{clave[1]}", 'etiqueta': etiqueta,
                                         'orden': orden, 'vol_inicio': round(c['vol_inicio'], 2),
-                                        'vol_fin': round(c['vol_fin'], 2), 'productos': filas})
+                                        'vol_fin': round(c['vol_fin'], 2),
+                                        'aceite': round(ent.get('aceite', 0.0), 2),
+                                        'agua': round(ent.get('agua', 0.0), 2),
+                                        'vol_quimicos': round(ent.get('quimicos', 0.0), 2),
+                                        'lodo': round(ent.get('lodo', 0.0), 2),
+                                        'productos': filas})
         concentraciones.sort(key=lambda x: x['orden'])
         for c in concentraciones:
             c.pop('orden')

@@ -466,3 +466,34 @@
 .cs-campo[hidden] {
   display: none;
 }
+
+/* ---------- Concentraciones: selector de unidad ---------- */
+.va-conc-unidad {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.va-conc-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.va-conc-btn:hover {
+  border-color: var(--color-orange);
+}
+
+.va-conc-btn.activo {
+  border-color: var(--color-orange);
+  background: var(--color-orange);
+  color: #fff;
+}

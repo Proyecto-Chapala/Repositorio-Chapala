@@ -357,6 +357,7 @@ def reporte_diario_detalle_view(request, pk, reporte_pk):
         'operaciones/js/reporte_hidraulica.js',
         'operaciones/css/reporte_opcionales.css',
         'operaciones/js/reporte_opcionales.js',
+        'operaciones/css/daily_reports.css',
     )
 
     return render(request, 'operaciones/avances_19_sep/reporte_diario_detalle.html', {
@@ -849,6 +850,108 @@ def reporte_diario_excel_view(request, pk, reporte_pk):
     )
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+# =====================================================================
+# Reporte corto de propiedades del lodo (avance a media jornada)
+# =====================================================================
+
+def _fmt_prop(valor, dec=1):
+    if valor is None or valor == '':
+        return ''
+    try:
+        v = float(valor)
+    except (TypeError, ValueError):
+        return str(valor)
+    return f"{v:,.{dec}f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+
+
+def _par_prop(a, b, dec=0):
+    if a in (None, '') and b in (None, ''):
+        return ''
+    return f"{_fmt_prop(a, dec)}/{_fmt_prop(b, dec)}"
+
+
+def reporte_propiedades_view(request, pk, reporte_pk):
+    """
+    Reporte corto SOLO con las propiedades del lodo y un comentario, para entregar al
+    compañero un avance antes del reporte completo (pedido del ingeniero, 27-sep).
+    Página imprimible: el navegador la guarda como PDF.
+    """
+    from .views import _version_estaticos
+    pozo = get_object_or_404(Pozo, pk=pk)
+    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+    header = getattr(pozo, 'well_header_info', None)
+    checks = list(reporte.mud_checks.all().order_by('check_number'))[:4]
+    base_agua = reporte.tipo_lodo not in ('OBM', 'SBM')
+
+    def fila(etiqueta, unidad, fn):
+        return {'etiqueta': etiqueta, 'unidad': unidad, 'valores': [fn(c) for c in checks]}
+
+    filas = [
+        fila('Muestra / hora', '', lambda c: f"{c.sample_from or ''} {c.time_taken or ''}".strip()),
+        fila('Temperatura de línea de flujo', '°F', lambda c: _fmt_prop(c.flowline_temp, 0)),
+        fila('Profundidad / TVD', 'ft', lambda c: _par_prop(c.depth, c.tvd)),
+        fila('Densidad del lodo', 'lb/gal', lambda c: (f"{_fmt_prop(c.mud_weight, 1)} @ {_fmt_prop(c.mw_temp, 0)} °F"
+                                                       if c.mud_weight is not None else '')),
+        fila('Viscosidad de embudo', 's/qt', lambda c: _fmt_prop(c.funnel_viscosity, 0)),
+        fila('Temperatura de reología', '°F', lambda c: _fmt_prop(c.rheology_temp, 0)),
+        fila('R600 / R300', '', lambda c: _par_prop(c.r600, c.r300)),
+        fila('R200 / R100', '', lambda c: _par_prop(c.r200, c.r100)),
+        fila('R6 / R3', '', lambda c: _par_prop(c.r6, c.r3)),
+        fila('Viscosidad plástica (PV)', 'cP', lambda c: _fmt_prop(c.pv, 0)),
+        fila('Punto cedente (YP)', 'lb/100ft²', lambda c: _fmt_prop(c.yp, 0)),
+        fila('Geles 10 s / 10 min / 30 min', 'lb/100ft²', lambda c: (
+            f"{_fmt_prop(c.gel_10s, 0)}/{_fmt_prop(c.gel_10m, 0)}/{_fmt_prop(c.gel_30m, 0)}"
+            if any(x is not None for x in (c.gel_10s, c.gel_10m, c.gel_30m)) else '')),
+        fila('Filtrado API', 'cc/30 min', lambda c: _fmt_prop(c.api_fluid_loss, 1)),
+        fila('Filtrado HTHP', 'cc/30 min', lambda c: _fmt_prop(c.hthp_fluid_loss, 1)),
+        fila('Revoque API / HTHP', '1/32"', lambda c: _par_prop(c.cake_api, c.cake_hthp)),
+        fila('Sólidos (retorta)', '% vol', lambda c: _fmt_prop(c.solids_pct, 1)),
+    ]
+    if base_agua:
+        filas += [
+            fila('Aceite / Agua', '% vol', lambda c: _par_prop(c.oil_pct, c.water_pct, 1)),
+            fila('Arena', '% vol', lambda c: _fmt_prop(c.sand_pct, 2)),
+            fila('MBT', 'lb/bbl', lambda c: _fmt_prop(c.mbt, 1)),
+            fila('pH', '', lambda c: _fmt_prop(c.ph, 1)),
+            fila('Pm', '', lambda c: _fmt_prop(c.pm, 2)),
+            fila('Pf / Mf', '', lambda c: _par_prop(c.pf, c.mf, 2)),
+            fila('Cloruros', 'mg/L', lambda c: _fmt_prop(c.chlorides, 0)),
+            fila('Dureza cálcica', 'mg/L', lambda c: _fmt_prop(c.calcium_hardness, 0)),
+        ]
+    else:
+        filas += [
+            fila('Sólidos corregidos', '% vol', lambda c: _fmt_prop(c.adjusted_solids_pct, 1)),
+            fila('Aceite', '% vol', lambda c: _fmt_prop(c.oil_pct, 1)),
+            fila('Agua', '% vol', lambda c: _fmt_prop(c.water_pct, 1)),
+            fila('Relación aceite/agua', '', lambda c: c.oil_water_ratio or ''),
+            fila('Alcalinidad (Pom)', '', lambda c: _fmt_prop(c.pm, 2)),
+            fila('Cloruros', 'mg/L', lambda c: _fmt_prop(c.chlorides, 0)),
+            fila('Sal', '% peso', lambda c: _fmt_prop(c.salt_pct_wt, 1)),
+            fila('Cal en exceso', 'lb/bbl', lambda c: _fmt_prop(c.excess_lime, 2)),
+            fila('Estabilidad eléctrica', 'V', lambda c: _fmt_prop(c.electrical_stability, 0)),
+        ]
+
+    # Propiedades extra 1-8 del tipo de fluido (las que se imprimen en el reporte de lodo)
+    tipo_extra = 'WBM' if base_agua else 'OBM'
+    valores = {}
+    for c in checks:
+        for v in c.extra_values.all():
+            valores[(c.id, v.propiedad_extra_id)] = v.valor
+    for p in pozo.propiedades_extra.filter(orden_impresion__gt=0, tipo_fluido=tipo_extra, numero__lte=8).order_by('orden_impresion', 'numero'):
+        filas.append({'etiqueta': p.etiqueta, 'unidad': p.unidad or '',
+                      'valores': [valores.get((c.id, p.id)) or '' for c in checks]})
+
+    # Solo las filas con algún dato
+    filas = [f for f in filas if any(str(v).strip() for v in f['valores'])]
+
+    comentarios = getattr(reporte, 'comentarios', None)
+    return render(request, 'operaciones/avances_19_sep/reporte_propiedades.html', {
+        'pozo': pozo, 'reporte': reporte, 'header': header, 'checks': checks, 'filas': filas,
+        'base_agua': base_agua, 'comentarios': comentarios,
+        'version_estaticos': _version_estaticos('operaciones/css/reporte_propiedades.css'),
+    })
 
 
 # =====================================================================
@@ -1536,6 +1639,22 @@ def _resumen_avance_intervalo(reporte, intervalos):
     }
 
 
+def _hoyo_perforado_dia(reporte, anterior):
+    """Hoyo perforado del día (longitud y volumen), con los casos de side track y piloto."""
+    from .views_control_solidos import _contexto_hoyo
+    try:
+        c = _contexto_hoyo(reporte, anterior)
+    except Exception:
+        return None
+    return {
+        'desde_ft': round(c['inicio_avance_ft'], 2),
+        'avance_ft': round(c['avance_ft'], 2),
+        'volumen_bbl': round(c['volumen_hoyo_bbl'], 2),
+        'motivo': c['motivo_avance'],
+        'diametro_in': round(c['diametro_in'], 3),
+    }
+
+
 @require_http_methods(["GET"])
 def api_well_geometry_detail(request, pk, reporte_pk):
     """Devuelve la sarta, el contexto del pozo y los volúmenes calculados del Tab 4."""
@@ -1571,6 +1690,8 @@ def api_well_geometry_detail(request, pk, reporte_pk):
         'orden_impresion_intervalo': reporte.orden_impresion_intervalo,
         'pilot_hole_size_in': _float(reporte.pilot_hole_size_in),
         'pilot_hole_depth_ft': _float(reporte.pilot_hole_depth_ft),
+        'kickoff_sidetrack_ft': _float(reporte.kickoff_sidetrack_ft),
+        'hoyo_perforado': _hoyo_perforado_dia(reporte, anterior),
         'bit_depth_ft': _float(reporte.bit_depth),
         'profundidad_actual_ft': _float(reporte.profundidad_actual),
         'avance_intervalo': _resumen_avance_intervalo(reporte, intervalos),
@@ -1604,9 +1725,27 @@ def api_well_geometry_guardar(request, pk, reporte_pk):
         # 2. Hoyo piloto
         reporte.pilot_hole_size_in = _float(body.get('pilot_hole_size_in'))
         reporte.pilot_hole_depth_ft = _float(body.get('pilot_hole_depth_ft'))
+
+        # 3. Side track: profundidad de kick-off (solo el día en que arranca)
+        kickoff = _float(body.get('kickoff_sidetrack_ft'))
+        if kickoff < 0:
+            kickoff = 0.0
+        if kickoff > 0:
+            profundidad = _float(reporte.profundidad_actual)
+            if profundidad and kickoff >= profundidad:
+                return JsonResponse({'ok': False, 'error': (
+                    f"La profundidad de kick-off ({kickoff:g} ft) debe ser menor que la profundidad "
+                    f"del día ({profundidad:g} ft, pestaña 1).")}, status=400)
+            previo = pozo.reportes_diarios.filter(fecha__lt=reporte.fecha).order_by('-fecha').first()
+            if previo and _float(previo.profundidad_actual) and kickoff > _float(previo.profundidad_actual) + 0.5:
+                return JsonResponse({'ok': False, 'error': (
+                    f"La profundidad de kick-off ({kickoff:g} ft) no puede ser mayor que la del hoyo "
+                    f"anterior ({_float(previo.profundidad_actual):g} ft): el desvío sale de un punto "
+                    f"del hoyo que ya existía.")}, status=400)
+        reporte.kickoff_sidetrack_ft = kickoff
         reporte.save()
 
-        # 3. Sarta: reemplazo total (mismo patrón que boquillas y listas activas)
+        # 4. Sarta: reemplazo total (mismo patrón que boquillas y listas activas)
         filas = body.get('tramos', [])
         nuevos = []
         orden_actual = 0
@@ -1643,6 +1782,9 @@ def api_well_geometry_guardar(request, pk, reporte_pk):
             'ok': True,
             'mensaje': 'Geometría del pozo guardada correctamente.',
             'tramos': tramos,
+            'kickoff_sidetrack_ft': _float(reporte.kickoff_sidetrack_ft),
+            'hoyo_perforado': _hoyo_perforado_dia(
+                reporte, pozo.reportes_diarios.filter(fecha__lt=reporte.fecha).order_by('-fecha').first()),
             'avance_intervalo': _resumen_avance_intervalo(reporte, intervalos),
             'geometria': geometria,
         })

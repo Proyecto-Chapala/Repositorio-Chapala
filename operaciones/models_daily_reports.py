@@ -46,6 +46,11 @@ class ReporteDiario(models.Model):
     pilot_hole_depth_ft = models.FloatField(
         default=0.0, verbose_name="Profundidad del Hoyo Piloto (ft)"
     )
+    kickoff_sidetrack_ft = models.FloatField(
+        default=0.0, verbose_name="Profundidad de Kick-off del Side Track (ft)",
+        help_text="Solo el día en que arranca el side track. El hoyo perforado de ese día se "
+                  "cuenta desde aquí y no desde la profundidad del día anterior."
+    )
 
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
