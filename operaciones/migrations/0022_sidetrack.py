@@ -5,7 +5,7 @@ class Migration(migrations.Migration):
     """Casos especiales del manual: side track (kick-off del día y tipo de intervalo)."""
 
     dependencies = [
-        ('operaciones', '0021_modulos_opcionales'),
+        ('operaciones', '0022_inventario_unificado'),
     ]
 
     operations = [
