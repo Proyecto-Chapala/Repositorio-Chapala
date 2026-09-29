@@ -49,6 +49,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Licencia de prueba (bloquea el sistema si no está activa)
+    'operaciones.middleware_licencia.LicenciaMiddleware',
 ]
 
 ROOT_URLCONF = 'chapala.urls'
@@ -83,7 +85,8 @@ if env_path.exists():
             line = line.strip()
             if line and not line.startswith('#') and '=' in line:
                 k, v = line.split('=', 1)
-                os.environ[k.strip()] = v.strip().strip('"').strip("'")
+                # setdefault: una variable ya definida (p. ej. por el .exe de pruebas) manda sobre el .env
+                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 USE_POSTGRES = os.environ.get('USE_POSTGRES', 'True').lower() in ('true', '1', 'yes')
 
@@ -102,7 +105,8 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            # CHAPALA_DB_PATH lo define el ejecutable de pruebas (base junto al .exe)
+            'NAME': os.environ.get('CHAPALA_DB_PATH') or (BASE_DIR / 'db.sqlite3'),
         }
     }
 

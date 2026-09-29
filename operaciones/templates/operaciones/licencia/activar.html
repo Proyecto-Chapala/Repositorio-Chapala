@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activación &bull; CHAPALA</title>
+  <link rel="stylesheet" href="{% static 'operaciones/css/licencia.css' %}">
+</head>
+<body class="licencia-body">
+  <main class="licencia-tarjeta">
+    <h1>CHAPALA &bull; Operaciones</h1>
+
+    {% if bloqueada %}
+      <p class="licencia-titulo-error">Período de prueba vencido</p>
+      <p class="licencia-texto">
+        {% if info.estado == 'alterada' %}
+          Se detectó una alteración en la licencia o en la fecha del equipo.
+        {% else %}
+          La versión de prueba de {{ dias_prueba }} días ha finalizado.
+        {% endif %}
+        Contacte al programador para obtener una licencia.
+      </p>
+    {% else %}
+      <p class="licencia-texto">
+        Ingrese la clave de activación para iniciar la versión de prueba
+        de {{ dias_prueba }} días.
+      </p>
+      <form method="post" class="licencia-form">
+        {% csrf_token %}
+        <label for="clave">Clave de activación</label>
+        <input type="password" id="clave" name="clave" autocomplete="off" required autofocus>
+        <button type="submit">Activar</button>
+      </form>
+    {% endif %}
+
+    {% if mensaje %}
+      <p class="licencia-mensaje{% if error %} licencia-mensaje-error{% endif %}">{{ mensaje }}</p>
+    {% endif %}
+  </main>
+</body>
+</html>

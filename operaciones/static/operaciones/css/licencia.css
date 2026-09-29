@@ -1,0 +1,114 @@
+/* ==========================================================================
+   LICENCIA DE PRUEBA - Pantalla de activación y aviso de vencimiento
+   ========================================================================== */
+
+/* ---- Aviso pequeño "vencerá pronto" (se inserta en todas las páginas) ---- */
+.aviso-licencia {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 260px;
+  padding: 8px 12px;
+  border-left: 4px solid #d97706;
+  border-radius: 6px;
+  background: #fffbeb;
+  color: #78350f;
+  font: 12px/1.35 'Inter', system-ui, sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+
+.aviso-licencia strong {
+  font-weight: 700;
+}
+
+@media print {
+  .aviso-licencia { display: none; }
+}
+
+/* ---- Pantalla de activación ---- */
+.licencia-body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #0f172a;
+}
+
+.licencia-tarjeta {
+  width: 100%;
+  max-width: 380px;
+  margin: 16px;
+  padding: 28px;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.licencia-tarjeta h1 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.licencia-texto {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.licencia-titulo-error {
+  margin: 0 0 8px;
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+.licencia-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.licencia-form label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.licencia-form input {
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+
+.licencia-form button {
+  margin-top: 6px;
+  padding: 10px;
+  border: 0;
+  border-radius: 6px;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.licencia-form button:hover {
+  background: #1e40af;
+}
+
+.licencia-mensaje {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: #166534;
+}
+
+.licencia-mensaje-error {
+  color: #b91c1c;
+}

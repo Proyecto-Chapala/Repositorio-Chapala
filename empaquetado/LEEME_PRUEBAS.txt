@@ -1,0 +1,26 @@
+CHAPALA - Sistema de Operaciones (versión de prueba)
+====================================================
+
+CÓMO INICIAR
+1. Descomprima CHAPALA_Pruebas.zip en una carpeta propia
+   (por ejemplo C:\CHAPALA). No lo ejecute desde dentro del .zip.
+2. Haga doble clic en CHAPALA.exe.
+3. Se abre una ventana negra y luego el navegador con el sistema.
+   NO cierre la ventana negra mientras usa el sistema.
+4. La primera vez el sistema pide la clave de activación
+   (la entrega el programador). La prueba dura 7 días.
+
+PARA SALIR
+Cierre la ventana negra.
+
+DATOS
+- Todo lo que cargue se guarda en la carpeta "datos" junto a CHAPALA.exe.
+- La primera vez se cargan el catálogo de productos y el pozo PRUEBA-001.
+- Para empezar de cero: cierre el sistema y borre la carpeta "datos".
+
+SI WINDOWS MUESTRA "Windows protegió su PC"
+Pulse "Más información" y luego "Ejecutar de todas formas".
+El aviso aparece porque el programa no tiene firma digital.
+
+SI ALGO FALLA
+La ventana negra muestra el error. Tome una captura y envíela al programador.
