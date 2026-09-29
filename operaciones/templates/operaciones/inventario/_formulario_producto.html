@@ -19,11 +19,23 @@
       <input type="text" id="inputDescripcion" class="form-input" placeholder="Ej: ACETATO DE POTASIO (SACOS DE 25 KG)" required disabled>
     </div>
 
-    <!-- Fila 1: Unidad & Costo -->
+    <!-- Fila 1: Empaque & Unidad -->
     <div class="form-grid-2">
       <div class="form-group">
-        <label for="inputUnidad">Unidad *</label>
-        <input type="text" id="inputUnidad" class="form-input" placeholder="Ej: SACOS 55 LBS" required disabled>
+        <label for="inputEmpaque">Empaque</label>
+        <input type="text" id="inputEmpaque" class="form-input" placeholder="Ej: SACOS, TAMBOR, TOTE" disabled>
+      </div>
+      <div class="form-group">
+        <label for="inputUnidad">Unidad Física *</label>
+        <input type="text" id="inputUnidad" class="form-input" placeholder="Ej: LBS, GAL, BBL" required disabled>
+      </div>
+    </div>
+
+    <!-- Fila 2: Tamaño/Libraje & Costo -->
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label for="inputLibraje">Tamaño / Libraje *</label>
+        <input type="number" id="inputLibraje" class="form-input" step="0.01" min="0" placeholder="55.00" required disabled>
       </div>
       <div class="form-group">
         <label for="inputCosto">Costo Unitario ($) *</label>
@@ -31,31 +43,25 @@
       </div>
     </div>
 
-    <!-- Fila 2: Libraje & Cantidad -->
+    <!-- Fila 3: Cantidad & Gravedad -->
     <div class="form-grid-2">
-      <div class="form-group">
-        <label for="inputLibraje">Libraje (LBS) *</label>
-        <input type="number" id="inputLibraje" class="form-input" step="0.01" min="0" placeholder="55.00" required disabled>
-      </div>
       <div class="form-group">
         <label for="inputCantidad">Cantidad (Stock) *</label>
         <input type="number" id="inputCantidad" class="form-input" step="0.01" min="0" placeholder="0.00" required disabled>
       </div>
-    </div>
-
-    <!-- Fila 3: Gravedad & Categoría -->
-    <div class="form-grid-2">
       <div class="form-group">
         <label for="inputGravedad">Gravedad Específica *</label>
         <input type="number" id="inputGravedad" class="form-input" step="0.0001" min="0.0001" placeholder="1.0000" required disabled>
       </div>
-      <div class="form-group">
-        <label for="selectCategoria">Categoría *</label>
-        <select id="selectCategoria" class="form-select" disabled>
-          <option value="SOLIDO">Sólido</option>
-          <option value="LIQUIDO">Líquido</option>
-        </select>
-      </div>
+    </div>
+
+    <!-- Fila 4: Categoría -->
+    <div class="form-group">
+      <label for="selectCategoria">Categoría *</label>
+      <select id="selectCategoria" class="form-select" disabled>
+        <option value="SOLIDO">Sólido</option>
+        <option value="LIQUIDO">Líquido</option>
+      </select>
     </div>
 
     <!-- Fila 4: Estado Calculado Automáticamente (0-20 Bajo, 21-50 Medio, >50 Alto) -->

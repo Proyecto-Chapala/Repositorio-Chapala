@@ -25,10 +25,17 @@ class Producto(models.Model):
         max_length=255,
         verbose_name="Descripción"
     )
+    empaque = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        verbose_name="Empaque",
+        help_text="Ej: SACOS, TAMBOR, TOTE, LATA, GRANEL"
+    )
     unidad = models.CharField(
         max_length=50,
-        verbose_name="Unidad / Presentación",
-        help_text="Ej: SACOS 55 LBS, TAMBOR 55 GLS, TOTE"
+        verbose_name="Unidad Física",
+        help_text="Ej: LBS, GAL, BBL, KG, L"
     )
     libraje = models.DecimalField(
         max_digits=12,
@@ -123,6 +130,7 @@ class Producto(models.Model):
             "id": self.id,
             "codigo": self.codigo,
             "descripcion": self.descripcion,
+            "empaque": self.empaque or "",
             "unidad": self.unidad,
             "libraje": float(self.libraje),
             "gravedad": float(self.gravedad),

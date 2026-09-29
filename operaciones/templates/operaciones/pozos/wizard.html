@@ -43,7 +43,7 @@
 
 {% block extra_js %}
 <script>
-  window.POZO_ID_INICIAL = {{ pozo_id|default:"null" }};
+  window.POZO_ID_INICIAL = parseInt("{{ pozo_id|default:'' }}", 10) || null;
 </script>
 <script src="{% static 'operaciones/js/pozos.js' %}"></script>
 {% endblock %}
