@@ -90,7 +90,7 @@
 
 {% block extra_js %}
 <script>
-  window.POZO_ID = {{ pozo.id }};
+  window.POZO_ID = parseInt("{{ pozo.id }}", 10);
 </script>
 <script src="{% static 'operaciones/js/spud_date.js' %}"></script>
 {% endblock %}

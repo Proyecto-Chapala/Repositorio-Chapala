@@ -51,6 +51,7 @@ const Inventario = {
 
       inputCodigo: document.getElementById('inputCodigo'),
       inputDescripcion: document.getElementById('inputDescripcion'),
+      inputEmpaque: document.getElementById('inputEmpaque'),
       inputUnidad: document.getElementById('inputUnidad'),
       inputLibraje: document.getElementById('inputLibraje'),
       inputGravedad: document.getElementById('inputGravedad'),
@@ -180,7 +181,7 @@ const Inventario = {
     if (this.productos.length === 0) {
       this.elements.tableBody.innerHTML = `
         <tr>
-          <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--color-text-muted);">
+          <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--color-text-muted);">
             No hay productos registrados. Presione <strong>Nuevo</strong> para agregar uno.
           </td>
         </tr>
@@ -198,6 +199,7 @@ const Inventario = {
         <td><strong>${p.codigo}</strong></td>
         <td>${p.descripcion}</td>
         <td><span class="badge-cat">${p.categoria_display}</span></td>
+        <td>${p.empaque || '-'}</td>
         <td>${p.unidad}</td>
         <td style="text-align: right; font-weight: 700; color: var(--color-navy);">${p.cantidad.toFixed(2)}</td>
         <td style="text-align: right;">$${p.costo.toFixed(2)}</td>
@@ -245,6 +247,7 @@ const Inventario = {
   cargarEnFormulario(p) {
     this.elements.inputCodigo.value = p.codigo || '';
     this.elements.inputDescripcion.value = p.descripcion || '';
+    this.elements.inputEmpaque.value = p.empaque || '';
     this.elements.inputUnidad.value = p.unidad || '';
     this.elements.inputLibraje.value = p.libraje !== undefined ? p.libraje : 0;
     this.elements.inputGravedad.value = p.gravedad !== undefined ? p.gravedad : 1.0;
@@ -259,6 +262,7 @@ const Inventario = {
   limpiarFormulario() {
     this.elements.inputCodigo.value = '';
     this.elements.inputDescripcion.value = '';
+    this.elements.inputEmpaque.value = '';
     this.elements.inputUnidad.value = '';
     this.elements.inputLibraje.value = '0.00';
     this.elements.inputGravedad.value = '1.0000';
@@ -274,6 +278,7 @@ const Inventario = {
     const inputs = [
       this.elements.inputCodigo,
       this.elements.inputDescripcion,
+      this.elements.inputEmpaque,
       this.elements.inputUnidad,
       this.elements.inputLibraje,
       this.elements.inputGravedad,
@@ -378,7 +383,8 @@ const Inventario = {
     const payload = {
       codigo: this.elements.inputCodigo.value.trim(),
       descripcion: this.elements.inputDescripcion.value.trim(),
-      unidad: this.elements.inputUnidad.value.trim(),
+      empaque: this.elements.inputEmpaque ? this.elements.inputEmpaque.value.trim().toUpperCase() : '',
+      unidad: this.elements.inputUnidad.value.trim().toUpperCase(),
       libraje: parseFloat(this.elements.inputLibraje.value) || 0,
       gravedad: parseFloat(this.elements.inputGravedad.value) || 1.0,
       costo: parseFloat(this.elements.inputCosto.value) || 0,

@@ -925,3 +925,312 @@
 .btn-add-row:hover {
   color: var(--color-orange-hover, #e2853a);
 }
+
+/* ============================================================
+   Vista Ampliada y Legible (Well Header & Pantallas de Configuración)
+   ============================================================ */
+.subpage.subpage-wide {
+  max-width: 1440px;
+  width: 98%;
+  margin: 0 auto;
+  padding: 12px 16px 28px 16px;
+}
+
+.subpage-wide .subpage-header {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.subpage-wide .subpage-back {
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--color-surface-muted, #f5f2ec);
+  border: 1px solid var(--color-border, #e2dbc9);
+  color: var(--color-text-primary, #1e2a22);
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.subpage-wide .subpage-back:hover {
+  background: var(--color-accent-soft, #fff6ec);
+}
+
+.subpage-wide .subpage-title {
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--color-text-primary, #1e2a22);
+  line-height: 1.2;
+}
+
+.subpage-wide .subpage-breadcrumb {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #8c7a5e);
+  margin-bottom: 2px;
+}
+
+.subpage-wide .subpage-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--color-border, #e2dbc9);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.subpage-wide .tab-nav {
+  padding: 0 20px;
+  background: #faf8f5;
+  border-bottom: 1.5px solid var(--color-border-soft, #efe9d9);
+  display: flex;
+  gap: 8px;
+}
+
+.subpage-wide .tab-nav-item {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 11px 14px;
+  margin-right: 0;
+  background: none;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  color: var(--color-text-secondary, #8c7a5e);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.subpage-wide .tab-nav-item.is-active {
+  color: var(--color-accent, #b4570f);
+  border-bottom-color: var(--color-accent, #b4570f);
+}
+
+.subpage-wide .tab-panel {
+  padding: 14px 18px 18px 18px;
+}
+
+/* Dashboard Grid de 2 columnas */
+.well-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.15fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.well-dashboard-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subpage-wide .form-section-card {
+  background: #fdfcf9;
+  border: 1px solid #e7e2d4;
+  border-radius: 9px;
+  padding: 12px 16px;
+  margin-bottom: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.subpage-wide .form-section-card.h-full {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.subpage-wide .form-section-card:hover {
+  border-color: #ded8c6;
+}
+
+.subpage-wide .fieldset-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  color: var(--color-accent, #b4570f);
+  margin: 0 0 8px 0;
+  padding-bottom: 5px;
+  border-bottom: 1.5px solid rgba(180, 87, 15, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.subpage-wide .form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+.subpage-wide .form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+.form-grid-comments {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.subpage-wide .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.subpage-wide .form-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #354238;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.subpage-wide .form-input,
+.subpage-wide .form-select,
+.subpage-wide .textarea-recap {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #1e2a22;
+  padding: 5px 9px;
+  border: 1.5px solid #d5caba;
+  border-radius: 6px;
+  background: #ffffff;
+  min-height: 33px;
+  height: 33px;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.subpage-wide .textarea-recap {
+  height: auto;
+  min-height: 46px;
+  resize: vertical;
+}
+
+.subpage-wide .form-input:focus,
+.subpage-wide .textarea-recap:focus {
+  border-color: var(--color-accent, #b4570f);
+  box-shadow: 0 0 0 2.5px rgba(180, 87, 15, 0.12);
+  outline: none;
+}
+
+.subpage-wide .checkbox-inline {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1e2a22;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  margin-bottom: 2px;
+}
+
+.subpage-wide .checkbox-inline input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-accent, #b4570f);
+  cursor: pointer;
+}
+
+.subpage-wide .field-hint {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #6a786d;
+}
+
+.subpage-wide .wizard-footer-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #eee8da;
+}
+
+.subpage-wide .btn-guardar {
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 9px 36px;
+  border-radius: 8px;
+  width: auto;
+  min-width: 250px;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(180, 87, 15, 0.22);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.subpage-wide .btn-guardar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(180, 87, 15, 0.32);
+}
+
+/* Responsividad para pantallas angostas o ventanas partidas */
+@media (max-width: 1060px) {
+  .well-dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 680px) {
+  .subpage-wide .form-grid-3,
+  .subpage-wide .form-grid-2,
+  .form-grid-comments {
+    grid-template-columns: 1fr;
+  }
+  .subpage-wide .tab-panel {
+    padding: 12px 10px;
+  }
+}
+
+/* Adaptación para pantallas de laptops o baja altura vertical */
+@media (max-height: 780px) {
+  .subpage.subpage-wide {
+    padding-top: 6px;
+    padding-bottom: 12px;
+  }
+  .subpage-wide .subpage-header {
+    margin-bottom: 6px;
+  }
+  .subpage-wide .subpage-title {
+    font-size: 18px;
+  }
+  .subpage-wide .tab-nav-item {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .subpage-wide .tab-panel {
+    padding: 10px 14px;
+  }
+  .subpage-wide .form-section-card {
+    padding: 8px 12px;
+  }
+  .subpage-wide .fieldset-title {
+    font-size: 11.5px;
+    margin-bottom: 6px;
+  }
+  .subpage-wide .form-input,
+  .subpage-wide .form-select {
+    min-height: 29px;
+    height: 29px;
+    font-size: 11.5px;
+    padding: 3px 6px;
+  }
+  .subpage-wide .form-group label {
+    font-size: 10.5px;
+  }
+  .subpage-wide .btn-guardar {
+    padding: 6px 24px;
+    font-size: 12.5px;
+    min-height: 32px;
+  }
+}
+

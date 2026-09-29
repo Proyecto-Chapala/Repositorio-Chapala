@@ -68,7 +68,7 @@
     data.productos.slice(0, 50).forEach((p) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${p.codigo}</td><td>${p.descripcion}</td><td>${p.unidad || ''}</td>
+        <td>${p.codigo}</td><td>${p.descripcion}</td><td>${p.empaque ? p.empaque + ' ' : ''}${p.unidad || ''}</td>
         <td><button type="button" class="btn-add-row" title="Agregar a la lista activa">+</button></td>
       `;
       tr.querySelector('.btn-add-row').addEventListener('click', () => agregarProductoActivo(p));
@@ -79,7 +79,7 @@
   function agregarProductoActivo(p) {
     state.productosActivos.push({
       producto_id: p.id, producto_codigo: p.codigo, producto_nombre: p.descripcion,
-      abreviatura: '', unit_size: p.libraje, unidad: p.unidad, empaque: '',
+      abreviatura: '', unit_size: p.libraje, unidad: p.unidad, empaque: p.empaque || '',
       precio: p.costo, gravedad_especifica: p.gravedad,
       calcular_concentracion: true, es_producto_mi: true, grupo_producto: 1,
       codigo_costo_diario: 1, calcular_wmgt_conc: true,

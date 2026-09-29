@@ -99,7 +99,8 @@ def api_producto_create(request):
 
     codigo = str(data.get('codigo', '')).strip()
     descripcion = str(data.get('descripcion', '')).strip()
-    unidad = str(data.get('unidad', '')).strip()
+    empaque = str(data.get('empaque', '')).strip().upper()
+    unidad = str(data.get('unidad', '')).strip().upper()
     categoria = str(data.get('categoria', 'SOLIDO')).strip().upper()
     estado = str(data.get('estado', 'ALTO')).strip().upper()
     observacion = str(data.get('observacion', '')).strip()
@@ -158,6 +159,7 @@ def api_producto_create(request):
     producto = Producto.objects.create(
         codigo=codigo,
         descripcion=descripcion,
+        empaque=empaque,
         unidad=unidad,
         libraje=libraje,
         gravedad=gravedad,
@@ -188,7 +190,8 @@ def api_producto_update(request, pk):
 
     codigo = str(data.get('codigo', producto.codigo)).strip()
     descripcion = str(data.get('descripcion', producto.descripcion)).strip()
-    unidad = str(data.get('unidad', producto.unidad)).strip()
+    empaque = str(data.get('empaque', producto.empaque or '')).strip().upper()
+    unidad = str(data.get('unidad', producto.unidad)).strip().upper()
     categoria = str(data.get('categoria', producto.categoria)).strip().upper()
     estado = str(data.get('estado', producto.estado)).strip().upper()
     observacion = str(data.get('observacion', producto.observacion or '')).strip()
@@ -244,6 +247,7 @@ def api_producto_update(request, pk):
 
     producto.codigo = codigo
     producto.descripcion = descripcion
+    producto.empaque = empaque
     producto.unidad = unidad
     producto.libraje = libraje
     producto.gravedad = gravedad

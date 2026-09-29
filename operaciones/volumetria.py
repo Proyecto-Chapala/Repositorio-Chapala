@@ -179,10 +179,6 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
 
         delta = defaultdict(float)
         flujos = _flujos()
-        # Por compartimento (reporte de concentraciones): unidades de producto agregadas y
-        # volúmenes que entran hoy (fluido base, agua, volumen de químicos, lodo entero).
-        agregado_comp = defaultdict(lambda: defaultdict(float))
-        entradas_comp = defaultdict(lambda: defaultdict(float))
         perdidas = defaultdict(lambda: defaultdict(float))   # código → grupo → bbl
         usado_fluido = defaultdict(float)
         costo_dia_prod = defaultdict(float)
@@ -234,7 +230,6 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 for p in tr.get('productos', []):
                     cant = float(p.get('cantidad') or 0)
                     usado_fluido[p['producto']] += cant
-                    agregado_comp[c][p['producto']] += cant
                     costo = cant * float(p.get('precio') or 0)
                     costo_dia_prod[p['producto']] += costo
                     costo_dia_cat[p.get('categoria') or 1] += costo
@@ -244,9 +239,6 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                         if m:
                             masa[c][p['producto']] += m
                 total = aceite + agua + vq
-                entradas_comp[c]['aceite'] += aceite
-                entradas_comp[c]['agua'] += agua
-                entradas_comp[c]['quimicos'] += vq
                 delta[n] += total
                 vol_comp[c] += total
                 flujos[g]['aceite'] += aceite
@@ -264,7 +256,6 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 for p in tr.get('productos', []):
                     if p.get('concentracion', True):
                         masa[c][p['producto']] += float(p.get('cantidad') or 0) * vol
-                entradas_comp[c]['lodo'] += vol
                 delta[n] += vol
                 vol_comp[c] += vol
                 flujos[g]['recibido'] += vol
@@ -385,10 +376,8 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                                    for p, m in masa_inicio.get(cc, {}).items()},
                         'fin': {p: (m / vol_fin_comp[cc] if vol_fin_comp.get(cc, 0) > EPS else 0.0)
                                 for p, m in masa_fin.get(cc, {}).items()},
-                        'agregado': dict(agregado_comp.get(cc, {})),
-                        'entradas': dict(entradas_comp.get(cc, {})),
                     }
-                    for cc in set(masa_inicio) | set(masa_fin) | set(agregado_comp)
+                    for cc in set(masa_inicio) | set(masa_fin)
                 },
                 'avisos': avisos,
             }
