@@ -28,6 +28,7 @@ urlpatterns = [
     # --- API Wizard de Pozo ---
     path('api/pozos/plantillas/', views.api_pozos_plantillas, name='api_pozos_plantillas'),
     path('api/pozos/<int:pk>/', views.api_pozo_detail, name='api_pozo_detail'),
+    path('api/pozos/<int:pk>/eliminar/', views.api_pozo_eliminar, name='api_pozo_eliminar'),
     path('api/pozos/paso1/', views.api_pozo_paso1, name='api_pozo_paso1_crear'),
     path('api/pozos/<int:pk>/paso1/', views.api_pozo_paso1, name='api_pozo_paso1_actualizar'),
     path('api/pozos/<int:pk>/paso2/', views.api_pozo_paso2, name='api_pozo_paso2'),
@@ -121,6 +122,8 @@ urlpatterns = [
     path('api/pozos/<int:pk>/casing-intervals/crear/', views.api_intervalo_crear, name='api_intervalo_crear'),
     path('api/pozos/<int:pk>/casing-intervals/<int:intervalo_pk>/', views.api_intervalo_actualizar, name='api_intervalo_actualizar'),
     path('api/pozos/<int:pk>/casing-intervals/<int:intervalo_pk>/eliminar/', views.api_intervalo_eliminar, name='api_intervalo_eliminar'),
+    path('api/pozos/<int:pk>/casing-intervals/<int:intervalo_pk>/cerrar/', views.api_intervalo_cerrar, name='api_intervalo_cerrar'),
+    path('api/pozos/<int:pk>/casing-intervals/<int:intervalo_pk>/reabrir/', views.api_intervalo_reabrir, name='api_intervalo_reabrir'),
 
     # --- Pit Information ---
     path('pozos/<int:pk>/pits/', views.pits_view, name='pits'),

@@ -2,8 +2,27 @@
 
   <div class="form-grid-2">
     <div class="form-group">
-      <label for="inputMonedaSimbolo">Símbolo de Moneda *</label>
-      <input type="text" id="inputMonedaSimbolo" class="form-input" maxlength="6" placeholder="USD">
+      <label for="inputMonedaSimbolo">Moneda *</label>
+      <select id="inputMonedaSimbolo" class="form-select">
+        <option value="USD">USD — Dólar estadounidense</option>
+        <option value="VES">VES — Bolívar venezolano (Bs.)</option>
+        <option value="EUR">EUR — Euro</option>
+        <option value="COP">COP — Peso colombiano</option>
+        <option value="MXN">MXN — Peso mexicano</option>
+        <option value="ARS">ARS — Peso argentino</option>
+        <option value="BRL">BRL — Real brasileño</option>
+        <option value="CLP">CLP — Peso chileno</option>
+        <option value="PEN">PEN — Sol peruano</option>
+        <option value="BOB">BOB — Boliviano</option>
+        <option value="UYU">UYU — Peso uruguayo</option>
+        <option value="PYG">PYG — Guaraní paraguayo</option>
+        <option value="DOP">DOP — Peso dominicano</option>
+        <option value="TTD">TTD — Dólar de Trinidad y Tobago</option>
+        <option value="GYD">GYD — Dólar guyanés</option>
+        <option value="CAD">CAD — Dólar canadiense</option>
+        <option value="GBP">GBP — Libra esterlina</option>
+        <option value="CNY">CNY — Yuan chino</option>
+      </select>
     </div>
     <div class="form-group">
       <label for="inputMonedaDecimales">Decimales de Moneda *</label>
@@ -20,14 +39,12 @@
     <div class="form-group">
       <label for="selectEcuacionAgua">Ecuación de Sólidos — Base Agua *</label>
       <select id="selectEcuacionAgua" class="form-select">
-        <option value="MI">M-I</option>
         <option value="API">API</option>
       </select>
     </div>
     <div class="form-group">
       <label for="selectEcuacionAceite">Ecuación de Sólidos — Base Aceite/Sintética *</label>
       <select id="selectEcuacionAceite" class="form-select">
-        <option value="MI">M-I</option>
         <option value="API">API</option>
       </select>
     </div>
@@ -36,7 +53,7 @@
   <div class="form-group">
     <label for="selectCategoriaPerdida">Categorías de Pérdida *</label>
     <select id="selectCategoriaPerdida" class="form-select">
-      <option value="MI">M-I</option>
+      <option value="MI">Estándar</option>
       <option value="UK">UK</option>
       <option value="HYDRO">Hydro</option>
       <option value="STATOIL">Statoil</option>

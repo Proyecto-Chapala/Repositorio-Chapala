@@ -176,10 +176,13 @@ body {
    ========================================================================== */
 .main-wrapper {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: hidden;
+  /* Si la pantalla es chica, se puede desplazar en vez de cortar el contenido */
+  overflow-y: auto;
+  overflow-x: hidden;
   background-color: var(--color-bg-app);
 }
 

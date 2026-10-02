@@ -5,15 +5,15 @@ Función pura, sin Django. Repite, día por día y en orden, los movimientos de 
 
 - Volumen de cada fosa: inicial (= real medido del día anterior, o el calculado si no se
   midió) + químicos, fluido base y agua, lodo reciclado, transferencias, devoluciones y pérdidas.
-- Sistema activo: incluye el HOYO. Inicial = fosas activas + fluido en el hoyo del día
-  anterior. Real = fosas activas medidas + fluido en el hoyo de hoy. Por eso el calculado de
-  la fosa activa y su volumen real NO tienen que coincidir (nota especial del manual, pág. 146).
+- Sistema activo: incluye el HOYO. Inicial = tanques activos + fluido en el hoyo del día
+  anterior. Real = tanques activos medidos + fluido en el hoyo de hoy. Por eso el calculado de
+  el tanque activo y su volumen real NO tienen que coincidir (nota especial del manual, pág. 146).
 - "No contabilizado" = real − calculado, por grupo (activo, reserva, premezcla). Al cierre
   de cada día debe ser cero.
 - Inventario de productos: inicial + recibido − devuelto − usado en fluidos − usado en otro
   módulo ± ajuste. Si algún día queda negativo se rechaza (misma regla que las mallas).
 - Costos por categoría y concentración de cada producto (lb/bbl) por compartimento: el sistema
-  activo (fosas activas + hoyo, que se mezclan) y cada una de las demás fosas.
+  activo (tanques activos + hoyo, que se mezclan) y cada una de las demás fosas.
 
 Servicios (productos sin unidad, como los días de ingeniero de fluidos): solo generan costo;
 no llevan existencias (en el manual su inicial y final siempre son 0).
@@ -126,7 +126,7 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
         return nombres_producto.get(p, f"producto {p}")
 
     def nf(n):
-        return nombres_fosa.get(n, f"fosa {n}")
+        return nombres_fosa.get(n, f"tanque {n}")
 
     fin_fosa = {}                     # volumen final (real o calculado) por fosa
     hoyo_prev = 0.0
@@ -191,7 +191,7 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
 
         def g_de(n, etiqueta):
             if n not in fosas:
-                raise ErrorVolumetria(f"El {fecha}: {etiqueta} ({nf(n)}) ya no está en la lista de fosas del pozo.")
+                raise ErrorVolumetria(f"El {fecha}: {etiqueta} ({nf(n)}) ya no está en la lista de tanques del pozo.")
             if grupo[n] is None:
                 raise ErrorVolumetria(
                     f"El {fecha}: {nf(n)} no tiene tipo asignado (o es 'Vacía'). Asígnale un tipo antes de moverle fluido.")
@@ -219,7 +219,7 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
         for tr in sorted(dia.get('transacciones', []), key=lambda x: x['secuencia']):
             tipo = tr['tipo']
             n = tr['fosa']
-            g = g_de(n, 'la fosa')
+            g = g_de(n, 'el tanque')
             c = comp_de(n)
             vol = float(tr.get('volumen') or 0)
 
@@ -262,7 +262,7 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
 
             elif tipo == 'TRANSFERENCIA':
                 d = tr.get('destino')
-                gd = g_de(d, 'la fosa destino')
+                gd = g_de(d, 'el tanque destino')
                 cd = comp_de(d)
                 if c != cd and vol_comp[c] > EPS:
                     fr = min(vol / vol_comp[c], 1.0)

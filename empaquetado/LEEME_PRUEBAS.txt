@@ -1,26 +1,31 @@
-CHAPALA - Sistema de Operaciones (versión de prueba)
-====================================================
+SMART MUD - Sistema de Fluidos de Perforación (versión de prueba)
+=================================================================
 
 CÓMO INICIAR
-1. Descomprima CHAPALA_Pruebas.zip en una carpeta propia
-   (por ejemplo C:\CHAPALA). No lo ejecute desde dentro del .zip.
-2. Haga doble clic en CHAPALA.exe.
-3. Se abre una ventana negra y luego el navegador con el sistema.
-   NO cierre la ventana negra mientras usa el sistema.
+1. Descomprima SmartMud_Pruebas.zip en una carpeta propia
+   (por ejemplo C:\SmartMud). No lo ejecute desde dentro del .zip.
+2. Haga doble clic en SmartMud.exe.
+3. Se abre el navegador con el sistema. No aparece ninguna ventana negra:
+   el sistema queda funcionando con un ícono de gota junto al reloj de Windows
+   (si no lo ve, pulse la flechita ^ al lado del reloj).
 4. La primera vez el sistema pide la clave de activación
    (la entrega el programador). La prueba dura 7 días.
 
+SI CERRÓ EL NAVEGADOR
+Haga doble clic en SmartMud.exe otra vez, o doble clic en el ícono de la gota.
+
 PARA SALIR
-Cierre la ventana negra.
+Clic derecho en el ícono de la gota > "Salir".
 
 DATOS
-- Todo lo que cargue se guarda en la carpeta "datos" junto a CHAPALA.exe.
+- Todo lo que cargue se guarda en la carpeta "datos" junto a SmartMud.exe.
 - La primera vez se cargan el catálogo de productos y el pozo PRUEBA-001.
-- Para empezar de cero: cierre el sistema y borre la carpeta "datos".
+- Para empezar de cero: salga del sistema y borre la carpeta "datos".
 
 SI WINDOWS MUESTRA "Windows protegió su PC"
 Pulse "Más información" y luego "Ejecutar de todas formas".
 El aviso aparece porque el programa no tiene firma digital.
 
 SI ALGO FALLA
-La ventana negra muestra el error. Tome una captura y envíela al programador.
+Aparece un cuadro con el error. Envíe al programador el archivo
+datos\smartmud.log (está en la carpeta "datos" junto a SmartMud.exe).

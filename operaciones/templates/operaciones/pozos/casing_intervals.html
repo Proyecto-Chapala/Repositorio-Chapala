@@ -1,7 +1,7 @@
 {% extends 'operaciones/base.html' %}
 {% load static %}
 
-{% block title %}Intervalos de Revestimiento (Costo) &bull; {{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+{% block title %}Intervalos de Revestimiento (Costo) &bull; {{ pozo.nombre }} &bull; Smart Mud{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
@@ -29,6 +29,7 @@
         <thead>
           <tr>
             <th>N° Intervalo</th>
+            <th>Estado</th>
             <th>Tipo</th>
             <th>Diám. Ext. Revest.</th>
             <th>Diám. Int. Revest.</th>
@@ -47,7 +48,8 @@
         </thead>
         <tbody id="intervalosBody"></tbody>
       </table>
-      <div class="table-empty-hint" id="emptyHint" hidden>Aún no hay intervalos registrados. Usa "+ New" para crear el primero.</div>
+      <div class="table-empty-hint" id="emptyHint" hidden>Aún no hay intervalos registrados. Usa "+ Nuevo" para crear el primero.</div>
+      <div class="field-hint intervalo-aviso" id="avisoIntervaloAbierto" hidden></div>
     </div>
 
     <div class="interval-detail" id="detailPanel" hidden>
@@ -105,6 +107,8 @@
 
       <div class="wizard-footer-actions" style="margin-top:10px;">
         <button type="button" class="btn btn-cancelar" id="btnEliminarIntervalo" hidden>Eliminar</button>
+        <button type="button" class="btn btn-nav" id="btnReabrirIntervalo" hidden>Reabrir intervalo</button>
+        <button type="button" class="btn btn-eliminar" id="btnCerrarIntervalo" hidden>Cerrar intervalo</button>
         <button type="button" class="btn btn-guardar" id="btnGuardarIntervalo">Guardar</button>
       </div>
     </div>

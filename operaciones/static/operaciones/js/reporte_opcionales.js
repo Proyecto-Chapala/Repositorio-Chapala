@@ -175,7 +175,7 @@ function opRenderFicha(clave){
     ${(m.avisos || []).map(a => `<div class="cs-aviso-item">${csEsc(a)}</div>`).join('')}
     <div class="cs-subtitulo">Resultados ${nueva ? '(se calculan al guardar)' : ''}</div>
     <div class="cs-resultados">${res}</div>
-    ${clave === 'retencion' ? '<p class="cs-nota">El "lodo en recortes" es una reconstrucción de la fórmula de ONE-TRAX (en el ejemplo del manual da ~1,5 % más). Puedes usarlo como referencia en el rendimiento de equipos.</p>' : ''}
+    ${clave === 'retencion' ? '<p class="cs-nota">El "lodo en recortes" es una reconstrucción de la fórmula estándar (en el ejemplo del manual da ~1,5 % más). Puedes usarlo como referencia en el rendimiento de equipos.</p>' : ''}
     <div class="cs-tk-acciones">
       ${nueva ? '' : `<button type="button" class="btn-modern-secondary btn-sm cs-btn-peligro" data-op-eliminar="${clave}:${m.id}"><span>&#128465;</span><span>Eliminar</span></button>`}
       <span class="cs-flex"></span>

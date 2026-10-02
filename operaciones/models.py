@@ -174,13 +174,35 @@ class Pozo(models.Model):
         ('CUSTOM', 'Personalizado'),
     ]
 
+    # Monedas comunes para el selector (se guarda el código; el campo acepta otro código escrito a mano).
+    MONEDAS_COMUNES = [
+        ('USD', 'Dólar estadounidense'),
+        ('VES', 'Bolívar venezolano (Bs.)'),
+        ('EUR', 'Euro'),
+        ('COP', 'Peso colombiano'),
+        ('MXN', 'Peso mexicano'),
+        ('ARS', 'Peso argentino'),
+        ('BRL', 'Real brasileño'),
+        ('CLP', 'Peso chileno'),
+        ('PEN', 'Sol peruano'),
+        ('BOB', 'Boliviano'),
+        ('UYU', 'Peso uruguayo'),
+        ('PYG', 'Guaraní paraguayo'),
+        ('DOP', 'Peso dominicano'),
+        ('TTD', 'Dólar de Trinidad y Tobago'),
+        ('GYD', 'Dólar guyanés'),
+        ('CAD', 'Dólar canadiense'),
+        ('GBP', 'Libra esterlina'),
+        ('CNY', 'Yuan chino'),
+    ]
+
+    # Solo API (pedido del cliente: que no aparezca M-I). Los pozos viejos con 'MI' pasan a 'API' en la migración 0026.
     ECUACION_SOLIDOS_CHOICES = [
-        ('MI', 'M-I'),
         ('API', 'API'),
     ]
 
     CATEGORIA_PERDIDA_CHOICES = [
-        ('MI', 'M-I'),
+        ('MI', 'Estándar'),
         ('UK', 'UK'),
         ('HYDRO', 'Hydro'),
         ('STATOIL', 'Statoil'),
@@ -234,12 +256,25 @@ class Pozo(models.Model):
         max_digits=5, decimal_places=2, default=0,
         verbose_name="Tasa de Impuesto (%)"
     )
+    # Segunda moneda de cobro (contratos que se pagan parte en una moneda y parte en otra).
+    moneda_secundaria = models.CharField(
+        max_length=6, blank=True, default='', verbose_name="Segunda Moneda de Cobro"
+    )
+    tasa_cambio_secundaria = models.DecimalField(
+        max_digits=18, decimal_places=4, null=True, blank=True,
+        verbose_name="Tasa de Cambio",
+        help_text="Cuántas unidades de la segunda moneda equivalen a 1 de la moneda del pozo."
+    )
+    porcentaje_cobro_secundaria = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+        verbose_name="% Cobrado en la Segunda Moneda"
+    )
     ecuacion_solidos_base_agua = models.CharField(
-        max_length=5, choices=ECUACION_SOLIDOS_CHOICES, default='MI',
+        max_length=5, choices=ECUACION_SOLIDOS_CHOICES, default='API',
         verbose_name="Ecuación de Sólidos — Base Agua"
     )
     ecuacion_solidos_base_aceite = models.CharField(
-        max_length=5, choices=ECUACION_SOLIDOS_CHOICES, default='MI',
+        max_length=5, choices=ECUACION_SOLIDOS_CHOICES, default='API',
         verbose_name="Ecuación de Sólidos — Base Aceite/Sintética"
     )
     usar_api_5ta_edicion_hidraulica = models.BooleanField(
@@ -709,6 +744,11 @@ class IntervaloRevestimiento(models.Model):
     fluid_type_code_1 = models.CharField(max_length=50, blank=True, verbose_name="Código de Tipo de Fluido 1")
     fluid_type_code_2 = models.CharField(max_length=50, blank=True, verbose_name="Código de Tipo de Fluido 2")
 
+    cerrado = models.BooleanField(
+        default=False, verbose_name="Intervalo Cerrado",
+        help_text="Se cierra cuando se baja el revestidor. No se puede abrir otro intervalo mientras este siga abierto."
+    )
+
     observaciones_recomendaciones = models.TextField(blank=True, verbose_name="Observaciones y Recomendaciones")
     comentarios_recap = models.TextField(
         blank=True, verbose_name="Comentarios del Intervalo para Recap",
@@ -1058,7 +1098,7 @@ class ProductoActivoPozo(models.Model):
     precio = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True, verbose_name="Precio")
     gravedad_especifica = models.DecimalField(max_digits=8, decimal_places=4, null=True, blank=True, verbose_name="Gravedad Específica")
     calcular_concentracion = models.BooleanField(default=True, verbose_name="¿Calcular Concentración?")
-    es_producto_mi = models.BooleanField(default=True, verbose_name="¿Producto M-I?")
+    es_producto_mi = models.BooleanField(default=True, verbose_name="¿Producto propio?")
     grupo_producto = models.PositiveSmallIntegerField(default=1, verbose_name="Grupo de Producto")
     codigo_costo_diario = models.PositiveSmallIntegerField(default=1, verbose_name="Código de Costo Diario")
     calcular_wmgt_conc = models.BooleanField(default=True, verbose_name="¿Calcular Conc. WMgt?")

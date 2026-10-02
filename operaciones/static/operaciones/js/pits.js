@@ -62,9 +62,9 @@
         method: 'POST',
         body: JSON.stringify({ fosas: filas }),
       });
-      showToast('Fosas guardadas.', 'success');
+      showToast('Tanques guardados.', 'success');
     } catch (err) {
-      showToast(err.data.error || 'Error al guardar las fosas.', 'error');
+      showToast(err.data.error || 'Error al guardar los tanques.', 'error');
     }
   }
 
@@ -93,9 +93,9 @@
         method: 'POST',
         body: JSON.stringify({ tipos_fosa: filas }),
       });
-      showToast('Pit Type Setup guardado.', 'success');
+      showToast('Tipos de tanque guardados.', 'success');
     } catch (err) {
-      showToast(err.data.error || 'Error al guardar los tipos de fosa.', 'error');
+      showToast(err.data.error || 'Error al guardar los tipos de tanque.', 'error');
     }
   }
 
@@ -116,7 +116,7 @@
     try {
       await cargarDatos();
     } catch (err) {
-      showToast('No se pudo cargar Pit Information.', 'error');
+      showToast('No se pudo cargar la información de tanques.', 'error');
     }
   });
 })();

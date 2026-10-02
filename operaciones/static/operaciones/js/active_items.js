@@ -72,11 +72,18 @@
         <td><button type="button" class="btn-add-row" title="Agregar a la lista activa">+</button></td>
       `;
       tr.querySelector('.btn-add-row').addEventListener('click', () => agregarProductoActivo(p));
+      tr.classList.add('fila-catalogo');
+      tr.title = 'Doble clic para agregar a la lista activa';
+      tr.addEventListener('dblclick', () => agregarProductoActivo(p));
       tbody.appendChild(tr);
     });
   }
 
   function agregarProductoActivo(p) {
+    if (state.productosActivos.some((x) => x.producto_id === p.id)) {
+      showToast(`${p.descripcion} ya está en la lista activa.`, 'info');
+      return;
+    }
     state.productosActivos.push({
       producto_id: p.id, producto_codigo: p.codigo, producto_nombre: p.descripcion,
       abreviatura: '', unit_size: p.libraje, unidad: p.unidad, empaque: p.empaque || '',
@@ -174,6 +181,9 @@
         <td><button type="button" class="btn-add-row" title="Agregar a la lista activa">+</button></td>
       `;
       tr.querySelector('.btn-add-row').addEventListener('click', () => agregarEquipoActivo(e));
+      tr.classList.add('fila-catalogo');
+      tr.title = 'Doble clic para agregar a la lista activa';
+      tr.addEventListener('dblclick', () => agregarEquipoActivo(e));
       tbody.appendChild(tr);
     });
   }
@@ -253,11 +263,18 @@
         <td><button type="button" class="btn-add-row" title="Agregar a la lista activa">+</button></td>
       `;
       tr.querySelector('.btn-add-row').addEventListener('click', () => agregarMallaActiva(m));
+      tr.classList.add('fila-catalogo');
+      tr.title = 'Doble clic para agregar a la lista activa';
+      tr.addEventListener('dblclick', () => agregarMallaActiva(m));
       tbody.appendChild(tr);
     });
   }
 
   function agregarMallaActiva(m) {
+    if (state.mallasActivas.some((x) => x.malla_id === m.id)) {
+      showToast(`${m.descripcion} ya está en la lista activa.`, 'info');
+      return;
+    }
     state.mallasActivas.push({
       malla_id: m.id, malla_codigo: m.codigo, malla_descripcion: m.descripcion,
       mesh_size: m.mesh_size, precio: 0, descuento_porcentaje: 0,

@@ -2641,3 +2641,67 @@
 .wg-ayuda{ margin-top:8px; font-size:11.5px; color:#475569; }
 .wg-ayuda summary{ cursor:pointer; font-weight:700; color:#f2994a; }
 .wg-ayuda ol{ margin:8px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:6px; line-height:1.45; }
+
+/* Pestaña 4 · Contexto del pozo: las etiquetas se ven completas (ej. "Orden de Impresión") */
+.wg-contexto-col .report-field-label {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
+/* Eventos no programados: oculto a pedido del cliente (el módulo sigue en el código) */
+[data-en-abrir][hidden] {
+  display: none !important;
+}
+
+/* Fluidos de Perforación y Equipos: página bloqueada (solo crear y abrir reportes) */
+.hub-nota-bloqueo {
+  margin: 12px 0 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #64748b;
+}
+.erl-bloqueado input[data-tipo] {
+  background: #f8fafc;
+  color: #334155;
+  cursor: default;
+}
+
+/* Pantalla de costos: cobro en dos monedas */
+.cobro-dos-monedas {
+  margin: 0 0 14px 0;
+  padding: 10px 12px;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  background: #fff7ed;
+}
+.cobro-dos-monedas[hidden] {
+  display: none;
+}
+.cdm-titulo {
+  font-size: 12px;
+  font-weight: 700;
+  color: #9a3412;
+  margin-bottom: 8px;
+}
+.cdm-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.cdm-tabla th,
+.cdm-tabla td {
+  padding: 4px 8px;
+  text-align: right;
+  border-bottom: 1px solid #fde4c8;
+}
+.cdm-tabla th:first-child,
+.cdm-tabla td:first-child {
+  text-align: left;
+  font-weight: 700;
+}
+.cdm-equiv {
+  color: #94a3b8;
+  font-size: 11px;
+}

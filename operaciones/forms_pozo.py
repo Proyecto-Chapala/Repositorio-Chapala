@@ -208,7 +208,8 @@ class MarketingCodesForm(forms.ModelForm):
 class IntervaloRevestimientoForm(forms.ModelForm):
     class Meta:
         model = IntervaloRevestimiento
-        exclude = ['pozo', 'created_at', 'updated_at']
+        # 'cerrado' solo cambia con los botones Cerrar / Reabrir intervalo
+        exclude = ['pozo', 'created_at', 'updated_at', 'cerrado']
 
     def clean_comentarios_recap(self):
         texto = self.cleaned_data.get('comentarios_recap', '') or ''
@@ -252,16 +253,42 @@ class GeneralSetupForm(forms.ModelForm):
     class Meta:
         model = Pozo
         fields = [
+            'moneda_simbolo',
+            'moneda_secundaria', 'tasa_cambio_secundaria', 'porcentaje_cobro_secundaria',
             'tasa_impuesto', 'con_tratamiento_disposicion',
             'usar_api_5ta_edicion_hidraulica',
             'ecuacion_solidos_base_agua', 'ecuacion_solidos_base_aceite',
         ]
+
+    def clean_moneda_simbolo(self):
+        simbolo = (self.cleaned_data.get('moneda_simbolo') or '').strip().upper()
+        if not simbolo:
+            raise forms.ValidationError("Indica la moneda del pozo.")
+        return simbolo
 
     def clean_tasa_impuesto(self):
         tasa = self.cleaned_data['tasa_impuesto']
         if tasa < 0 or tasa > 100:
             raise forms.ValidationError("La tasa de impuesto debe estar entre 0 y 100.")
         return tasa
+
+    def clean(self):
+        datos = super().clean()
+        segunda = (datos.get('moneda_secundaria') or '').strip().upper()
+        datos['moneda_secundaria'] = segunda
+        if not segunda:
+            datos['tasa_cambio_secundaria'] = None
+            datos['porcentaje_cobro_secundaria'] = 0
+            return datos
+        if segunda == (datos.get('moneda_simbolo') or '').strip().upper():
+            self.add_error('moneda_secundaria', "La segunda moneda debe ser distinta a la moneda del pozo.")
+        tasa = datos.get('tasa_cambio_secundaria')
+        if tasa is None or tasa <= 0:
+            self.add_error('tasa_cambio_secundaria', "Indica la tasa de cambio (mayor que 0).")
+        pct = datos.get('porcentaje_cobro_secundaria')
+        if pct is None or pct < 0 or pct > 100:
+            self.add_error('porcentaje_cobro_secundaria', "El porcentaje debe estar entre 0 y 100.")
+        return datos
 
 
 class AlmacenCodigoForm(forms.ModelForm):

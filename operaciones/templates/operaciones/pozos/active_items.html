@@ -1,7 +1,7 @@
 {% extends 'operaciones/base.html' %}
 {% load static %}
 
-{% block title %}Productos / Equipos / Mallas Activos &bull; {{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+{% block title %}Productos / Equipos / Mallas Activos &bull; {{ pozo.nombre }} &bull; Smart Mud{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
@@ -19,7 +19,7 @@
   </div>
 
   <div class="field-hint" style="margin-bottom:16px;">
-    Selecciona del catálogo maestro los productos, equipos y mallas que se van a usar en este proyecto. Se pueden agregar nuevos en cualquier momento.
+    Selecciona del catálogo maestro los productos, equipos y mallas que se van a usar en este proyecto. Se pueden agregar nuevos en cualquier momento. <strong>Doble clic</strong> sobre una fila del catálogo la pasa a la lista activa.
     <span class="field-hint-warning" style="display:inline;">Revisa con cuidado el "Código de Costo Diario" de cada producto: se usa para la asignación de costos.</span>
   </div>
 
@@ -60,7 +60,7 @@
               <th style="width:90px;">Precio</th>
               <th style="width:80px;">S.G.</th>
               <th style="width:60px;">¿Conc?</th>
-              <th style="width:60px;">¿M-I?</th>
+              <th style="width:60px;">¿Propio?</th>
               <th style="width:70px;">Grupo</th>
               <th style="width:90px;">Cód. Costo Diario</th>
               <th style="width:60px;">¿WMgt?</th>
@@ -93,7 +93,7 @@
         </table>
       </div>
 
-      <div class="field-hint">Agrega todo el equipo que se debe llevar en el reporte, aunque no sea equipo de renta M-I SWACO.</div>
+      <div class="field-hint">Agrega todo el equipo que se debe llevar en el reporte.</div>
       <div class="fieldset-title">Lista Activa de Equipos</div>
       <div class="data-table-wrap">
         <table class="custom-table">
@@ -131,7 +131,7 @@
         </table>
       </div>
 
-      <div class="field-hint">Agrega toda malla que se deba llevar en el reporte, aunque no sea malla M-I SWACO.</div>
+      <div class="field-hint">Agrega toda malla que se deba llevar en el reporte.</div>
       <div class="fieldset-title">Lista Activa de Mallas</div>
       <div class="data-table-wrap">
         <table class="custom-table">

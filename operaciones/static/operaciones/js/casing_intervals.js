@@ -52,6 +52,7 @@
       tr.style.cursor = 'pointer';
       tr.innerHTML = `
         <td>${i.numero_intervalo}</td>
+        <td><span class="intervalo-estado ${i.cerrado ? 'is-cerrado' : 'is-abierto'}">${i.cerrado ? 'Cerrado' : 'Abierto'}</span></td>
         <td>${i.tipo_display || '—'}</td>
         <td>${fmt(i.casing_od_in)}</td>
         <td>${fmt(i.casing_id_in)}</td>
@@ -77,6 +78,22 @@
       });
       tbody.appendChild(tr);
     });
+  }
+
+  function intervaloAbierto() {
+    return state.intervalos.find((i) => !i.cerrado) || null;
+  }
+
+  function renderEstadoNuevo() {
+    const abierto = intervaloAbierto();
+    const btn = document.getElementById('btnNuevoIntervalo');
+    const aviso = document.getElementById('avisoIntervaloAbierto');
+    btn.disabled = !!abierto;
+    btn.title = abierto ? `Cierra primero el intervalo ${abierto.numero_intervalo}` : '';
+    aviso.hidden = !abierto;
+    aviso.textContent = abierto
+      ? `El intervalo ${abierto.numero_intervalo} está abierto (perforando). Cuando se baje el revestidor, ábrelo, completa sus datos y pulsa "Cerrar intervalo"; recién ahí se puede crear el siguiente.`
+      : '';
   }
 
   function renderTipoOptions() {
@@ -108,6 +125,11 @@
     document.getElementById('detailTitle').textContent = intervalo
       ? `Intervalo ${intervalo.numero_intervalo}` : 'Nuevo Intervalo';
     document.getElementById('btnEliminarIntervalo').hidden = !intervalo;
+    const ultimo = state.intervalos.length
+      ? Math.max(...state.intervalos.map((i) => i.numero_intervalo)) : 0;
+    document.getElementById('btnCerrarIntervalo').hidden = !intervalo || intervalo.cerrado;
+    document.getElementById('btnReabrirIntervalo').hidden = !intervalo || !intervalo.cerrado
+      || intervalo.numero_intervalo !== ultimo;
 
     if (intervalo) {
       document.getElementById('dInterval').value = intervalo.numero_intervalo;
@@ -209,16 +231,43 @@
     }
   }
 
+  async function cambiarEstadoIntervalo(accion) {
+    const i = state.intervalos.find((x) => x.id === state.editandoId);
+    if (!i) return;
+    const pregunta = accion === 'cerrar'
+      ? `¿Cerrar el intervalo ${i.numero_intervalo}? Hazlo solo cuando ya se bajó el revestidor. Guarda antes los cambios del formulario.`
+      : `¿Reabrir el intervalo ${i.numero_intervalo}?`;
+    if (!window.confirm(pregunta)) return;
+    try {
+      const data = await apiFetch(`/api/pozos/${window.POZO_ID}/casing-intervals/${i.id}/${accion}/`, { method: 'POST' });
+      showToast(data.mensaje, 'success');
+      cerrarDetalle();
+      await cargarIntervalos();
+    } catch (err) {
+      document.getElementById('errorDetalle').textContent = (err.data && err.data.error) || 'No se pudo cambiar el estado.';
+    }
+  }
+
   async function cargarIntervalos() {
     const data = await apiFetch(`/api/pozos/${window.POZO_ID}/casing-intervals/`);
     state.intervalos = data.intervalos;
     state.tipoChoices = data.tipo_choices;
     renderTipoOptions();
     renderTabla();
+    renderEstadoNuevo();
   }
 
   document.addEventListener('DOMContentLoaded', async () => {
-    document.getElementById('btnNuevoIntervalo').addEventListener('click', () => abrirDetalle(null));
+    document.getElementById('btnNuevoIntervalo').addEventListener('click', () => {
+      const abierto = intervaloAbierto();
+      if (abierto) {
+        showToast(`Cierra primero el intervalo ${abierto.numero_intervalo}.`, 'error');
+        return;
+      }
+      abrirDetalle(null);
+    });
+    document.getElementById('btnCerrarIntervalo').addEventListener('click', () => cambiarEstadoIntervalo('cerrar'));
+    document.getElementById('btnReabrirIntervalo').addEventListener('click', () => cambiarEstadoIntervalo('reabrir'));
     document.getElementById('btnCerrarDetalle').addEventListener('click', cerrarDetalle);
     document.getElementById('btnGuardarIntervalo').addEventListener('click', guardarIntervalo);
     document.getElementById('btnEliminarIntervalo').addEventListener('click', () => {

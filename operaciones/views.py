@@ -781,6 +781,7 @@ def _intervalo_to_dict(intervalo):
         valor = getattr(intervalo, campo)
         data[campo] = float(valor) if isinstance(valor, Decimal) else valor
     data['tipo_display'] = intervalo.get_tipo_display() if intervalo.tipo else ''
+    data['cerrado'] = intervalo.cerrado
     return data
 
 
@@ -803,6 +804,13 @@ def api_intervalo_crear(request, pk):
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
         return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+
+    abierto = pozo.intervalos_revestimiento.filter(cerrado=False).order_by('numero_intervalo').first()
+    if abierto:
+        return JsonResponse({
+            "success": False,
+            "error": f"El intervalo {abierto.numero_intervalo} sigue abierto. Ciérralo (cuando se baje el revestidor) antes de crear el siguiente.",
+        }, status=400)
 
     siguiente = (pozo.intervalos_revestimiento.aggregate(models.Max('numero_intervalo'))['numero_intervalo__max'] or 0) + 1
     data.setdefault('numero_intervalo', siguiente)
@@ -850,12 +858,91 @@ def api_intervalo_actualizar(request, pk, intervalo_pk):
 
 
 @csrf_exempt
+@require_http_methods(["POST"])
+def api_intervalo_cerrar(request, pk, intervalo_pk):
+    """Cierra el intervalo (se bajó el revestidor). Recién entonces se puede abrir el siguiente."""
+    intervalo = get_object_or_404(IntervaloRevestimiento, pk=intervalo_pk, pozo_id=pk)
+    if intervalo.cerrado:
+        return JsonResponse({"success": False, "error": "El intervalo ya está cerrado."}, status=400)
+    faltan = []
+    if not intervalo.tipo:
+        faltan.append("tipo")
+    if intervalo.profundidad_ft is None:
+        faltan.append("profundidad")
+    if faltan:
+        return JsonResponse({
+            "success": False,
+            "error": "Para cerrar el intervalo guarda primero: " + " y ".join(faltan) + ".",
+        }, status=400)
+    intervalo.cerrado = True
+    intervalo.save(update_fields=['cerrado', 'updated_at'])
+    return JsonResponse({
+        "success": True, "mensaje": f"Intervalo {intervalo.numero_intervalo} cerrado. Ya puedes crear el siguiente.",
+        "intervalo": _intervalo_to_dict(intervalo),
+    })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_intervalo_reabrir(request, pk, intervalo_pk):
+    """Reabre un intervalo cerrado por error. Solo el último y si no hay otro abierto."""
+    intervalo = get_object_or_404(IntervaloRevestimiento, pk=intervalo_pk, pozo_id=pk)
+    otros = IntervaloRevestimiento.objects.filter(pozo_id=pk).exclude(pk=intervalo.pk)
+    if otros.filter(numero_intervalo__gt=intervalo.numero_intervalo).exists():
+        return JsonResponse({"success": False, "error": "Solo se puede reabrir el último intervalo."}, status=400)
+    if otros.filter(cerrado=False).exists():
+        return JsonResponse({"success": False, "error": "Hay otro intervalo abierto."}, status=400)
+    intervalo.cerrado = False
+    intervalo.save(update_fields=['cerrado', 'updated_at'])
+    return JsonResponse({"success": True, "mensaje": f"Intervalo {intervalo.numero_intervalo} reabierto.",
+                         "intervalo": _intervalo_to_dict(intervalo)})
+
+
+@csrf_exempt
 @require_http_methods(["POST", "DELETE"])
 def api_intervalo_eliminar(request, pk, intervalo_pk):
     intervalo = get_object_or_404(IntervaloRevestimiento, pk=intervalo_pk, pozo_id=pk)
     numero = intervalo.numero_intervalo
     intervalo.delete()
     return JsonResponse({"success": True, "mensaje": f"Intervalo {numero} eliminado."})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_pozo_eliminar(request, pk):
+    """
+    Elimina un pozo completo. Hay que escribir el nombre exacto del pozo para confirmar.
+    Antes de borrar, cada reporte diario devuelve al inventario general lo que consumió
+    (inventario unificado), igual que al borrar los reportes uno por uno.
+    """
+    pozo = get_object_or_404(Pozo, pk=pk)
+    try:
+        data = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+
+    if (data.get('confirmar') or '').strip() != pozo.nombre:
+        return JsonResponse({
+            "success": False,
+            "error": "Para eliminar, escribe el nombre del pozo exactamente como aparece.",
+        }, status=400)
+
+    from .models_daily_reports import ReporteDiario
+    from .views_inventario import devolver_stock_reporte
+    nombre = pozo.nombre
+    try:
+        with transaction.atomic():
+            reportes = ReporteDiario.objects.filter(pozo=pozo).order_by('-fecha')
+            for reporte in reportes:
+                devolver_stock_reporte(reporte)
+            pozo.delete()
+    except ProtectedError as exc:
+        bloqueos = sorted({str(o._meta.verbose_name) for o in exc.protected_objects})
+        return JsonResponse({
+            "success": False,
+            "error": "No se pudo eliminar el pozo porque tiene registros relacionados: " + ", ".join(bloqueos) + ".",
+        }, status=400)
+    return JsonResponse({"success": True, "mensaje": f"Pozo {nombre} eliminado."})
 
 
 # ============================================================
@@ -1047,6 +1134,9 @@ def api_general_setup_detail(request, pk):
         "general_setup": {
             "moneda_simbolo": pozo.moneda_simbolo,
             "moneda_decimales": pozo.moneda_decimales,
+            "moneda_secundaria": pozo.moneda_secundaria,
+            "tasa_cambio_secundaria": float(pozo.tasa_cambio_secundaria) if pozo.tasa_cambio_secundaria is not None else None,
+            "porcentaje_cobro_secundaria": float(pozo.porcentaje_cobro_secundaria),
             "tasa_impuesto": float(pozo.tasa_impuesto),
             "con_tratamiento_disposicion": pozo.con_tratamiento_disposicion,
             "usar_api_5ta_edicion_hidraulica": pozo.usar_api_5ta_edicion_hidraulica,
@@ -1054,6 +1144,7 @@ def api_general_setup_detail(request, pk):
             "ecuacion_solidos_base_aceite": pozo.ecuacion_solidos_base_aceite,
         },
         "ecuacion_solidos_choices": Pozo.ECUACION_SOLIDOS_CHOICES,
+        "monedas": Pozo.MONEDAS_COMUNES,
     })
 
 
@@ -1079,6 +1170,9 @@ def api_general_setup_guardar(request, pk):
         "general_setup": {
             "moneda_simbolo": pozo.moneda_simbolo,
             "moneda_decimales": pozo.moneda_decimales,
+            "moneda_secundaria": pozo.moneda_secundaria,
+            "tasa_cambio_secundaria": float(pozo.tasa_cambio_secundaria) if pozo.tasa_cambio_secundaria is not None else None,
+            "porcentaje_cobro_secundaria": float(pozo.porcentaje_cobro_secundaria),
             "tasa_impuesto": float(pozo.tasa_impuesto),
             "con_tratamiento_disposicion": pozo.con_tratamiento_disposicion,
             "usar_api_5ta_edicion_hidraulica": pozo.usar_api_5ta_edicion_hidraulica,

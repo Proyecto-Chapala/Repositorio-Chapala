@@ -1,0 +1,345 @@
+(Transcrito por TurboScribe. Actualizar a Ilimitado para eliminar este mensaje.)
+
+No dice nada, no cerraron pues. Hay que cerrar bien. Fluido de perforación y equipo.
+
+Y ahí es donde van a ver el reporte. Ok. Ok, ¿dónde meto la propiedad del logo? Eso ya es una vez dentro de las opciones del reporte.
+
+Una vez que usted ponga los reportes. Dentro del reporte están las opciones que van a ir en el reporte. ¿Cómo no metemos el reporte? Tiene que darle nuevo reporte.
+
+Ok. Nuevo reporte. Y ahí seleccionan las opciones que van.
+
+El día. El tipo de lodo. ¿Va a ser agua? ¿Va a ser agua sintética? ¿Va a ser aceite? Todo va a ser agua.
+
+¿Qué es lo que tenemos allá? La fecha en la que iniciamos. Y ahí sale la opción de copiar datos del día anterior. Y sale.
+
+Sí, copiar datos del día anterior y salen recomendados. Y después sale la opción de no iniciar en blanco. Ok.
+
+Eso es por si acaso. Dale aquí. Ok, entonces.
+
+Ok, vamos a crear reportes. Ok, creamos. Se creó el reporte.
+
+Una vez hecho el reporte, se va a aparecer aquí y le va a dar en abrir. Aquí dice así. Una vez abierto y salen las opciones del reporte como salían en el manual.
+
+¿Qué sale? General. Bombas de arena. Propiedades del lodo.
+
+Geometría del pozo. Comentario. Control de sólido.
+
+Estancia del tiempo. No sé cuál es esa. Comentario.
+
+Era aquella ventana que vimos allá, ¿verdad? Sí. Ya está el reporte. Y aquí empieza el verguero, ¿verdad? Sí.
+
+Entonces, en general ya la está tomando, ¿verdad? Sí. ¿Qué nos falta generar? Aquí está. Ahí están los teléfonos.
+
+Correcto. Aquí... Ahí sale el teléfono. Teléfono de taladro.
+
+Y el teléfono de la almazón. Esto se va a ver después del reporte. Sí, claro.
+
+Ese ya es para que salga en el reporte. Esto va a salir allá. Ok.
+
+Tipo de fluido. Versaclean. Aquí tiene un versaclean por ahí.
+
+Igual le puedes poner pantalla más grande para ver mejor. Sí. Ok.
+
+Vamos, generales. Estos son los estudios generales ahorita. Generales.
+
+¿Qué nos falta en general? Esto está cargado ya, ¿verdad? Sí. Esto aquí no debe tener tanto peor. Esto diario, no tengo costo, no tengo nada.
+
+Después nos vamos a la bomba. Tengo que alimentar datos de bomba, ¿verdad? Tengo que alimentar el diámetro de la camisa, tal, tal. ¿Aquí está en uno? Sí, claro.
+
+Pero esto no... Esto no lo vimos por allá por el camino. De las bombas. No lo vimos.
+
+Seguro que nada más se llena en la parte del reporte. Ah, bueno, tengo que llenarlo aquí. Ah, esto es cambiable.
+
+Ah, pero esto es cambiable. Hay partes en que no salen en la parte de allá, pero salen en el reporte. Incluso se hacen los cálculos que necesitan.
+
+Está bien, está bien. Ya yo tengo mi reporte. Aquí yo voy a poner el diámetro de la carrera, el diámetro, la mierda, tal, tal, tal, reporte, el plazamiento, todo.
+
+Aquí está todo, de carga. Descripción. Hay calor.
+
+Número de barra. De barrera. Porcentaje lavado.
+
+El BPM. Encerrotario, tal, tal, tal, tal. Aquí están todos los datos.
+
+Todos esos datos van a cambiar. Lo único que no se cambia son las fórmulas. Esto está aquí.
+
+Área de fluido rotal de la TFA. Muy bien. Perfecto.
+
+Y aquí está la velocidad. Esto también es un cálculo. ¿Qué tal? Ponemos aquí.
+
+Y los caudales. Mira, caudal total. 803.
+
+Aquí está en... Capacidad caudal. Ok. Todo esto yo tengo que cargarlo.
+
+Esto sobre la salta. Hay unas cosas que ya se cargan de por sí, de las informaciones que usted ya agregó en las otras opciones. Claro, claro.
+
+Pero hay opciones que salen directamente en el reporte que tiene que llenarse manualmente. Muy bien, bien. Aquí estamos.
+
+General, pues lo cargue allá. Sin embargo, aquí tengo la opción de la profundidad. Esta es la profundidad de medida y esta es la... ¿Esto es cambiable? Sí.
+
+Claro. Esto es lo que yo decía. Esto debería ser medida, pero bueno.
+
+Es la medida y esta es la profundidad TBD. Aquí la profundidad de la barrena. También le pone la misma profundidad.
+
+La barrena va variando porque te digo, si tú estás sacando tubería, te dice que la profundidad es tanto, que la TBD es tanto, pero mira. Esta es la profundidad donde yo dejé el pozo. Y esta es la barrena que es la que se va a ir subiendo en caso de que vaya a hacer un viaje.
+
+Y yo voy a calcular en base dónde está la barrena. ¿Eh? Eso es. Para que te dé el diagramita para que veas que vivo.
+
+Ok. Perfecto. Aquí vamos metiéndole los datos.
+
+Y aquí vamos alimentando la parte general. Todo lo que nos falta por aquí. Menos cotos, porque los cotos vienen de allá.
+
+Los cotos los vamos a meter nosotros cuando metamos los cotos de inventario. Toda esa vaina viene para acá. Aquí donde se van los cotos.
+
+Entonces aquí. Bombas y barrenas. Aquí están las bombas y barrenas.
+
+Vamos a meter el tipo. ¿Cuántas son? Quedaron 4. Lo voy metiendo aquí. Y aquí selecciono la parte de en report. 
+
+El que va a salir en el report las barrenas de esta parte. Los que van a salir en el report. Sí, claro.
+
+Aquí se puede seleccionar y deseleccionar esas que van a salir. Muy bien. Tipo agregado. 
+
+Tenía 4. Lo máximo que tenía, ¿no? Sí, así es. Yo creo que más de 4 no va a ser nada recto. Yo estaba viendo un taladro con 4 bombas.
+
+Está bien. Están 4 bombas. Yo 4 los marcho.
+
+Ok, tengo mis bombas. Perfecto. Aquí tengo mis bombas con todo mi barrio que voy a calcular.
+
+De todos modos, cuando usted haga los cambios en el report aquí, da la opción en el botón de guardar cambios. Ok. Cuando yo llene todo esto, le digo guardar cambios.
+
+Report Excel, mira. Imprimir report. Y resumen de cambio. 
+
+Muy bien. Yo metí aquí mi vaina, todos mis datos, está el ingeniero echándole bol aquí. Esto es lo primero que él va a hacer. 
+
+Cargar sus bombas, cargar su vaina para que le calcule sus datos. Aquí está. Está bien la bomba, la vaina.
+
+Ok. Y aquí vamos a propiedades del lodo. Aquí están mis propiedades.
+
+Esto es modificable, ¿verdad? Sí. Esta es la propiedad de información de la muestra y estado del bot. Punto de muestra.
+
+Hora de tomada. Temperatura, profundidad, densidad, densidad, geología, propiedades de filtrado, filtrado de API, remolque API, remolque API, análisis de sólido, base de agua. Ya esto, densidad, lodo, y aquí calcula, ¿verdad? Aquí va a calcular esta vaina.
+
+Aquí tiene análisis químico de filtrado. 8.5, pH, temperatura de pH, PMNF. Y aquí arriba sale el reporte de propiedades.
+
+Y un reporte de propiedades. Aquí sale el reporte de propiedades. Y aquí le damos un reporte de propiedades.
+
+Y ahí sale el reporte. Y ahí sale la opción de imprimir o guardar en PDF. Ajá, perfecto.
+
+Muy bien. O sea, que yo puedo tomar este reporte si yo no quiero guardar aquí. Ok, yo puedo... ¿Qué hay para atrás? Aquí, volver al reporte.
+
+Yo voy al reporte. Bien, propiedades, ¿verdad? Propiedades. Ok. 
+
+Yo hice una prueba a la talora y me pidió... Pásame la prueba que tenga ahorita. Yo le hice una prueba, la reporté aquí y me la pidió el compañero. Dame una prueba de talora.
+
+Dame una prueba de talora ahorita. A esa hora la vas a reportar porque el reporte la vas a tener. Porque tú hiciste una prueba a esa hora y está una prueba esta.
+
+Que te la pidieron, pues. Te hiciste, te dio todos tus datos, tus datos, pim, pam, pam, pam. Ok, como tú ya envaseas, te está dando todo. 
+
+Sin embargo, tienes para darte valores de HP. Esto también te da valores de... Porque aquí está, a ver si tiene la calidad. Analice... A ver si tiene... Eso ahí se puede también cambiar manualmente.
+
+Eso está bien, porque aquí están todas las propiedades, tanto el vaciado como el vaciado. Una vez que selecciones una de las partes, se puede cambiar manualmente y dar en guardar la propiedad. Ajá, ¿cómo es la vaina aquí? O sea, usted sabe que esto, usted lo puede seleccionar y borrar los datos y seleccionar otro.
+
+O sea, si yo quiero hacer... Como editarlo. Eso es lo que yo quería. Yo no quiero que en el reporte general me aparezca esa propiedad, sino que yo la tenga como un extra.
+
+Ok. ¿Ves? Entonces tú me das visión que sí se puede hacer. Ya yo tengo mis propiedades aquí.
+
+Ahí se ve la opción de poder editarlo. Estos están en 17.0 y se pueden cambiar. De subir o bajar. 
+
+Ok, ok. Yo puedo cambiar esto. Me equivoqué y la voy a modificar.
+
+Muy bien. Y una vez cambiado, guardar propiedades y listo. Y este... Este es el principal.
+
+Sí, es el principal. Guardar propiedades. Una vez que se haga un cambio y se guarda.
+
+Y sale el reporte. Ya no puedo... Pero puedo editarlo. Puedo modificar.
+
+Aquí yo puedo escribir... Yo puedo modificar cualquier cosa. Sí, claro, manualmente. Anualmente. 
+
+La modifico. Me equivoqué. Nada, la puse de nuevo.
+
+Y ya todo lo que está en amarillo, esos cargos. Se equivoquea a Platia, muy procedente. Este... Y aquí está todo lo que son las análisis de de sólidos. 
+
+Está bien. Lo duro, lo que... Los gravitas sólidos. La ventonita.
+
+Sólidos perforados. Sólidos perforados. Perfecto.
+
+Esto es amarillo. Esto no aparece en el reporte por lo general. Estos cargos de ahí no aparecen.
+
+Aparecen ya como... Ya te lo llevas para allá donde está aquel cuadrito. Aquí vamos a ver cómo queda el reporte. Vamos a ver cómo queda.
+
+Vamos a ver. Te digo que me lo... Me lo... Lo guarde, ¿no? Sí. Guarda.
+
+Y después que te ha guardado... Quiero verlo. El reporte de las propiedades. Lo que acabo de hacer ahorita. 
+
+Así como voy. Si es el reporte de las propiedades, aquí. Si es el reporte general... No, no. 
+
+Ahorita es el reporte de propiedades. Que voy a reporte de propiedades. Ahí se ve.
+
+Yo le voy a mandar... Un reportito de propiedades. Y aquí hay algunos comentarios. Correcto.
+
+¿Estos comentarios estaban para yo hacerlo ya? No, no. Esos se ponen directamente ahí. Ajá.
+
+Aquí llevan mis comentarios. Perfecto. Llevan los comentarios. 
+
+Listo. Y imprimo. Y vamos a hacer una... Vamos a imprimirse con mi madre para ver.
+
+Aquí está. Y esto es lo que yo le voy a entregar al... Al... Al compañero. Esto y sus... Y sus comentarios.
+
+Aquí están las propiedades que me pidió. A mí una pruebita ahí... Se la hice a tal hora... De dónde lo tomé también. Ahí dice. 
+
+Tomado de dónde... Profundidad, temperatura... Yo creo que dice por aquí de dónde estoy tomando el... Muestra... Temperatura... Chequeó 1, chequeó 2, chequeó 3... Igual hicimos esas opciones. Después se casó. Es como que si se lo piden rápido para que él lo lea de una vez ahí.
+
+Igual se guarda para imprimirse. Correcto. Entonces aquí le pongo los comentarios y los imprimo.
+
+O sea, la opción de comentarios se pone en la parte anterior. Y una vez que le da el botón de imprimir o descargar ya el comentario... Ya es correcto. Aquí va a salir el comentario.
+
+Ahí está el comentario anteriormente. Ahí está la baña. Floruro, PFME, FPM, PF de aceite, agua, sólido, refoque, filtrado... Ok.
+
+Temperatura, profundidad, densidad, lectura, licuosidad plástica, punto excedente, GMI... Afino. Esto está afino. Esto está afino.
+
+Hasta aquí vamos vergatario. Vamos bien. Muy bien.
+
+Para explicarme lo que ha dado, está machete. Entonces me voy para atrás. En cancelado.
+
+Cancelado. Le dices para atrás y vuelve en el reporte. Vuelve en el reporte.
+
+Si no lo vuelves en el reporte, siempre lo mandas a la General. Me manda a esa General que estamos llenando. Aquí tengo mis propiedades.
+
+Vamos ahora a la geometría del pozo. La geometría del pozo. Aquí nos aparece en el diagramita.
+
+Pero todo es agregando a mano de la General. Aquí va agregar. Agregar componente o heredar del día anterior.
+
+O heredar del día anterior. Heredar del día anterior si no agregaste ningún componente. Si hay algo del día anterior, sale la opción para agregar.
+
+Pero como no hay, no se puede. Porque no metimos ningún componente. Esa es otra idea de los componentes que metimos.
+
+Cuando uno le va a agregar del día anterior, es del reporte anterior. Del día pasado. Y agregar componente o heredar.
+
+Agregar componente y ahí sale. Componente 1, componente 2. Tubería de perforación, longitud, y todas las opciones. ¿Esto viene de dónde? Eso se pone manualmente.
+
+Por ejemplo, tubería de perforación. Aquí voy agregando la profundidad. El tramo, tanto piedra y el volumen.
+
+Yo meto todo mi componente aquí. Y después el intervalo de costos, asignar y lo demás que hay que llenar para que salgan todos los datos. Una vez llena todo, se va a guardar el sartre.
+
+Y va a aparecer el sartre en el reporte. Aquí estoy agregando mis componentes. Con su diámetro, contexto del costo, intervalo de costo, hoyo, piloto, saitrá y perforación.
+
+Entonces, intervalo de costo, hoyo, piloto, perfil del poste. ¿Sí? ¿Dónde viene esto? Intervalo... Ajá. Intervalo 1. Exactamente.
+
+Intervalo 1. Los intervalos que se guardan, aparte de las que usted duró ahí rellenando todo, van a aparecer aquí, en la geometría del poste. Usted va a seleccionar cuál intervalo se va a guardar. Intervalo 1. ¿Y esto que aparece aquí? Orden de impresión.
+
+Orden de impresión. Hay que ir ahí, para que se vea completo. Sí, sí.
+
+Sí, ponle uno hacia arriba. Profundidad, diámetro, hoyo, piloto. Profundidad.
+
+Si el hoyo es piloto. El hoyo piloto ocupa el tramo más profundo del poste. Desde el fondo, el hoyo.
+
+Cero, piloto, sinóplito. Saitrano. Hoyo arranca con Saitrán, día de Kikó. 
+
+Profundidad de Kikó. ¿Cómo se registra el Saitrán? Día anterior, abandono. Usted le vuelve a dar cómo se hace el Saitrán, y se quita el texto.
+
+Se minimiza otra vez el texto. Para que no ocupe tanto espacio visual. Cuando empezamos a hablar a Sarta ya, y su parámetro, empieza a aparecer aquí el diagrama.
+
+El esquema del poste. Aquí va a aparecer el esquema del poste. Una vez que se ven todas las datas.
+
+Profundidad de la mecha. Ahí se puede editar la profundidad de la mecha. Y ahí están las opciones.
+
+Bomba de barrera. Estamos en metría del poste. Hay que eliminar ese audio, porque parece que ese botón te manda a generar.
+
+Y este es longitud total de una sarta. Es cuando vaya metiendo los componentes. Agrega los componentes que son las opciones.
+
+Se va sumando todo. Ahora dice sin sarta y todo lo demás. ¿Qué es lo que se llama la sarta? ¿Qué es lo que se llama la sarta? El intervalo aquí.
+
+El diámetro. No hay audio fino. El perfil del poste.
+
+Sin datos suficientes para armar el perfil. ¿Dónde meto el perfil del poste? Hay que agregar los componentes. Todo viene también de las otras opciones que hay que llenar.
+
+Todo tiene que ver con lo mismo. Toda la información se llena. Lo único que quedó ahí porque si yo estoy ahí como ese vestidor.
+
+Yo estoy perforando. Por aquí no me parece. Ahí me hizo algo.
+
+Ahí me hizo algo. Donde me hizo algo por eliminar me hizo algo. Esta es la compañía.
+
+Elimina y no salga más nada. Nada más salga poste y el nombre ya. Donde me hizo algo, elimina y me hizo algo.
+
+Voy a ir explicando. No me parece que haya nada que diga me hizo algo por ahí. Vamos a ir chequeando.
+
+Elimina y me hizo algo. Aquí también aparece en la propiedad. Bomba, me hizo algo.
+
+Generar, me hizo algo. Elimina y me hizo algo. Fuere y me hizo algo.
+
+Esto es diario. Aquí es donde yo voy. Aquella paginita donde llenamos.
+
+Esa es cuando se va a cerrar el poste. Cuando se va a cerrar el poste. Cuando tú llames al número 2. Cuando llames al número 2. Abrir intervalo número 2. De verdad que no vi cómo cerrar.
+
+Para abrir el intervalo número 2. Esa parte. Sí, ahorita no vamos a ir. Porque yo digo que eso se cierra cuando yo tenga el revestidor.
+
+Cuando yo tenga el cargador. Y ahí cierro. Yo le digo los datos.
+
+Pácata, guardar datos. Me guardo el 2. Eso es lo que yo voy a ver. Yo estoy aquí apenas llenando mi reporte.
+
+Sí. Propiedades de lodo. Porque cuando ve.
+
+Aquí datos que el VHA va a quedar igualito. Por aquí está el VHA. No sé si aparece el tamaño del VHA al final.
+
+El problema es que no estamos mirando componentes. Aquí. Geometría.
+
+Está el VHA. 1,8 kilómetros. Cuando te dan el botón de agregar componentes, salen las opciones que hay que agregar.
+
+No, porque el VHA es la formación ya de todo. Ensamblaje. Ensamblaje desde la mecha hacia arriba.
+
+Sarta. Ensamblaje. Aquí arriba. 
+
+Ensamblaje de la mecha hacia arriba. Desde la mecha hacia arriba. Vas ensamblando desde la mecha hacia arriba.
+
+Sarta de perforación. Ensamblaje desde la mecha hacia arriba. Va a poner primero la mecha.
+
+Después va a poner si hay un crossover. Y va poniendo. Ahí va haciendo la sarta.
+
+Aquí dice agregar componente. Y aquí guardar sarta. Cuando ya tú la guardas esa es la que va a quedar ahí.
+
+Y llena entonces lo que hay que llenar por ahí. El intervalo es el uno. Un 9.625 con hasta dos mil piezas.
+
+Pero cuando tú le digas la profundidad de la mecha que dice por aquí ella no te va a tomar ella te va a tomar a la mecha. Aunque la profundidad programada sean dos mil piezas. Ok.
+
+Pero esto está bien. Agregó componente y me va sumando aquí mis componentes. Esto es lo que está haciendo.
+
+Y después de ahí te va a dar tu geometría. Piloto no hay piloto. Oye piloto, puede que haya un piloto.
+
+Es lo que te va esquematizando. Esto está fino. Ok.
+
+Aquí es. Aquí te dice que es un base agua. Lleva el aceite.
+
+Ok. Esto viene de arriba ya. Esto viene de arriba.
+
+Aparte cinco es los comentarios. Comentarios. Los comentarios.
+
+Esto no tiene dependencia. Esto es comentar. Las observaciones.
+
+Días y tiempo. Muy bien. Aquí está lo de el día en que se vuelve a verla.
+
+Aquí está. Esta es la que me interesa. Volúmenes.
+
+Inventario. Hidráulicos y concentraciones. Necesito.
+
+Ahí es donde estamos buscando lo que es volumetría. Acuérdate. Está aquí si hay varias opciones.
+
+Por ejemplo, la opción uno es volumetría. Inventario de productos. La opción dos es concentración de productos.
+
+La tres es hidráulica. La cuatro es evaluación de benchmark. Y sale perdido.
+
+En volumetría y inventario. Volumen. Volumen en tanque.
+
+Que hay un tanque activo y que hay una reserva. Aquí están las demás opciones. Agregar químico, agregar lodo entero, transferencias y pérdidas, movimientos del día y volúmenes de fosa.
+
+¿Qué queda para hacer el tanque? ¿Verdad? Balance de volumen. Este es para reporte. Sí.
+
+Inventario de productos. Aquí hay productos seleccionados. Aquí hay productos seleccionados.
+
+Tú le vas a poner cuánto estaste inicial y cuánto estaste en el día. Claro. Toda esta información viene de la parte de... Claro. 
+
+Cuando tú lo inventamos allá, ahora viene aquí y se va cerrando tu reporte con tus fotos y te va a dar tu base. Ok. Y aquí están mis transacciones.
+
+Pero le doy a dónde. Yo metí de tal fosa a tal fosa, me metí de aquí para allá, me metí de acá. Ok.
+
+Muy bien. Ya está prácticamente mi reporte lleno. Lleno de inventario.
+
+(Transcrito por TurboScribe. Actualizar a Ilimitado para eliminar este mensaje.)

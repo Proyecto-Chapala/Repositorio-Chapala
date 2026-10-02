@@ -297,11 +297,10 @@ class ReporteDiarioMudConfig(models.Model):
     Configuración global de propiedades de lodo y análisis de sólidos para el reporte diario (Tab #3).
     """
     EQUATION_CHOICES = [
-        ('M-I', 'M-I SWACO'),
-        ('API', 'API Standard'),
+        ('API', 'API'),
     ]
     reporte = models.OneToOneField(ReporteDiario, on_delete=models.CASCADE, related_name='mud_config')
-    solids_equation = models.CharField(max_length=20, default='M-I', choices=EQUATION_CHOICES, verbose_name="Current Solids Analysis Equations")
+    solids_equation = models.CharField(max_length=20, default='API', choices=EQUATION_CHOICES, verbose_name="Current Solids Analysis Equations")
     is_weighted = models.BooleanField(default=True, verbose_name="Weighted Mud")
     
     # Specific Gravities (s.g.) required for mass/volume balance equations

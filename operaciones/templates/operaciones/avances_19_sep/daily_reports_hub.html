@@ -46,12 +46,11 @@
           <div class="section-title">Reporte Diario</div>
           <div class="btn-grid">
             <button type="button" class="btn-action" onclick="openNewReportModal()" style="grid-column: 1 / -1; font-weight: 800; background: #fff7ed; border-color: #fdba74; color: #c2410c;">+ Nuevo Reporte</button>
-            <button type="button" class="btn-action" onclick="desplazarAHistorial()">Editar</button>
-            <button type="button" class="btn-action" onclick="activarModoEliminar()" style="border-color:#fca5a5; color:#b91c1c;">Eliminar</button>
           </div>
-
-          <div class="field-label">Reporte Diario Especial</div>
-          <select><option>Ninguno</option></select>
+          <p class="hub-nota-bloqueo">
+            Esta página solo sirve para <strong>crear</strong> el reporte del día y <strong>abrir</strong> los anteriores.
+            Todo lo demás se carga dentro de cada reporte.
+          </p>
         </div>
 
         <!-- RIGHT PANEL: EXTRA REPORT LABELS -->
@@ -60,16 +59,6 @@
           <!-- TITLE -->
           <div class="erl-main-title">Etiquetas de Propiedades Extra</div>
 
-          <!-- PRESET BAR -->
-          <div class="erl-preset-bar">
-            <label>Configuración Predefinida:</label>
-            <select id="presetSelect">
-              <option value="">Personalizado (Ninguno)</option>
-              <option value="statoil">Statoil</option>
-            </select>
-            <button onclick="cargarPreset()">Cargar</button>
-            <button onclick="guardarPreset()">Guardar como Plantilla</button>
-          </div>
 
           <!-- WATER-BASED -->
           <div class="erl-section-header wbm">Base Agua (WBM)</div>
@@ -151,13 +140,9 @@
             <input type="text" data-tipo="OBM" data-num="8" data-field="unit">
           </div>
 
-          <div class="erl-footer">
-            <button onclick="alert('Las etiquetas 9-60 son para reporte Excel. Funcionalidad por implementar.')">Etiquetas Extra 9 &ndash; 60</button>
-            <span class="note">Las etiquetas extra (9-60) son solo para el reporte de Excel.</span>
-          </div>
-
           <div class="erl-save-bar">
-            <button class="btn-save-main" onclick="guardarExtraLabels()">&#128190; Guardar Etiquetas</button>
+            <button type="button" class="btn-action" id="btnDesbloquearEtiquetas" onclick="desbloquearEtiquetas()">&#128274; Modificar etiquetas</button>
+            <button class="btn-save-main" id="btnGuardarEtiquetas" onclick="guardarExtraLabels()" hidden>&#128190; Guardar Etiquetas</button>
           </div>
 
         </div>
@@ -177,9 +162,6 @@
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn-action" onclick="openNewReportModal()" style="font-size: 12px; padding: 6px 14px; border-radius: 16px; background: #fff7ed; border-color: #fdba74; color: #c2410c; font-weight: 700;">
               + Nuevo Reporte
-            </button>
-            <button type="button" class="btn-action" id="btnToggleEliminar" onclick="toggleModoEliminar()" style="border-color:#fca5a5; color:#b91c1c; font-size: 12px; padding: 6px 14px; border-radius: 16px; font-weight: 700;">
-              &#128465; Modo Eliminación
             </button>
           </div>
         </div>
@@ -456,6 +438,15 @@ async function cargarExtraLabels(){
   }catch(e){console.error(e);}
 }
 
+/* === EXTRA LABELS: bloqueadas hasta que se pida modificarlas === */
+function bloquearEtiquetas(bloquear){
+  document.querySelectorAll('#extraLabelsPanel input[data-tipo]').forEach(i=>{ i.readOnly = bloquear; });
+  document.getElementById('extraLabelsPanel').classList.toggle('erl-bloqueado', bloquear);
+  document.getElementById('btnDesbloquearEtiquetas').hidden = !bloquear;
+  document.getElementById('btnGuardarEtiquetas').hidden = bloquear;
+}
+function desbloquearEtiquetas(){ bloquearEtiquetas(false); }
+
 /* === EXTRA LABELS: Guardar === */
 async function guardarExtraLabels(){
   const items=[];
@@ -471,13 +462,11 @@ async function guardarExtraLabels(){
       body:JSON.stringify({items})
     });
     const d=await r.json();
-    d.ok ? showToast(`${d.guardados} etiquetas guardadas`) : showToast(d.error||'Error',false);
+    if(d.ok){ showToast(`${d.guardados} etiquetas guardadas`); bloquearEtiquetas(true); }
+    else showToast(d.error||'Error',false);
   }catch(e){showToast('Error de conexion',false);}
 }
 
-/* === PRESETS (placeholder) === */
-function cargarPreset(){ showToast('Funcionalidad de presets por implementar'); }
-function guardarPreset(){ showToast('Funcionalidad de presets por implementar'); }
 
 /* === REPORTES: Cargar === */
 async function cargarReportes(){
@@ -509,7 +498,6 @@ async function cargarReportes(){
             </button>
           ` : `
             <a href="/pozos/${POZO_ID}/daily-report/${r.id}/" class="btn-nav" style="text-decoration:none; color:var(--color-text-primary); font-size: 11px; padding: 4px 10px; margin-right: 5px; font-weight:700;">&#9998; Abrir</a>
-            <button type="button" class="btn-remove-row" title="Eliminar" onclick="solicitarEliminar(${r.id}, '${r.fecha}')">&times;</button>
           `}
         </td>
       </tr>
@@ -680,6 +668,7 @@ async function crearReporte(){
 
 /* === INIT === */
 document.addEventListener('DOMContentLoaded',()=>{
+  bloquearEtiquetas(true);
   cargarExtraLabels();
   cargarReportes();
   if(document.getElementById('modalFecha')){

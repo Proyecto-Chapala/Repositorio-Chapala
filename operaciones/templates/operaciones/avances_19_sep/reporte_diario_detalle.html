@@ -31,7 +31,7 @@
         </div>
         <h1 class="report-hero-title">
           <span>Reporte Diario &ndash; {{ reporte.fecha|date:"d/m/Y" }}</span>
-          <span style="font-size:12px; font-weight:600; color:#64748b;">(Pozo: {{ pozo.nombre }} &bull; {{ pozo.operador|default:"M-I SWACO" }})</span>
+          <span style="font-size:12px; font-weight:600; color:#64748b;">(Pozo: {{ pozo.nombre }} &bull; {{ pozo.operador|default:"—" }})</span>
         </h1>
       </div>
     </div>
@@ -212,7 +212,7 @@
               <span style="font-size:14px; color:#f26419;">&#9874;</span>
               <div>
                 <div style="font-size:11px; font-weight:800; color:#fff; line-height:1.2;">{{ pozo.nombre }}</div>
-                <div style="font-size:9.5px; color:#94a3b8;">Taladro &bull; {{ pozo.operador|default:"M-I SWACO" }}</div>
+                <div style="font-size:9.5px; color:#94a3b8;">Taladro &bull; {{ pozo.operador|default:"—" }}</div>
               </div>
             </div>
             <div style="display:flex; align-items:center; gap:5px;">
@@ -422,7 +422,7 @@
               <span>&#128200;</span>
               <span>Datos Extra de ECD</span>
             </div>
-            <button type="button" class="btn-modern-secondary btn-mini-action" onclick="abrirSurfaceEquipmentModal()" title="Ver tabla oficial de especificaciones de equipos de superficie (M-I SWACO)">
+            <button type="button" class="btn-modern-secondary btn-mini-action" onclick="abrirSurfaceEquipmentModal()" title="Ver tabla oficial de especificaciones de equipos de superficie">
               <span>&#128220;</span>
               <span>Especificaciones</span>
             </button>
@@ -1260,7 +1260,7 @@
     <div class="mud-bottom-controls-bar">
       <div class="mud-bottom-left">
         <span>Ecuaciones de An&aacute;lisis de S&oacute;lidos:</span>
-        <span id="label_solids_eq" class="eq-badge-box">{{ mud_config.solids_equation|default:'M-I' }}</span>
+        <span id="label_solids_eq" class="eq-badge-box" data-valor="API">API</span>
         <button type="button" class="btn-specs-compact" onclick="abrirSolidsSGModal()" title="Especificaciones de Gravedades Espec&iacute;ficas (s.g.)">
           <i class="fas fa-sliders-h"></i> Especificaciones GE
         </button>
@@ -1647,10 +1647,10 @@
           </div>
           <div class="cm-bloque-ayuda">
             Actividad y servicio de fluidos prestado durante el día: tratamientos aplicados,
-            productos recibidos, limpieza de fosas, manejo de desechos.
+            productos recibidos, limpieza de tanques, manejo de desechos.
           </div>
           <textarea id="cmRemarksTratamiento" class="cm-textarea" rows="10"
-                    placeholder="Ej: Asentó revestidor a 5.002 ft. Circuló el volumen del revestidor dos veces y cementó. Sin pérdidas durante la cementación. Limpió fosas y recibió 2.000 bbl de VERSACLEAN LTOBM a 11.5 lpg para desplazar el pozo."></textarea>
+                    placeholder="Ej: Asentó revestidor a 5.002 ft. Circuló el volumen del revestidor dos veces y cementó. Sin pérdidas durante la cementación. Limpió tanques y recibió 2.000 bbl de VERSACLEAN LTOBM a 11.5 lpg para desplazar el pozo."></textarea>
         </div>
 
         <div class="cm-bloque">
@@ -1668,7 +1668,7 @@
       </div>
 
       <div class="cm-acciones">
-        <button type="button" class="btn-modern-secondary btn-sm" data-en-abrir title="Registro de eventos no programados del pozo (módulo opcional)">
+        <button type="button" class="btn-modern-secondary btn-sm" data-en-abrir hidden title="Registro de eventos no programados del pozo (módulo opcional)">
           <span>&#9888;</span><span>Eventos No Programados</span><span class="cs-badge" data-en-badge hidden>0</span>
         </button>
         <span class="cm-pendiente">Opcional</span>
@@ -2184,7 +2184,7 @@
           Configurar actividades del pozo &rarr;
         </a>
         <span class="tt-separador"></span>
-        <button type="button" class="btn-modern-secondary btn-sm" data-en-abrir title="Registro de eventos no programados del pozo (módulo opcional)">
+        <button type="button" class="btn-modern-secondary btn-sm" data-en-abrir hidden title="Registro de eventos no programados del pozo (módulo opcional)">
           <span>&#9888;</span><span>Eventos No Programados</span><span class="cs-badge" data-en-badge hidden>0</span>
         </button>
         <span class="tt-pendiente">Opcional</span>
@@ -2246,7 +2246,7 @@
       </div>
 
       <div class="cs-eq-tabs va-tabs" role="tablist">
-        <button type="button" class="cs-eq-tab is-active" data-va-tab="fosas">Volúmenes de fosas</button>
+        <button type="button" class="cs-eq-tab is-active" data-va-tab="fosas">Volúmenes de tanques</button>
         <button type="button" class="cs-eq-tab" data-va-tab="balance">Balance de volumen</button>
         <button type="button" class="cs-eq-tab" data-va-tab="inventario">Inventario de productos</button>
       </div>
@@ -2258,16 +2258,16 @@
         <div class="report-card-modern">
           <div class="cs-card-cabecera">
             <div>
-              <span class="cs-card-titulo">Volúmenes de fosas (bbl)</span>
-              <span class="cs-card-subtitulo">Escribe el volumen REAL que ves en cada fosa al cierre del día. No lo cambies para cuadrar el balance: la diferencia se corrige con los movimientos.</span>
+              <span class="cs-card-titulo">Volúmenes de tanques (bbl)</span>
+              <span class="cs-card-subtitulo">Escribe el volumen REAL que ves en cada tanque al cierre del día. No lo cambies para cuadrar el balance: la diferencia se corrige con los movimientos.</span>
             </div>
-            <a class="cs-enlace iv-link-config" id="vaLinkFosas" href="#" target="_blank" rel="noopener">Fosas del pozo &rarr;</a>
+            <a class="cs-enlace iv-link-config" id="vaLinkFosas" href="#" target="_blank" rel="noopener">Tanques del pozo &rarr;</a>
           </div>
           <div class="cs-tabla-wrapper">
             <table class="cs-tabla va-tabla-fosas">
               <thead>
                 <tr>
-                  <th>Fosa</th>
+                  <th>Tanque</th>
                   <th class="cs-num">Capacidad</th>
                   <th>Tipo</th>
                   <th class="cs-num">Inicial</th>
@@ -2281,7 +2281,7 @@
               <tbody id="vaFilasFosas"></tbody>
             </table>
           </div>
-          <p class="cs-nota">En las fosas activas el calculado se ve en el sistema activo, que incluye el volumen del hoyo. Por eso el calculado del sistema y lo real de las fosas activas no tienen que ser iguales.</p>
+          <p class="cs-nota">En los tanques activos el calculado se ve en el sistema activo, que incluye el volumen del hoyo. Por eso el calculado del sistema y lo real de los tanques activos no tienen que ser iguales.</p>
         </div>
 
         <div class="va-grid-2">
@@ -2296,7 +2296,7 @@
             <p class="cs-nota">Al cierre de cada día el "No contabilizado" debe ser cero.</p>
           </div>
           <div class="report-card-modern">
-            <div class="cs-card-titulo">Otras fosas por tipo (bbl)</div>
+            <div class="cs-card-titulo">Otros tanques por tipo (bbl)</div>
             <div id="vaOtras"></div>
           </div>
         </div>
@@ -2437,7 +2437,7 @@
           <span class="cs-card-subtitulo">Inicial y final del día, calculadas con los químicos y el lodo reciclado agregados, las transferencias y las pérdidas. Solo cuentan los productos que se miden en peso y tienen marcado "¿Calcular concentración?".</span>
         </div>
         <label class="cs-campo va-campo-inline">
-          <span class="cs-campo-label">Fosa</span>
+          <span class="cs-campo-label">Tanque</span>
           <select id="vaConcFosa" class="report-input"></select>
         </label>
       </div>
@@ -2536,7 +2536,7 @@
   <div id="tabContent-placeholder" class="report-card-modern" style="display:none; text-align:center; padding:60px 20px;">
     <h3 id="placeholder-title" style="color:#0f172a; margin-bottom:12px; font-weight:800; font-size:18px;"></h3>
     <p style="color:#64748b; font-size:13.5px; max-width:500px; margin:0 auto 24px auto;">
-      Esta pestaña se encuentra en fase de desarrollo según la hoja de ruta de ONE-TRAX para CHAPALA.
+      Esta pestaña se encuentra en fase de desarrollo según la hoja de ruta de Smart Mud.
     </p>
     <button type="button" class="btn-modern-primary" onclick="switchTab(1)">&larr; Volver a 1- General</button>
   </div>
@@ -2771,6 +2771,9 @@
         </div>
       </div>
 
+      <!-- Cobro en dos monedas (si el pozo tiene segunda moneda) -->
+      <div class="cobro-dos-monedas" id="cobroDosMonedas" hidden></div>
+
       <!-- Itemized Cost Breakdown Table -->
       <div class="survey-table-wrapper">
         <table class="survey-table">
@@ -2815,7 +2818,7 @@
     <div class="modal-header-modern">
       <div class="modal-title-modern">
         <span>&#9881;&#65039;</span>
-        <span>Lithology Setup &bull; Formation Tops &amp; Lithology (ONE-TRAX)</span>
+        <span>Lithology Setup &bull; Formation Tops &amp; Lithology</span>
       </div>
       <button type="button" class="modal-close-btn" onclick="cerrarLithologyModal()">&times;</button>
     </div>
@@ -2894,7 +2897,7 @@
     <div class="modal-header-modern">
       <div class="modal-title-modern">
         <span>&#9935;&#65039;</span>
-        <span>Información de la Barrena &bull; Especificaciones (ONE-TRAX)</span>
+        <span>Información de la Barrena &bull; Especificaciones</span>
       </div>
       <button type="button" class="modal-close-btn" onclick="cerrarBitInfoModal()">&times;</button>
     </div>
@@ -3024,7 +3027,7 @@
     <div class="modal-header-modern">
       <div class="modal-title-modern">
         <span>&#128221;</span>
-        <span>Propiedades Extra del Reporte &bull; Chequeos Diarios (M-I SWACO)</span>
+        <span>Propiedades Extra del Reporte &bull; Chequeos Diarios</span>
       </div>
       <button type="button" class="modal-close-btn" onclick="cerrarExtraPropertiesModal()">&times;</button>
     </div>
@@ -3091,13 +3094,13 @@
     <div class="modal-header-modern">
       <div class="modal-title-modern">
         <span>&#9878;</span>
-        <span>An&aacute;lisis de S&oacute;lidos y Especificaciones GE (M-I SWACO)</span>
+        <span>An&aacute;lisis de S&oacute;lidos y Especificaciones GE</span>
       </div>
       <button type="button" class="modal-close-btn" onclick="cerrarSolidsSGModal()">&times;</button>
     </div>
     <div class="modal-body-modern">
       <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:8px 12px; margin-bottom:14px; font-size:11px; color:#1e40af;">
-        <strong>Nota T&eacute;cnica M-I SWACO:</strong>
+        <strong>Nota T&eacute;cnica:</strong>
         <em>"Be sure to fill in s.g.'s for base oils, weight materials and drill solids."</em>
         Los c&aacute;lculos de balance de s&oacute;lidos desacoplan los s&oacute;lidos de alta gravedad (HGS) de los cortes perforados de baja gravedad (LGS) utilizando estas gravedades espec&iacute;ficas.
       </div>
@@ -3105,8 +3108,7 @@
       <div class="report-field-row">
         <label class="report-label">Ecuaciones de An&aacute;lisis de S&oacute;lidos:</label>
         <select id="modal_sg_eq_select" class="modern-input" style="height:25px; font-size:11.5px;">
-          <option value="M-I" {% if mud_config.solids_equation == 'M-I' %}selected{% endif %}>Ecuaciones M-I SWACO</option>
-          <option value="API" {% if mud_config.solids_equation == 'API' %}selected{% endif %}>Ecuaciones Est&aacute;ndar API</option>
+          <option value="API" selected>Ecuaciones API</option>
         </select>
       </div>
 
@@ -4691,6 +4693,27 @@ function cerrarCostOverviewModal() {
   document.getElementById('modal-cost-overview').style.display = 'none';
 }
 
+function renderCobroDosMonedas(c) {
+  const caja = document.getElementById('cobroDosMonedas');
+  if (!caja) return;
+  if (!c) { caja.hidden = true; caja.innerHTML = ''; return; }
+  const f = (v) => Number(v).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const fila = (titulo, r) => `
+    <tr>
+      <td>${titulo}</td>
+      <td>${f(r.principal)} ${c.moneda_principal}</td>
+      <td>${f(r.secundaria)} ${c.moneda_secundaria} <span class="cdm-equiv">(= ${f(r.secundaria_equivalente)} ${c.moneda_principal})</span></td>
+      <td>${f(r.total_en_secundaria)} ${c.moneda_secundaria}</td>
+    </tr>`;
+  caja.innerHTML = `
+    <div class="cdm-titulo">Cobro en dos monedas &bull; ${f(100 - c.porcentaje_secundaria)} % en ${c.moneda_principal} y ${f(c.porcentaje_secundaria)} % en ${c.moneda_secundaria} &bull; Tasa: ${f(c.tasa)} ${c.moneda_secundaria} por 1 ${c.moneda_principal}</div>
+    <table class="cdm-tabla">
+      <thead><tr><th></th><th>A cobrar en ${c.moneda_principal}</th><th>A cobrar en ${c.moneda_secundaria}</th><th>Total expresado en ${c.moneda_secundaria}</th></tr></thead>
+      <tbody>${fila('Día', c.dia)}${fila('Acumulado', c.acumulado)}</tbody>
+    </table>`;
+  caja.hidden = false;
+}
+
 async function cargarCostOverview() {
   try {
     const res = await fetch(API_COST_OVERVIEW);
@@ -4710,6 +4733,8 @@ async function cargarCostOverview() {
       document.getElementById('kpi-other-cum').textContent = `Acum: $${data.cumulative.other_cost.toLocaleString('en-US', {minimumFractionDigits:2})}`;
 
       document.getElementById('kpi-grand-total').textContent = `$${data.cumulative.total.toLocaleString('en-US', {minimumFractionDigits:2})} ${mon}`;
+
+      renderCobroDosMonedas(data.cobro);
 
       const tbody = document.getElementById('tbody-cost-items');
       tbody.innerHTML = '';
@@ -5221,7 +5246,7 @@ async function guardarMudProperties(silent = false){
   const obmSaltType = saltRadio ? saltRadio.value : 'CaCl2';
 
   const configPayload = {
-    solids_equation: document.getElementById('label_solids_eq') ? document.getElementById('label_solids_eq').textContent.trim() : 'M-I',
+    solids_equation: document.getElementById('label_solids_eq') ? (document.getElementById('label_solids_eq').dataset.valor || 'API') : 'API',
     is_weighted: isWeighted,
     obm_salt_type: obmSaltType,
     sg_base_oil: parseFloat(document.getElementById('modal_sg_base_oil') ? document.getElementById('modal_sg_base_oil').value : 0.84) || 0.84,
@@ -5267,7 +5292,10 @@ function aplicarSolidsSGModal(){
   const eqSelect = document.getElementById('modal_sg_eq_select');
   if(eqSelect){
     const labelEq = document.getElementById('label_solids_eq');
-    if(labelEq) labelEq.textContent = eqSelect.value;
+    if(labelEq){
+      labelEq.dataset.valor = eqSelect.value;
+      labelEq.textContent = eqSelect.value;
+    }
   }
   cerrarSolidsSGModal();
   guardarMudProperties();

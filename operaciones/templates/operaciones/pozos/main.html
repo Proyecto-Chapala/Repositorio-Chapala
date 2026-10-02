@@ -1,7 +1,7 @@
 {% extends 'operaciones/base.html' %}
 {% load static %}
 
-{% block title %}{{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+{% block title %}{{ pozo.nombre }} &bull; Smart Mud{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
@@ -19,6 +19,7 @@
       <span class="project-chip chip-accent">{{ pozo.get_sistema_unidades_display }}</span>
       <span class="project-chip">{{ pozo.moneda_simbolo }}</span>
       <span class="project-chip">{{ pozo.get_estado_display }}</span>
+      <button type="button" class="btn btn-eliminar btn-eliminar-pozo" id="btnEliminarPozo">Eliminar pozo</button>
     </div>
   </header>
 
@@ -34,6 +35,13 @@
       <span class="project-card-badge {% if pozo.well_header_info.completado %}badge-ready{% endif %}">
         {% if pozo.well_header_info.completado %}Listo{% else %}Pendiente{% endif %}
       </span>
+    </a>
+    <a class="project-card" href="{% url 'operaciones:general_setup' pozo.pk %}">
+      <div class="project-card-icon">🧾</div>
+      <div>
+        <div class="project-card-title">Configuración General</div>
+        <div class="project-card-sub">Moneda, impuestos, almacenes y distribución de tiempo</div>
+      </div>
     </a>
 
     <a class="project-card" href="{% url 'operaciones:casing_intervals' pozo.pk %}">
@@ -83,11 +91,11 @@
     <a class="project-card" href="{% url 'operaciones:pits' pozo.pk %}">
       <div class="project-card-icon">🪣</div>
       <div>
-        <div class="project-card-title">Información de Fosas</div>
-        <div class="project-card-sub">Fosas, tanques y Tipos de Fosa</div>
+        <div class="project-card-title">Información de Tanques</div>
+        <div class="project-card-sub">Tanques y tipos de tanque</div>
       </div>
       <span class="project-card-badge {% if pozo.fosas.count %}badge-ready{% endif %}">
-        {{ pozo.fosas.count }} fosa{{ pozo.fosas.count|pluralize }}
+        {{ pozo.fosas.count }} tanque{{ pozo.fosas.count|pluralize }}
       </span>
     </a>
 
@@ -99,16 +107,9 @@
       </div>
     </a>
 
-    <a class="project-card" href="{% url 'operaciones:general_setup' pozo.pk %}">
-      <div class="project-card-icon">🧾</div>
-      <div>
-        <div class="project-card-title">Configuración General</div>
-        <div class="project-card-sub">Moneda, impuestos, almacenes y distribución de tiempo</div>
-      </div>
-    </a>
   </div>
 
-  <div class="project-section-title">Módulos ONE-TRAX</div>
+  <div class="project-section-title">Módulos Smart Mud</div>
   <div class="project-grid">
 
     <a class="project-card" href="{% url 'operaciones:daily_reports_hub' pozo.pk %}">
@@ -131,5 +132,37 @@
     </a>
   </div>
 
+  <!-- ===================== Modal: Eliminar pozo ===================== -->
+  <div class="modal-backdrop" id="modalEliminarPozo" hidden>
+    <div class="modal-box modal-eliminar-pozo">
+      <div class="modal-header">
+        <span class="modal-title">Eliminar pozo</span>
+        <button type="button" class="wizard-close-btn" id="btnCerrarEliminarPozo" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="eliminar-pozo-aviso">
+          Se borrará <strong>{{ pozo.nombre }}</strong> con toda su información: configuración, intervalos,
+          tanques y todos sus reportes diarios. <strong>No se puede deshacer.</strong>
+        </p>
+        <p class="field-hint">Los productos que consumieron sus reportes vuelven al inventario general.</p>
+        <label for="inputConfirmarPozo" class="eliminar-pozo-label">Para confirmar, escribe el nombre del pozo:</label>
+        <input type="text" id="inputConfirmarPozo" class="form-input" autocomplete="off" placeholder="{{ pozo.nombre }}">
+      </div>
+      <div class="modal-footer">
+        <span class="field-error" id="errorEliminarPozo"></span>
+        <button type="button" class="btn btn-eliminar" id="btnConfirmarEliminarPozo" disabled>Eliminar definitivamente</button>
+      </div>
+    </div>
+  </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.POZO_ID = {{ pozo.id }};
+  window.POZO_NOMBRE = "{{ pozo.nombre|escapejs }}";
+  window.URL_POZOS = "{% url 'operaciones:pozos_list' %}";
+</script>
+<script src="{% static 'operaciones/js/pozo_main.js' %}"></script>
 {% endblock %}

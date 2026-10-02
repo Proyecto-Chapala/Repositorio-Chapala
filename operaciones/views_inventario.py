@@ -109,7 +109,7 @@ class _Rechazo(Exception):
     """Validación con mensaje para el usuario; provoca el rollback."""
 
 
-NOMBRE_GRUPO = {ACTIVO: 'Sistema activo', RESERVA: 'Reserva', PREMEZCLA: 'Premezcla', OTRAS: 'Otras fosas'}
+NOMBRE_GRUPO = {ACTIVO: 'Sistema activo', RESERVA: 'Reserva', PREMEZCLA: 'Premezcla', OTRAS: 'Otros tanques'}
 
 
 def _obtener(pk, reporte_pk):
@@ -442,7 +442,7 @@ def _descarga_equipos(pozo, reporte):
 
 
 def _texto_movimiento(t, fosas):
-    nombre = lambda n, respaldo: fosas.get(n, respaldo) or f"Fosa {n}"
+    nombre = lambda n, respaldo: fosas.get(n, respaldo) or f"Tanque {n}"
     origen = nombre(t.fosa_numero, t.fosa_descripcion)
     v = f"{float(t.volumen_bbl):g} bbl"
     if t.tipo == TransaccionVolumen.QUIMICOS:
@@ -593,9 +593,9 @@ def _estado_volumetria(pozo, reporte):
     if sim:
         for clave, c in sim['concentraciones'].items():
             if clave == ACTIVO:
-                etiqueta, orden = 'Sistema activo (fosas activas + hoyo)', (0, 0)
+                etiqueta, orden = 'Sistema activo (tanques activos + hoyo)', (0, 0)
             else:
-                etiqueta, orden = nombres_fosa.get(clave[1], f"Fosa {clave[1]}"), (1, clave[1])
+                etiqueta, orden = nombres_fosa.get(clave[1], f"Tanque {clave[1]}"), (1, clave[1])
             filas = []
             agregado = c.get('agregado', {})
             ids_c = set(c['inicio']) | set(c['fin']) | {i for i, v in agregado.items() if v}
@@ -707,7 +707,7 @@ def api_volumetria_detail(request, pk, reporte_pk):
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_volumetria_guardar(request, pk, reporte_pk):
-    """Guarda lo que se mide o se escribe a mano: tipo y volumen real de fosas, hoyo e inventario."""
+    """Guarda lo que se mide o se escribe a mano: tipo y volumen real de tanques, hoyo e inventario."""
     pozo, reporte = _obtener(pk, reporte_pk)
     try:
         body = _leer(request)
@@ -721,7 +721,7 @@ def api_volumetria_guardar(request, pk, reporte_pk):
             try:
                 n = int(item.get('numero'))
             except (TypeError, ValueError):
-                raise _Rechazo('Fosa inválida.')
+                raise _Rechazo('Tanque inválido.')
             f = fosas_pozo.get(n)
             prev = previas.get(n)
             if f is None and prev is None:
@@ -731,9 +731,9 @@ def api_volumetria_guardar(request, pk, reporte_pk):
             try:
                 tipo = None if tipo in (None, '') else int(tipo)
             except (TypeError, ValueError):
-                raise _Rechazo(f"{nombre}: tipo de fosa inválido.")
+                raise _Rechazo(f"{nombre}: tipo de tanque inválido.")
             if tipo is not None and tipo not in tipos:
-                raise _Rechazo(f"{nombre}: el tipo de fosa no existe en la configuración del pozo.")
+                raise _Rechazo(f"{nombre}: el tipo de tanque no existe en la configuración del pozo.")
             real = _num(item.get('real'), f"{nombre} — volumen real", 0, 100000)
             capacidad = float(f.capacidad or 0) if f else float(prev.capacidad or 0)
             filas_fosa.append(VolumenFosaDia(
@@ -800,7 +800,7 @@ def _fosa_valida(pozo, reporte, numero, etiqueta):
         raise _Rechazo(f"Elige {etiqueta}.")
     f = pozo.fosas.filter(numero=n).first()
     if f is None:
-        raise _Rechazo(f"{etiqueta.capitalize()} no existe en la lista de fosas del pozo.")
+        raise _Rechazo(f"{etiqueta.capitalize()} no existe en la lista de tanques del pozo.")
     return f
 
 
@@ -814,7 +814,7 @@ def api_volumetria_transaccion(request, pk, reporte_pk):
         tipo = str(body.get('tipo') or '')
         if tipo not in dict(TransaccionVolumen.TIPO_CHOICES):
             raise _Rechazo('Tipo de movimiento no válido.')
-        fosa = _fosa_valida(pozo, reporte, body.get('fosa'), 'la fosa')
+        fosa = _fosa_valida(pozo, reporte, body.get('fosa'), 'el tanque')
         t = TransaccionVolumen(reporte=reporte, tipo=tipo, fosa_numero=fosa.numero,
                                fosa_descripcion=fosa.descripcion[:100])
         productos = _productos_pozo(pozo)
@@ -863,9 +863,9 @@ def api_volumetria_transaccion(request, pk, reporte_pk):
             v = _num(body.get('volumen'), 'Volumen', 0.01, 100000, permitir_vacio=False)
             t.volumen_bbl = _dec(v, 2)
             if tipo == TransaccionVolumen.TRANSFERENCIA:
-                destino = _fosa_valida(pozo, reporte, body.get('destino'), 'la fosa destino')
+                destino = _fosa_valida(pozo, reporte, body.get('destino'), 'el tanque destino')
                 if destino.numero == fosa.numero:
-                    raise _Rechazo('La fosa de origen y la de destino son la misma.')
+                    raise _Rechazo('El tanque de origen y el de destino son el mismo.')
                 t.destino_numero, t.destino_descripcion = destino.numero, destino.descripcion[:100]
             elif tipo == TransaccionVolumen.DEVOLUCION:
                 t.origen_destino = str(body.get('destino_texto') or '').strip()[:120]

@@ -702,7 +702,9 @@
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: .03em;
-  color: var(--color-text-secondary, #8c7a5e);
+  /* styles.css le da fondo azul marino a .custom-table th: el texto debe ser blanco para leerse */
+  background: var(--color-navy, #14213d);
+  color: #ffffff;
   padding: 8px 8px;
   border-bottom: 1.5px solid var(--color-border, #dad0b8);
   white-space: nowrap;
@@ -1234,3 +1236,56 @@
   }
 }
 
+
+/* Filas del catálogo maestro en Productos / Equipos / Mallas Activos: doble clic agrega */
+.custom-table tbody tr.fila-catalogo {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Pantalla principal del pozo: eliminar pozo */
+.btn-eliminar-pozo {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+.modal-eliminar-pozo {
+  max-width: 480px;
+}
+.eliminar-pozo-aviso {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-text-primary, #14213d);
+}
+.eliminar-pozo-label {
+  display: block;
+  margin: 14px 0 6px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #5a6472);
+}
+
+/* Intervalos de revestimiento: estado abierto / cerrado */
+.intervalo-estado {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.intervalo-estado.is-abierto {
+  background: #fff4e8;
+  color: #c2410c;
+}
+.intervalo-estado.is-cerrado {
+  background: #e8f7ee;
+  color: #137333;
+}
+.intervalo-aviso {
+  margin: 10px 24px 0 24px;
+}
+#btnNuevoIntervalo:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

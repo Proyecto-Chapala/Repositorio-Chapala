@@ -44,7 +44,26 @@
   async function cargarGeneralSetup() {
     const data = await apiFetch(`/api/pozos/${window.POZO_ID}/general-setup/`);
     const s = data.general_setup;
-    document.getElementById('chipMonedaSimbolo').textContent = s.moneda_simbolo;
+    const selMoneda = document.getElementById('selectMoneda');
+    const monedas = (data.monedas || []).slice();
+    if (s.moneda_simbolo && !monedas.some(([codigo]) => codigo === s.moneda_simbolo)) {
+      monedas.unshift([s.moneda_simbolo, s.moneda_simbolo]);
+    }
+    selMoneda.innerHTML = monedas.map(([codigo, nombre]) =>
+      `<option value="${codigo}" ${codigo === s.moneda_simbolo ? 'selected' : ''}>${codigo === nombre ? codigo : codigo + ' — ' + nombre}</option>`
+    ).join('');
+
+    const selSegunda = document.getElementById('selectMonedaSecundaria');
+    const opcionesSegunda = [['', 'Ninguna']].concat(data.monedas || []);
+    if (s.moneda_secundaria && !opcionesSegunda.some(([c]) => c === s.moneda_secundaria)) {
+      opcionesSegunda.push([s.moneda_secundaria, s.moneda_secundaria]);
+    }
+    selSegunda.innerHTML = opcionesSegunda.map(([codigo, nombre]) =>
+      `<option value="${codigo}" ${codigo === (s.moneda_secundaria || '') ? 'selected' : ''}>${codigo ? codigo + ' — ' + nombre : nombre}</option>`
+    ).join('');
+    document.getElementById('inputTasaCambio').value = s.tasa_cambio_secundaria ?? '';
+    document.getElementById('inputPorcentajeSecundaria').value = s.porcentaje_cobro_secundaria ?? 0;
+    actualizarSegundaMoneda();
     document.getElementById('chipMonedaDecimales').textContent = s.moneda_decimales;
     document.getElementById('inputTasaImpuesto').value = s.tasa_impuesto;
     document.getElementById('inputConTratamiento').checked = s.con_tratamiento_disposicion;
@@ -60,9 +79,22 @@
     });
   }
 
+  function actualizarSegundaMoneda() {
+    const segunda = document.getElementById('selectMonedaSecundaria').value;
+    const principal = document.getElementById('selectMoneda').value;
+    document.getElementById('inputTasaCambio').disabled = !segunda;
+    document.getElementById('inputPorcentajeSecundaria').disabled = !segunda;
+    document.getElementById('labelTasaCambio').textContent = segunda
+      ? `Tasa de cambio (${segunda} por 1 ${principal})` : 'Tasa de cambio';
+  }
+
   async function guardarGeneralSetup() {
     document.getElementById('errorGeneralSetup').textContent = '';
     const payload = {
+      moneda_simbolo: document.getElementById('selectMoneda').value,
+      moneda_secundaria: document.getElementById('selectMonedaSecundaria').value,
+      tasa_cambio_secundaria: document.getElementById('inputTasaCambio').value || null,
+      porcentaje_cobro_secundaria: document.getElementById('inputPorcentajeSecundaria').value || 0,
       tasa_impuesto: parseFloat(document.getElementById('inputTasaImpuesto').value || '0'),
       con_tratamiento_disposicion: document.getElementById('inputConTratamiento').checked,
       usar_api_5ta_edicion_hidraulica: document.getElementById('inputUsarApi5ta').checked,
@@ -184,6 +216,8 @@
 
   document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnGuardarGeneralSetup').addEventListener('click', guardarGeneralSetup);
+    document.getElementById('selectMonedaSecundaria').addEventListener('change', actualizarSegundaMoneda);
+    document.getElementById('selectMoneda').addEventListener('change', actualizarSegundaMoneda);
 
     document.getElementById('btnAbrirAlmacenes').addEventListener('click', async () => {
       document.getElementById('modalAlmacenes').hidden = false;

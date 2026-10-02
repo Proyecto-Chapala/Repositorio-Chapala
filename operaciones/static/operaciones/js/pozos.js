@@ -371,11 +371,19 @@
     }
 
     // Paso 3
-    document.getElementById('inputMonedaSimbolo').value = p.moneda_simbolo || 'USD';
+    const selMoneda = document.getElementById('inputMonedaSimbolo');
+    const codigoMoneda = p.moneda_simbolo || 'USD';
+    if (!Array.from(selMoneda.options).some((o) => o.value === codigoMoneda)) {
+      selMoneda.add(new Option(codigoMoneda, codigoMoneda), 0);
+    }
+    selMoneda.value = codigoMoneda;
     document.getElementById('inputMonedaDecimales').value = p.moneda_decimales;
     document.getElementById('inputTasaImpuesto').value = p.tasa_impuesto;
-    document.getElementById('selectEcuacionAgua').value = p.ecuacion_solidos_base_agua;
-    document.getElementById('selectEcuacionAceite').value = p.ecuacion_solidos_base_aceite;
+    ['selectEcuacionAgua', 'selectEcuacionAceite'].forEach((id, i) => {
+      const sel = document.getElementById(id);
+      sel.value = i === 0 ? p.ecuacion_solidos_base_agua : p.ecuacion_solidos_base_aceite;
+      if (!sel.value) sel.value = 'API';
+    });
     document.getElementById('selectCategoriaPerdida').value = p.categoria_perdida_tipo;
     state.categoriaPerdidaTipo = p.categoria_perdida_tipo;
     if (p.categoria_perdida_tipo === 'CUSTOM') {

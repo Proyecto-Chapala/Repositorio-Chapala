@@ -1,0 +1,373 @@
+(Transcrito por TurboScribe. Actualizar a Ilimitado para eliminar este mensaje.)
+
+Pero la API tiene cálculo hidráulico, aquí en marcas, entonces. API, pero no hay otra opción, o sea, tienen que ver si hay otra opción. Aparte de la API, si hay otra vaina por ahí.
+
+La colección de análisis de historias. API, API, déjame ver. Déjamelo, déjamelo ver.
+
+Sí, déjale la API. Y catálogo de proyectos. ¿Esto qué es? Configuración de código.
+
+¿Y el almacén? Ahí está la configuración y agregar almacén. Agregar almacén. Ah, ok.
+
+Los almacenes, ¿de dónde vienen? Sí. Almacén, aquí pongo, voy agregando anaco. Código, un código y descripción, el nombre del almacén.
+
+Ah, ok, ok. Aquí le vamos a dar la configuración del código de almacén. Configuración de distribución de tiempo.
+
+Ajá, esto es lo que va a aparecer en la... Mira, aquí está la configuración de distribución de tiempo. Esto es un... Y esto como también es un listado, ¿verdad? Ok, este es un listado. Sí.
+
+Y hay todas las que pueden aparecer ahí. Ok, muy bien. Muy bien.
+
+Toca guardar. Toca guardar y guardamos esa mierda como un demonio. Configuración de almacén.
+
+Ok. Catálogo de proyectos. Almacén, anaco.
+
+Sí. Tengo que dar un código aquí, ¿verdad? Sí. Se le va a poner su propio código manual y el nombre.
+
+Código. Ajá, otra cosa. Que se vea eso, porque... O sea, aquí salen algunas cosas, pero se ve en negro y hay que cambiarlo para que se vea mejor.
+
+Eso es otra cosa que yo me diría. Eso, ponle ahí. Que no se ve... No se ve la vaina que dice aquí.
+
+Eso, aquí también vi esta vaina. Sí, en día. A ver.
+
+¿Calor? Calor, sí. Hay que ver esto más rápido. Sí, tío.
+
+Hoy nos ponemos... Oye, escúchame con este carajo ya. Ya hoy... Bueno, después que este se vaya, hablo con el muchacho y ya más tarde le daré... Sí, vamos a seguir sacándose la vaina. Los colores de la vaina que no se ven, ¿verdad? Creo que también no se ven... Sí, yo vi que no se ven en algunas opciones.
+
+Sí, en algunas opciones no se ven. Ya, esto lo estoy entendiendo. Aquí, este... Aquí, bueno, van a poner que un cuento de semana vamos a trabajar, que las monedas que vamos a trabajar... La tasa de impuesto.
+
+Y si yo tengo monedas dobles, que va a haber una parte que cobran bolívares en... Bolívares en... Por ejemplo. Bolívares y dólares, pues. Que tengan una mezcla.
+
+¿Puede pasar? Ah, bueno, agregamos eso también. Agrégame ahí, este, costo... Otra moneda, por ejemplo. Costo en otra moneda, entonces ponen opción bolívares, peso, verga, le ponen ahí alguna vaina.
+
+O sea, que yo pueda agregar la moneda a la otra, pues. Eso me preguntaba, si tú tienes la moneda, este, verga, ¿cómo hacemos? Si tienes dos, si vas a cobrar en bolívares, vas a quebrar una parte en bolívares y otra parte en dólares. Sí, claro.
+
+Ya todo queda en opción. Le ponemos opción ahora de dólares, euros... Exactamente, exactamente. ¿Viste? Porque puede pasar, no me puede dejar pedir una más a todos.
+
+¿Trabajando también? No, nada. Dale, mira. Ok.
+
+Aquí quedamos en esta página que vamos a meter la otra opción de monedas. Y me pones toda la lista. Ok.
+
+Claro, las más comunes. Es decir, la de euros, que es la más común. Dólares, bolívares... México, el real, Brasil, el real.
+
+También pones una opción ahí para... ¿También de otros países? Claro, claro. Para no quedar amarrado. Si tengo que hacer un trabajo en Colombia, pues, colombiano.
+
+Tiene que darme la opción que yo pueda agregar ahí una moneda. Y ponerle el precio. Ok.
+
+Sí. También tenemos un contrato que tiene una parte en bolívares y otra parte en dólares. No voy a tener problemas cuando vaya a meter la respuesta.
+
+Porque no me va a dar la vaina. Ok. Vamos a seguir.
+
+Hasta ahorita vamos manteniendo la vaina. Esta configuración me ha pasado allá arriba. Inventario de revetimiento.
+
+Intervalos, intervalos. Vamos a meter los intervalos. Nuevo.
+
+Primero. Ahí están las opciones. Aquí pongo todas las opciones.
+
+Costo. Gradiente. Código.
+
+Código del fluido. Código del fluido. No sé.
+
+Los dos códigos que ponen aquí. Código. Puedes llamarlo el fluido de agua, gel, polimérico, una vaina.
+
+Esto es número. Sí. O sea, eso es anual.
+
+No sé qué pone. ¿Número o palabra? Ok. Costo planificado.
+
+Gradiente fractura. Ángulo máximo. Coste del aire.
+
+Densidad máxima. Esto que te iba a decir. Esto.
+
+Esto mientras yo tenga abierto el número uno. Que yo no he cerrado. Por ejemplo.
+
+Todavía. Lo que tengo es diámetro de hoyo. Y la profundidad.
+
+No sé si esto es planificación o esto es diario. Eso es. Eso va solamente en ese pozo creado.
+
+Ok, ya voy a hablar. O sea, que si es diario. Sí.
+
+No, no. Es porque yo voy a tener un intervalo uno que va a estar perforando. Si va a estar perforando, yo voy a tener un diámetro de hoyo.
+
+Y voy a tener su profundidad, ¿verdad? Ajá. ¿Verdad? Y aquí está el tipo. Aquí me da el tipo.
+
+Por mi pozo, superficie intermedia y producción. Ahí está. Hoyo abierto.
+
+Hoyo abierto. Me imagino que ahí está leyendo que estoy en un hoyo abierto, ¿verdad? Ajá. No tengo revestido porque él no me dio revestido.
+
+Revestido no tengo. Diámetro externo. Diámetro externo.
+
+Diámetro. Hoyo abierto. Diámetro del hoyo.
+
+Aquí tengo un diámetro del hoyo. Yo digo que estoy perforando. 12.25. Por si acaso.
+
+Un 12.25. Voy a ir. No tengo el liner todavía. Profundidad.
+
+Vamos a ver. La profundidad. Esta es como la medida.
+
+Mil... Dos mil pies. Y... Tengo un TBD que me lo está dando. Estoy vertical.
+
+Lo mismo tren. Lo mismo dos mil. Dos mil.
+
+¿Verdad? No tengo el liner todavía. No tengo densidad de lodo. Tengo una densidad de lodo.
+
+Vamos a decir que estoy perforando. Tengo... 12. Por si acaso.
+
+12. Tengo una... 12. Tengo 12.
+
+De libras por galón. Bien. ¿Qué tengo ahorita? Un hoyo abierto.
+
+Con un diámetro. Con una profundidad. Ángulo máximo.
+
+Vamos a poner cero. Porque estoy vertical. ¿Verdad? Uh-huh.
+
+Temperatura. 70. Sí.
+
+100 grados Fahrenheit. Los diámetros. OK.
+
+Eh... Longitud planificada. Esta sí lo puedo poner. Tres mil.
+
+OK. Día planificado. Vamos a poner 25.
+
+Costo estimado. Vamos a poner tres mil. Yo quiero que me de esto.
+
+Costo planificado. Costo... Del intervalo. Del intervalo.
+
+Tres mil. Costo planificado. ¿Usted puede poner costo... Así, costo planificado? ¿O lo cambiamos a cuánto? No, porque... Aquí tiene una planificación.
+
+Vamos a planificarle que... Planificado día y noche, para tener la relación. Planificado cinco mil. Porque ya estamos... No he terminado.
+
+Cinco mil. De la siguiente trayectura. Tres mil.
+
+Un gradiente de... Cero punto madre. Venga. Código de subido.
+
+Código de subido. Ah, pues ese es el subido que estoy usando. Que tiene un código, pues.
+
+Un código que se le dice. Aguaje los códigos dados. Vamos a poner... Cero, cero, uno.
+
+Ah, no necesariamente voy a poner cero. No hay un código. Subido dos, bueno, bueno.
+
+Subido en el primer intervalo. No tengo dos. Pero cuando yo vaya por el segundo.
+
+Depende, tengo uno y yo tengo dos. Aquí uno de observaciones. Observaciones y recomendaciones.
+
+Comentarios de intervalo para el siguiente recap. Ah. Comentarios de... De intervalo para el recap.
+
+Bien. Observaciones y recomendaciones. ¿Es para recap? Ajá.
+
+Claro. Comentarios de intervalo para el recap. Aquí estoy como cerrando esto, dice.
+
+Yo creo que esto es cuando yo vaya a cerrar. ¿Dónde me quedó el revestidor? ¿Dónde me quedó esto? Yo creo que esto es para cierre. Yo estoy cerrando esta vaina aquí, dice.
+
+Yo creo que aquí esto tiene que estar llenito todo. Ya tengo un revestidor. Ya tengo todo.
+
+Lo voy a cerrar primero. Pa' acá. ¿Me merece caerle? Sí.
+
+Yo creo que acá aquí. Hoyo abierto. Tipo hoyo abierto.
+
+Como aquí. Conductor. Superficie.
+
+Aquí. Ese fue un revestidor. Y el hoyo fue de 12.25. Diámetro externo del revestidor.
+
+Trece y tres octavos. Ok. Mano alto a la boca.
+
+Diámetro externo de un revestidor. Si estoy... Nueve y cinco octavos. Nueve puntos veinticinco.
+
+Cinco octavos veinticinco. Nueve puntos veinticinco. Ok.
+
+Nueve puntos veinticinco. Ok. Hice un hoyo de doce, de doce... Nueve, nueve cinco octavos.
+
+Nueve puntos veinticinco. Nueve puntos veinticinco. Nueve puntos.
+
+Nueve veinticinco. Nueve cinco octavos. Cinco octavos.
+
+Nueve puntos veinticinco. Ok. Doce veinticinco, nueve puntos veinticinco, profundidad.
+
+Y diametro de loya. 2.35 profundidad vaina no hay superficie diámetro interno repetidor 8.3 8.375 8.375 9.625 el diámetro externo diámetro del hoyo 12.95 diámetro del hoyo 12.95 diámetro del hoyo 1000 profundidad no hay decida más en el 2012 el voto juntan y ángulos vertical días del intervalo 3 decimos en tres días con el que debería ser a todo comentario xx guardó si hay que ir cerrando cerrando el intervalo guardar ok aquí me dice cómo quedó la base ahí donde digo que no veo aquí aquí está ángulo máximo está decidida máxima la fractura huido el intervalo y esto es cierre de intervalos entre paréntesis ya lo cerré me imagino que aquí está me está diciendo ya papá yo ya yo puedo abrir un segundo así que yo aquí dónde dónde ya cerré el intervalo 11 categoría listo informe cero estaciones esto que hay aquí aquí no metimos nada Si, esa es la opción que tenemos que revisar. Esto es lo que vamos a revisar.
+
+Fosa tenemos dos. Aquí veis que tenemos un primer intervalo. Productos, pero no he agregado productos.
+
+Productos de equipo, esa es la vaina. Ah, esta parte. Allá vi que tenía una matriz equipo.
+
+Vamos a usar equipo. Yo quiero... Configuración de producto. Configuración del centro de equipo.
+
+Configuración... ¿Qué me dice esto? Aquí se puede buscar por código o nombre. Ajá, pero si yo... ¿Cuándo yo... ¿Cuándo le toca? Eso es la opción de los productos que se va a usar en... Esto es lo que va a aparecer en el reporte. En el reporte.
+
+Ok. Ah, porque nos lo cargamos allá, aquí se viene la página donde va. Esto es lo que está reflejado.
+
+Sí, claro, eso se refleja y vas a seleccionar lo que vas a usar. Esto es modificable. Sí, esto nada más se modifica en su opción.
+
+Ah. Eso nada más se modifica en la opción. Ok.
+
+Usted selecciona cualquier producto, una vez seleccionados los productos, aparecen abajo y nada más se le da una vuelta. Ah, como es la vaina que lleva. ¿Cómo se trabaja esta vaina? A ver, mueve eso.
+
+Hay más. Más. Ok.
+
+Lista activa de productos. Lista de productos. Código.
+
+Nombre. Abreviación. Tamaño de la unidad.
+
+Unidad. Empaque. Precio.
+
+No leo bien ahí. Y salen otras opciones. Ah, que esto no podrá acceder.
+
+Sí. Ok. Con esto que yo iba a hacer reporte.
+
+Eso es lo que va a salir en el reporte. Esto es lo que va a salir en el reporte. Voy tomando de aquí y me va pasando para acá.
+
+Y voy agregando aquí. Sí, una vez que agregas todo. Voy agregando.
+
+Revisa. Se va a editar ahí algunas cosas, lo que va a usar. Ok.
+
+Y después se guarda y ya se va a reflejar en el reporte una vez que pasan esos productos. Ok, vamos a ir seleccionando aquí. Cuando generemos allá algo tiene que aparecer lo que hicimos.
+
+Ok. Vamos aquí. Este vamos a seleccionar.
+
+Este. No, vamos a hacer una situación. Igual podemos hacer que la opción de darle directamente para que se ponga una vez aquí.
+
+Ah, es directo. Sí. O sea, podemos hacer eso.
+
+De que es una configuración rápida. De una de las observaciones es que dándole el segundo clic se ponga aquí una vez. Ok.
+
+Yo lo paso para acá. Por ahí. Y aquí voy sumando.
+
+Ok. Estos son mis productos y los guardé. Los guardé.
+
+Eso fue en ese día. Este día me van a aparecer estos productos en el reporte. Ok.
+
+Hasta aquí vamos bien. Ok. Y si es las mallas, lo mismo.
+
+Los equipos. Aquí guardé. Espérate.
+
+Espérate. Guarda rápido. Ya eso está guardado.
+
+Ok. Ya guardé. Esto es lo que me va a aparecer en el reporte.
+
+¿Ya lo guardaste? Ya lo guardé. O sea, leí en la opción, ¿no? Sí. Como no veía que hacía algo así.
+
+Configuro mi equipo. Y aquí está la lista. Hay una lista que vas a meter y aquí vamos seleccionando igualito.
+
+Y esto es lo que va para el reporte. Vas seleccionando y vamos seleccionando y vamos agregando y ellos van apareciendo. Y aquí dice, selecciona del catálogo maestro de los productos equipos y mallas que se van a usar en este proyecto.
+
+Se puede agregar nuevos en cualquier momento. Revisa con cuidado el código de costo diario de cada producto. Se usa para la asignación de costos.
+
+Correcto. Ahora aquí está la vaina y entonces yo le voy a aparecer. Él tiene aquí ya en la matriz se le puso el costo y la van a cuantos puestos ir.
+
+Imagino que tiene aquí el costo, tiene su vaina. Aquí, la vaina no se ve. Igual también, eso es manual.
+
+El precio de la venta y el precio del stand-by. Y aquí el número de serie. ¿Esto lo tiene que llenar el ingeniero? Sí.
+
+Aquí le va poniendo los costos. Se pone ellos mismos, manual, y aquí el número de serie. Claro, él tiene que agregar costos ahí porque en la matriz lo que aparece es el desplegado así.
+
+Y aquí le va a poner su costo y su unidad. Igualito con el inventario, ¿verdad? Sí. El inventario también es igualito.
+
+Vamos aquí a inventario. En el inventario le va a poner también aquí, le va a poner lo que viene, el precio. Todo esto cambiado, ¿verdad? Sí.
+
+Ok. Todo eso configurado. Ya lo que tiene es... Y el empaque, aquí está el iniciar, ¿todo eso? Sí, todo eso.
+
+Le va llenando aquí su vaina. ¿Cuánto recibe? Todo se va llenando. ¿Cuánto recibió? Esto es manual, ¿verdad? Sí.
+
+Esto sí pasa para el segundo reporte. La ha acumulado, ¿verdad? Claro, ya la acumula para allá. Como yo voy a hacer el número dos.
+
+Por eso como cerramos ahí ya... Yo digo que el cierre es el día... Se cierra cuando ya yo tenga el número de reporte. Que voy... Y ahí es donde se mete un cierre. Para que no aparezcan los intervalos.
+
+Yo creo que cerramos... Cerramos cuando no tenemos que cerrar todavía. Aquí hay un paginite para el cierre. Cuando él vaya a cerrar, se mete aquí y cerró todo.
+
+Y ya me da mi iniciar. Correcto. Eso te va a violar el cierre... El día que ya bajaron tus repetidores.
+
+Muy bien, muy bien. Eso está fin. Ok.
+
+Aquí vamos... Aquí vamos... Esto no lo veía yo. Es una paja negra. Sí.
+
+Hay un... Nosotros lo hicimos que las letras se vieran blancas. Ajá. Por el negro.
+
+Pero parece que hubo un error ahí. Ahí está. Ahí está algo que no estaba oyendo.
+
+Sí, eso se cambió rápido. Ok. Esto se puede poner más grande, ¿verdad? Sí.
+
+En la lupita que está aquí. Ahí. Y usted ahí le da.
+
+O sea, le da clic. Y ahí le va a aparecer la opción de más o menos. Sí, sí.
+
+Yo podía estar más grande. Ok. O sea, yo lo había puesto... Lo minimicé porque... Por el problema que le había dicho.
+
+Que cuando usted sale... Y usted le da la opción, no baja. O sea, no salen algunas cosas... Ok, perfecto, perfecto. Para que usted se pase.
+
+En caso que el ingeniero quiera... Coño, no veo bien esta vaina. Pero aquí trabaja tranquilo. Le pueden poner un poquito más bien.
+
+Igual nosotros vamos a arreglarlo. Porque todo sale una vez en la pantalla grande. Que se vea.
+
+Arreglen eso. Muy bien. Pero cualquier cosa.
+
+Usted si se va y va a usarlo ya en su casa otra vez. O en el trabajo. Ya sabe que le da en las tres bromitas.
+
+No. Y aquí le va a aparecer el Zoom. Y usted tiene que minimizarlo.
+
+Para que salga lo que no vea. Claro. Bien.
+
+Así vamos. Así vamos. Agregando... Esto es lo que hace el reporte.
+
+Es lo que estoy viendo. Esto es lo que... Y guardé. Ahí está guardado.
+
+Y me voy para atrás. Ok. Ya voy por los productos.
+
+Equipos. Y mayas. Configuración.
+
+Décima. Eso lo vamos a dejar como obvio. Esto es para un catálogo de un producto que sea la bebida Triana.
+
+Si tiene un producto especial lo puede meter ahí. Y le da una descripción del producto. Para que lo vea.
+
+Esto es mercadeo. Esto es mercadeo. Está.
+
+Está en la opción de entrada de objetos. Está. Está la opción de entrada de objetos.
+
+Estima... Entrada de... De objetivo. Ingresa el valor de objeto o mínimo o máximo por cada parámetro. Seleccionado por columna.
+
+La columna Window World aplica esto a todo el pozo. No se ha seleccionado ningún parámetro todavía. Vea la pestaña 1. Definición de parámetros primero.
+
+O sea, una vez que usted... En la primera pestaña. Selecciona todo y guarda los... Ahí voy metiendo. Las definiciones se pueden ver en la segunda pestaña.
+
+Está bien. Ok, muy bien. Esto lo explico yo.
+
+Si tiene un producto especial. Una vaina lo mete ahí y lo vende. El que vea una vaina que usted usaste, lo vende.
+
+Ok. Y así voy para atrás. Ok, lo que es más bueno.
+
+Ya es una vaina. De propiedades de equipo. Propiedades de equipo.
+
+Configuración de propiedades de equipo. Propiedades de equipo. Aquí dice, selecciona que propiedades se van a monitorear por cada tipo de equipo activo en este pozo.
+
+Los tipos que aparecen aquí dependen de lo agregado en productos, equipos, mayas y activos. Y aquí dice, no se ha agregado ningún equipo. Vea productos, mayas y activos para seleccionar los equipos primero.
+
+¿Esto dónde es? Aquí. ¿En esta misma pestaña? Ahí está. Y le va a enviar la maya.
+
+Porque parece que tiene que seleccionar los tres. ¿Cómo es la vaina? Ahí. Pero yo lo guardé.
+
+Pero yo creo que se tiene que llenar todo bien. La abreviación. En caso de abreviación, una abreviación de aceptor.
+
+Le pone una abreviación. Empaque. Lo que va en empaque.
+
+Y ahí una vez lleno todo, guardar. Aquí también. Una vez lleno todo, guardar.
+
+Aquí una vez lleno todo, guardar. Y se va a reflejar. Cuando voy aquí, configuración.
+
+Ahí estoy configurando ya. Y después una vez todo lleno, bien hecho todo, que el programa lo pueda leer y guardarlo, se va a reflejar ahí. Y le digo guardar.
+
+Sí. Entonces ya está todo, todo como... Todo lo que seleccionamos en esa parte. Plegado.
+
+Plegado. Entonces ya tenemos inventario, ya tenemos los equipos, ya tenemos lo que va... El cabezal de la vaina con su... Con su... Con sus profundidades, con la gente, con la mirada, con todo. Ok.
+
+Vamos para atrás. Para aquí. Ya estoy como terminando.
+
+Esto está como bloqueado. No, esas son opciones... Eso lo tenía eliminado aquí, ¿verdad? Sí. Las opciones que no vamos a escuchar.
+
+Esto no programado, eliminado. Sí. Porque aquí... Eso es lo que en los comentarios está por ahí.
+
+Este es eliminado, eso va ahí. Esto no programado, eliminado. Que no confunda el ingeniero.
+
+Ok. Ahora vamos... Esto es fluido, ahora. Módulo... Guantar.
+
+Ese módulo Guantar, eliminado. Esto que dice módulo Guantar, eliminado. Guantar no... Módulo, te pone el nombre.
+
+Smart... Mod... Módulo de Smart Mod. Eso es lo que debe de pasar. ¿Cambiar? ¿Módulo de OneTrack? Módulo de Smart Mod.
+
+Ok.
+
+(Transcrito por TurboScribe. Actualizar a Ilimitado para eliminar este mensaje.)

@@ -218,7 +218,7 @@ async function guardarPestanaInventario(silent = false){
 /* =====================================================================
    1. VOLUMETRÍA E INVENTARIO DE PRODUCTOS
 
-   Lo medido y escrito a mano (tipo y volumen real de fosas, hoyo e
+   Lo medido y escrito a mano (tipo y volumen real de tanques, hoyo e
    inventario) se guarda con "Guardar volumetría". Los movimientos
    (químicos, lodo reciclado, transferencias, devoluciones, pérdidas) y los
    tickets se registran al momento y el servidor valida toda la línea de
@@ -259,7 +259,7 @@ function vaVolumenQuimico(cantidad, unidad, tamano, gravedad){
 }
 
 /* Redondeo de volúmenes (pedido del ingeniero): en campo el volumen se reporta sin
-   decimales. Los "no contabilizados" y las fosas conservan 1 decimal para no ocultar
+   decimales. Los "no contabilizados" y los tanques conservan 1 decimal para no ocultar
    diferencias pequeñas. */
 function vaVol(n){ return csFmt(n, 0); }
 
@@ -410,7 +410,7 @@ function vaRenderKpis(){
     const x = c[g];
     if(!x.tiene) return '';
     let clase = 'va-kpi-ok', valor = '0,00 bbl', nota = 'Cuadra';
-    if(x.na === null){ clase = 'va-kpi-pendiente'; valor = '—'; nota = `Falta el volumen real de ${x.sin.length} fosa(s)`; }
+    if(x.na === null){ clase = 'va-kpi-pendiente'; valor = '—'; nota = `Falta el volumen real de ${x.sin.length} tanque(s)`; }
     else if(Math.abs(x.na) >= 0.005){ clase = 'va-kpi-error'; valor = `${csFmt(x.na, 1)} bbl`; nota = x.na > 0 ? 'Sobra fluido real' : 'Falta fluido real'; }
     return `<div class="va-kpi ${clase}"><span>No contabilizado · ${nombre}</span><strong>${valor}</strong><small>${nota}</small></div>`;
   };
@@ -423,7 +423,7 @@ function vaRenderKpis(){
 
 function vaRenderAvisos(){
   const avisos = (vaDatos.avisos || []).slice();
-  if(!vaDatos.fosas.length) avisos.push('El pozo no tiene fosas. Agrégalas en la configuración de fosas del pozo.');
+  if(!vaDatos.fosas.length) avisos.push('El pozo no tiene tanques. Agrégalos en la configuración de tanques del pozo.');
   vaDatos.fosas.forEach(f => {
     const r = csNum(f.real);
     if(r !== null && f.capacidad > 0 && r > f.capacidad + 0.005) avisos.push(`${csEsc(f.descripcion)}: el volumen real (${csFmt(r)}) supera la capacidad (${csFmt(f.capacidad)}).`);
@@ -433,12 +433,12 @@ function vaRenderAvisos(){
   document.getElementById('vaAvisos').innerHTML = avisos.map(a => `<div class="cs-aviso-item">${a}</div>`).join('');
 }
 
-/* ---------- Volúmenes de fosas ---------- */
+/* ---------- Volúmenes de tanques ---------- */
 
 function vaRenderFosas(){
   const tbody = document.getElementById('vaFilasFosas');
   if(!vaDatos.fosas.length){
-    tbody.innerHTML = `<tr class="cs-fila-vacia"><td colspan="9">El pozo no tiene fosas. <a href="${vaDatos.enlaces.fosas}" target="_blank" rel="noopener">Configurarlas &rarr;</a></td></tr>`;
+    tbody.innerHTML = `<tr class="cs-fila-vacia"><td colspan="9">El pozo no tiene tanques. <a href="${vaDatos.enlaces.fosas}" target="_blank" rel="noopener">Configurarlos &rarr;</a></td></tr>`;
     return;
   }
   const opciones = (sel) => '<option value="">— Sin tipo —</option>' + vaDatos.tipos_fosa.map(t =>
@@ -470,9 +470,9 @@ function vaRenderResumen(){
   const act = c.ACTIVO;
   const realPits = vaDatos.fosas.filter(f => vaGrupoDeTipo(f._tipo_guardado) === 'ACTIVO').reduce((a, f) => a + (csNum(f.real) || 0), 0);
   let html = '';
-  if(c.RESERVA.tiene) html += `<tr><td>Fosas de reserva</td><td class="cs-num">${vaVol(c.RESERVA.calculado)}</td><td class="cs-num">${real(c.RESERVA)}</td><td class="cs-num">${na(c.RESERVA)}</td></tr>`;
-  if(c.PREMEZCLA.tiene) html += `<tr><td>Fosas de premezcla</td><td class="cs-num">${vaVol(c.PREMEZCLA.calculado)}</td><td class="cs-num">${real(c.PREMEZCLA)}</td><td class="cs-num">${na(c.PREMEZCLA)}</td></tr>`;
-  html += `<tr class="va-fila-sub"><td>Fosas activas (sin hoyo)</td><td></td><td class="cs-num">${vaVol(realPits)}</td><td></td></tr>`;
+  if(c.RESERVA.tiene) html += `<tr><td>Tanques de reserva</td><td class="cs-num">${vaVol(c.RESERVA.calculado)}</td><td class="cs-num">${real(c.RESERVA)}</td><td class="cs-num">${na(c.RESERVA)}</td></tr>`;
+  if(c.PREMEZCLA.tiene) html += `<tr><td>Tanques de premezcla</td><td class="cs-num">${vaVol(c.PREMEZCLA.calculado)}</td><td class="cs-num">${real(c.PREMEZCLA)}</td><td class="cs-num">${na(c.PREMEZCLA)}</td></tr>`;
+  html += `<tr class="va-fila-sub"><td>Tanques activos (sin hoyo)</td><td></td><td class="cs-num">${vaVol(realPits)}</td><td></td></tr>`;
   html += `<tr class="va-fila-sub"><td>Fluido en el hoyo</td><td></td><td class="cs-num">${vaVol(vaFluidoHoyo())}</td><td></td></tr>`;
   html += `<tr class="cs-fila-total"><td>Sistema activo (con hoyo)</td><td class="cs-num">${vaVol(act.calculado)}</td><td class="cs-num">${real(act)}</td><td class="cs-num">${na(act)}</td></tr>`;
   document.getElementById('vaResumen').innerHTML = html;
@@ -483,7 +483,7 @@ function vaRenderOtras(){
   const filas = vaDatos.otras_por_tipo || [];
   cont.innerHTML = filas.length
     ? `<ul class="cs-almacen">${filas.map(o => `<li><span class="cs-almacen-texto">${csEsc(o.tipo)}</span><strong>${vaVol(o.volumen)} bbl</strong></li>`).join('')}</ul>`
-    : '<div class="cs-vacio">No hay fosas de otros tipos (fluido base, salmuera, píldora, espaciador...).</div>';
+    : '<div class="cs-vacio">No hay tanques de otros tipos (fluido base, salmuera, píldora, espaciador...).</div>';
 }
 
 /* ---------- Balance ---------- */
@@ -713,7 +713,7 @@ function vaFosasConTipo(){
 
 function vaOpcionesFosa(seleccion){
   const fs = vaFosasConTipo();
-  if(!fs.length) return '<option value="">No hay fosas con tipo asignado</option>';
+  if(!fs.length) return '<option value="">No hay tanques con tipo asignado</option>';
   return fs.map(f => `<option value="${f.numero}" ${f.numero === seleccion ? 'selected' : ''}>${csEsc(f.descripcion)} — ${csEsc(f.tipo_descripcion || vaDatos.tipos_fosa.find(t => t.codigo === f._tipo_guardado)?.descripcion || '')}</option>`).join('');
 }
 
@@ -726,7 +726,7 @@ function vaOpcionesDestinoExterno(){
 function vaAbrirModal(tipo){
   if(!vaDatos) return;
   if(vaSucio && ['quimicos', 'lodo', 'transferencia'].includes(tipo) && vaTiposCambiados){
-    showToast('Guarda primero los cambios de tipo de fosa: los movimientos usan los tipos guardados.', false);
+    showToast('Guarda primero los cambios de tipo de tanque: los movimientos usan los tipos guardados.', false);
     return;
   }
   vaModalTipo = tipo;
@@ -751,11 +751,11 @@ function vaRenderModal(inicial = false){
 
   if(vaModalTipo === 'quimicos'){
     if(!inicial) return;
-    titulo.textContent = 'Agregar químicos a una fosa';
+    titulo.textContent = 'Agregar químicos a un tanque';
     const prods = vaDatos.inventario.filter(r => r.activo && !r.servicio);
     cuerpo.innerHTML = `
       <div class="va-form-fila">
-        <label class="cs-campo"><span class="cs-campo-label">1. Fosa</span><select id="vaQFosa" class="report-input">${vaOpcionesFosa()}</select></label>
+        <label class="cs-campo"><span class="cs-campo-label">1. Tanque</span><select id="vaQFosa" class="report-input">${vaOpcionesFosa()}</select></label>
         <label class="cs-campo"><span class="cs-campo-label">2. Fluido base agregado <em>(bbl)</em></span><input type="number" id="vaQAceite" class="report-input" min="0" step="any"></label>
         <label class="cs-campo"><span class="cs-campo-label">Agua agregada <em>(bbl)</em></span><input type="number" id="vaQAgua" class="report-input" min="0" step="any"></label>
         <label class="cs-campo"><span class="cs-campo-label">Buscar producto</span><input type="search" id="vaQBuscar" class="report-input" placeholder="Código o descripción"></label>
@@ -770,7 +770,7 @@ function vaRenderModal(inicial = false){
               <td class="cs-num ${r.final <= 0 ? 'cs-agotado' : ''}">${csFmt(r.final)}</td>
               <td class="cs-num"><input type="number" class="cs-input-cant va-q-cant" min="0" step="any" data-prod="${r.producto_id}" placeholder="0"></td>
               <td class="cs-num" data-q-vol="${r.producto_id}">—</td>
-            </tr>`).join('') || '<tr class="cs-fila-vacia"><td colspan="6">No hay productos activos que se agreguen a fosas.</td></tr>'}</tbody>
+            </tr>`).join('') || '<tr class="cs-fila-vacia"><td colspan="6">No hay productos activos que se agreguen a tanques.</td></tr>'}</tbody>
         </table>
       </div>
       <div class="va-resumen-mov" id="vaQResumen"></div>
@@ -781,14 +781,14 @@ function vaRenderModal(inicial = false){
 
   } else if(vaModalTipo === 'lodo'){
     if(!inicial) return;
-    titulo.textContent = 'Agregar lodo reciclado a una fosa';
+    titulo.textContent = 'Agregar lodo reciclado a un tanque';
     const prods = vaDatos.inventario.filter(r => r.activo && !r.servicio);
     const lodos = prods.slice().sort((a, b) => ((b.unidad || '').toUpperCase().startsWith('B') ? 1 : 0) - ((a.unidad || '').toUpperCase().startsWith('B') ? 1 : 0));
     const conc = prods.filter(r => r.concentracion && vaMasaLb(1, r.unidad, r.tamano) !== null);
     cuerpo.innerHTML = `
       <div class="va-grid-2 va-grid-lodo">
         <div>
-          <label class="cs-campo"><span class="cs-campo-label">1. Fosa</span><select id="vaLFosa" class="report-input">${vaOpcionesFosa()}</select></label>
+          <label class="cs-campo"><span class="cs-campo-label">1. Tanque</span><select id="vaLFosa" class="report-input">${vaOpcionesFosa()}</select></label>
           <label class="cs-campo"><span class="cs-campo-label">2. Producto de lodo reciclado</span><select id="vaLProducto" class="report-input">
             <option value="">Elige…</option>${lodos.map(r => `<option value="${r.producto_id}">${csEsc(r.descripcion)} (${csEsc(r.codigo)}) — ${csFmt(r.final)} ${csEsc(r.unidad || '')} disponibles</option>`).join('')}</select>
             <small class="cs-campo-ayuda">Se descuenta del inventario el volumen agregado.</small></label>
@@ -818,13 +818,13 @@ function vaRenderModal(inicial = false){
     titulo.textContent = 'Transferencia, devolución o pérdida';
     cuerpo.innerHTML = `
       <div class="cs-condicion va-opciones" role="radiogroup">
-        <button type="button" class="cs-condicion-btn is-active" data-va-op="TRANSFERENCIA">Entre fosas</button>
+        <button type="button" class="cs-condicion-btn is-active" data-va-op="TRANSFERENCIA">Entre tanques</button>
         <button type="button" class="cs-condicion-btn" data-va-op="DEVOLUCION">Devolución</button>
         <button type="button" class="cs-condicion-btn" data-va-op="PERDIDA">Pérdida y descarte</button>
       </div>
       <div class="va-form-col">
-        <label class="cs-campo"><span class="cs-campo-label">Fosa de origen</span><select id="vaTFosa" class="report-input">${vaOpcionesFosa()}</select></label>
-        <label class="cs-campo" id="vaTCampoDestino"><span class="cs-campo-label">Fosa destino</span><select id="vaTDestino" class="report-input">${vaOpcionesFosa()}</select></label>
+        <label class="cs-campo"><span class="cs-campo-label">Tanque de origen</span><select id="vaTFosa" class="report-input">${vaOpcionesFosa()}</select></label>
+        <label class="cs-campo" id="vaTCampoDestino"><span class="cs-campo-label">Tanque destino</span><select id="vaTDestino" class="report-input">${vaOpcionesFosa()}</select></label>
         <label class="cs-campo" id="vaTCampoDevuelto" hidden><span class="cs-campo-label">Devuelto a</span><select id="vaTDevuelto" class="report-input">${vaOpcionesDestinoExterno()}</select></label>
         <label class="cs-campo" id="vaTCampoPerdida" hidden><span class="cs-campo-label">Tipo de pérdida</span><select id="vaTPerdida" class="report-input">
           <option value="">Elige…</option>${vaDatos.categorias_perdida.map(c => {

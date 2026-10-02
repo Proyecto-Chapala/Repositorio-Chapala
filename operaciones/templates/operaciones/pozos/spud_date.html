@@ -1,7 +1,7 @@
 {% extends 'operaciones/base.html' %}
 {% load static %}
 
-{% block title %}Fecha de Inicio &bull; {{ pozo.nombre }} &bull; CHAPALA{% endblock %}
+{% block title %}Fecha de Inicio &bull; {{ pozo.nombre }} &bull; Smart Mud{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
@@ -42,7 +42,7 @@
     {% else %}
       <div class="wizard-body">
         <p class="field-hint" style="margin-bottom:18px;">
-          ONE-TRAX inicializará la base de datos del pozo con estos valores.
+          Smart Mud inicializará la base de datos del pozo con estos valores.
           La fecha y el tipo de fluido <strong>no se podrán cambiar</strong> después de confirmar.
         </p>
 

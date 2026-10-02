@@ -12,7 +12,7 @@ cada fosa, en lb/bbl y kg/m³), inventario químico (DF, por nombre y completo),
 equipos e inventario de mallas.
 
 Redondeo: los volúmenes del balance y del hoyo se imprimen sin decimales (así se reportan en
-campo); los volúmenes de fosas con 1 decimal; los costos no se redondean más allá de centavos.
+campo); los volúmenes de tanques con 1 decimal; los costos no se redondean más allá de centavos.
 """
 
 import io
@@ -622,7 +622,7 @@ BBL_A_M3 = 0.158987
 def _hoja_concentraciones(wb, d, despues_de):
     """
     Reporte de concentración de productos (ONE-TRAX: Product Concentration / Reporte Diario
-    Sistema Activo). Un bloque por compartimento: primero el sistema activo (fosas activas +
+    Sistema Activo). Un bloque por compartimento: primero el sistema activo (tanques activos +
     hoyo) y luego cada fosa aparte. La hoja se arma por código (no está en la plantilla).
     """
     from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -866,11 +866,22 @@ def _hoja_mallas(ws, d):
 
 # ---------------------------------------------------------------- libro completo
 
+def _textos_tanques(wb):
+    """Smart Mud dice "tanque" donde la plantilla ONE-TRAX dice "fosa"."""
+    cambios = {'Fosas Activas': 'Tanques Activos', 'FOSA': 'TANQUE', 'SUMA DE FOSAS': 'SUMA DE TANQUES'}
+    for ws in wb.worksheets:
+        for fila in ws.iter_rows(min_row=1, max_row=min(ws.max_row, 20)):
+            for celda in fila:
+                if isinstance(celda.value, str) and celda.value.strip() in cambios:
+                    celda.value = cambios[celda.value.strip()]
+
+
 def generar_reporte_excel(pozo, reporte):
     """Devuelve (bytes del .xlsx, nombre de archivo)."""
     d = _datos(pozo, reporte)
     variante = reporte.tipo_lodo if reporte.tipo_lodo in HOJA_LODO else 'WBM'
     wb = openpyxl.load_workbook(PLANTILLA)
+    _textos_tanques(wb)
 
     hoja_lodo, hoja_extra = HOJA_LODO[variante], HOJA_EXTRA[variante]
     for nombre in list(HOJA_LODO.values()) + ['Prop Extra Base Agua', 'Prop Extra Aceite-Sint']:
