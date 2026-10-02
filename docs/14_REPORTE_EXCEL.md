@@ -15,8 +15,8 @@ Ruta de descarga: `GET /pozos/<id>/daily-report/<id_reporte>/excel/`. Nombre del
 |---|---|
 | **Lodo Base Agua / Lodo CALDRIL / Lodo Base Aceite / Lodo Base Sintetica** | *Solo queda una*, según el tipo del reporte: WBM → Base Agua, WBM_CACL2 → CALDRIL, OBM → Base Aceite, SBM → Base Sintética. Encabezado, sarta y revestidor, volúmenes y circulación (el **avance del día** toma en cuenta side track y ampliación de piloto), bombas y mecha, hasta 4 chequeos de lodo con propiedades extra 1-8, productos usados y equipos con sus mallas ("4X170"), especificación y comentarios, distribución de tiempo (10 filas), contabilidad de volumen y pérdidas (hasta 10), análisis de sólidos del chequeo principal, reología e hidráulica, costos diarios y acumulados, contactos |
 | **Prop Extra Base Agua / Prop Extra Aceite-Sint** | Solo queda la del tipo de fluido. Propiedades extra 9-60 con orden de impresión > 0 |
-| **Contabilidad de Volumen** | Fosas (capacidad, peso, volumen con 1 decimal, clase), suma por grupo, lodo en el hoyo (total, no fluido, fluido), balance por grupo (activo, reserva, premezcla), transferencias entre grupos y desglose de pérdidas. **Balance, hoyo y pérdidas sin decimales**, como se reporta en campo (formato *Mud Volume Accounting*) |
-| **Concentraciones** | *Nueva (27-sep).* Formato del reporte "Sistema Activo" de ONE-TRAX. Un bloque por compartimento (primero el sistema activo, luego cada fosa, cada uno en su página): encabezado del pozo, volúmenes del día en bbl y m³ (fluido base, agua, aumento por material, lodo entero, volumen inicial, final y cambio) y por producto: tamaño, cantidad agregada, concentración inicial/cambio/final en **lb/bbl y kg/m³**, con total. Ver [20](20_CONCENTRACIONES_Y_CASOS_ESPECIALES.md) |
+| **Contabilidad de Volumen** | Tanques (capacidad, peso, volumen con 1 decimal, clase), suma por grupo, lodo en el hoyo (total, no fluido, fluido), balance por grupo (activo, reserva, premezcla), transferencias entre grupos y desglose de pérdidas. **Balance, hoyo y pérdidas sin decimales**, como se reporta en campo (formato *Mud Volume Accounting*) |
+| **Concentraciones** | *Nueva (27-sep).* Formato del reporte "Sistema Activo" de ONE-TRAX. Un bloque por compartimento (primero el sistema activo, luego cada tanque, cada uno en su página): encabezado del pozo, volúmenes del día en bbl y m³ (fluido base, agua, aumento por material, lodo reciclado, volumen inicial, final y cambio) y por producto: tamaño, cantidad agregada, concentración inicial/cambio/final en **lb/bbl y kg/m³**, con total. Ver [20](20_CONCENTRACIONES_Y_CASOS_ESPECIALES.md) |
 | **Inv Quimico (DF)** | Inventario de productos con movimiento, sin los marcados *No imprimir*, ordenado por código |
 | **Inv Quimico (por nombre)** | La misma lista, ordenada por descripción |
 | **Inv Quimico (completo)** | Todos los productos activos o con movimiento, incluidos los *No imprimir* |
@@ -28,17 +28,21 @@ Ruta de descarga: `GET /pozos/<id>/daily-report/<id_reporte>/excel/`. Nombre del
 - Hasta **3 páginas de 50 productos** cada una (filas 11-60, 71-120, 131-180).
 - Columnas: descripción, tamaño/unidad, precio, inicial, usado día y acumulado, recibido día y acumulado, devuelto día y acumulado, final y costo del día. Para los **servicios** se dejan vacíos inicial y final.
 - En el encabezado van el costo del día, el **impuesto** (`costo × tasa_impuesto`) y el costo acumulado.
-- El área de impresión se ajusta a las páginas usadas, pero **la plantilla trae dibujadas las 3 páginas**. Al abrir el archivo en Excel se ven encabezados repetidos y vacíos debajo de los datos (ver abajo).
+- **Solo quedan las páginas usadas** (02-oct-2026): `_quitar_paginas_vacias()` borra las filas, uniones y saltos de página de las páginas 2 y 3 si no hay más de 50 productos. Probado con la plantilla: 1 página al imprimir.
 
-## Por qué aparecen hojas o páginas "repetidas y sin datos"
+## Hojas o páginas "repetidas y sin datos" (resuelto)
 
-Es el bug 3 de la lista del usuario. No viene de otros pozos: el Excel **siempre es de un solo pozo y un solo reporte**. Las causas son:
+Era el bug 3 de la lista del usuario. El Excel **siempre es de un solo pozo y un solo reporte**. Hoy:
 
-1. **Tres hojas de inventario químico con los mismos datos** en distinto orden o filtro (DF, por nombre, completo). Así lo hace ONE-TRAX.
-2. **Páginas 2 y 3 de cada hoja de inventario** (y bloques equivalentes en otras hojas) vienen **pre-dibujadas** en la plantilla. Si hay menos de 50 productos, quedan con su encabezado y sin filas. El área de impresión sí se recorta (`A1:M60`), así que **al imprimir no salen**, pero en pantalla se ven.
-3. **Hojas sin información ese día**: por ejemplo, *Equipos* o *Inventario de Mallas* si no hubo uso. Salen igual, solo con el encabezado.
+1. De las tres hojas de inventario químico queda **una sola**, *Inv Quimico (completo)* (pedido de AOS: "con el inventario químico es suficiente"); las otras dos se eliminan del libro.
+2. Las páginas 2 y 3 sin productos se **borran** (ver arriba).
+3. *Equipos* e *Inventario de Mallas* se quitan si ese día no tienen datos.
 
-Posibles mejoras (no implementadas): borrar las filas de las páginas no usadas, eliminar las hojas vacías o dejar que el usuario elija qué hojas descargar. Ver [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md).
+## Logo y textos (02-oct-2026)
+
+- **Logo de AOS** (`static/operaciones/img/logo_reporte.png`) en la esquina superior izquierda (`A1`, 45 px de alto) de **todas las hojas**. Requiere **Pillow**; si no está instalado, el Excel sale sin logo (`_pillow_disponible()`).
+- `_textos_tanques()` cambia al generar: *Fosas Activas* → **Tanques Activos**, *FOSA* → **TANQUE**, *SUMA DE FOSAS* → **SUMA DE TANQUES**, *Fecha Spud :* → **Fecha Inicial :**. La plantilla `.xlsx` no se modificó.
+- El reporte final (`recap_pozo.generar_recap_excel`) también lleva el logo en cada hoja, con el título corrido a la derecha.
 
 ## Formato de números
 

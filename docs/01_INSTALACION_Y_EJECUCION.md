@@ -15,13 +15,14 @@ asgiref==3.12.1
 Django==6.1.1
 et_xmlfile==2.0.0
 openpyxl==3.1.5
+pillow
 psycopg2-binary==2.9.12
 pypdf==6.18.1
 sqlparse==0.6.0
 tzdata==2026.3
 ```
 
-> ⚠ **El `.venv` incluido en la carpeta NO tiene `openpyxl` ni `pypdf`.** Sin `openpyxl`, Django no arranca: `views_daily_reports.py` lo importa al cargar las rutas. Antes del primer uso, ejecuta `pip install -r requirements.txt` dentro del entorno.
+> Antes del primer uso, ejecuta `pip install -r requirements.txt` dentro del entorno. Sin `openpyxl` Django no arranca (`views_daily_reports.py` lo importa al cargar las rutas). **`pillow`** (agregado el 02-oct-2026) lo usa `openpyxl` para poner el **logo de AOS** en los Excel; sin él los Excel salen sin logo.
 
 ## 1. Preparar el entorno
 
@@ -71,19 +72,18 @@ python manage.py migrate
 python manage.py showmigrations operaciones
 ```
 
-Deben aparecer las 21 migraciones marcadas, de `0001_initial` a `0021_modulos_opcionales`. Las últimas (`0019`, `0020`, `0021`) corresponden a la pestaña 8 y a los módulos opcionales.
+Deben aparecer marcadas de `0001_initial` a **`0027_intervalo_cerrado_moneda_secundaria`** (estado al 02-oct-2026). La cadena completa y qué hace cada una está en [03](03_MODELO_DATOS.md#historial-de-migraciones) y en el [traspaso](00_TRASPASO.md).
 
-> Actualización 27-sep-2026: ahora hay migraciones hasta la **0024** (`0022_inventario_unificado`, `0022_sidetrack`, `0023_recap_pozo`, `0024_merge`). Ver `claude/chapala-traspaso-siguiente-conversacion.md`.
-
-Comprobación verificada el 25-sep-2026 sobre una copia del proyecto en SQLite: `manage.py check` → sin problemas; `migrate` → aplica las 21; `makemigrations --check` → *No changes detected*, es decir, los modelos y las migraciones están sincronizados.
+> El 02-oct-2026 el usuario corrió `migrate` desde cero hasta la 0026 sin errores.
 
 ## 4. Datos iniciales
 
-- **Catálogos por pozo**: no hace falta cargarlos. Al crear un pozo, el sistema siembra automáticamente los 7 tipos de fosa, las 15 categorías de pérdida estándar, las 20 actividades de distribución de tiempo y los tipos de ticket de ejemplo (ver [05](05_CONFIGURACION_POZO.md)).
+- **Catálogos por pozo**: no hace falta cargarlos. Al crear un pozo, el sistema siembra automáticamente los 7 tipos de tanque (fosa), las 15 categorías de pérdida estándar, las 20 actividades de distribución de tiempo y los tipos de ticket de ejemplo (ver [05](05_CONFIGURACION_POZO.md)).
 - **Catálogos maestros globales** (equipos, mallas, componentes de sarta, propiedades, parámetros de benchmark): se cargan desde la pantalla **Catálogos Maestros** o desde `/admin/`.
 - **Productos químicos**: desde la pantalla **Inventario**.
 
-> ⚠ Los scripts `seed_data.py` y `seed_propiedades.py` de la raíz **ya no funcionan**. Importan `mychapala.models` y una app `reportes` que no existen en esta versión, porque el modelo `Producto` vive hoy en `operaciones`. Hay que adaptarlos antes de usarlos (ver [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md)).
+- **Catálogo AOS de productos**: `python seed_data.py` (solo crea los que no existen; no pisa existencias). `seed_propiedades.py` pertenece a la app vieja y **no funciona**.
+- **Pozo de prueba**: `python manage.py seed_pozo_prueba` crea el pozo `PRUEBA-001` (lo usa también el `.exe` la primera vez).
 
 ## 5. Superusuario (para `/admin/`)
 
@@ -101,9 +101,7 @@ Manual:
 python manage.py runserver 127.0.0.1:8000
 ```
 
-Con el acceso directo **`Iniciar Sistema.bat`**: abre el navegador en `http://127.0.0.1:8000/` y levanta el servidor.
-
-> ⚠ `Iniciar Sistema.bat` ejecuta `.\env\Scripts\python.exe`, pero el entorno que viene con el proyecto se llama **`.venv`**. Si en tu equipo no existe la carpeta `env`, corrige la línea a `".\.venv\Scripts\python.exe" manage.py runserver 127.0.0.1:8000`.
+Con el acceso directo **`Iniciar Sistema.bat`** (usa `.venv`): abre el navegador en `http://127.0.0.1:8000/` y levanta el servidor en una ventana de consola. Es el modo de **desarrollo**; a los ingenieros se les entrega el `.exe` (sección 9).
 
 ## 7. Direcciones principales
 
@@ -129,3 +127,28 @@ Con el acceso directo **`Iniciar Sistema.bat`**: abre el navegador en `http://12
 | La pantalla no refleja cambios de JS/CSS | Caché del navegador | `Ctrl + F5`. Las pestañas del reporte diario ya se versionan solas (ver [19](19_GUIA_MANTENIMIENTO.md)) |
 | `relation "operaciones_..." does not exist` | Falta migrar | `python manage.py migrate` |
 | `InconsistentMigrationHistory` / `Conflicting migrations` | Dos ramas de migraciones | Ver la cadena de migraciones en el traspaso; no cambiar dependencias de migraciones ya aplicadas, usar una migración de unión (`merge`) |
+
+## 9. Ejecutable para los ingenieros (`SmartMud.exe`)
+
+Carpeta `empaquetado/`. Se construye con doble clic en **`Construir EXE.bat`**, que:
+
+1. instala en el `.venv` PyInstaller, `pystray` y `pillow`;
+2. verifica el proyecto con Python (base temporal, no toca datos);
+3. construye `dist\SmartMud\SmartMud.exe` con `chapala.spec`;
+4. verifica el ejecutable (el resultado queda en `empaquetado\verificacion_exe.log` y se muestra en la consola);
+5. comprime `dist\SmartMud_Pruebas.zip` con `LEEME_PRUEBAS.txt`.
+
+Cómo funciona el `.exe` (`empaquetado/chapala_app.py`, actualizado el 02-oct-2026):
+
+| Tema | Comportamiento |
+|---|---|
+| Ventana | **Sin consola negra** (`console=False`). El sistema vive en un **ícono de gota** en la bandeja de Windows: *Abrir Smart Mud* / *Salir* |
+| Base de datos | SQLite propia en `datos\chapala_pruebas.sqlite3`, junto al `.exe`. Migra en cada arranque; la primera vez carga productos y `PRUEBA-001` |
+| Segunda vez | Si ya está abierto (`datos\servidor_en_uso.txt` + puerto que responde), solo abre el navegador |
+| Servidor | `django.core.servers.basehttp.run` en un hilo, con `StaticFilesHandler`; puerto libre entre 8000 y 8019 |
+| Errores | Todo lo que antes salía en consola va a `datos\smartmud.log` (se reinicia al pasar 5 MB). Si no arranca, cuadro de mensaje de Windows con el error |
+| Ícono | `empaquetado\smartmud.ico` / `smartmud.png` (la gota del logo Smart Mud) |
+| Verificación | `SmartMud.exe --verificar --log <archivo>` (sale con código 1 si algo falla) |
+| Licencia | Prueba de 7 días con clave de activación (`operaciones/licencia.py`, `scripts/generar_clave_licencia.py`) |
+
+Para cambiar el ícono basta con reemplazar `smartmud.ico` y `smartmud.png` y volver a construir.

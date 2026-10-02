@@ -64,7 +64,10 @@ Pozo ─┬─ configuración (1 por pozo): WellHeaderInfo · CentrifugaUnidadCo
 | 0022_inventario_unificado | (compañero) campos `stock_aplicado` / `lodo_stock_aplicado`: el reporte descuenta `Producto.cantidad` |
 | 0022_sidetrack | `ReporteDiario.kickoff_sidetrack_ft` y tipo `SIDETRACK` en `IntervaloRevestimiento` (depende de 0021) |
 | 0023_recap_pozo | `RecapPozo` (textos del reporte final) |
-| 0024_merge | Une las dos ramas (0022_inventario_unificado + 0023_recap_pozo). **La próxima migración depende de esta** |
+| 0024_merge | Une las dos ramas (0022_inventario_unificado + 0023_recap_pozo) |
+| 0025_add_empaque_to_producto | (compañero) `Producto.empaque` y texto de ayuda de `Producto.unidad` |
+| 0026_textos_smart_mud | Quita "M-I": ecuaciones de sólidos solo `API` (datos viejos pasan a API), etiqueta "Estándar" en categorías de pérdida, "¿Producto propio?" |
+| 0027_intervalo_cerrado_moneda_secundaria | `IntervaloRevestimiento.cerrado`; `Pozo.moneda_secundaria`, `tasa_cambio_secundaria`, `porcentaje_cobro_secundaria`. Cierra los intervalos viejos menos el último de cada pozo. **La próxima migración depende de esta** |
 
 # Detalle por modelo
 
@@ -78,7 +81,8 @@ Tabla: `operaciones_producto` · Migración: `0001_initial` · Orden: `codigo`
 |---|---|---|
 | `codigo` | CharField(50) | Código del Producto; único; Código único identificador del producto (SKU) |
 | `descripcion` | CharField(255) | Descripción |
-| `unidad` | CharField(50) | Unidad / Presentación; Ej: SACOS 55 LBS, TAMBOR 55 GLS, TOTE |
+| `unidad` | CharField(50) | Unidad Física (0025); Ej: LBS, GAL, BBL, KG, L |
+| `empaque` | CharField(50) | (0025) Empaque; Ej: SACOS, TAMBOR, TOTE, LATA, GRANEL |
 | `libraje` | DecimalField(12,2) | Libraje (LBS); por defecto `0.0`; Peso o libraje unitario en libras |
 | `gravedad` | DecimalField(8,4) | Gravedad Específica; por defecto `1.0` |
 | `costo` | DecimalField(14,2) | Costo Unitario ($); por defecto `0.0` |
@@ -101,13 +105,16 @@ Tabla: `operaciones_pozo` · Migración: `0002_pozo_categoriaperdidaitem_propied
 | `pozo_plantilla` | ForeignKey | Pozo usado como plantilla; → **Pozo** (on_delete SET_NULL); opcional (null) |
 | `sistema_unidades` | CharField(20) | Sistema de Unidades; por defecto `'STANDARD_OILFIELD'`; opciones: `STANDARD_OILFIELD`, `STANDARD_1`, `STANDARD_2`, `STANDARD_3`, `SI_METRIC`, `METRIC_1`, `METRIC_2`, `METRIC_3`, `METRIC_4`, `METRIC_5`, `CUSTOM` |
 | `unidades_bloqueadas` | BooleanField | Unidades Bloqueadas; por defecto `False`; Se activa automáticamente al confirmar el paso 4 del wizard. |
-| `moneda_simbolo` | CharField(6) | Símbolo de Moneda; por defecto `'USD'` |
+| `moneda_simbolo` | CharField(6) | Moneda (código: USD, VES, EUR…; lista en `Pozo.MONEDAS_COMUNES`); por defecto `'USD'`; editable en Configuración General |
+| `moneda_secundaria` | CharField(6) | (0027) Segunda moneda de cobro; vacío = no hay |
+| `tasa_cambio_secundaria` | Decimal(18,4) | (0027) Unidades de la segunda moneda por 1 de la del pozo |
+| `porcentaje_cobro_secundaria` | Decimal(5,2) | (0027) % del costo que se cobra en la segunda moneda; por defecto 0 |
 | `moneda_decimales` | PositiveSmallIntegerField | Decimales de Moneda; por defecto `2` |
 | `tasa_impuesto` | DecimalField(5,2) | Tasa de Impuesto (%); por defecto `0` |
-| `ecuacion_solidos_base_agua` | CharField(5) | Ecuación de Sólidos — Base Agua; por defecto `'MI'`; opciones: `MI`, `API` |
-| `ecuacion_solidos_base_aceite` | CharField(5) | Ecuación de Sólidos — Base Aceite/Sintética; por defecto `'MI'`; opciones: `MI`, `API` |
+| `ecuacion_solidos_base_agua` | CharField(5) | Ecuación de Sólidos — Base Agua; por defecto `'API'`; opciones: `API` (0026; antes `MI`) |
+| `ecuacion_solidos_base_aceite` | CharField(5) | Ecuación de Sólidos — Base Aceite/Sintética; por defecto `'API'`; opciones: `API` (0026) |
 | `usar_api_5ta_edicion_hidraulica` | BooleanField | Usar API 5ta Edición para Cálculo Hidráulico; por defecto `False` |
-| `categoria_perdida_tipo` | CharField(20) | Categorías de Pérdida; por defecto `'MI'`; opciones: `MI`, `UK`, `HYDRO`, `STATOIL`, `IFE`, `COMPLETION_FLUIDS`, `CUSTOM` |
+| `categoria_perdida_tipo` | CharField(20) | Categorías de Pérdida; por defecto `'MI'` (se muestra "Estándar"); opciones: `MI`, `UK`, `HYDRO`, `STATOIL`, `IFE`, `COMPLETION_FLUIDS`, `CUSTOM` |
 | `fecha_primera_captura` | DateField | Primera Fecha de Datos; opcional (null); Inmutable una vez confirmada. Puede ser anterior a la fecha de spud. |
 | `tipo_fluido_inicial` | CharField(20) | Tipo de Fluido — Primer Chequeo; opcional (null); opciones: `WATER_BASE`, `WATER_BASE_CACL2`, `OIL_BASE`, `SYNTHETIC_BASE`, `COMPLETION_FLUIDS` |
 | `con_tratamiento_disposicion` | BooleanField | Con Tratamiento y Disposición de Desechos; por defecto `False` |
@@ -230,6 +237,7 @@ Tabla: `operaciones_intervalorevestimiento` · Migración: `0003_wellheaderinfo_
 | `fluid_type_code_2` | CharField(50) | Código de Tipo de Fluido 2 |
 | `observaciones_recomendaciones` | TextField | Observaciones y Recomendaciones |
 | `comentarios_recap` | TextField | Comentarios del Intervalo para Recap; Hasta 10,000 caracteres. |
+| `cerrado` | BooleanField | (0027) Intervalo cerrado (se bajó el revestidor). No se crea otro mientras haya uno abierto. Solo cambia con los botones Cerrar / Reabrir (excluido del formulario) |
 | `created_at` | DateTimeField |  |
 | `updated_at` | DateTimeField |  |
 
@@ -343,7 +351,7 @@ Tabla: `operaciones_productoactivopozo` · Migración: `0005_equipo_mallazaranda
 | `precio` | DecimalField(14,2) | Precio; opcional (null) |
 | `gravedad_especifica` | DecimalField(8,4) | Gravedad Específica; opcional (null) |
 | `calcular_concentracion` | BooleanField | ¿Calcular Concentración?; por defecto `True` |
-| `es_producto_mi` | BooleanField | ¿Producto M-I?; por defecto `True` |
+| `es_producto_mi` | BooleanField | ¿Producto propio? (columna "¿Propio?"; nombre interno heredado); por defecto `True` |
 | `grupo_producto` | PositiveSmallIntegerField | Grupo de Producto; por defecto `1` |
 | `codigo_costo_diario` | PositiveSmallIntegerField | Código de Costo Diario; por defecto `1` |
 | `calcular_wmgt_conc` | BooleanField | ¿Calcular Conc. WMgt?; por defecto `True` |
@@ -645,7 +653,7 @@ Tabla: `operaciones_reportediariomudconfig` · Migración: `0011_reportediariomu
 | Campo | Tipo | Detalles |
 |---|---|---|
 | `reporte` | OneToOneField | → **ReporteDiario** (on_delete CASCADE); único |
-| `solids_equation` | CharField(20) | Current Solids Analysis Equations; por defecto `'M-I'`; opciones: `M-I`, `API` |
+| `solids_equation` | CharField(20) | Current Solids Analysis Equations; por defecto `'API'`; opciones: `API` (0026; antes `M-I`). No cambia ningún cálculo |
 | `is_weighted` | BooleanField | Weighted Mud; por defecto `True` |
 | `sg_base_oil` | FloatField | Base Oil S.G.; por defecto `0.84` |
 | `sg_weight_material` | FloatField | Weight Material S.G.; por defecto `4.2` |
@@ -1158,3 +1166,8 @@ Tabla: `operaciones_recappozo` · Migración: `0023_recap_pozo`
 - `RecapPozo` (0023_recap_pozo).
 - Del compañero: campos `stock_aplicado` / `lodo_stock_aplicado` (0022_inventario_unificado): el reporte diario descuenta y devuelve `Producto.cantidad`. Los datos viejos se marcaron como "ya aplicados" (la cantidad del Inventario se toma como correcta).
 - `0024_merge` une ambas ramas.
+
+## Cambios del 02-oct-2026
+
+- Migraciones **0025** (compañero), **0026** y **0027**: ver el historial arriba y [22](22_CAMBIOS_02OCT_SMART_MUD.md).
+- `Pozo.MONEDAS_COMUNES`: lista de 18 monedas para los selectores (no es un campo; `moneda_simbolo` acepta otro código).

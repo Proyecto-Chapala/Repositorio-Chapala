@@ -1,5 +1,7 @@
 # 02 — Arquitectura
 
+> Nombre del sistema: **Smart Mud** (desde el 02-oct-2026). El proyecto Django sigue llamándose `chapala` y la app `operaciones`; no se renombraron para no romper migraciones, rutas ni la base de datos.
+
 ## Visión general
 
 CHAPALA es un proyecto Django con **una sola aplicación de negocio: `operaciones`**. El frontend no usa frameworks. Django sirve la página HTML con los datos iniciales y, desde ahí, el JavaScript de cada pantalla llama a una **API JSON** del mismo servidor para leer y guardar.
@@ -27,7 +29,9 @@ Proyecto CHAPALA/
 ├── manage.py
 ├── requirements.txt
 ├── AGENT.md                      # orden de lectura para retomar el proyecto
-├── docs/                         # esta documentación
+├── AGENT.md                      # leer primero (asistentes y desarrolladores)
+├── docs/                         # esta documentación (índice en docs/README.md)
+├── empaquetado/                  # SmartMud.exe: chapala_app.py, chapala.spec, Construir EXE.bat, íconos
 ├── .env                          # credenciales de BD (NO versionar)
 ├── Iniciar Sistema.bat           # acceso directo de arranque
 ├── chapala/                      # proyecto Django (settings, urls raíz, wsgi/asgi)
@@ -37,6 +41,7 @@ Proyecto CHAPALA/
 │   ├── models_control_solidos.py # pestaña 6
 │   ├── models_inventario.py      # pestaña 8 (volumetría, inventario, pérdidas)
 │   ├── models_opcionales.py      # IFE, muestras, eventos no programados
+│   ├── licencia.py, middleware_licencia.py, views_licencia.py  # licencia de prueba del .exe
 │   ├── models_recap.py           # RecapPozo (textos del reporte final)
 │   ├── views.py                  # inventario de almacén, wizard, setups del pozo, catálogos
 │   ├── views_daily_reports.py    # hub, reporte diario, pestañas 1-5 y 7, Excel, reporte de propiedades
@@ -55,7 +60,7 @@ Proyecto CHAPALA/
 │   ├── plantillas/               # plantilla .xlsx de ONE-TRAX + script que la creó
 │   ├── admin.py
 │   ├── urls.py
-│   ├── migrations/               # 0001 … 0024
+│   ├── migrations/               # 0001 … 0027
 │   ├── templates/operaciones/
 │   │   ├── base.html, index.html, pozos_list.html, catalogos_maestros.html
 │   │   ├── componentes/sidebar.html
@@ -64,8 +69,10 @@ Proyecto CHAPALA/
 │   │   └── avances_19_sep/       # daily_reports_hub.html, reporte_diario_detalle.html, reporte_propiedades.html
 │   └── static/operaciones/
 │       ├── css/                  # un CSS por pantalla/pestaña
+│       ├── img/                  # logo_reporte.png (AOS, reportes), smartmud_icono.png, smartmud_logo.png, favicon.png
 │       └── js/                   # un JS por pantalla/pestaña
-├── seed_data.py, seed_propiedades.py   # obsoletos (ver 16)
+├── seed_data.py                  # carga el catálogo AOS de productos (seed_propiedades.py es obsoleto)
+├── scripts/                      # generar_clave_licencia.py, seed_pozo_prueba.py
 └── proyecto chapala - claude/          # copias de trabajo antiguas (no se usan)
 ```
 
@@ -173,7 +180,7 @@ En el paso 1 del wizard se puede elegir un pozo ACTIVO como plantilla. Se copian
 | `ALLOWED_HOSTS` | `['*']` | ⚠ solo desarrollo |
 | `SECRET_KEY` | escrita en el código | ⚠ mover al `.env` antes de producción |
 
-Los riesgos de seguridad se detallan en [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md#c-seguridad).
+Los riesgos de seguridad se detallan en [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md#d-seguridad).
 
 ## Navegación del usuario
 

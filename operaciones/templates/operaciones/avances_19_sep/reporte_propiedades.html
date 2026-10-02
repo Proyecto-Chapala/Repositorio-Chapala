@@ -17,7 +17,8 @@
 
 <main class="rp-hoja">
   <header class="rp-encabezado">
-    <div>
+    <img class="logo-empresa" src="{% static 'operaciones/img/logo_reporte.png' %}" alt="All Oil Services, C.A.">
+    <div class="rp-encabezado-texto">
       <div class="rp-titulo">Reporte de Propiedades del Lodo</div>
       <div class="rp-subtitulo">{% if base_agua %}Base agua{% else %}Base aceite / sintético{% endif %}{% if reporte.tipo_fluido_display %} · {{ reporte.tipo_fluido_display }}{% endif %}</div>
     </div>

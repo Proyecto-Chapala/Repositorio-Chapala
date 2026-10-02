@@ -1,5 +1,7 @@
 # 06 — Reporte diario: hub y pestañas 1 a 5
 
+> Pestaña 4: las etiquetas del bloque *Contexto del pozo* (ej. **Orden de Impresión**) se muestran completas desde el 02-oct-2026.
+
 Archivos principales: `views_daily_reports.py`, `models_daily_reports.py`, `templates/operaciones/avances_19_sep/daily_reports_hub.html` y `reporte_diario_detalle.html`. Las pestañas 1 a 5 tienen su JS en línea dentro de la plantilla del reporte.
 
 ## 1. Hub "Fluidos de Perforación y Equipos"
@@ -8,15 +10,17 @@ Ruta: `/pozos/<id>/drilling-fluids-equipment/` (alias `/daily-reports/`).
 
 | Zona | Función |
 |---|---|
-| **Historial de reportes diarios** | Tabla cronológica con fecha, profundidad, actividad y tipo de lodo. Botones **Abrir**, **Editar** y **Eliminar** (con confirmación y *modo de eliminación*) |
+| **Historial de reportes diarios** | Tabla cronológica con fecha, profundidad, actividad y tipo de lodo. Solo botón **Abrir** |
 | **+ Nuevo Reporte** | Abre el modal de creación |
-| **Etiquetas de propiedades extra** | Define las propiedades extra del lodo del pozo por tipo (WBM y OBM/SBF): etiqueta y unidad. Se pueden **cargar** de una plantilla predefinida (*Statoil*, *Personalizado*) o **guardar como plantilla**. Las etiquetas 9 a 60 solo salen en el Excel |
+| **Etiquetas de propiedades extra** | Propiedades extra del lodo del pozo por tipo (WBM y OBM/SBF): etiqueta y unidad (1 a 8). **Bloqueadas** (solo lectura); el botón **Modificar etiquetas** las habilita y al guardar se vuelven a bloquear |
+
+> **Página bloqueada (02-oct-2026, pedido de AOS):** el hub solo sirve para **crear** el reporte del día y **abrir** los anteriores. Se quitaron *Editar*, *Eliminar*, la X de cada fila, el *modo de eliminación*, el selector "Reporte Diario Especial", la barra de plantillas predefinidas y el botón de etiquetas 9–60 (no hacían nada).
 
 ### Crear un reporte (`api/pozos/<id>/reportes-diarios/crear/`)
 
 | Campo | Regla |
 |---|---|
-| Fecha | Obligatoria. Atajos **Hoy** y **Fecha Spud**. **No puede haber dos reportes en la misma fecha** |
+| Fecha | Obligatoria. Atajos **Hoy** y **Fecha Inicio**. **No puede haber dos reportes en la misma fecha** |
 | Tipo de fluido | Base Agua (WBM), Base Agua CaCl2 (`WBM_CACL2`), Base Aceite (OBM), Base Sintética (SBM) |
 | ¿Copiar datos del día anterior? | **Sí (recomendado)**: copia profundidades, actividad, litología, representantes y teléfonos del reporte con fecha anterior más cercana. **No**: arranca en blanco, con los representantes tomados de la Información General del Pozo |
 
@@ -28,7 +32,7 @@ No se guarda: es la cantidad de reportes del pozo con fecha menor o igual a la d
 
 ### Eliminar un reporte
 
-`DELETE api/pozos/<id>/reportes-diarios/<id_reporte>/eliminar/` borra el reporte **y todo su contenido**: tickets, transacciones de mallas y volumetría, usos de equipos, etc. ⚠ No se vuelve a validar la línea de tiempo: si el reporte borrado tenía un ticket de entrada del que dependían días posteriores, esos días quedan con inventario inconsistente, y el error aparecerá la próxima vez que se escriba en ellos.
+Desde el 02-oct-2026 **no hay botón en pantalla** (hub bloqueado). La API sigue existiendo y devuelve al inventario general lo consumido: `DELETE api/pozos/<id>/reportes-diarios/<id_reporte>/eliminar/` borra el reporte **y todo su contenido**: tickets, transacciones de mallas y volumetría, usos de equipos, etc. ⚠ No se vuelve a validar la línea de tiempo: si el reporte borrado tenía un ticket de entrada del que dependían días posteriores, esos días quedan con inventario inconsistente, y el error aparecerá la próxima vez que se escriba en ellos.
 
 ## 2. Estructura de la pantalla del reporte
 
@@ -57,7 +61,7 @@ Desde aquí se abren dos ventanas que se guardan **por pozo**, no por día:
 - **Registro direccional** (*Well Survey*): estaciones con MD, inclinación y azimut. Al guardar, el servidor calcula **TVD, DLS y sección vertical** por el método de **curvatura mínima** (ver [11](11_CALCULOS_INGENIERIA.md#registro-direccional-curvatura-mínima)). La hidráulica usa esta TVD.
 
 ### Personal de guardia
-Representantes del operador, del contratista y de M-I SWACO (1 y 2), teléfonos del taladro y del almacén, otros teléfonos y fax.
+Representantes del operador, del contratista e **ingenieros de fluido 1 y 2** (campos internos `mi_representante_1/2`), teléfonos del taladro y del almacén, otros teléfonos y fax.
 
 ### Resumen de costos diarios y acumulados
 Tarjeta **"Balance económico de fluidos y equipos"** con las columnas de ONE-TRAX: Químicos/Personal DF, Ingeniero IFE/Control de sólidos, Total perforación, Equipos/Mallas, Otros y Total, en valores del día y acumulados. El botón de detalle abre el modal **Cost Overview** (`cost-overview/`) con el desglose por ítem. Todos los costos salen de `views_inventario.resumen_costos()`. Ver [13](13_COSTOS.md).
@@ -86,7 +90,7 @@ Descripción, número, serie, fabricante, código IADC, tamaño de la barrena, *
 ## 5. Pestaña 3 — Propiedades del lodo
 
 ### Configuración (una por reporte)
-Ecuación de sólidos (`M-I` o `API`), densificado/no densificado, GE del aceite base, del material densificante y de los sólidos perforados, y tipo de sal en OBM (CaCl2 o NaCl).
+Ecuación de sólidos (solo `API` desde el 02-oct; no cambia el cálculo), densificado/no densificado, GE del aceite base, del material densificante y de los sólidos perforados, y tipo de sal en OBM (CaCl2 o NaCl).
 
 ### Chequeos de lodo (hasta 4 por día)
 Matriz en **orden cronológico inverso**: **#1 = Principal** es el último chequeo del día y es el que usan la hidráulica, el Excel y el benchmark. Grupos de campos:
@@ -123,4 +127,4 @@ Equivale a *Daily Casing / Volume* de ONE-TRAX. Por sección: longitud, diámetr
 | **Observaciones y tratamiento** (*Remarks and Treatment*) | Tratamientos aplicados |
 | **Observaciones del día** (*Remarks*) | Comentarios generales |
 
-Como referencia se muestra el resumen del reporte anterior. Desde esta pestaña (y desde la 7) se abre la ventana de **Eventos no programados** (ver [12](12_MODULOS_OPCIONALES.md)).
+Como referencia se muestra el resumen del reporte anterior. La ventana de **Eventos no programados** quedó **oculta** el 02-oct-2026 (pedido de AOS); ver [12](12_MODULOS_OPCIONALES.md).

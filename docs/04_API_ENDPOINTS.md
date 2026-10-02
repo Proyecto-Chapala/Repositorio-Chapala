@@ -9,7 +9,7 @@
 - **Parámetros de ruta**: `<pk>` = id del **pozo** (salvo en `api/productos/<pk>`, `api/equipos/<pk>` y demás catálogos, donde es el id del registro); `<reporte_pk>` = id del **reporte diario**.
 - **Cuerpo de las escrituras**: JSON en el body (`Content-Type: application/json`).
 - **Respuesta**: hay **dos convenciones**. Las APIs de `views.py` (inventario de almacén, wizard, setups del pozo y catálogos) responden `{"success": true, …}` o `{"success": false, "error": "…", "errores_filas": […]}`. Las del reporte diario (`views_daily_reports`, `views_control_solidos`, `views_inventario`, `views_hidraulica`, `views_opcionales`) responden `{"ok": true, …}` o `{"ok": false, "error": "…"}`. Los errores usan HTTP 400 o 404. Las APIs de las pestañas 6 y 8 devuelven, después de cada escritura, **el estado completo recalculado** de la pestaña, y la pantalla se redibuja con él.
-- **CSRF**: las vistas de escritura están marcadas `@csrf_exempt` (⚠ aparecen en las tablas como *CSRF-exento*). El frontend igual envía `X-CSRFToken` con `getCookie('csrftoken')`. Ver [16 § Seguridad](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md#c-seguridad).
+- **CSRF**: las vistas de escritura están marcadas `@csrf_exempt` (⚠ aparecen en las tablas como *CSRF-exento*). El frontend igual envía `X-CSRFToken` con `getCookie('csrftoken')`. Ver [16 § Seguridad](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md#d-seguridad).
 - **Autenticación**: ninguna vista exige inicio de sesión.
 - **Métodos**: cuando una fila dice `PUT / POST` o `DELETE / POST`, el frontend usa `POST`. La excepción es `api_reporte_diario_eliminar`, que **solo** acepta `DELETE`.
 
@@ -65,6 +65,7 @@ Descargar el Excel del reporte: `GET /pozos/3/daily-report/41/excel/`
 | GET (página HTML) | `/pozos/<int:pk>/continuar/` | `views.pozo_wizard_view` | Renderiza el shell del wizard (SPA) |
 | GET | `/api/pozos/plantillas/` | `views.api_pozos_plantillas` | Lista de pozos ACTIVOS disponibles para usar como plantilla (paso 1). |
 | GET | `/api/pozos/<int:pk>/` | `views.api_pozo_detail` |  |
+| POST ⚠CSRF-exento | `/api/pozos/<int:pk>/eliminar/` | `views.api_pozo_eliminar` | (02-oct) Cuerpo `{"confirmar": "<nombre exacto>"}`. Devuelve al inventario lo consumido por sus reportes y borra el pozo |
 | POST ⚠CSRF-exento | `/api/pozos/paso1/` | `views.api_pozo_paso1` | Crea el borrador (pk=None) o actualiza uno existente (pk dado) |
 | POST ⚠CSRF-exento | `/api/pozos/<int:pk>/paso1/` | `views.api_pozo_paso1` | Crea el borrador (pk=None) o actualiza uno existente (pk dado) |
 | POST ⚠CSRF-exento | `/api/pozos/<int:pk>/paso2/` | `views.api_pozo_paso2` | Guarda sistema de unidades |
@@ -97,6 +98,8 @@ Descargar el Excel del reporte: `GET /pozos/3/daily-report/41/excel/`
 | POST ⚠CSRF-exento | `/api/pozos/<int:pk>/casing-intervals/crear/` | `views.api_intervalo_crear` |  |
 | POST / PUT ⚠CSRF-exento | `/api/pozos/<int:pk>/casing-intervals/<int:intervalo_pk>/` | `views.api_intervalo_actualizar` |  |
 | POST / DELETE ⚠CSRF-exento | `/api/pozos/<int:pk>/casing-intervals/<int:intervalo_pk>/eliminar/` | `views.api_intervalo_eliminar` |  |
+| POST ⚠CSRF-exento | `/api/pozos/<int:pk>/casing-intervals/<int:intervalo_pk>/cerrar/` | `views.api_intervalo_cerrar` | (02-oct) Exige tipo y profundidad guardados |
+| POST ⚠CSRF-exento | `/api/pozos/<int:pk>/casing-intervals/<int:intervalo_pk>/reabrir/` | `views.api_intervalo_reabrir` | (02-oct) Solo el último y si no hay otro abierto |
 
 ## Fosas y tipos de fosa
 
@@ -121,7 +124,7 @@ Descargar el Excel del reporte: `GET /pozos/3/daily-report/41/excel/`
 |---|---|---|---|
 | GET (página HTML) | `/pozos/<int:pk>/general-setup/` | `views.general_setup_view` |  |
 | GET | `/api/pozos/<int:pk>/general-setup/` | `views.api_general_setup_detail` |  |
-| POST ⚠CSRF-exento | `/api/pozos/<int:pk>/general-setup/guardar/` | `views.api_general_setup_guardar` |  |
+| POST ⚠CSRF-exento | `/api/pozos/<int:pk>/general-setup/guardar/` | `views.api_general_setup_guardar` | (02-oct) Acepta además `moneda_simbolo`, `moneda_secundaria`, `tasa_cambio_secundaria`, `porcentaje_cobro_secundaria`. El GET devuelve `monedas` |
 | GET | `/api/pozos/<int:pk>/almacenes/` | `views.api_almacenes_list` |  |
 | POST ⚠CSRF-exento | `/api/pozos/<int:pk>/almacenes/guardar/` | `views.api_almacenes_guardar` | Reemplaza el listado completo de códigos de almacén del pozo. |
 | GET | `/api/pozos/<int:pk>/tipos-distribucion/` | `views.api_tipos_distribucion_list` |  |
@@ -285,3 +288,9 @@ Descargar el Excel del reporte: `GET /pozos/3/daily-report/41/excel/`
 | Método | Ruta | Vista | Descripción |
 |---|---|---|---|
 | GET (página HTML) | `/admin/` | `sites.index` | Display the main admin index page, which lists all of the installed apps that have been registered in this site. |
+
+## Cambios del 02-oct-2026
+
+- `api_intervalo_crear` responde **400** si hay un intervalo abierto: *"El intervalo N sigue abierto. Ciérralo (cuando se baje el revestidor) antes de crear el siguiente."*
+- `api_cost_overview_detail` devuelve además `cobro` (o `null`): `{moneda_principal, moneda_secundaria, tasa, porcentaje_secundaria, dia: {...}, acumulado: {...}}`, con `principal`, `secundaria`, `secundaria_equivalente` y `total_en_secundaria` (función `cobro_dos_monedas` en `views_daily_reports.py`).
+- La API para borrar un reporte diario sigue existiendo, pero el hub ya no la usa (página bloqueada).

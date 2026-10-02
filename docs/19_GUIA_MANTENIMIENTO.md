@@ -11,6 +11,8 @@
 7. **Los archivos usan fin de línea CRLF (Windows).** Respetarlo al editar para no generar diferencias falsas en git.
 8. **Antes de editar un archivo, releerlo del disco**: pudo cambiar desde la última vez.
 9. Rama de git de trabajo: `Refactorizacion`.
+10. **No mostrar "M-I", "M-I SWACO" ni "ONE-TRAX" en pantalla ni en los reportes** (pedido de AOS, 02-oct-2026). En pantalla se dice **tanque** (no fosa) y **lodo reciclado** (no lodo entero). Los nombres internos del código pueden quedar.
+11. **Documentar cada cambio**: actualizar [00_TRASPASO](00_TRASPASO.md), [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y el documento del tema. Las notas o audios del cliente van en `docs/fuentes/`; lo que queda viejo, en `docs/_archivo/`. No crear carpetas de documentación nuevas fuera de `docs/`.
 
 ## Agregar una pestaña o sub-vista al reporte diario
 
@@ -92,7 +94,7 @@ O, independiente del motor: `python manage.py dumpdata operaciones --indent 2 > 
 ## Pasar a producción (lista mínima)
 
 1. `SECRET_KEY`, `DEBUG=False` y `ALLOWED_HOSTS` desde el `.env`.
-2. Autenticación en todas las vistas y quitar `@csrf_exempt` (ver [16 § C](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md#c-seguridad)).
+2. Autenticación en todas las vistas y quitar `@csrf_exempt` (ver [16 § C](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md#d-seguridad)).
 3. `python manage.py collectstatic` y servir `staticfiles/` con el servidor web.
 4. Servidor WSGI (por ejemplo `waitress` en Windows) en lugar de `runserver`.
 5. Respaldos automáticos de PostgreSQL.

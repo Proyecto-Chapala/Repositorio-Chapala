@@ -791,7 +791,26 @@ def _hoja_inventario(ws, d, productos):
                 v = _f(v)
                 if v:
                     ws[f'{col}{fila}'].value = round(v, 2)
+    _quitar_paginas_vacias(ws, paginas)
     ws.print_area = f'A1:M{paginas * 60}'
+
+
+def _quitar_paginas_vacias(ws, paginas):
+    """La plantilla trae 3 páginas de inventario dibujadas; se borran las que no se usan
+    (pedido de AOS: que no salgan páginas vacías al abrir o imprimir)."""
+    desde = paginas * 60 + 1
+    hasta = ws.max_row
+    if desde > hasta:
+        return
+    for rango in list(ws.merged_cells.ranges):
+        if rango.max_row >= desde:
+            ws.unmerge_cells(str(rango))
+    ws.delete_rows(desde, hasta - desde + 1)
+    for fila in list(ws.row_dimensions):
+        if fila >= desde:
+            del ws.row_dimensions[fila]
+    saltos = [b for b in ws.row_breaks.brk if b.id < desde - 1]
+    ws.row_breaks.brk = saltos
 
 
 def _listas_inventario(d):
@@ -866,14 +885,26 @@ def _hoja_mallas(ws, d):
 
 # ---------------------------------------------------------------- libro completo
 
+def _pillow_disponible():
+    """openpyxl necesita Pillow para insertar imágenes; sin Pillow el Excel sale sin logo."""
+    try:
+        import PIL  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
 def _textos_tanques(wb):
-    """Smart Mud dice "tanque" donde la plantilla ONE-TRAX dice "fosa"."""
-    cambios = {'Fosas Activas': 'Tanques Activos', 'FOSA': 'TANQUE', 'SUMA DE FOSAS': 'SUMA DE TANQUES'}
+    """Textos de Smart Mud sobre la plantilla ONE-TRAX: "tanque" en vez de "fosa", "Fecha Inicial" en vez de "Fecha Spud"."""
+    cambios = {'Fosas Activas': 'Tanques Activos', 'FOSA': 'TANQUE', 'SUMA DE FOSAS': 'SUMA DE TANQUES',
+               'Fecha Spud :': 'Fecha Inicial :'}
     for ws in wb.worksheets:
         for fila in ws.iter_rows(min_row=1, max_row=min(ws.max_row, 20)):
             for celda in fila:
                 if isinstance(celda.value, str) and celda.value.strip() in cambios:
                     celda.value = cambios[celda.value.strip()]
+                elif isinstance(celda.value, str) and celda.value in cambios:
+                    celda.value = cambios[celda.value]
 
 
 def generar_reporte_excel(pozo, reporte):
@@ -906,11 +937,11 @@ def generar_reporte_excel(pozo, reporte):
     for hoja in vacias:
         wb.remove(wb[hoja])
 
-    if os.path.exists(LOGO):
+    if os.path.exists(LOGO) and _pillow_disponible():
         from openpyxl.drawing.image import Image
         for ws in wb.worksheets:
             img = Image(LOGO)
-            escala = 40.0 / img.height if img.height else 1
+            escala = 45.0 / img.height if img.height else 1  # logo AOS, esquina superior izquierda
             img.height, img.width = img.height * escala, img.width * escala
             ws.add_image(img, 'A1')
 

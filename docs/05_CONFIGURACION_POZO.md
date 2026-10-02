@@ -24,7 +24,7 @@ SPA con 4 pasos (`pozos/wizard.html`, `_paso1..4`, `pozos.js`). Cada paso hace `
 | Campo | Regla |
 |---|---|
 | Nombre del pozo | Obligatorio y **único** |
-| Pozo plantilla (opcional) | Solo pozos **ACTIVOS**. Al elegirlo se copian su configuración (unidades, moneda, impuestos, ecuaciones de sólidos), sus unidades personalizadas, sus categorías de pérdida y sus fosas y tipos de fosa |
+| Pozo plantilla (opcional) | Solo pozos **ACTIVOS**. Al elegirlo se copian su configuración (unidades, moneda, impuestos, ecuaciones de sólidos), sus unidades personalizadas, sus categorías de pérdida, sus tanques y tipos de tanque y sus productos, equipos y mallas activos con precios |
 
 Al crear el borrador también se siembra el catálogo estándar de **distribución de tiempo** (20 actividades).
 
@@ -39,17 +39,17 @@ Con *Personalizado* se elige la unidad de 12 propiedades: profundidad, hoyo/tube
 
 | Campo | Regla / valores |
 |---|---|
-| Símbolo de moneda | Por defecto `USD` |
+| Moneda | Selector de 18 monedas comunes (USD, VES, EUR, COP, MXN, BRL…); por defecto `USD` |
 | Decimales de moneda | 0 a 4 |
 | Tasa de impuesto (%) | 0 a 100 |
-| Ecuación de sólidos base agua / base aceite | `M-I` o `API` |
-| Tipo de categorías de pérdida | M-I, UK, Hydro, Statoil, IFE, Completion Fluids o **Personalizado** (en ese caso se editan las filas código/descripción/tipo SUPERFICIE o SUBSUELO) |
+| Ecuación de sólidos base agua / base aceite | Solo `API` (desde el 02-oct-2026) |
+| Tipo de categorías de pérdida | Estándar (valor interno `MI`), UK, Hydro, Statoil, IFE, Completion Fluids o **Personalizado** (en ese caso se editan las filas código/descripción/tipo SUPERFICIE o SUBSUELO) |
 
 ### Paso 4 — Resumen y confirmación (`confirmar/`)
 
 Muestra el resumen. Al confirmar se ejecuta `Pozo.activar()`: **bloquea las unidades** (`unidades_bloqueadas=True`) y pasa el pozo a **ACTIVO**.
 
-## 3. Spud Date (`/pozos/<id>/spud-date/`)
+## 3. Fecha inicial (antes "Spud Date") (`/pozos/<id>/spud-date/`)
 
 Aparece **una sola vez**, la primera vez que se abre un pozo recién activado.
 
@@ -69,20 +69,25 @@ Es el equivalente al *Project Main Screen* de ONE-TRAX. Muestra tarjetas con su 
 | Tarjeta | URL | Qué configura |
 |---|---|---|
 | 📋 Información General del Pozo | `well-header/` | Datos del pozo y códigos de mercadeo |
+| 🧾 Configuración General | `general-setup/` | Moneda (y segunda moneda de cobro), impuesto, hidráulica, ecuaciones, almacenes y actividades de tiempo |
 | 🛢️ Intervalos de Revestimiento (Costo) | `casing-intervals/` | Revestidores e intervalos de costo |
 | 📉 Configuración de Pérdidas | `loss-setup/` | Categorías de pérdida de fluido |
 | 🧰 Productos / Equipos / Mallas Activos | `active-items/` | Qué productos, equipos y mallas se usan en el pozo, con sus precios |
 | 📊 Configuración de Benchmark | `benchmark-setup/` | Parámetros a vigilar y sus objetivos |
-| 🪣 Información de Fosas | `pits/` | Fosas/tanques y tipos de fosa |
+| 🪣 Información de Tanques | `pits/` | Tanques y tipos de tanque |
 | ⚙️ Config. Propiedades de Equipo | `equipment-properties-setup/` | Propiedades a registrar por tipo de equipo |
-| 🧾 Configuración General | `general-setup/` | Impuesto, hidráulica, ecuaciones, almacenes y actividades de tiempo |
-| 💧 **Fluidos de Perforación y Equipos** | `drilling-fluids-equipment/` | **Entrada al reporte diario** |
+| 💧 **Fluidos de Perforación y Equipos** | `drilling-fluids-equipment/` | **Entrada al reporte diario** (sección "Módulos Smart Mud") |
+| 📑 Reporte Final del Pozo | `reporte-final/` | Recap en Excel o PDF |
 
-"Próximamente" (sin construir): Registro Direccional (como tarjeta), Eventos No Programados (como tarjeta), Resumen de Costos, Módulo RDF, Fluidos de Completación y Tratamiento y Disposición de Desechos.
+**Orden (02-oct-2026):** Configuración General va justo después de Información General, a pedido de AOS (primero los datos del pozo, luego unidades y moneda).
+
+**Eliminar pozo (02-oct-2026):** botón rojo en el encabezado. Abre una ventana que exige escribir el nombre exacto del pozo; llama a `api_pozo_eliminar`, que dentro de una transacción devuelve al inventario general lo consumido por cada reporte (`devolver_stock_reporte`) y borra el pozo. JS: `static/operaciones/js/pozo_main.js`.
+
+Las tarjetas "Próximamente" ya no se muestran.
 
 ### 4.1 Información General del Pozo (Well Header) — 2 pestañas
 
-**Pestaña 1: Información del pozo.** Operador, campo/área, descripción, ubicación, almacén, contratista, taladro, ingenieros (proyecto, M-I 1 y 2), fechas (spud, TD, fin), profundidad total, TVD, desplazamiento horizontal, temperaturas (superficie, gradiente °F/100 ft, máxima), días, costo total y comentarios.
+**Pestaña 1: Información del pozo.** Operador, campo/área, descripción, ubicación, almacén, contratista, taladro, **coordinador de fluido** e **ingenieros de fluido 1 y 2** (campos internos `project_engineer`, `ingeniero_miswaco_1/2`), fechas (inicial, TD, fin), profundidad total, TVD, desplazamiento horizontal, temperaturas (superficie, gradiente °F/100 ft, máxima), días, costo total y comentarios.
 
 - **Offshore**: si se marca, **exige** Air Gap, Water Depth y Sea Floor Temp.
 - **Riser**: solo para offshore. Exige el **ID del riser**. Si no se da la longitud, se asume **Air Gap + Water Depth**, y si ambos son 0, lo pide.
@@ -92,12 +97,14 @@ Es el equivalente al *Project Main Screen* de ONE-TRAX. Muestra tarjetas con su 
 
 ### 4.2 Intervalos de Revestimiento (Costo)
 
-Una fila por intervalo. Campos: número, tipo (Conductor, Superficie, Intermedio, Producción, Liner, Casing, Hoyo abierto), OD/ID del revestidor, diámetro de hoyo, profundidad MD y TVD, tope del liner, densidad máxima, BHT máx., ángulo máx., gradiente de fractura, días (reales y planeados), longitud planeada, costos (real y planeado), tipos de fluido, observaciones y comentarios del recap (máx. 10.000 caracteres).
+Una fila por intervalo. Campos: número, **estado** (abierto/cerrado), tipo (Conductor, Superficie, Intermedio, Producción, Liner, Casing, Hoyo abierto, Side Track), OD/ID del revestidor, diámetro de hoyo, profundidad MD y TVD, tope del liner, densidad máxima, BHT máx., ángulo máx., gradiente de fractura, días (reales y planeados), longitud planeada, costos (real y planeado), tipos de fluido, observaciones y comentarios del recap (máx. 10.000 caracteres).
 
 Se usan para:
 - **Pestaña 4**: el perfil de revestidores define el diámetro que confina el fluido a cada profundidad.
 - **Asignar el intervalo de costo** a cada reporte y comparar planeado contra real.
 - **Benchmark**: los objetivos pueden ser por intervalo.
+
+**Abierto / cerrado (02-oct-2026).** Un intervalo se **cierra** cuando se baja el revestidor (botón *Cerrar intervalo*; exige tipo y profundidad guardados). **No se puede crear el siguiente mientras haya uno abierto**: el botón *+ Nuevo* se desactiva con un aviso y el servidor también lo rechaza. *Reabrir intervalo* solo funciona con el último. El campo `cerrado` no lo toca el formulario de edición. Pedido de AOS para no abrir por error el intervalo 2 mientras se perfora el 1.
 
 ### 4.3 Configuración de Pérdidas
 
@@ -106,11 +113,11 @@ Los códigos no pueden repetirse. En la pestaña 8, ⚙ *Pérdidas del reporte* 
 
 ### 4.4 Productos / Equipos / Mallas Activos — 3 pestañas
 
-Cada lista toma sus elementos de un **catálogo maestro global** y les agrega los datos propios del pozo:
+Cada lista toma sus elementos de un **catálogo maestro global** y les agrega los datos propios del pozo. **Doble clic** en una fila del catálogo la pasa a la lista activa (productos y mallas no se duplican; equipos sí, porque puede haber varias unidades):
 
 | Lista | Datos del pozo |
 |---|---|
-| **Productos activos** | Abreviatura, tamaño de la unidad (`unit_size`), **unidad**, empaque, **precio**, gravedad específica, ¿calcular concentración?, ¿producto M-I?, grupo, **código de costo diario (1-4)**, códigos WMGT/CF |
+| **Productos activos** | Abreviatura, tamaño de la unidad (`unit_size`), **unidad**, empaque, **precio**, gravedad específica, ¿calcular concentración?, ¿producto propio?, grupo, **código de costo diario (1-4)**, códigos WMGT/CF |
 | **Equipos activos** | **N° de serie** (obligatorio), descripción, **tarifa de renta** y **tarifa standby** |
 | **Mallas activas** | **Precio** y **% de descuento** (el precio neto se usa al instalar mallas nuevas) |
 
@@ -126,10 +133,12 @@ Cada lista toma sus elementos de un **catálogo maestro global** y les agrega lo
 
 La evaluación contra los chequeos de lodo se ve en la pestaña 8 → *Evaluación de benchmark* (ver [12](12_MODULOS_OPCIONALES.md)).
 
-### 4.6 Información de Fosas — 2 bloques
+### 4.6 Información de Tanques — 2 bloques
 
-- **Fosas y tanques**: número, descripción y capacidad (bbl). El nombre es descriptivo: el **uso del día** (activa, reserva…) se elige en la volumetría de la pestaña 8.
-- **Tipos de fosa**: se siembran 7 estándar: 0 Vacía, 1 **Activa**, 2 **Reserva**, 3 **Premix**, 4 Espaciador, 5 Píldora, 6 Rompedor. Se pueden agregar otros (Base Oil, Brine…). Para el balance de volumetría, el código 1 cuenta como sistema **activo**, el 2 como **reserva**, el 3 como **premezcla** y el resto como **otras**.
+> En pantalla dice **tanque**; en el código y la base sigue siendo `Fosa` / `TipoFosa`.
+
+- **Tanques**: número, descripción y capacidad (bbl). El nombre es descriptivo: el **uso del día** (activa, reserva…) se elige en la volumetría de la pestaña 8.
+- **Tipos de tanque**: se siembran 7 estándar: 0 Vacía, 1 **Activa**, 2 **Reserva**, 3 **Premix**, 4 Espaciador, 5 Píldora, 6 Rompedor. Se pueden agregar otros (Base Oil, Brine…). Para el balance de volumetría, el código 1 cuenta como sistema **activo**, el 2 como **reserva**, el 3 como **premezcla** y el resto como **otras**.
 
 ### 4.7 Configuración de Propiedades de Equipo
 
@@ -140,11 +149,13 @@ Por **tipo de equipo** (Centrífuga, Limpiador de lodo, Zaranda, Secador de reco
 
 Estas propiedades aparecen como columnas adicionales en *Uso de equipos* de la pestaña 6.
 
-### 4.8 Configuración General — 3 bloques
+### 4.8 Configuración General
 
 | Bloque | Contenido |
 |---|---|
-| **Setup** | Tasa de impuesto, ¿con tratamiento y disposición?, **¿usar API 13D 5ª edición en hidráulica?**, ecuaciones de sólidos base agua y base aceite |
+| **Moneda** | Moneda del pozo (selector con 18 monedas comunes; cambiarla solo cambia el símbolo, no convierte montos) |
+| **Segunda moneda (opcional)** | Moneda, **tasa de cambio** (unidades por 1 de la moneda del pozo) y **% cobrado** en ella. La pantalla de costos del reporte muestra el reparto (día y acumulado). El Excel todavía no lo muestra |
+| **Setup** | Tasa de impuesto, ¿con tratamiento y disposición?, **¿usar API 13D 5ª edición en hidráulica?**, ecuaciones de sólidos (solo **API** desde el 02-oct) |
 | **Códigos de almacén** | Código y nombre de cada almacén o bodega. No trae datos precargados. Se usan en los tickets de mallas y productos |
 | **Distribución de tiempo** | Catálogo de actividades del taladro (número, descripción, tipo DF, CF o DF/CF). Trae 20 estándar precargadas. La pestaña 7 usa las de tipo DF y DF/CF |
 

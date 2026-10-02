@@ -1,6 +1,8 @@
 # AGENT.md — Leer primero (Proyecto CHAPALA)
 
-Si eres un asistente que empieza una conversación nueva sobre el **Proyecto CHAPALA** (sistema Django estilo ONE-TRAX para All Oil Services, C.A.), **antes de responder o tocar código lee los documentos de este proyecto en este orden**:
+Si eres un asistente que empieza una conversación nueva sobre el **Proyecto CHAPALA** (sistema Django estilo ONE-TRAX para All Oil Services, C.A.), **antes de responder o tocar código lee los documentos en este orden**.
+
+La documentación completa está en el **Proyecto de Claude "Totalizador"** (claude.ai → Proyectos). Si trabajas desde ahí, léela con la herramienta de Proyectos; las rutas son las de abajo.
 
 1. **`claude/chapala-traspaso-siguiente-conversacion.md`**: estado actual, dónde está cada archivo, la **cadena de migraciones** (la próxima debe depender de `0024_merge`) y las **reglas de trabajo** del usuario.
 2. **`docs/16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md`**: qué falta, bugs conocidos, riesgos y lo ya resuelto.
@@ -25,8 +27,8 @@ Si eres un asistente que empieza una conversación nueva sobre el **Proyecto CHA
 
 ## Reglas que no se negocian
 
-- **Traer siempre el archivo actual del disco del usuario antes de editarlo** (`C:\Users\Admin\Documents\Proyectos\Proyecto CHAPALA`). Un compañero también sube cambios por git. Archivos con CRLF.
-- No hay Django ni shell en la máquina del usuario desde aquí: se valida con `ast.parse`, `node --check` y pruebas de funciones puras; **el usuario corre `migrate` y git** (rama `Refactorizacion`).
+- **Traer siempre el archivo actual del disco antes de editarlo** (`C:\Users\Admin\Documents\Proyectos\Proyecto CHAPALA`). Un compañero también sube cambios por git. Archivos con CRLF.
+- Desde la nube no hay Django ni shell en la máquina del usuario: se valida con `ast.parse`, `node --check` y pruebas de funciones puras; **el usuario corre `migrate` y git** (rama `Refactorizacion`).
 - Todo el texto visible en **español**; CSS y JS en archivos aparte, nunca en línea.
 - Ir por partes; ante la duda, pedir o revisar la captura del manual ONE-TRAX antes de inventar.
 - Si el usuario comparte una imagen del manual, analizarla y **dejar el análisis documentado** en `docs/` (como se hizo en el 21).

@@ -5,11 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Activación &bull; Smart Mud</title>
+  <link rel="icon" type="image/png" href="{% static 'operaciones/img/favicon.png' %}">
   <link rel="stylesheet" href="{% static 'operaciones/css/licencia.css' %}">
 </head>
 <body class="licencia-body">
   <main class="licencia-tarjeta">
-    <h1>Smart Mud &bull; Operaciones</h1>
+    <img class="licencia-logo" src="{% static 'operaciones/img/smartmud_logo.png' %}" alt="Smart Mud">
 
     {% if bloqueada %}
       <p class="licencia-titulo-error">Período de prueba vencido</p>

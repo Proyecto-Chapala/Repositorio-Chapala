@@ -1,146 +1,82 @@
-# Proyecto CHAPALA — Documentación
+# Smart Mud — Documentación
 
-Sistema web de **All Oil Services, C.A. (AOS)** para dos trabajos:
+**Smart Mud** (*Fluid Management Software*) es el sistema web en Django de **All Oil Services, C.A. (AOS)** para los reportes diarios de fluidos de perforación y equipos, más el inventario de productos químicos. Sigue la lógica del módulo *Drilling Fluids and Equipment* del manual de ONE-TRAX, en español. Hasta el 02-oct-2026 se llamó "Proyecto CHAPALA"; ese nombre queda en la carpeta, en el proyecto Django (`chapala`) y en la base de datos.
 
-1. **Inventario de productos químicos**: catálogo maestro de productos con su stock, costo y estado.
-2. **Reportes diarios de fluidos de perforación**, al estilo **ONE-TRAX** (M-I SWACO): pozos, configuración del pozo y un reporte diario de 8 pestañas con volumetría, control de sólidos, hidráulica API 13D y exportación a Excel.
-
-Estado al **23/09/2026**: proyecto cerrado en su versión funcional. Los pendientes y los posibles errores conocidos están en [PENDIENTES_Y_DECISIONES.md](PENDIENTES_Y_DECISIONES.md).
+> **Estado al 02-oct-2026:** pestañas 1 a 8, módulos opcionales, concentraciones, side track, hoyo piloto, reporte de propiedades, reporte final y correcciones del cliente del 02-oct construidos. Migraciones hasta la **0027**. Falta la prueba en pantalla. Ver [00_TRASPASO](00_TRASPASO.md) y [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md).
 
 ---
 
-## Índice de la documentación
+## ¿Por dónde empiezo?
 
-| Documento | Para quién | Qué contiene |
-|---|---|---|
-| [README.md](README.md) | Todos | Este archivo: instalación y arranque |
-| [MANUAL_USUARIO.md](MANUAL_USUARIO.md) | Personal de AOS / Ingeniería | **Manual de Usuario Maestro**: Arquitectura estilo ONE-TRAX, Setup inicial, Operación diaria (8 pestañas), Volumetría y Cierre |
-| [ARQUITECTURA.md](ARQUITECTURA.md) | Desarrollo | App, carpetas, motores de cálculo, convenciones |
-| [API_ENDPOINTS.md](API_ENDPOINTS.md) | Desarrollo | Todas las rutas, métodos y cuerpos JSON |
-| [PENDIENTES_Y_DECISIONES.md](PENDIENTES_Y_DECISIONES.md) | Todos | Decisiones tomadas, bugs conocidos y trabajo pendiente |
-| **Inventario** | | |
-| [inventario/MODELO_DATOS.md](inventario/MODELO_DATOS.md) | Desarrollo | Modelo `Producto` y cómo se relaciona con los pozos |
-| [inventario/FLUJOS.md](inventario/FLUJOS.md) | Desarrollo / soporte | Alta, edición, borrado, reglas de estado y relación con la pestaña 8 |
-| [inventario/MANUAL_USUARIO.md](inventario/MANUAL_USUARIO.md) | Personal de AOS | Cómo usar la pantalla de Inventario |
-| **Reportes (ONE-TRAX)** | | |
-| [reportes/MODELO_DATOS.md](reportes/MODELO_DATOS.md) | Desarrollo | Todos los modelos del pozo y del reporte diario, por migración |
-| [reportes/WIZARD_POZO.md](reportes/WIZARD_POZO.md) | Desarrollo / soporte | Creación del pozo (4 pasos), Spud Date y pantallas de configuración |
-| [reportes/pestanas/](reportes/pestanas/) | Desarrollo / soporte | Un documento por cada pestaña del reporte diario (1 a 8) |
-| [reportes/HIDRAULICA_API13D.md](reportes/HIDRAULICA_API13D.md) | Ingeniería | Fórmulas de 4ª y 5ª edición y verificación contra el manual |
-| [reportes/VOLUMETRIA.md](reportes/VOLUMETRIA.md) | Ingeniería / desarrollo | Motor de volumetría, inventario de productos y concentraciones |
-| [reportes/MODULOS_OPCIONALES.md](reportes/MODULOS_OPCIONALES.md) | Ingeniería | IFE, análisis de sólidos, retención en recortes, eventos y benchmark |
-| [reportes/MANUAL_USUARIO.md](reportes/MANUAL_USUARIO.md) | Personal de AOS | Guía paso a paso del reporte diario |
-
----
-
-## Requisitos
-
-| Componente | Versión usada |
+| Si eres… | Lee |
 |---|---|
-| Python | 3.14 (según el reporte de avances del 22/09/2026) |
-| Django | 6.1.1 |
-| PostgreSQL | Cualquier versión compatible con `psycopg2-binary 2.9.12` |
-| Navegador | Chrome o Edge actualizados |
-
-Dependencias exactas (`requirements.txt`):
-
-```
-asgiref==3.12.1
-Django==6.1.1
-et_xmlfile==2.0.0
-openpyxl==3.1.5
-psycopg2-binary==2.9.12
-pypdf==6.18.1
-sqlparse==0.6.0
-tzdata==2026.3
-```
-
-`openpyxl` genera el Excel del reporte diario. `pypdf` no se usa en el código actual de `operaciones`.
+| **Ingeniero de AOS** (usuario) | [MANUAL_USUARIO](MANUAL_USUARIO.md) → [18 Preguntas frecuentes](18_PREGUNTAS_FRECUENTES.md) → [17 Glosario](17_GLOSARIO.md) |
+| **Desarrollador o asistente que retoma el proyecto** | `../AGENT.md` → [00 Traspaso](00_TRASPASO.md) → [16 Pendientes](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) → el documento del tema |
+| **Quien instala o empaqueta** | [01 Instalación y ejecución](01_INSTALACION_Y_EJECUCION.md) (incluye `SmartMud.exe`) |
 
 ---
 
-## Instalación en un equipo nuevo
+## Índice
 
-```bat
-cd "C:\ruta\Proyecto CHAPALA"
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-```
+### Estado del proyecto
 
-### Base de datos
-
-La configuración se lee de un archivo `.env` en la raíz del proyecto (`chapala/settings.py` lo carga a mano, sin librerías extra). Variables:
-
-| Variable | Default si falta | Uso |
+| # | Documento | Contenido |
 |---|---|---|
-| `USE_POSTGRES` | `True` | `True` = PostgreSQL. `False` = SQLite (`db.sqlite3`) |
-| `DB_NAME` | `chapala_db` | Nombre de la base PostgreSQL |
-| `DB_USER` | `postgres` | Usuario |
-| `DB_PASSWORD` | `postgres` | Contraseña |
-| `DB_HOST` | `localhost` | Servidor |
-| `DB_PORT` | `5432` | Puerto |
+| 00 | [Traspaso](00_TRASPASO.md) | Estado actual, reglas de trabajo, cadena de migraciones, prioridades |
+| 16 | [Problemas conocidos y pendientes](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) | Qué probar, decisiones abiertas, errores conocidos, seguridad, historial de lo resuelto |
+| 21 | [Análisis de la revisión del 27-sep](21_ANALISIS_MATERIAL_REVISION_27SEP.md) | De dónde salió cada decisión del 27-sep (imágenes y audios) |
+| 22 | [Cambios del 02-oct: Smart Mud](22_CAMBIOS_02OCT_SMART_MUD.md) | Nombre, logos, tanques, monedas, intervalos, hub bloqueado, `.exe` sin consola |
 
-El `.env` está en `.gitignore` y no debe subirse al repositorio.
+### Usuario
 
-Crear las tablas:
-
-```bat
-python manage.py migrate
-python manage.py createsuperuser   (opcional, para /admin/)
-```
-
-Las migraciones de la app `operaciones` van de la `0001` a la `0022`. Ver [reportes/MODELO_DATOS.md](reportes/MODELO_DATOS.md).
-
-### Datos iniciales
-
-No hace falta cargar nada para empezar a usar los pozos: al crear un pozo el sistema **siembra automáticamente** sus catálogos (15 categorías de pérdida, 7 tipos de fosa, 20 actividades de distribución de tiempo y 4 tipos de ticket).
-
-Los productos del inventario se cargan desde la pantalla de Inventario o desde `/admin/`.
-
-Para cargar el catálogo AOS de productos: `python seed_data.py`. Solo crea los productos que no existen; no modifica los que ya están.
-
-> `seed_propiedades.py` pertenece a la app antigua `reportes` (en `_legacy/`) y **no funciona** con la versión actual.
-
----
-
-## Cómo arrancar el sistema
-
-### Opción 1: doble clic en `Iniciar Sistema.bat`
-
-Abre el navegador en `http://127.0.0.1:8000/` y levanta el servidor.
-
-El `.bat` usa el entorno virtual `.venv\` de la raíz del proyecto.
-
-### Opción 2: consola
-
-```bat
-.venv\Scripts\activate
-python manage.py runserver 127.0.0.1:8000
-```
-
-### Pantallas principales
-
-| URL | Pantalla |
+| Documento | Contenido |
 |---|---|
-| `/` | Inventario de productos |
-| `/pozos/` | Lista de pozos |
-| `/pozos/nuevo/` | Asistente para crear un pozo |
-| `/pozos/<id>/` | Pantalla principal del pozo |
-| `/pozos/<id>/drilling-fluids-equipment/` | Historial de reportes diarios del pozo |
-| `/pozos/<id>/daily-report/<id_reporte>/` | Reporte diario (8 pestañas) |
-| `/catalogos-maestros/` | Catálogos globales: equipos, mallas, propiedades, benchmark y componentes de sarta |
-| `/admin/` | Administración de Django |
+| [MANUAL_USUARIO](MANUAL_USUARIO.md) | Paso a paso: abrir el sistema, crear y configurar un pozo, reporte diario, casos especiales, reportes que se entregan |
+| [17 Glosario](17_GLOSARIO.md) | ONE-TRAX (inglés) ↔ Smart Mud (español) y siglas del oficio |
+| [18 Preguntas frecuentes](18_PREGUNTAS_FRECUENTES.md) | Dudas comunes y mensajes de error |
+
+### Técnico
+
+| # | Documento | Contenido |
+|---|---|---|
+| 01 | [Instalación y ejecución](01_INSTALACION_Y_EJECUCION.md) | Requisitos, `.env`, migraciones, arranque, `SmartMud.exe` |
+| 02 | [Arquitectura](02_ARQUITECTURA.md) | Carpetas, capas, motores de cálculo, patrones |
+| 03 | [Modelo de datos](03_MODELO_DATOS.md) | Modelos campo por campo e historial de migraciones |
+| 04 | [API y rutas](04_API_ENDPOINTS.md) | URLs, métodos y vistas |
+| 05 | [Configuración del pozo](05_CONFIGURACION_POZO.md) | Wizard, fecha inicial, pantalla del pozo y sus configuraciones, catálogos maestros |
+| 06 | [Reporte diario: hub y pestañas 1 a 5](06_REPORTE_DIARIO_PESTANAS_1_A_5.md) | Hub (bloqueado), General, Bombas, Lodo, Geometría, Comentarios |
+| 07 | [Pestaña 6: control de sólidos](07_PESTANA_6_CONTROL_SOLIDOS.md) | Mallas, tickets, transacciones, uso de equipos |
+| 08 | [Pestaña 7: distribución de tiempo](08_PESTANA_7_DISTRIBUCION_TIEMPO.md) | Horas por actividad |
+| 09 | [Pestaña 8: volumetría e inventario](09_PESTANA_8_VOLUMETRIA_INVENTARIO.md) | Tanques, movimientos, inventario unificado, concentraciones, pérdidas |
+| 10 | [Hidráulica API RP 13D](10_HIDRAULICA_API13D.md) | 4ª y 5ª edición |
+| 11 | [Cálculos de ingeniería](11_CALCULOS_INGENIERIA.md) | Geometría, survey, bombas, reología, sólidos |
+| 12 | [Módulos opcionales](12_MODULOS_OPCIONALES.md) | IFE, análisis de sólidos, retención, eventos (ocultos), benchmark |
+| 13 | [Costos](13_COSTOS.md) | Origen de cada costo y cobro en dos monedas |
+| 14 | [Reporte Excel](14_REPORTE_EXCEL.md) | Plantilla, hojas, logo, páginas |
+| 15 | [Inventario de almacén](15_INVENTARIO_ALMACEN.md) | Pantalla Inventario e inventario unificado |
+| 19 | [Guía de mantenimiento](19_GUIA_MANTENIMIENTO.md) | Reglas del proyecto, cómo agregar pestañas o campos, pruebas, despliegue |
+| 20 | [Concentraciones y casos especiales](20_CONCENTRACIONES_Y_CASOS_ESPECIALES.md) | Concentraciones, side track, hoyo piloto, CaCO₃ |
 
 ---
 
-## Advertencias de seguridad
+## Carpetas dentro de `docs/`
 
-El proyecto está configurado para **uso local en un solo equipo**, no para publicarse en internet:
+| Carpeta | Qué hay | ¿Está al día? |
+|---|---|---|
+| `docs/` (raíz) | Los documentos de arriba | **Sí** — es la documentación oficial |
+| `manuales/` | `GUIA_DIA_OPERATIVO` (HTML y PDF), `MANUAL_USUARIO.html` y `convertir_a_pdf.py` | **No**: se generaron el 23/24-sep desde el manual viejo. Regenerar desde `MANUAL_USUARIO.md` antes de repartirlos |
+| `fuentes/` | Material del cliente: audios transcritos del 02-oct, observaciones, lista de bugs, avances | Material original, no se edita |
+| `_archivo/` | Documentación reemplazada: la de `docs/` del 23-sep, memoria y traspasos viejos de Claude, `RESUMEN_AVANCE` de la app vieja | Solo como historia; **no usar como referencia** |
 
-- `DEBUG = True` y `ALLOWED_HOSTS = ['*']`.
-- La `SECRET_KEY` está escrita en `settings.py`.
-- No hay inicio de sesión en las pantallas; cualquiera que abra la URL puede editar.
-- Casi todas las APIs de escritura llevan `@csrf_exempt`.
+## Tecnología
 
-Si algún día se expone en red, hay que corregir esos cuatro puntos antes.
+| Capa | Tecnología |
+|---|---|
+| Backend | Python 3.12+ · Django 6.1.1 |
+| Base de datos | PostgreSQL (`psycopg2-binary`) o SQLite (según `.env`); el `.exe` usa SQLite |
+| Frontend | Plantillas Django + JavaScript sin frameworks + CSS |
+| Excel | `openpyxl` (+ `pillow` para el logo) sobre `operaciones/plantillas/reporte_diario_onetrax.xlsx` |
+| Ejecutable | PyInstaller + `pystray` (ícono en la bandeja) |
+| Idioma / zona | `es-ve`, `America/Caracas` |
+
+Desarrollado para All Oil Services, C.A. Referencia funcional: manual de ONE-TRAX, módulo *Drilling Fluids and Equipment*.

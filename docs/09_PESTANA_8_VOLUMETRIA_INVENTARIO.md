@@ -1,5 +1,7 @@
 # 09 — Pestaña 8: Inventario, Hidráulica y Concentraciones
 
+> **Terminología (02-oct-2026):** en pantalla y en el Excel se dice **tanque** donde antes decía *fosa*, y **lodo reciclado** donde decía *lodo entero*. En el código y la base de datos siguen los nombres internos (`Fosa`, `fosa`, `LODO_ENTERO`).
+
 Archivos: `models_inventario.py` (migraciones 0019 y 0020), `volumetria.py` (motor), `views_inventario.py` (API y `resumen_costos`) y `reporte_inventario.js/.css`. La hidráulica tiene su propio documento ([10](10_HIDRAULICA_API13D.md)) y la evaluación de benchmark está en [12](12_MODULOS_OPCIONALES.md). Concentraciones en detalle y casos especiales (side track, piloto): [20](20_CONCENTRACIONES_Y_CASOS_ESPECIALES.md).
 
 Sub-vistas de la pestaña:
@@ -55,7 +57,7 @@ Se registran al instante, cada uno con `secuencia` por pozo. **Solo se puede des
 | Tipo | Datos | Efecto |
 |---|---|---|
 | **Agregar químicos** (`QUIMICOS`) | Fosa · cantidades de productos activos · fluido base (bbl) · agua (bbl) | Suma volumen = fluido base + agua + **volumen de químicos**. Descuenta los productos del inventario. Genera costo. Suma masa para concentraciones |
-| **Agregar lodo entero** (`LODO_ENTERO`) | Fosa · volumen · peso · **producto "lodo entero"** (de los activos) · origen · concentraciones del lodo (lb/bbl) | Suma volumen. Consume unidades del producto de lodo entero (`volumen / (tamaño × factor de volumen)`) y genera su costo. Las concentraciones solo sirven para calcular concentraciones |
+| **Agregar lodo reciclado** (`LODO_ENTERO`; antes "lodo entero") | Fosa · volumen · peso · **producto "lodo reciclado"** (de los activos) · origen · concentraciones del lodo (lb/bbl) | Suma volumen. Consume unidades del producto de lodo reciclado (`volumen / (tamaño × factor de volumen)`) y genera su costo. Las concentraciones solo sirven para calcular concentraciones |
 | **Transferencia** (`TRANSFERENCIA`) | Fosa origen · fosa destino · volumen | Mueve volumen (y la masa de productos proporcional). Origen y destino no pueden ser la misma fosa |
 | **Devolución** (`DEVOLUCION`) | Fosa · volumen · a dónde (texto obligatorio) | Resta volumen |
 | **Pérdida** (`PERDIDA`) | Fosa · volumen · **tipo de pérdida** (categoría del pozo) | Resta volumen y lo suma al total de esa categoría |
@@ -69,7 +71,7 @@ Solo los productos medidos en **peso** aportan volumen:
 masa (lb) = cantidad × tamaño de la unidad × factor   (LB=1 · KG=2,20462 · TN/TON/ST=2000 · MT/TM/T=2204,62)
 volumen (bbl) = masa / (gravedad específica × 350)
 ```
-Los productos en volumen (BBL, GAL, L) **no** se suman como volumen químico: su volumen se registra como fluido base/agua o como lodo entero. En el reporte de concentraciones este volumen aparece como **"Aumento de volumen por material"** (ONE-TRAX: *Incr Vol – Matl Den*).
+Los productos en volumen (BBL, GAL, L) **no** se suman como volumen químico: su volumen se registra como fluido base/agua o como lodo reciclado. En el reporte de concentraciones este volumen aparece como **"Aumento de volumen por material"** (ONE-TRAX: *Incr Vol – Matl Den*).
 
 ## 3. Inventario de productos del pozo
 
@@ -79,23 +81,28 @@ final = inicial + recibido − devuelto − usado en fluidos − usado en otro m
 
 | Columna | Origen |
 |---|---|
-| Inicial | Final del día anterior. **El primer día es 0** |
-| Recibido / devuelto | **Tickets de productos** (cantidad *real*; la cantidad *según ticket* se guarda para comparar) |
+| Inicial | Existencia del inventario general llevada a la fecha (ver recuadro) |
+| Recibido / devuelto | **Tickets de productos**: solo registro (cantidad *real* y *según ticket* para comparar) |
 | Usado en fluidos | Movimientos *Agregar químicos* y *Lodo entero* |
 | Usado en otro módulo | A mano (ej. días de ingeniero, personal de servicio). Genera costo |
 | Ajuste | A mano (+/−) |
 | En pedido · No imprimir | A mano, informativos |
 
-- **Si algún día el inventario queda negativo, se rechaza** con un mensaje como: *"El 20/09/2026: el inventario de BARITA queda en −15. Hay 40 disponibles y se usan o devuelven 55. Registra primero el ticket de recepción."* Se valida toda la línea de tiempo del pozo, como en las mallas.
+- **Si la existencia no alcanza, se rechaza** el movimiento (ver recuadro). El chequeo se hace contra el inventario general, que comparten todos los pozos.
 - **Servicios**: los productos activos con **unidad vacía** son servicios. Solo generan costo y no llevan existencias (inicial y final siempre 0).
 - Los productos usados en el pasado que ya no están activos siguen apareciendo, marcados como inactivos.
 
-> ### ⚠ Este inventario NO es el del módulo "Inventario" (almacén)
-> El inventario de la pestaña 8 es el **inventario en el taladro** de ese pozo. Arranca en **0** y solo sube con **tickets de recepción**. **No lee** `Producto.cantidad`, el stock del almacén que se ve en la pantalla *Inventario*. Por eso un producto con muchas unidades en el almacén aparece con **0 disponible** en la pestaña 8 hasta que se registre su ticket de entrada. Es el comportamiento de ONE-TRAX, no un error de carga. Ver [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y [18](18_PREGUNTAS_FRECUENTES.md).
+> ### Inventario unificado (desde el 25-sep-2026)
+> La existencia de cada producto es **una sola**: `Producto.cantidad`, la de la pantalla *Inventario* (almacén). La pestaña 8 la muestra **llevada a la fecha del reporte**: final del día = existencia actual + lo consumido en días posteriores (en **todos** los pozos); inicial = final + lo consumido ese día.
+> - *Agregar químicos*, *lodo reciclado*, *usado en otro módulo* y *ajuste* **descuentan** la existencia al guardarse; deshacer el movimiento o borrar el reporte la **devuelve** (campos `stock_aplicado`).
+> - Si no alcanza, se rechaza: *"Inventario de BARITA (AOS-1010): hay 12 SACOS 100 LBS y se necesitan 40. Actualiza la existencia en la pantalla Inventario."*
+> - Los **tickets de productos** son **solo registro** (quién pidió, quién recibió, diferencias con el papel); no mueven la existencia.
+> - Las entradas de mercancía se cargan en la pantalla *Inventario*, editando la cantidad del producto.
+> - Código: `views_inventario._mover_stock`, `devolver_stock_reporte`, `_consumo_aplicado_por_fecha`; migración `0022_inventario_unificado` (del compañero *xtal*). Ver [15](15_INVENTARIO_ALMACEN.md).
 
 ### Tickets de productos (`TicketProducto`)
 
-Mismo esquema que los de mallas: tipo (catálogo compartido con mallas: se usa el **sentido** ENTRADA/SALIDA), número, pedido por, recibido por, almacén del pozo y, por producto, cantidad según ticket y cantidad real. La pantalla muestra el último número usado de cada tipo y resalta los tickets con diferencias entre ticket y real.
+Son **solo registro** (no mueven la existencia). Mismo esquema que los de mallas: tipo (catálogo compartido con mallas: se usa el **sentido** ENTRADA/SALIDA), número, pedido por, recibido por, almacén del pozo y, por producto, cantidad según ticket y cantidad real. La pantalla muestra el último número usado de cada tipo y resalta los tickets con diferencias entre ticket y real.
 
 ## 4. Lo que se guarda a mano (`api_volumetria_guardar`)
 

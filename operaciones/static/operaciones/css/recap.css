@@ -260,3 +260,14 @@
   .rc-salto { break-before: page; }
   @page { size: A4 landscape; margin: 12mm; }
 }
+
+/* Logo AOS en la esquina superior izquierda */
+.rc-portada .logo-empresa {
+  height: 56px;
+  width: auto;
+  flex: 0 0 auto;
+  align-self: flex-start;
+}
+.rc-portada-texto {
+  flex: 1 1 auto;
+}

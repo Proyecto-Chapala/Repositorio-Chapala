@@ -1,8 +1,10 @@
 # 17 — Glosario
 
-## ONE-TRAX (inglés) → CHAPALA (español)
+## ONE-TRAX (inglés) → Smart Mud (español)
 
-| ONE-TRAX | En CHAPALA | Dónde |
+> **Smart Mud** es el nombre del sistema desde el 02-oct-2026 (antes "CHAPALA", que sigue como nombre de la carpeta, del proyecto Django `chapala` y de la base de datos).
+
+| ONE-TRAX | En Smart Mud | Dónde |
 |---|---|---|
 | Project / Well (.MDB) | Pozo | Wizard |
 | New Well Wizard | Wizard de nuevo pozo | `/pozos/nuevo/` |
@@ -12,7 +14,7 @@
 | Well Header Information | Información general del pozo | Pantalla principal |
 | Marketing Codes | Códigos de mercadeo | Información general |
 | Well Casing Intervals (Cost) | Intervalos de revestimiento (costo) | Pantalla principal |
-| Pits and Tanks Information / Pit Type Setup | Información de fosas / Tipos de fosa | Pantalla principal |
+| Pits and Tanks Information / Pit Type Setup | **Información de tanques / Tipos de tanque** (internamente `Fosa`, `TipoFosa`) | Pantalla principal |
 | Active Product / Equipment / Screen List | Productos / Equipos / Mallas activos | Pantalla principal |
 | Master Equipment / Screen / Drill String Component List | Catálogos maestros | `/catalogos-maestros/` |
 | Equipment Properties Setup | Configuración de propiedades de equipo | Pantalla principal |
@@ -39,14 +41,14 @@
 | Time Distribution | Distribución de tiempo | Pestaña 7 |
 | Inv / Hyd / Conc | Inventario / Hidráulica / Concentraciones | Pestaña 8 |
 | Volume Accounting and Product Inventory | Volumetría e inventario de productos | Pestaña 8 |
-| Add Chemicals / Add Whole Mud / Transfer / Return / Loss | Agregar químicos / lodo entero / Transferencia / Devolución / Pérdida | Pestaña 8 |
+| Add Chemicals / Add Whole Mud / Transfer / Return / Loss | Agregar químicos / **lodo reciclado** / Transferencia / Devolución / Pérdida | Pestaña 8 |
 | Unaccounted | No contabilizado | Pestaña 8 |
 | Volume Not Fluids | Volumen que no es fluido (hoyo) | Pestaña 8 |
 | Daily Loss Print Selection | Pérdidas del reporte | Pestaña 8 |
 | IFE Remarks | Observaciones IFE | Opcionales |
 | Equipment Solids Analysis | Análisis de sólidos por equipo | Opcionales |
 | Cuttings Retention | Retención en recortes | Opcionales |
-| Unscheduled Events | Eventos no programados | Pestañas 5 y 7 |
+| Unscheduled Events | Eventos no programados (oculto desde el 02-oct) | Pestañas 5 y 7 |
 
 ## Siglas y términos técnicos
 

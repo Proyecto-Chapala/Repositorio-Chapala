@@ -31,7 +31,7 @@ hiddenimports = (
     + collect_submodules('chapala')
     + collect_submodules('pystray')
     + ['seed_data', 'openpyxl', 'pypdf', 'sqlparse', 'asgiref', 'tzdata',
-       'PIL.Image', 'PIL.ImageDraw']
+       'PIL', 'PIL.Image', 'PIL.ImageDraw', 'PIL.PngImagePlugin', 'PIL.JpegImagePlugin']
 )
 
 a = Analysis(

@@ -140,3 +140,15 @@ body {
   .rp-comentario:empty { display: none; }
   @page { margin: 14mm; }
 }
+
+/* Logo AOS en la esquina superior izquierda */
+.rp-encabezado .logo-empresa {
+  height: 48px;
+  width: auto;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  margin-right: 14px;
+}
+.rp-encabezado-texto {
+  flex: 1 1 auto;
+}

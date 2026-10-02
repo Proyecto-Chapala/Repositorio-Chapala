@@ -24,7 +24,7 @@ Cada columna se da **del día** y **acumulada** del pozo hasta la fecha del repo
 | Hecho | Costo |
 |---|---|
 | *Agregar químicos* | cantidad × precio del producto **en ese momento** (copiado en el movimiento) |
-| *Agregar lodo entero* | unidades consumidas del producto "lodo entero" × su precio |
+| *Agregar lodo reciclado* | unidades consumidas del producto "lodo reciclado" × su precio |
 | *Usado en otro módulo* (inventario manual) | cantidad × precio del día (ej. días de ingeniero) |
 | Servicios (productos con unidad vacía) | Solo costo, sin existencias |
 
@@ -49,3 +49,15 @@ Cada **malla nueva instalada** cuesta su **precio neto** = `precio × (100 − d
 ## Si algo no cuadra
 
 Si la línea de tiempo de la volumetría o de las mallas tiene un error (por ejemplo, tras borrar un reporte con tickets), `resumen_costos` **omite** esa parte en silencio (costo 0) para no romper la pantalla. Si los costos se ven en 0 de repente, hay que abrir la pestaña 6 u 8 de ese reporte: allí sí aparece el mensaje de error.
+
+## Cobro en dos monedas (02-oct-2026)
+
+Si el pozo tiene **segunda moneda** (Configuración General), la *Pantalla Detallada de Costos* del reporte muestra un recuadro con el reparto del total del día y del acumulado:
+
+```
+a cobrar en la moneda del pozo  = total × (1 − %/100)
+a cobrar en la segunda moneda   = total × %/100 × tasa
+total expresado en la segunda   = total × tasa
+```
+
+Los costos se siguen calculando y guardando en la moneda del pozo; no hay conversión de precios. Función `cobro_dos_monedas()` en `views_daily_reports.py`. El Excel diario todavía no muestra este reparto.

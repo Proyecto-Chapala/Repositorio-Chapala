@@ -9,7 +9,7 @@ Archivos: `models_opcionales.py` (migración 0021), `views_opcionales.py` y `rep
 | Observaciones IFE | Pestaña 6 → Opcionales | Sí | `…/ife/` (GET y POST) |
 | Análisis de sólidos por equipo | Pestaña 6 → Opcionales | Sí | `…/muestras/solidos/` |
 | Retención en recortes | Pestaña 6 → Opcionales | Sí | `…/muestras/retencion/` |
-| Eventos no programados | Pestañas 5 y 7 (ventana `#enModal`) | Sí | `…/eventos/` |
+| Eventos no programados | Pestañas 5 y 7 (ventana `#enModal`) — **botón oculto desde el 02-oct-2026** | Sí | `…/eventos/` |
 | Evaluación de benchmark | Pestaña 8 | **No** (consulta) | `…/benchmark/` |
 
 ---
@@ -53,6 +53,8 @@ API genérica de muestras (clave `solidos` o `retencion`):
 Solo se aceptan equipos de la lista de equipos activos del pozo.
 
 ## 4. Eventos no programados (`EventoNoProgramado`)
+
+> **Oculto en pantalla desde el 02-oct-2026** a pedido de AOS ("que no confunda al ingeniero"): los botones `[data-en-abrir]` llevan `hidden`. El código, la API y el modelo siguen; los eventos ya cargados salen en el reporte final. Para reactivarlo, quitar `hidden` de los dos botones en `reporte_diario_detalle.html`.
 
 Registro de problemas del pozo (*Unscheduled Events*).
 

@@ -7,7 +7,7 @@ Pantalla: **Inventario** en la barra lateral, ruta `/`. Archivos: `views.py` (`i
 Es el **catálogo maestro de productos** del sistema y, además, el registro del **stock del almacén** de AOS.
 
 - Como **catálogo**: en *Productos activos* de cada pozo se eligen productos de esta lista.
-- Como **stock**: `Producto.cantidad` es lo que hay en el almacén. **No está conectado** con el inventario del taladro de la pestaña 8 (ver abajo).
+- Como **existencia única**: `Producto.cantidad` es la existencia que usan los reportes diarios de **todos los pozos** (inventario unificado desde el 25-sep-2026; ver abajo).
 
 ## Pantalla
 
@@ -34,21 +34,34 @@ Es el **catálogo maestro de productos** del sistema y, además, el registro del
 | POST/PUT | `/api/productos/<id>/modificar/` | Modificar |
 | POST/DELETE | `/api/productos/<id>/eliminar/` | Eliminar (solo con cantidad 0) |
 
-## Relación con la pestaña 8 (importante)
+## Relación con la pestaña 8 (inventario unificado)
 
-```
- ALMACÉN (esta pantalla)                         TALADRO / POZO (pestaña 8)
- Producto.cantidad = 500 sacos                   Inventario del pozo = 0 al empezar
-         │                                                 ▲
-         │   (no hay conexión automática)                  │ sube SOLO con "Tickets de productos"
-         └─────────────────────────────────────────────────┘ de tipo ENTRADA (recepción)
-```
+Desde el **25-sep-2026 hay un solo inventario** (migración `0022_inventario_unificado`).
 
-- La pestaña 8 **no lee ni descuenta** `Producto.cantidad`.
-- Para usar un producto en el reporte diario hay que: (1) tenerlo en **Productos activos** del pozo, con su precio y unidad; (2) registrar en la pestaña 8 un **ticket de recepción** con la cantidad **real** recibida en el taladro.
-- Consumir productos en la pestaña 8 **no baja** el stock del almacén.
+| Acción en el reporte diario | Efecto en la cantidad de esta pantalla |
+|---|---|
+| Agregar químicos a un tanque | Resta la cantidad usada |
+| Agregar lodo reciclado | Resta las unidades del producto de lodo reciclado consumidas |
+| "Usado en otro módulo" | Resta |
+| Ajuste (+ / −) | Suma o resta |
+| Deshacer el último movimiento | Devuelve lo que ese movimiento había restado |
+| Cambiar "usado en otro módulo" o el ajuste de un día | Aplica solo la diferencia |
+| Borrar un reporte diario o el pozo completo | Devuelve todo lo que esos reportes habían restado |
+| Tickets de entrega o devolución | **Nada**: son solo registro |
 
-Si se quiere que ambos inventarios se muevan juntos (que un ticket de recepción descuente el almacén), hay que desarrollarlo. Ver [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md).
+Si no alcanza la existencia, el reporte rechaza el movimiento: *"Inventario de BARITA (AOS-1010): hay 12 SACOS 100 LBS y se necesitan 40. Actualiza la existencia en la pantalla Inventario."*
+
+Para usar un producto en el reporte diario de un pozo: (1) existir aquí con su cantidad; (2) estar en **Productos activos** del pozo (precio, **unidad**, tamaño, gravedad y código de costo). Si la **unidad queda vacía** es un **servicio** (días de ingeniero): genera costo pero no descuenta existencia.
+
+Las entradas de mercancía (compras, llegadas de proveedor) se registran aquí, editando la cantidad del producto.
+
+**Datos anteriores al cambio:** la cantidad que había el 25-sep-2026 se tomó como correcta y los consumos ya registrados **no se descontaron otra vez** (quedaron marcados como ya aplicados).
+
+Código: `views_inventario._mover_stock`, `consumo_aplicado_reporte`, `devolver_stock_reporte`.
+
+## Pantalla en laptops (02-oct-2026)
+
+En pantallas bajas o angostas el formulario *Nuevo producto* pasa debajo de la tabla y la página se desplaza; ya no hace falta reducir el zoom del navegador.
 
 ## Historia
 

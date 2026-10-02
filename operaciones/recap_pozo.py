@@ -287,12 +287,27 @@ def generar_recap_excel(d, secciones):
     envolver = Alignment(wrap_text=True, vertical='top')
     pozo, h, moneda = d['pozo'], d['header'], d['moneda']
 
+    import os
+    from .reporte_excel import LOGO, _pillow_disponible
+    hay_logo = os.path.exists(LOGO) and _pillow_disponible()
+
     def hoja(titulo, nombre):
         ws = wb.create_sheet(nombre[:31])
         ws['A1'] = f"REPORTE FINAL DEL POZO — {titulo.upper()}"
         ws['A1'].font = Font(bold=True, size=14)
         ws['A2'] = f"{pozo.nombre} · {h.operador if h and h.operador else ''} · generado {d['generado']:%d/%m/%Y %H:%M}"
         ws['A2'].font = Font(italic=True, color='6B7280')
+        if hay_logo:
+            # Logo AOS en la esquina superior izquierda; el título se corre a la derecha del logo
+            from openpyxl.drawing.image import Image as ImagenXl
+            img = ImagenXl(LOGO)
+            escala = 45.0 / img.height if img.height else 1
+            img.height, img.width = img.height * escala, img.width * escala
+            ws.add_image(img, 'A1')
+            ws.row_dimensions[1].height = 20
+            ws.row_dimensions[2].height = 18
+            ws['A1'].alignment = Alignment(indent=10, vertical='center')
+            ws['A2'].alignment = Alignment(indent=12, vertical='center')
         return ws
 
     def tabla(ws, fila, cabeceras, filas, formatos=None, anchos=None):
