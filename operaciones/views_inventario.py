@@ -457,7 +457,7 @@ def _texto_movimiento(t, fosas):
         lineas = [f"{float(p.cantidad):g} lb/bbl {p.descripcion}" for p in t.productos.all()]
         desde = f" desde {t.origen_destino}" if t.origen_destino else ''
         peso = f" de {float(t.peso_lodo):g} lb/gal" if t.peso_lodo else ''
-        return f"{v} de lodo entero{peso} ({t.lodo_producto_texto}) agregados a {origen}{desde}", lineas
+        return f"{v} de lodo reciclado{peso} ({t.lodo_producto_texto}) agregados a {origen}{desde}", lineas
     if t.tipo == TransaccionVolumen.TRANSFERENCIA:
         return f"Transferidos {v} de {origen} a {nombre(t.destino_numero, t.destino_descripcion)}", []
     if t.tipo == TransaccionVolumen.DEVOLUCION:
@@ -807,7 +807,7 @@ def _fosa_valida(pozo, reporte, numero, etiqueta):
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_volumetria_transaccion(request, pk, reporte_pk):
-    """Registra un movimiento: químicos, lodo entero, transferencia, devolución o pérdida."""
+    """Registra un movimiento: químicos, lodo reciclado, transferencia, devolución o pérdida."""
     pozo, reporte = _obtener(pk, reporte_pk)
     try:
         body = _leer(request)
@@ -842,7 +842,7 @@ def api_volumetria_transaccion(request, pk, reporte_pk):
             t.peso_lodo = None if peso is None else _dec(peso, 2)
             lp = productos.get(int(body.get('lodo_producto_id') or 0))
             if lp is None:
-                raise _Rechazo('Elige el producto de lodo entero (de los productos activos del pozo).')
+                raise _Rechazo('Elige el producto de lodo reciclado (de los productos activos del pozo).')
             t.lodo_producto_id = lp['producto_id']
             lodo_servicio = lp['servicio']
             t.lodo_producto_texto = f"{lp['descripcion']}"[:255]

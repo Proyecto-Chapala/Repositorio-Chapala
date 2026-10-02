@@ -581,11 +581,11 @@ class WellHeaderInfo(models.Model):
     almacen = models.CharField(max_length=150, blank=True, verbose_name="Almacén")
     contratista = models.CharField(max_length=150, blank=True, verbose_name="Contratista")
     nombre_taladro = models.CharField(max_length=150, blank=True, verbose_name="Nombre del Taladro")
-    ingeniero_proyecto = models.CharField(max_length=150, blank=True, verbose_name="Ingeniero de Proyecto")
-    ingeniero_miswaco_1 = models.CharField(max_length=150, blank=True, verbose_name="Ingeniero M-I SWACO 1")
-    ingeniero_miswaco_2 = models.CharField(max_length=150, blank=True, verbose_name="Ingeniero M-I SWACO 2")
+    ingeniero_proyecto = models.CharField(max_length=150, blank=True, verbose_name="Coordinador de Fluido")
+    ingeniero_miswaco_1 = models.CharField(max_length=150, blank=True, verbose_name="Ingeniero Fluidos 1")
+    ingeniero_miswaco_2 = models.CharField(max_length=150, blank=True, verbose_name="Ingeniero Fluidos 2")
 
-    spud_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Spud")
+    spud_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Inicio")
     td_date = models.DateField(null=True, blank=True, verbose_name="Fecha de TD")
     td_days = models.PositiveIntegerField(null=True, blank=True, verbose_name="Días de TD")
     re_entry_depth_ft = models.DecimalField(

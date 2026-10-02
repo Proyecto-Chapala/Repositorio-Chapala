@@ -211,7 +211,7 @@ Por pozo: `WellSurveyStation` (MD, inclinación, azimut, TVD, DLS, sección vert
 | `PerdidaReportePozo` | Por pozo, máximo 10 códigos de pérdida en orden |
 | `VolumenFosaDia` | Por reporte y fosa: tipo del día, volumen real medido, peso, temperatura |
 | `VolumenHoyoDia` (1:1) | Volumen del hoyo **no** ocupado por fluido (anular, sarta, bajo la mecha) |
-| `TransaccionVolumen` | `secuencia` por pozo, `tipo` (`QUIMICOS`, `LODO_ENTERO`, `TRANSFERENCIA`, `DEVOLUCION`, `PERDIDA`), fosa y destino, volumen, aceite, agua, peso, lodo entero consumido, origen/destino, pérdida |
+| `TransaccionVolumen` | `secuencia` por pozo, `tipo` (`QUIMICOS`, `LODO_ENTERO`, `TRANSFERENCIA`, `DEVOLUCION`, `PERDIDA`), fosa y destino, volumen, aceite, agua, peso, lodo reciclado consumido, origen/destino, pérdida |
 | `TransaccionVolumenProducto` | Producto de un movimiento: cantidad o concentración, con copia de unidad, tamaño, gravedad, precio y categoría. `stock_aplicado`: cuánto se descontó del inventario general |
 | `InventarioProductoDia` | Columnas a mano: usado en otro módulo, ajuste (±), en pedido, no imprimir. `stock_aplicado`: neto descontado del inventario general |
 | `TicketProducto` → `TicketProductoDetalle` | Tickets de productos; cantidades según ticket y reales |

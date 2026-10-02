@@ -32,7 +32,7 @@ T = {
     'Contractor: ': 'Contratista : ', 'Field/Area :': 'Campo/Área :', 'Description :': 'Descripción :',
     'Location :': 'Ubicación :', 'Location:': 'Ubicación :', 'Water Depth :': 'Prof. de Agua :',
     'Rig Name :': 'Taladro :', 'Depth/TVD :': 'Prof./TVD :', 'Date :': 'Fecha :', 'Date : ': 'Fecha : ',
-    'Spud Date :': 'Fecha Spud :', 'Mud Type :': 'Tipo de Lodo :', 'Activity :': 'Actividad :',
+    'Spud Date :': 'Fecha Inicio :', 'Mud Type :': 'Tipo de Lodo :', 'Activity :': 'Actividad :',
     'Report No:': 'Reporte N° :', 'Report No.:': 'Reporte N° :', 'Page ': 'Página ',
     # Reporte de lodo
     'DRILLING ASSEMBLY': 'SARTA DE PERFORACIÓN', 'CASING': 'REVESTIDOR', 'CASING (*TVD)': 'REVESTIDOR (*TVD)',
@@ -54,7 +54,7 @@ T = {
     'Unc Ret Solids': 'Sólidos s/Corr.', 'Correct Solids': 'Sólidos Corregidos', 'Oil': 'Aceite',
     'Synthetic': 'Sintético', 'Uncorr Water': 'Agua s/Corr.', 'Oil/Water Ratio': 'Rel. Aceite/Agua',
     'Synthetic/Water Ratio': 'Rel. Sint./Agua', 'Alkal Mud (Pom)': 'Alcal. Lodo (Pom)',
-    'Alkal Mud (Psm)': 'Alcal. Lodo (Psm)', 'Cl- Whole Mud': 'Cl- Lodo Entero', 'Salt': 'Sal', 'Lime': 'Cal',
+    'Alkal Mud (Psm)': 'Alcal. Lodo (Psm)', 'Cl- Whole Mud': 'Cl- Lodo Reciclado', 'Salt': 'Sal', 'Lime': 'Cal',
     'Emul Stability': 'Estab. Eléctrica',
     'SOLIDS CONTROL EQUIPMENT Last 24 hr': 'EQUIPOS DE CONTROL DE SÓLIDOS Últ. 24 h', 'Type': 'Tipo',
     'Model/Size': 'Modelo/Mallas', 'Hrs Used': 'Horas Uso', 'MUD PROPERTY SPECS': 'ESPECIFICACIÓN DEL LODO',

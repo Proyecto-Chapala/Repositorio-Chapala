@@ -66,7 +66,7 @@ const OP_CAMPOS = {
         ['mbt', 'MBT', 'lb/bbl'], ['drill_solids_sg', 'SG sólidos perforados', ''], ['wt_additive_sg', 'SG densificante', ''],
         ['oil_sg', 'SG aceite', ''], ['frac_bent', 'Fracción de bentonita', ''], ['chem_conc', 'Conc. de químicos', 'lb/bbl']],
   OBM: [['mud_weight', 'Peso del lodo', 'lb/gal'], ['water_pct', 'Agua', '% vol'], ['oil_pct', 'Aceite / fluido base', '% vol'],
-        ['solids_pct', 'Sólidos', '% vol'], ['chlorides', 'Cloruros (lodo entero)', 'mg/l'], ['oil_sg', 'SG fluido base', ''],
+        ['solids_pct', 'Sólidos', '% vol'], ['chlorides', 'Cloruros (lodo reciclado)', 'mg/l'], ['oil_sg', 'SG fluido base', ''],
         ['wt_additive_sg', 'SG sólidos de alta gravedad', ''], ['drill_solids_sg', 'SG sólidos de baja gravedad', '']],
   RET: [['peso_lodo', 'Peso del lodo', 'lb/gal'], ['pct_fluido_base', 'Fluido base en retorta', '% vol'],
         ['sg_fluido_base', 'SG fluido base', ''], ['sg_solidos', 'SG de los sólidos', ''],

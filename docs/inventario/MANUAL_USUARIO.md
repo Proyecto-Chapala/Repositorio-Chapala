@@ -41,14 +41,15 @@ Guía para el personal de AOS que registra y consulta los productos químicos de
 | Campo | Qué poner | Ejemplo |
 |---|---|---|
 | Código * | Código único del producto | `AOS-1002` |
-| Descripción * | Nombre completo | `ACETATO DE POTASIO (SACOS DE 25 KG)` |
-| Unidad * | Presentación | `SACOS 55 LBS` |
+| Descripción * | Nombre completo | `ACETATO DE POTASIO` |
+| Empaque * | Tipo de contenedor físico | `SACOS`, `TAMBOR`, `TOTE`, `LATA`, `GRANEL` |
+| Unidad * | Unidad de medida pura | `LBS`, `GAL`, `BBL`, `KG`, `L` |
+| Libraje (LBS) * | Peso o capacidad unitaria en libras | `55` |
 | Costo Unitario ($) * | Precio de una unidad | `45.00` |
-| Libraje (LBS) * | Peso de una unidad en libras | `55` |
-| Cantidad (Stock) * | Unidades en el almacén | `120` |
-| Gravedad Específica * | Densidad relativa al agua | `1.57` |
+| Cantidad (Stock) * | Unidades en el almacén central | `120` |
+| Gravedad Específica * | Densidad relativa al agua (1.00) | `1.57` |
 | Categoría * | Sólido o Líquido | Sólido |
-| Observación | Notas (opcional) | |
+| Observación | Notas técnicas (opcional) | |
 
 3. Pulse **💾 Guardar**. Aparece un aviso verde en la esquina si se guardó.
 

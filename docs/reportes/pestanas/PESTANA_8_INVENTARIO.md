@@ -22,7 +22,7 @@ La pestaña más grande. Se divide en secciones:
 
 ## 1. Volumetría e inventario de productos
 
-Tres vistas: **Volúmenes de fosas**, **Balance de volumen** e **Inventario de productos**, y cuatro acciones de movimiento: **Agregar químicos**, **Agregar lodo entero**, **Transferencia / pérdida** y **Movimientos del día** (con *Deshacer último*).
+Tres vistas: **Volúmenes de fosas**, **Balance de volumen** e **Inventario de productos**, y cuatro acciones de movimiento: **Agregar químicos**, **Agregar lodo reciclado**, **Transferencia / pérdida** y **Movimientos del día** (con *Deshacer último*).
 
 ### Requisitos previos
 
@@ -65,7 +65,7 @@ inicial       = final + lo consumido ese día (todos los pozos)
 |---|---|
 | Inicial / final | Inventario general llevado a la fecha del reporte (ver arriba) |
 | Recibido / devuelto | Tickets de productos. **Solo registro**: no cambian la existencia |
-| Usado en fluidos | Movimientos "Agregar químicos" y consumo de "lodo entero" |
+| Usado en fluidos | Movimientos "Agregar químicos" y consumo de "lodo reciclado" |
 | Usado en otro módulo | A mano (por ejemplo, días de ingeniero cargados en otro módulo) |
 | Ajuste | A mano, positivo o negativo |
 | En pedido | A mano, informativo |
@@ -84,7 +84,7 @@ Detalle en [../../inventario/FLUJOS.md](../../inventario/FLUJOS.md#relación-con
 | Movimiento | Datos | Efecto |
 |---|---|---|
 | **Agregar químicos** | Fosa; fluido base (bbl); agua (bbl); productos y cantidades | Suma volumen a la fosa (fluido base + agua + volumen de los químicos medidos en peso); descuenta inventario; genera costo |
-| **Agregar lodo entero** | Fosa; volumen; peso; producto "lodo entero" (de los activos); origen; concentraciones del lodo (lb/bbl por producto) | Suma volumen; descuenta del inventario las unidades del producto de lodo entero; las concentraciones solo sirven para el cálculo de concentraciones |
+| **Agregar lodo reciclado** | Fosa; volumen; peso; producto "lodo reciclado" (de los activos); origen; concentraciones del lodo (lb/bbl por producto) | Suma volumen; descuenta del inventario las unidades del producto de lodo reciclado; las concentraciones solo sirven para el cálculo de concentraciones |
 | **Transferencia** | Fosa origen, fosa destino, volumen | Mueve volumen (y producto disuelto) entre fosas |
 | **Devolución** | Fosa, volumen, destino (texto obligatorio: almacén u otro taladro) | Saca volumen del pozo |
 | **Pérdida y descarte** | Fosa, volumen, tipo de pérdida | Saca volumen y lo suma a la categoría de pérdida |

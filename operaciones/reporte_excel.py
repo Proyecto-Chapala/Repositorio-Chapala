@@ -367,6 +367,17 @@ def _especificacion_y_textos(ws, d, variante):
     if cm:
         _poner(ws, f'A{fila_txt}', cm.remarks_and_treatment)
         _poner(ws, f'E{fila_txt}', cm.remarks)
+        try:
+            from openpyxl.styles import Alignment
+            txt_a = str(cm.remarks_and_treatment or '')
+            txt_e = str(cm.remarks or '')
+            lineas_a = (len(txt_a) // 45) + txt_a.count(chr(10)) + 1
+            lineas_e = (len(txt_e) // 75) + txt_e.count(chr(10)) + 1
+            ws.row_dimensions[fila_txt].height = max(18, max(lineas_a, lineas_e) * 14.5)
+            ws[f'A{fila_txt}'].alignment = Alignment(wrap_text=True, vertical='top')
+            ws[f'E{fila_txt}'].alignment = Alignment(wrap_text=True, vertical='top')
+        except Exception:
+            pass
 
 
 def _bloques_inferiores(ws, d, variante):
@@ -655,7 +666,7 @@ def _hoja_concentraciones(wb, d, despues_de):
     if not bloques:
         celda('A3', 'REPORTE DE CONCENTRACIONES', titulo_f)
         celda('A5', 'Sin productos con concentración: se calculan al agregar químicos medidos en peso '
-                    'o lodo entero con su concentración (pestaña 8).')
+                    'o lodo reciclado con su concentración (pestaña 8).')
         return
 
     for nb, b in enumerate(bloques):
@@ -667,7 +678,7 @@ def _hoja_concentraciones(wb, d, despues_de):
         cab = [
             ('Operador', h.operador if h else '', 'N° de Reporte', rep.numero_reporte),
             ('Pozo', pozo.nombre, 'Fecha', datetime(rep.fecha.year, rep.fecha.month, rep.fecha.day)),
-            ('Ubicación', h.ubicacion if h else '', 'Fecha de inicio (spud)',
+            ('Ubicación', h.ubicacion if h else '', 'Fecha de inicio',
              datetime(spud.year, spud.month, spud.day) if spud else ''),
             ('Profundidad (ft)', _num(rep.profundidad_actual, 0), 'Peso del lodo (lb/gal)',
              _num(principal.mud_weight, 1) if principal else ''),
@@ -685,7 +696,7 @@ def _hoja_concentraciones(wb, d, despues_de):
             ('Fluido base agregado', b.get('aceite'), 'Volumen inicial de fluido', b['vol_inicio']),
             ('Agua agregada', b.get('agua'), 'Volumen final de fluido', b['vol_fin']),
             ('Aumento de volumen por material', b.get('vol_quimicos'), 'Cambio en volumen', cambio),
-            ('Lodo entero recibido', b.get('lodo'), '', None),
+            ('Lodo reciclado recibido', b.get('lodo'), '', None),
         ]
         celda(f'A{fila}', 'VOLÚMENES DEL DÍA', neg)
         celda(f'C{fila}', 'bbl', neg, centro)
@@ -872,13 +883,11 @@ def generar_reporte_excel(pozo, reporte):
     _hoja_concentraciones(wb, d, 'Contabilidad de Volumen')
     df, por_nombre, completo = _listas_inventario(d)
     # Las hojas sin datos se quitan del libro: antes salían vacías y parecían repetidas.
-    vacias = []
-    for hoja, productos in (('Inv Quimico (DF)', df), ('Inv Quimico (por nombre)', por_nombre),
-                            ('Inv Quimico (completo)', completo)):
-        if productos:
-            _hoja_inventario(wb[hoja], d, productos)
-        else:
-            vacias.append(hoja)
+    vacias = ['Inv Quimico (DF)', 'Inv Quimico (por nombre)']
+    if completo:
+        _hoja_inventario(wb['Inv Quimico (completo)'], d, completo)
+    else:
+        vacias.append('Inv Quimico (completo)')
     if not _hoja_equipos(wb['Equipos'], d):
         vacias.append('Equipos')
     if not _hoja_mallas(wb['Inventario de Mallas'], d):

@@ -107,7 +107,7 @@ class TransaccionVolumen(models.Model):
     PERDIDA = 'PERDIDA'
     TIPO_CHOICES = [
         (QUIMICOS, 'Agregar químicos'),
-        (LODO_ENTERO, 'Agregar lodo entero'),
+        (LODO_ENTERO, 'Agregar lodo reciclado'),
         (TRANSFERENCIA, 'Transferencia entre fosas'),
         (DEVOLUCION, 'Devolución'),
         (PERDIDA, 'Pérdida y descarte'),
@@ -127,7 +127,7 @@ class TransaccionVolumen(models.Model):
     agua_bbl = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Agua agregada (bbl)")
     peso_lodo = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, verbose_name="Peso del lodo (lb/gal)")
 
-    # Lodo entero: producto del inventario que se consume (ej. VERSACLEAN MUD 11.5 ppg).
+    # Lodo reciclado: producto del inventario que se consume (ej. VERSACLEAN MUD 11.5 ppg).
     lodo_producto = models.ForeignKey(Producto, on_delete=models.PROTECT, null=True, blank=True, related_name='+')
     lodo_producto_texto = models.CharField(max_length=255, blank=True)
     lodo_cantidad = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Cantidad consumida")
@@ -136,7 +136,7 @@ class TransaccionVolumen(models.Model):
     lodo_stock_aplicado = models.DecimalField(
         max_digits=12, decimal_places=3, default=0,
         verbose_name="Descontado del inventario general",
-        help_text="Unidades del producto de lodo entero que este movimiento restó de Producto.cantidad.",
+        help_text="Unidades del producto de lodo reciclado que este movimiento restó de Producto.cantidad.",
     )
 
     origen_destino = models.CharField(max_length=120, blank=True, verbose_name="Recibido de / Devuelto a")
@@ -154,7 +154,7 @@ class TransaccionVolumen(models.Model):
 class TransaccionVolumenProducto(models.Model):
     """
     Producto de un movimiento. En 'Agregar químicos' es la CANTIDAD agregada (en la unidad
-    del producto); en 'Agregar lodo entero' es la CONCENTRACIÓN del lodo (lb/bbl), que solo
+    del producto); en 'Agregar lodo reciclado' es la CONCENTRACIÓN del lodo (lb/bbl), que solo
     sirve para el cálculo de concentraciones. Guarda copia de los datos del producto.
     """
 

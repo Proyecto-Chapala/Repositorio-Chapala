@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
             name='lodo_stock_aplicado',
             field=models.DecimalField(
                 decimal_places=3, default=0, max_digits=12,
-                help_text='Unidades del producto de lodo entero que este movimiento restó de Producto.cantidad.',
+                help_text='Unidades del producto de lodo reciclado que este movimiento restó de Producto.cantidad.',
                 verbose_name='Descontado del inventario general'),
         ),
         migrations.AddField(

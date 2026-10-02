@@ -77,7 +77,7 @@ Asistente de 4 pasos (borrador → activo; unidades y moneda bloqueadas al confi
 5. **Comentarios**: especificación (se hereda), resumen del día (una línea), observaciones.
 6. **Control de Sólidos**: inventario de mallas (derivado), tickets (según ticket vs real), transacciones (instalar nueva/usada, pasar al almacén, desechar; "Deshacer último"), detalle y uso de equipos (rendimiento, renta por `EquipoActivoPozo.precio_renta/precio_standby`, paradas). Sin stock de mallas nuevas → bloquea.
 7. **Distribución de Tiempo**: horas del período 24 editable; si no cuadra → rojo pero guarda.
-8. **Inventario/Hidráulica/Concentraciones**: volumetría (fosas con tipo del día y volumen REAL, fluido en el hoyo, movimientos al instante: químicos, lodo entero, transferencia/devolución/pérdida, deshacer), balance por grupo y "No contabilizado", pérdidas por categoría (máx. 10 en el reporte, selección por pozo), inventario de productos, concentración, hidráulica, benchmark.
+8. **Inventario/Hidráulica/Concentraciones**: volumetría (fosas con tipo del día y volumen REAL, fluido en el hoyo, movimientos al instante: químicos, lodo reciclado, transferencia/devolución/pérdida, deshacer), balance por grupo y "No contabilizado", pérdidas por categoría (máx. 10 en el reporte, selección por pozo), inventario de productos, concentración, hidráulica, benchmark.
 
 ### Reglas del motor de volumetría
 - Grupos por código de tipo de fosa: 1 → ACTIVO, 2 → RESERVA, 3 → PREMEZCLA, otro → OTRAS, 0/None → fuera. El sistema activo incluye el hoyo.

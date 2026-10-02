@@ -47,7 +47,7 @@ Las 4 bombas son fijas: el formulario y el guardado recorren siempre las bombas 
 
 ✅ **Corregido (25/09/2026) — inventario unificado.** Decisiones del usuario:
 
-- `Producto.cantidad` es la **única existencia**. Los consumos del reporte diario (químicos, lodo entero, usado en otro módulo, ajustes) la descuentan; deshacer o borrar el reporte la devuelve.
+- `Producto.cantidad` es la **única existencia**. Los consumos del reporte diario (químicos, lodo reciclado, usado en otro módulo, ajustes) la descuentan; deshacer o borrar el reporte la devuelve.
 - Los tickets de productos son **solo registro**.
 - Los consumos registrados antes del cambio **no se descontaron otra vez** (la cantidad de ese día se tomó como correcta).
 

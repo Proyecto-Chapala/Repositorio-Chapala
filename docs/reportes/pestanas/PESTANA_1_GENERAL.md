@@ -37,7 +37,7 @@ Representantes del operador, contratista y dos de M-I SWACO, teléfonos del tala
 Cuando se crea un reporte:
 
 - si hay reporte anterior y se eligió copiar datos, se heredan profundidad, TVD, mecha, actividad, fluido, litología, representantes y teléfonos;
-- si es el primer reporte, los representantes se toman de Información General del Pozo (ingeniero de proyecto, contratista, ingenieros M-I 1 y 2).
+- si es el primer reporte, los representantes se toman de Información General del Pozo (coordinador de fluido, contratista, ingenieros de fluidos 1 y 2).
 
 ### Balance económico de fluidos y equipos
 

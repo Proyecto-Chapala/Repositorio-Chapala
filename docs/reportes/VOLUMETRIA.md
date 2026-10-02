@@ -14,7 +14,7 @@ Motor de la pestaña 8 (ONE-TRAX: *Volume Accounting and Product Inventory*).
 
 - el tipo de cada fosa en el día y su volumen **real medido**,
 - el volumen del hoyo que no es fluido del sistema,
-- los **movimientos** (químicos, lodo entero, transferencias, devoluciones, pérdidas),
+- los **movimientos** (químicos, lodo reciclado, transferencias, devoluciones, pérdidas),
 - los **tickets** de productos,
 - las columnas manuales del inventario (usado en otro módulo, ajuste, en pedido, no imprimir).
 
@@ -76,7 +76,7 @@ Suman (ENTRADA) o restan (SALIDA) al inventario del producto usando la cantidad 
 | Tipo | Volumen | Inventario y costo |
 |---|---|---|
 | Químicos | + fluido base + agua + volumen de químicos | Cada producto: usado en fluidos += cantidad; costo = cantidad × precio |
-| Lodo entero | + volumen | Producto de lodo entero: usado += unidades consumidas; costo |
+| Lodo reciclado | + volumen | Producto de lodo reciclado: usado += unidades consumidas; costo |
 | Transferencia | − origen, + destino | — |
 | Devolución | − volumen | — |
 | Pérdida | − volumen, sumado a la categoría de pérdida y al grupo | — |
@@ -89,9 +89,9 @@ masa (lb) = cantidad × tamaño de unidad × factor
 volumen (bbl) = masa / (gravedad específica × 350)
 ```
 
-Los productos en unidades de volumen (bbl, gal, l) no suman volumen aquí: su volumen se registra como fluido base, agua o lodo entero (en el manual, el DF-1 Base Oil aparece como producto y como fluido base).
+Los productos en unidades de volumen (bbl, gal, l) no suman volumen aquí: su volumen se registra como fluido base, agua o lodo reciclado (en el manual, el DF-1 Base Oil aparece como producto y como fluido base).
 
-**Consumo de lodo entero**:
+**Consumo de lodo reciclado**:
 
 ```
 unidades = volumen (bbl) / (tamaño × factor a bbl)      factor: BL/BBL 1 · GA/GAL 1/42 · LT/L 1/158.987
@@ -112,7 +112,7 @@ no contabilizado     = real − calculado
 
 Al cierre de cada día el no contabilizado debería ser cero; si no lo es, queda a la vista. El volumen real **no se ajusta** para cuadrar.
 
-Flujos por grupo que se informan: fluido base, agua, químicos, recibido (lodo entero), devuelto, pérdida, entra y sale por transferencias entre grupos.
+Flujos por grupo que se informan: fluido base, agua, químicos, recibido (lodo reciclado), devuelto, pérdida, entra y sale por transferencias entre grupos.
 
 ### 5. Inventario de productos
 
@@ -123,7 +123,7 @@ final = inicial + recibido − devuelto − usado en fluidos − usado en otro m
 - "Usado en otro módulo" también genera costo (con el precio guardado ese día).
 - **Servicios**: final = inicial (siempre 0); solo generan costo.
 - **Inventario unificado (25/09/2026):** las vistas llaman a `simular(..., validar_stock=False)`, así que este inventario "del pozo" ya no rechaza negativos ni define la existencia. El motor sigue calculando usos, costos, acumulados y concentraciones. La existencia real es `Producto.cantidad`:
-  - `views_inventario._mover_stock()` la descuenta al registrar químicos, lodo entero, usado en otro módulo o ajuste, y rechaza si no alcanza: "Inventario de BARITA (AOS-1010): hay 12 SACOS 100 LBS y se necesitan 40".
+  - `views_inventario._mover_stock()` la descuenta al registrar químicos, lodo reciclado, usado en otro módulo o ajuste, y rechaza si no alcanza: "Inventario de BARITA (AOS-1010): hay 12 SACOS 100 LBS y se necesitan 40".
   - Deshacer un movimiento o borrar el reporte (`devolver_stock_reporte`) la devuelve.
   - Los campos `stock_aplicado` (`TransaccionVolumenProducto`, `InventarioProductoDia`) y `lodo_stock_aplicado` (`TransaccionVolumen`) guardan cuánto se descontó.
   - En pantalla, inicial y final se reemplazan por la existencia general llevada a la fecha del reporte.
@@ -148,7 +148,7 @@ Para cada **compartimento** (el sistema activo, que se mezcla con el hoyo, y cad
 | Evento | Masa |
 |---|---|
 | Químicos (producto que "calcula concentración" y se mide en peso) | + masa en lb al compartimento de la fosa |
-| Lodo entero | + concentración (lb/bbl) × volumen |
+| Lodo reciclado | + concentración (lb/bbl) × volumen |
 | Transferencia entre compartimentos | Pasa la fracción volumen / volumen del compartimento de origen |
 | Devolución o pérdida | Sale la fracción volumen / volumen del compartimento |
 | Cambio de tipo de una fosa (entra o sale del sistema activo) | Se lleva su parte de masa al nuevo compartimento |

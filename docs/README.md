@@ -14,6 +14,7 @@ Estado al **23/09/2026**: proyecto cerrado en su versión funcional. Los pendien
 | Documento | Para quién | Qué contiene |
 |---|---|---|
 | [README.md](README.md) | Todos | Este archivo: instalación y arranque |
+| [MANUAL_USUARIO.md](MANUAL_USUARIO.md) | Personal de AOS / Ingeniería | **Manual de Usuario Maestro**: Arquitectura estilo ONE-TRAX, Setup inicial, Operación diaria (8 pestañas), Volumetría y Cierre |
 | [ARQUITECTURA.md](ARQUITECTURA.md) | Desarrollo | App, carpetas, motores de cálculo, convenciones |
 | [API_ENDPOINTS.md](API_ENDPOINTS.md) | Desarrollo | Todas las rutas, métodos y cuerpos JSON |
 | [PENDIENTES_Y_DECISIONES.md](PENDIENTES_Y_DECISIONES.md) | Todos | Decisiones tomadas, bugs conocidos y trabajo pendiente |

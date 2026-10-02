@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Guía del Día Operativo — Sistema CHAPALA</title>
+<style>
+  @page {
+    size: letter portrait;
+    margin: 18mm 15mm 18mm 15mm;
+    @bottom-left {
+      content: "All Oil Services, C.A. • Sistema CHAPALA";
+      font-size: 8.5pt;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #64748b;
+    }
+    @bottom-right {
+      content: "Página " counter(page);
+      font-size: 8.5pt;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #64748b;
+      font-weight: 600;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    line-height: 1.6;
+    font-size: 9.8pt;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+  }
+
+  /* ====== PORTADA ====== */
+  .cover-page {
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 88vh;
+    padding: 36px 30px;
+    border: 3px solid #14283b;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    position: relative;
+    margin-bottom: 30px;
+  }
+  .cover-header {
+    border-bottom: 3px solid #d97706;
+    padding-bottom: 20px;
+  }
+  .cover-brand {
+    font-size: 26pt;
+    font-weight: 900;
+    color: #14283b;
+    letter-spacing: .05em;
+  }
+  .cover-brand span { color: #d97706; }
+  .cover-company {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #475569;
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .cover-body { margin: auto 0; }
+  .cover-title {
+    font-size: 28pt;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .cover-subtitle {
+    font-size: 13.5pt;
+    font-weight: 500;
+    color: #334155;
+    line-height: 1.45;
+    border-left: 4px solid #d97706;
+    padding-left: 16px;
+    margin-bottom: 28px;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: #14283b;
+    color: #ffffff;
+    font-size: 9.5pt;
+    font-weight: 700;
+    padding: 7px 18px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .cover-footer {
+    border-top: 1px solid #cbd5e1;
+    padding-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+    color: #475569;
+  }
+  .cover-footer strong { color: #0f172a; }
+
+  /* ====== ENCABEZADOS ====== */
+  h1.chapter-title {
+    color: #14283b;
+    font-size: 17pt;
+    font-weight: 800;
+    border-bottom: 2px solid #14283b;
+    padding-bottom: 6px;
+    margin-top: 32px;
+    margin-bottom: 14px;
+    page-break-before: always;
+  }
+  h1.chapter-title:first-of-type {
+    page-break-before: auto;
+  }
+  h2.section-title {
+    color: #1e3a5f;
+    font-size: 12.5pt;
+    font-weight: 800;
+    margin-top: 22px;
+    margin-bottom: 10px;
+    border-left: 4px solid #d97706;
+    padding-left: 10px;
+  }
+  h3.subsection-title {
+    color: #334155;
+    font-size: 10.5pt;
+    font-weight: 700;
+    margin-top: 15px;
+    margin-bottom: 6px;
+  }
+  h4 {
+    font-size: 9.8pt;
+    font-weight: 700;
+    color: #475569;
+    margin-top: 12px;
+    margin-bottom: 4px;
+  }
+  p {
+    margin-top: 0;
+    margin-bottom: 9px;
+    text-align: justify;
+  }
+  ul, ol {
+    margin-top: 4px;
+    margin-bottom: 10px;
+    padding-left: 22px;
+  }
+  li { margin-bottom: 4px; }
+
+  /* ====== TABLAS ====== */
+  .table-wrap {
+    margin: 12px 0 16px 0;
+    width: 100%;
+    page-break-inside: avoid;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.8pt;
+    background: #ffffff;
+  }
+  th {
+    background: #14283b;
+    color: #ffffff;
+    font-weight: 700;
+    text-align: left;
+    padding: 7px 9px;
+    border: 1px solid #14283b;
+  }
+  td {
+    padding: 6px 9px;
+    border: 1px solid #cbd5e1;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  /* ====== CALLOUTS ====== */
+  .callout {
+    margin: 12px 0 14px 0;
+    padding: 10px 14px;
+    border-radius: 6px;
+    page-break-inside: avoid;
+    font-size: 9.2pt;
+  }
+  .callout-title {
+    font-weight: 800;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-size: 9pt;
+  }
+  .callout-note {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    color: #1e3a8a;
+  }
+  .callout-note .callout-title { color: #1d4ed8; }
+  .callout-important {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    color: #78350f;
+  }
+  .callout-important .callout-title { color: #b45309; }
+  .callout-warning {
+    background: #fef2f2;
+    border-left: 4px solid #ef4444;
+    color: #7f1d1d;
+  }
+  .callout-warning .callout-title { color: #b91c1c; }
+  .callout-tip {
+    background: #f0fdf4;
+    border-left: 4px solid #10b981;
+    color: #064e3b;
+  }
+  .callout-tip .callout-title { color: #047857; }
+
+  /* ====== PASO CARD ====== */
+  .step-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin: 14px 0;
+    page-break-inside: avoid;
+    overflow: hidden;
+  }
+  .step-header {
+    background: linear-gradient(135deg, #14283b 0%, #1e3a5f 100%);
+    color: #ffffff;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .step-number {
+    background: #d97706;
+    color: #ffffff;
+    font-weight: 900;
+    font-size: 14pt;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-label {
+    font-size: 12pt;
+    font-weight: 700;
+    letter-spacing: .02em;
+  }
+  .step-tab {
+    font-size: 8.5pt;
+    background: rgba(255,255,255,.15);
+    padding: 2px 10px;
+    border-radius: 3px;
+    margin-left: auto;
+    letter-spacing: .04em;
+    font-weight: 600;
+  }
+  .step-body {
+    padding: 14px 18px;
+    background: #fafbfc;
+  }
+
+  /* ====== FIELD GRID ====== */
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 20px;
+    margin: 8px 0;
+  }
+  .field-item {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    font-size: 9pt;
+  }
+  .field-label {
+    font-weight: 700;
+    color: #475569;
+    white-space: nowrap;
+  }
+  .field-desc {
+    color: #64748b;
+    font-style: italic;
+  }
+
+  /* ====== FLOW DIAGRAM ====== */
+  .flow-box {
+    text-align: center;
+    margin: 20px 0;
+    page-break-inside: avoid;
+  }
+  .flow-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0;
+  }
+  .flow-node {
+    background: #14283b;
+    color: #ffffff;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 8.5pt;
+    font-weight: 700;
+    min-width: 100px;
+    text-align: center;
+  }
+  .flow-node.active { background: #d97706; }
+  .flow-arrow {
+    color: #94a3b8;
+    font-size: 16pt;
+    font-weight: 300;
+  }
+
+  /* ====== MISC ====== */
+  hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 18px 0;
+  }
+  code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 8.5pt;
+    background: #f1f5f9;
+    color: #b45309;
+    padding: 2px 4px;
+    border-radius: 3px;
+    border: 1px solid #e2e8f0;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+
+  .checklist { list-style: none; padding-left: 8px; }
+  .checklist li::before {
+    content: "☐ ";
+    font-size: 11pt;
+    color: #94a3b8;
+  }
+  .checklist li.done::before {
+    content: "☑ ";
+    color: #10b981;
+  }
+
+  .toc-section {
+    margin: 8px 0;
+    page-break-inside: avoid;
+  }
+  .toc-entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px dotted #cbd5e1;
+    font-size: 9.5pt;
+  }
+  .toc-entry .step-num {
+    background: #d97706;
+    color: #fff;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 8.5pt;
+    margin-right: 8px;
+  }
+
+  .formula-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #d97706;
+    padding: 8px 12px;
+    margin: 8px 0;
+    font-family: 'Cambria Math', 'Georgia', serif;
+    font-size: 9.8pt;
+    color: #0f172a;
+    text-align: center;
+    page-break-inside: avoid;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== PORTADA ===================== -->
+<div class="cover-page">
+  <div class="cover-header">
+    <div class="cover-brand">CHAPALA <span>OPERACIONES</span></div>
+    <div class="cover-company">All Oil Services, C.A. &bull; División Técnica y de Ingeniería de Fluidos</div>
+  </div>
+
+  <div class="cover-body">
+    <div class="cover-title">GUÍA DEL DÍA OPERATIVO</div>
+    <div class="cover-subtitle">
+      Paso a paso para completar el Reporte Diario de Fluidos de Perforación &mdash;
+      desde la apertura del reporte hasta la descarga del Excel final, cubriendo las 8 pestañas del sistema.
+    </div>
+    <div class="cover-badge">Guía Práctica &bull; Versión 2.0</div>
+  </div>
+
+  <div class="cover-footer">
+    <div><strong>Proyecto:</strong> Sistema CHAPALA</div>
+    <div><strong>Fecha de Emisión:</strong> Septiembre 2026</div>
+    <div><strong>Tipo:</strong> Guía Operativa Diaria</div>
+  </div>
+</div>
+
+<!-- ===================== CONTENIDO ===================== -->
+<div style="padding: 0 4px;">
+
+<!-- =================== ÍNDICE =================== -->
+<h1 class="chapter-title" style="page-break-before: auto;">📋 Contenido de la Guía</h1>
+
+<p>Esta guía describe el flujo completo de trabajo diario del ingeniero de fluidos de perforación utilizando el sistema CHAPALA.
+Cada paso corresponde a una pestaña del Reporte Diario y se presenta en el <strong>orden recomendado</strong> para garantizar la coherencia
+matemática y contable sin reprocesos.</p>
+
+<div class="toc-section">
+  <div class="toc-entry"><span><span class="step-num">PRE</span> Antes de Empezar: Abrir o Crear el Reporte</span></div>
+  <div class="toc-entry"><span><span class="step-num">1</span> Pestaña General &mdash; Profundidades, Actividad y Contactos</span></div>
+  <div class="toc-entry"><span><span class="step-num">2</span> Pestaña Bombas y Barrenas &mdash; Caudal, Boquillas y Presiones</span></div>
+  <div class="toc-entry"><span><span class="step-num">3</span> Pestaña Propiedades del Lodo &mdash; Reología, Retorta y Químicas</span></div>
+  <div class="toc-entry"><span><span class="step-num">4</span> Pestaña Geometría del Pozo &mdash; Sarta, Volúmenes y Bottoms-Up</span></div>
+  <div class="toc-entry"><span><span class="step-num">5</span> Pestaña Comentarios &mdash; Resumen del Día y Bitácora</span></div>
+  <div class="toc-entry"><span><span class="step-num">6</span> Pestaña Control de Sólidos &mdash; Mallas, Equipos y Descartes</span></div>
+  <div class="toc-entry"><span><span class="step-num">7</span> Pestaña Distribución de Tiempo &mdash; 24 Horas IADC</span></div>
+  <div class="toc-entry"><span><span class="step-num">8</span> Pestaña Inventario / Hidráulica &mdash; Volumetría, Balance y API 13D</span></div>
+  <div class="toc-entry"><span><span class="step-num">FIN</span> Cierre del Reporte &mdash; Auditoría y Descarga Excel</span></div>
+</div>
+
+<div class="callout callout-important">
+  <div class="callout-title">⚠ Orden de llenado</div>
+  El orden de las pestañas <strong>no es arbitrario</strong>. Las pestañas posteriores dependen de los datos ingresados en las anteriores.
+  Por ejemplo, la Hidráulica (Paso 8) necesita el caudal del Paso 2, la reología del Paso 3 y la geometría del Paso 4.
+  Seguir el orden evita cálculos incompletos y reprocesos.
+</div>
+
+<!-- =================== DIAGRAMA DE FLUJO =================== -->
+<h2 class="section-title">Flujo de Trabajo Visual</h2>
+
+<div class="flow-box">
+  <div class="flow-row">
+    <div class="flow-node active">PRE: Abrir Reporte</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">1. General</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">2. Bombas</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">3. Lodo</div>
+  </div>
+  <div class="flow-row" style="margin-top: 8px;">
+    <div class="flow-node">4. Geometría</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">5. Comentarios</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">6. Sólidos</div>
+  </div>
+  <div class="flow-row" style="margin-top: 8px;">
+    <div class="flow-node">7. Tiempo</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">8. Inventario</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node active">FIN: Descarga Excel</div>
+  </div>
+</div>
+
+
+<!-- =================== PRE-REQUISITO =================== -->
+<h1 class="chapter-title">🚀 Antes de Empezar: Abrir o Crear el Reporte</h1>
+
+<h2 class="section-title">Acceder al Hub de Reportes</h2>
+<ol>
+  <li>Desde el <strong>menú lateral (sidebar)</strong>, haga clic en <strong>Pozos</strong>.</li>
+  <li>Seleccione el pozo en el que trabajará hoy.</li>
+  <li>En la vista del pozo, acceda a la sección <strong>Fluidos de Perforación y Equipos</strong>.</li>
+  <li>Se muestra el <strong>Hub de Reportes</strong>: un historial de todos los reportes existentes con su fecha y consecutivo.</li>
+</ol>
+
+<h2 class="section-title">Crear un Nuevo Reporte Diario</h2>
+<ol>
+  <li>Haga clic en el botón <strong>+ Nuevo Reporte</strong>.</li>
+  <li>Seleccione la <strong>fecha</strong> correspondiente al día de operaciones.</li>
+  <li>El sistema crea el reporte con el siguiente consecutivo automáticamente y <strong>hereda datos del reporte anterior</strong>
+      (contactos, bombas, sarta, inventario, fosas y configuraciones).</li>
+</ol>
+
+<div class="callout callout-tip">
+  <div class="callout-title">💡 Consejo</div>
+  Si ya existe un reporte para hoy, simplemente haga clic en él desde el Hub para abrirlo y editarlo.
+  Use los botones de navegación <code>|&lt;&lt;</code> <code>&lt;</code> <code>&gt;</code> <code>&gt;&gt;|</code> para moverse entre reportes.
+</div>
+
+<h2 class="section-title">Elementos de la Barra Superior</h2>
+<p>Una vez dentro del reporte, la barra superior siempre muestra:</p>
+<div class="field-grid">
+  <div class="field-item"><span class="field-label">Miga de pan:</span> <span class="field-desc">Pozos → Pozo → Fluidos → Fecha</span></div>
+  <div class="field-item"><span class="field-label">Chips:</span> <span class="field-desc">Tipo de lodo, Unidades, Reporte #N</span></div>
+  <div class="field-item"><span class="field-label">Navegación:</span> <span class="field-desc">Primer / Anterior / Fecha / Siguiente / Último</span></div>
+  <div class="field-item"><span class="field-label">Acciones:</span> <span class="field-desc">Cost Overview · Excel · Imprimir · Guardar</span></div>
+</div>
+
+
+<!-- =================== PASO 1 =================== -->
+<h1 class="chapter-title">Paso 1 — Pestaña General</h1>
+
+<div class="step-card">
+  <div class="step-header">
+    <div class="step-number">1</div>
+    <div class="step-label">General: Profundidades, Actividad y Contactos</div>
+    <div class="step-tab">PESTAÑA 1</div>
+  </div>
+  <div class="step-body">
+    <p>Esta pestaña define las <strong>coordenadas operativas del día</strong>: dónde está el pozo, qué actividad se realiza y quién está de guardia.</p>
+  </div>
+</div>
+
+<h2 class="section-title">1.1 Parámetros de Operación</h2>
+<p>Complete los siguientes campos en orden:</p>
+
+<div class="table-wrap">
+<table>
+  <tr>
+    <th>Campo</th>
+    <th>Descripción</th>
+    <th>Ejemplo</th>
+  </tr>
+  <tr>
+    <td><strong>Fecha</strong></td>
+    <td>Fecha de las operaciones reportadas (formato YYYY-MM-DD)</td>
+    <td>2026-09-30</td>
+  </tr>
+  <tr>
+    <td><strong>Reporte N°</strong></td>
+    <td>Consecutivo automático (solo lectura)</td>
+    <td>#45</td>
+  </tr>
+  <tr>
+    <td><strong>Actividad</strong></td>
+    <td>Descripción de la operación en curso</td>
+    <td>Perforando hoyo 12-1/4"</td>
+  </tr>
+  <tr>
+    <td><strong>Profundidad MD (ft)</strong></td>
+    <td>Profundidad medida total alcanzada</td>
+    <td>8,450</td>
+  </tr>
+  <tr>
+    <td><strong>Profundidad TVD (ft)</strong></td>
+    <td>Profundidad vertical verdadera</td>
+    <td>7,820</td>
+  </tr>
+  <tr>
+    <td><strong>Prof. Mecha (ft)</strong></td>
+    <td>Ubicación física de la mecha. <span class="badge badge-red">CRÍTICO</span></td>
+    <td>8,450</td>
+  </tr>
+  <tr>
+    <td><strong>Tipo de Fluido</strong></td>
+    <td>Nombre del sistema de lodo</td>
+    <td>VERSACLEAN LTOBM</td>
+  </tr>
+  <tr>
+    <td><strong>Litología</strong></td>
+    <td>Formación que se perfora (autocompletado)</td>
+    <td>Shale</td>
+  </tr>
+</table>
+</div>
+
+<div class="callout callout-warning">
+  <div class="callout-title">⛔ Campo Crítico: Profundidad de Mecha (Bit Depth)</div>
+  Este campo gobierna el cálculo de volúmenes del pozo (Pestaña 4) y la hidráulica (Pestaña 8).
+  Si se deja en <strong>0</strong>, los volúmenes del hoyo, anular y bajo la mecha saldrán en 0 y la hidráulica se bloqueará.
+</div>
+
+<h2 class="section-title">1.2 Módulos Opcionales de Pestaña 1</h2>
+<h3 class="subsection-title">Configuración de Litología</h3>
+<ul>
+  <li>Acceda al modal <strong>Lithology Setup</strong> si necesita actualizar la columna estratigráfica.</li>
+  <li>Ingrese las formaciones con su profundidad tope y tipo de roca.</li>
+  <li>Use <strong>Detectar por Profundidad</strong> para seleccionar automáticamente la litología según la profundidad actual.</li>
+</ul>
+
+<h3 class="subsection-title">Registro Direccional (Well Survey)</h3>
+<ul>
+  <li>Abra el modal <strong>Well Survey</strong> para ingresar o importar estaciones direccionales.</li>
+  <li>Puede pegar datos desde CSV o escribirlos manualmente: MD, Inclinación, Azimut.</li>
+  <li>El sistema calcula TVD por curvatura mínima API automáticamente.</li>
+  <li>Pulse <strong>Aplicar TVD al Reporte</strong> para transferir el TVD calculado al campo correspondiente.</li>
+</ul>
+
+<h2 class="section-title">1.3 Personal de Guardia</h2>
+<p>Actualice los contactos si hay cambios de turno:</p>
+<ul>
+  <li>Representante del Operador (Company Man)</li>
+  <li>Toolpusher del Contratista de Perforación</li>
+  <li>Ingenieros de Fluidos: Día y Noche</li>
+  <li>Teléfonos: general, cabina del taladro y almacén base</li>
+</ul>
+
+<div class="callout callout-tip">
+  <div class="callout-title">💡 Consejo</div>
+  Los contactos se heredan del día anterior. Solo actualice si hubo cambio de guardia.
+</div>
+
+<p><strong>Al terminar → Pulse <code>Guardar</code> y pase a la Pestaña 2.</strong></p>
+
+
+<!-- =================== PASO 2 =================== -->
+<h1 class="chapter-title">Paso 2 — Pestaña Bombas y Barrenas</h1>
+
+<div class="step-card">
+  <div class="step-header">
+    <div class="step-number">2</div>
+    <div class="step-label">Bombas, Mecha, Boquillas y Presiones</div>
+    <div class="step-tab">PESTAÑA 2</div>
+  </div>
+  <div class="step-body">
+    <p>Aquí se configuran los parámetros mecánicos que determinan el <strong>caudal de circulación</strong> y la <strong>hidráulica de la barrena</strong>.</p>
+  </div>
+</div>
+
+<h2 class="section-title">2.1 Configurar las Bombas de Lodo</h2>
+<p>El sistema soporta hasta <strong>4 bombas simultáneas</strong>. Para cada una:</p>
+
+<div class="table-wrap">
+<table>
+  <tr>
+    <th>Campo</th>
+    <th>Qué llenar</th>
+  </tr>
+  <tr>
+    <td><strong>Marca y Modelo</strong></td>
+    <td>Seleccione del catálogo interactivo (ej. National 14-P-220)</td>
+  </tr>
+  <tr>
+    <td><strong>Diámetro de Camisa (in)</strong></td>
+    <td>Liner de la bomba instalado</td>
+  </tr>
+  <tr>
+    <td><strong>Longitud de Carrera (in)</strong></td>
+    <td>Stroke de la bomba</td>
+  </tr>
+  <tr>
+    <td><strong>Eficiencia (%)</strong></td>
+    <td>Típicamente 95% - 98%</td>
+  </tr>
+  <tr>
+    <td><strong>Velocidad (SPM)</strong></td>
+    <td>Emboladas por minuto actuales</td>
+  </tr>
+  <tr>
+    <td><strong>☑ En Reporte</strong></td>
+    <td>Marcar si la bomba está activa y suma al caudal total</td>
+  </tr>
+  <tr>
+    <td><strong>☑ Bomba Riser</strong></td>
+    <td>Solo en operaciones offshore, si aplica</td>
+  </tr>
+</table>
+</div>
+
+<div class="formula-box">
+  Desplazamiento (bbl/stk) = 0.000243 × Liner² × Stroke × (Eficiencia / 100)<br>
+  Caudal (GPM) = Desplazamiento × 42.0 × SPM
+</div>
+
+<h2 class="section-title">2.2 Boquillas de la Barrena (Nozzles)</h2>
+<ol>
+  <li>Agregue filas con el <strong>tamaño de boquilla</strong> (en 32avos de pulgada, rango 7-32) y la <strong>cantidad</strong> (1-12).</li>
+  <li>El sistema calcula automáticamente el <strong>TFA</strong> (Área Total de Flujo).</li>
+</ol>
+
+<div class="callout callout-note">
+  <div class="callout-title">ℹ Nota</div>
+  Si no hay boquillas configuradas, el TFA será 0 y no se podrán calcular las caídas de presión en la mecha ni la potencia hidráulica (HSI) en la Pestaña 8.
+</div>
+
+<h2 class="section-title">2.3 Datos de la Barrena</h2>
+<ul>
+  <li><strong>Tamaño de Barrena / Hoyo (in):</strong> Diámetro del hoyo perforado.</li>
+  <li><strong>% de Lavado (Washout):</strong> Incremento volumétrico del hoyo por erosión.</li>
+  <li><strong>RPM, WOB (lb), ROP (ft/hr):</strong> Parámetros operacionales de perforación.</li>
+</ul>
+
+<h2 class="section-title">2.4 Presiones de Circulación</h2>
+<ul>
+  <li>Use el botón <strong>Copiar Caudal</strong> para sincronizar el caudal total de las bombas marcadas.</li>
+  <li>Ingrese la <strong>Presión de Bombas en Superficie (SPP)</strong> en psi.</li>
+  <li>Si aplica: caída en MWD (psi) y caída en Motor de Fondo (psi).</li>
+</ul>
+
+<p><strong>Al terminar → Pulse <code>Guardar</code> y pase a la Pestaña 3.</strong></p>
+
+
+<!-- =================== PASO 3 =================== -->
+<h1 class="chapter-title">Paso 3 — Pestaña Propiedades del Lodo</h1>
+
+<div class="step-card">
+  <div class="step-header">
+    <div class="step-number">3</div>
+    <div class="step-label">Reología, Retorta, Sólidos y Análisis Químico</div>
+    <div class="step-tab">PESTAÑA 3</div>
+  </div>
+  <div class="step-body">
+    <p>La pestaña más densa del sistema. Permite registrar hasta <strong>4 chequeos diarios</strong> con el conjunto completo de pruebas de laboratorio.
+    El <strong>Chequeo #1</strong> (marcado con ★) es el <strong>Principal</strong> y alimenta los reportes ejecutivos y la hidráulica.</p>
+  </div>
+</div>
+
+<h2 class="section-title">3.1 Seleccionar el Sistema de Lodo</h2>
+<p>Use el <strong>Mode Switcher</strong> para alternar entre:</p>
+<ul>
+  <li><span class="badge badge-blue">WBM</span> &mdash; Base Agua (incluye WBM CaCl₂)</li>
+  <li><span class="badge badge-amber">OBM / SBM</span> &mdash; Base Aceite o Sintético</li>
+</ul>
+<p>La selección adapta dinámicamente las filas de análisis de sólidos y fórmulas disponibles.</p>
+
+<h2 class="section-title">3.2 Información de la Muestra</h2>
+<div class="field-grid">
+  <div class="field-item"><span class="field-label">Punto de toma:</span> <span class="field-desc">In / Flowline / Suction</span></div>
+  <div class="field-item"><span class="field-label">Hora:</span> <span class="field-desc">Hora del chequeo</span></div>
+  <div class="field-item"><span class="field-label">Temp. Línea de Flujo:</span> <span class="field-desc">°F</span></div>
+  <div class="field-item"><span class="field-label">Profundidad MD / TVD:</span> <span class="field-desc">ft</span></div>
+</div>
+
+<h2 class="section-title">3.3 Densidad y Reología</h2>
+<div class="table-wrap">
+<table>
+  <tr><th>Propiedad</th><th>Unidad</th><th>Notas</th></tr>
+  <tr><td>Densidad del Lodo</td><td>lb/gal (lpg)</td><td>Peso medido con balanza</td></tr>
+  <tr><td>Viscosidad Marsh</td><td>s/qt</td><td>Embudo Marsh estándar</td></tr>
+  <tr><td>Lecturas Fann 35</td><td>—</td><td>θ600, θ300, θ200, θ100, θ6, θ3</td></tr>
+  <tr><td>Geles</td><td>lb/100ft²</td><td>10 seg, 10 min, 30 min</td></tr>
+</table>
+</div>
+
+<div class="formula-box">
+  PV (cP) = θ600 − θ300 &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; YP (lb/100ft²) = θ300 − PV
+</div>
+
+<div class="callout callout-warning">
+  <div class="callout-title">⛔ Validación</div>
+  Si θ300 &gt; θ600, el sistema calculará un PV negativo (físicamente inválido). Verifique las lecturas antes de guardar.
+</div>
+
+<h2 class="section-title">3.4 Retorta y Análisis de Sólidos</h2>
+<ol>
+  <li>Ingrese los porcentajes volumétricos de <strong>Sólidos, Aceite, Agua y Arena</strong> de la retorta.</li>
+  <li>El sistema calcula automáticamente en la <strong>zona amarilla</strong>:
+    <ul>
+      <li><strong>WBM:</strong> LGS, Bentonita, Sólidos Perforados, Barita (HGS)</li>
+      <li><strong>OBM/SBM:</strong> Sólidos Corregidos, Relación Aceite/Agua (OWR), LGS y HGS netos</li>
+    </ul>
+  </li>
+  <li>Configure las <strong>Especificaciones de Gravedad Específica</strong> si difieren de los valores estándar.</li>
+</ol>
+
+<h2 class="section-title">3.5 Análisis Químico</h2>
+<ul>
+  <li><strong>pH</strong> y Temperatura de pH</li>
+  <li><strong>Pm, Pf, Mf:</strong> Alcalinidades del lodo y filtrado</li>
+  <li><strong>Cloruros</strong> (mg/L)</li>
+  <li><strong>Calcio Ca++</strong> (mg/L)</li>
+  <li><strong>MBT</strong> (lb/bbl de bentonita equivalente)</li>
+  <li><strong>Estabilidad Eléctrica</strong> (Voltios, solo OBM/SBM)</li>
+  <li><strong>Exceso de Cal</strong> (lb/bbl)</li>
+</ul>
+
+<h2 class="section-title">3.6 Filtrado</h2>
+<ul>
+  <li><strong>Filtrado API</strong> (cc/30min) y <strong>Revoque API</strong> (1/32")</li>
+  <li><strong>Filtrado HPHT</strong> (cc/30min) y <strong>Revoque HPHT</strong> (1/32")</li>
+</ul>
+
+<p><strong>Al terminar → Verifique que el Chequeo #1 esté marcado como Principal (★). Pulse <code>Guardar</code> y pase a la Pestaña 4.</strong></p>
+
+
+<!-- =================== PASO 4 =================== -->
+<h1 class="chapter-title">Paso 4 — Pestaña Geometría del Pozo</h1>
+
+<div class="step-card">
+  <div class="step-header">
+    <div class="step-number">4</div>
+    <div class="step-label">Sarta de Perforación, Volúmenes y Bottoms-Up</div>
+    <div class="step-tab">PESTAÑA 4</div>
+  </div>
+  <div class="step-body">
+    <p>Define el ensamblaje mecánico del pozo para calcular capacidades internas, anulares y tiempos de fondo arriba.</p>
+  </div>
+</div>
+
+<h2 class="section-title">4.1 Heredar la Sarta del Día Anterior</h2>
+<ol>
+  <li>Pulse <strong>Heredar del día anterior</strong> para clonar la sarta previa.</li>
+  <li>Ajuste únicamente la <strong>longitud de la Tubería de Perforación (DP)</strong> para que la suma total iguale la <strong>Profundidad de Mecha</strong> del Paso 1.</li>
+</ol>
+
+<div class="callout callout-important">
+  <div class="callout-title">⚠ Regla de Ensamblaje</div>
+  La sarta se construye <strong>desde la mecha hacia la superficie</strong>. La Fila #1 es obligatoriamente la mecha (Bit).
+  Si se invierte el orden, los diámetros anulares quedarán desfasados y las velocidades de circulación serán incorrectas.
+</div>
+
+<h2 class="section-title">4.2 Componentes de la Sarta</h2>
+<p>Cada fila incluye:</p>
+<div class="field-grid">
+  <div class="field-item"><span class="field-label">Componente:</span> <span class="field-desc">Bit, Motor, MWD, DC, HWDP, DP</span></div>
+  <div class="field-item"><span class="field-label">Longitud (ft):</span> <span class="field-desc">Largo del tramo</span></div>
+  <div class="field-item"><span class="field-label">OD / ID (in):</span> <span class="field-desc">Diámetros del cuerpo</span></div>
+  <div class="field-item"><span class="field-label">Tool Joint:</span> <span class="field-desc">OD, ID y longitud de junta</span></div>
+</div>
+
+<h2 class="section-title">4.3 Contexto del Pozo</h2>
+<ul>
+  <li><strong>Intervalo de Costo:</strong> Seleccione la fase de revestidor activa a la que se imputan los químicos.</li>
+  <li><strong>Hoyo Piloto:</strong> Configure diámetro y profundidad si aplica.</li>
+  <li><strong>Side Track:</strong> Active y configure la profundidad de kick-off si se inicia un desvío.</li>
+</ul>
+
+<h2 class="section-title">4.4 Volúmenes Calculados</h2>
+<p>Al guardar, el sistema muestra tarjetas con los volúmenes:</p>
+<div class="table-wrap">
+<table>
+  <tr><th>Volumen</th><th>Descripción</th></tr>
+  <tr><td><strong>DS Volume (bbl)</strong></td><td>Capacidad interna total de la sarta</td></tr>
+  <tr><td><strong>Annular Volume (bbl)</strong></td><td>Espacio entre pared del pozo/revestidor y sarta</td></tr>
+  <tr><td><strong>Under-bit (bbl)</strong></td><td>Volumen entre la mecha y el fondo del pozo</td></tr>
+  <tr><td><strong>Total Hole Volume (bbl)</strong></td><td>Suma de DS + Anular + Under-bit</td></tr>
+  <tr><td><strong>Bottoms-Up (stk / min)</strong></td><td>Emboladas y tiempo para llevar fluido del fondo a superficie</td></tr>
+</table>
+</div>
+
+<div class="callout callout-warning">
+  <div class="callout-title">⛔ Validación</div>
+  Si aparece en rojo <em>"La sarta no llega a la mecha: faltan X ft"</em>, ajuste la longitud de la tubería de perforación (DP) hasta que coincida con la Profundidad de Mecha (±1 ft).
+</div>
+
+<p><strong>Al terminar → Pulse <code>Guardar</code> y pase a la Pestaña 5.</strong></p>
+
+
+<!-- =================== PASO 5 =================== -->
+<h1 class="chapter-title">Paso 5 — Pestaña Comentarios</h1>
+
+<div class="step-card">
+  <div class="step-header">
+    <div class="step-number">5</div>
+    <div class="step-label">Resumen del Día y Bitácora de Operaciones</div>
+    <div class="step-tab">PESTAÑA 5</div>
+  </div>
+  <div class="step-body">
+    <p>Documentación narrativa del día: rangos objetivo, resumen ejecutivo y bitácora IADC detallada.</p>
+  </div>
+</div>
+
+<h2 class="section-title">5.1 Especificaciones Objetivo</h2>
+<p>Defina o verifique los rangos pactados con la operadora:</p>
+<div class="field-grid">
+  <div class="field-item"><span class="field-label">Peso del lodo:</span> <span class="field-desc">ej. 11.5 – 12.0 lpg</span></div>
+  <div class="field-item"><span class="field-label">Viscosidad Marsh:</span> <span class="field-desc">ej. 45 – 55 s/qt</span></div>
+  <div class="field-item"><span class="field-label">Filtrado:</span> <span class="field-desc">ej. 3.0 – 5.0 cc/30min</span></div>
+</div>
+
+<div class="callout callout-tip">
+  <div class="callout-title">💡 Consejo</div>
+  Las especificaciones se heredan automáticamente entre días. Solo actualice si cambian las condiciones operativas.
+</div>
+
+<h2 class="section-title">5.2 Resumen del Día (Mud Recap)</h2>
+<div class="callout callout-important">
+  <div class="callout-title">⚠ Regla Estricta</div>
+  Este campo es de <strong>una sola línea</strong>. Los saltos de línea se colapsan automáticamente al guardar.
+  Este texto alimenta directamente el dossier final del pozo (Well Recap Report).
+</div>
+<p>Ejemplo de un buen resumen:</p>
+<p><em>"Perforando de 8,200' a 8,450' MD en Shale. Manteniendo peso 11.8 lpg y PV/YP 28/18. Bombeada píldora de barrido de 30 bbl a 12.5 lpg cada 150' perforados. Sin problemas de estabilidad. CS operando al 100%."</em></p>
+
+<h2 class="section-title">5.3 Observaciones Detalladas</h2>
+<ul>
+  <li><strong>Tratamiento Químico:</strong> Productos dosificados, baches, píldoras, mantenimiento de tanques.</li>
+  <li><strong>Operaciones IADC:</strong> Viajes, registros, pegas, torque y arrastre, eventos significativos.</li>
+  <li><strong>Eventos No Programados (NPT):</strong> Si ocurrieron, acceda al modal de NPT para registrarlos.</li>
+</ul>
+
+<p><strong>Al terminar → Pulse <code>Guardar</code> y pase a la Pestaña 6.</strong></p>
+
+
+<!-- =================== PASO 6 =================== -->
+<h1 class="chapter-title">Paso 6 — Pestaña Control de Sólidos</h1>
+
+<div class="step-card">
+  <div class="step-header">
+    <div class="step-number">6</div>
+    <div class="step-label">Mallas de Zaranda, Equipos y Descartes</div>
+    <div class="step-tab">PESTAÑA 6</div>
+  </div>
+  <div class="step-body">
+    <p>Gestión del inventario de mallas, transacciones de instalación/retiro en zarandas, rendimiento de equipos mecánicos e indicadores API RP 13C.</p>
+  </div>
+</div>
+
+<h2 class="section-title">6.1 Registrar Tickets de Mallas Recibidas</h2>
+<ol>
+  <li>Acceda al modal <strong>Tickets de Entrega/Devolución</strong>.</li>
+  <li>Ingrese los datos de la remisión: modelo, cantidad según papel vs cantidad real.</li>
+  <li>Las discrepancias se resaltan en ámbar automáticamente.</li>
+</ol>
+
+<h2 class="section-title">6.2 Transacciones de Mallas en Zarandas</h2>
+<p>Desde el árbol de zarandas activas, cada posición (cama 1-12) soporta:</p>
+<div class="table-wrap">
+<table>
+  <tr><th>Acción</th><th>Efecto</th><th>Costo</th></tr>
+  <tr><td><strong>Install New</strong></td><td>Instala malla nueva del stock</td><td><span class="badge badge-red">Genera cargo</span></td></tr>
+  <tr><td><strong>Install Used</strong></td><td>Monta malla reutilizada</td><td><span class="badge badge-green">Sin cargo</span></td></tr>
+  <tr><td><strong>Remove & Reuse</strong></td><td>Desmonta y envía a usados</td><td>—</td></tr>
+  <tr><td><strong>Remove & Dispose</strong></td><td>Descarte por rotura/agotamiento</td><td>—</td></tr>
+  <tr><td><strong>Deshacer</strong></td><td>Revierte la última transacción</td><td>—</td></tr>
+</table>
+</div>
+
+<div class="callout callout-note">
+  <div class="callout-title">ℹ Nota</div>
+  Cada movimiento impacta la contabilidad al instante. No requiere pulsar Guardar por separado.
+  No se puede instalar en una posición ya ocupada ni sin existencia en stock.
+</div>
+
+<h2 class="section-title">6.3 Equipos Mecánicos (Centrífugas, Desilters, etc.)</h2>
+<ul>
+  <li><strong>Rendimiento:</strong> Horas operadas, % de ripios descartados, volumen descargado (bbl).</li>
+  <li><strong>Costos de Renta:</strong> Código de cobro (Full Charge, Stand-by, No Charge), tarifa y costo.</li>
+  <li><strong>Uso y Paradas:</strong> Bitácora de causa de parada (falla mecánica, mantenimiento, espera).</li>
+</ul>
+
+<p><strong>Al terminar → Pulse <code>Guardar</code> y pase a la Pestaña 7.</strong></p>
+
+
+<!-- =================== PASO 7 =================== -->
+<h1 class="chapter-title">Paso 7 — Pestaña Distribución de Tiempo</h1>
+
+<div class="step-card">
+  <div class="step-header">
+    <div class="step-number">7</div>
+    <div class="step-label">Distribución de 24 Horas según Clasificación IADC</div>
+    <div class="step-tab">PESTAÑA 7</div>
+  </div>
+  <div class="step-body">
+    <p>Asigna las <strong>24 horas del período</strong> a las actividades realizadas, con validación de cuadre automática y gráfico apilado.</p>
+  </div>
+</div>
+
+<h2 class="section-title">7.1 Configurar el Período</h2>
+<p>El período es <strong>24.00 horas</strong> por defecto. Modifique solo en días parciales:</p>
+<ul>
+  <li>Día de <strong>Spud</strong> (inicio de perforación)</li>
+  <li>Día de <strong>TD</strong> (profundidad total)</li>
+  <li>Cambio de hora de corte de guardia</li>
+</ul>
+
+<h2 class="section-title">7.2 Llenar las Actividades</h2>
+<p>El sistema presenta <strong>4 actividades fijas</strong> (siempre visibles) y permite agregar actividades opcionales:</p>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Actividad Fija</th><th>Ejemplo de Uso</th></tr>
+  <tr><td>Perforando / Drilling</td><td>Horas efectivas de avance de mecha</td></tr>
+  <tr><td>Viajando / Tripping</td><td>Viajes de sarta dentro y fuera del pozo</td></tr>
+  <tr><td>Circulando y Acondicionando</td><td>Fondos arriba, píldoras, acondicionamiento</td></tr>
+  <tr><td>Reparación / Rig Service</td><td>Mantenimiento de equipos del taladro</td></tr>
+</table>
+</div>
+
+<p>Para agregar más actividades, seleccione del catálogo (ej. <em>Armando BHA, Tomando Registros, Cementando, Bajando Revestidor</em>).</p>
+
+<h2 class="section-title">7.3 Validación de Cuadre</h2>
+<p>El sistema muestra un chip de estado en tiempo real:</p>
+<ul>
+  <li><span class="badge badge-green">Cuadra con el período</span> &mdash; La suma es exactamente 24.00 h ✓</li>
+  <li><span class="badge badge-red">Faltan X.XX h</span> &mdash; Faltan horas por asignar</li>
+  <li><span class="badge badge-red">Sobran X.XX h</span> &mdash; Se excedió el período</li>
+</ul>
+
+<div class="callout callout-warning">
+  <div class="callout-title">⛔ Meta</div>
+  El total <strong>debe ser exactamente 24.00 horas</strong> (o el período ajustado). El sistema permite guardar con diferencia,
+  pero el reporte quedará marcado con advertencia visual.
+</div>
+
+<p><strong>Al terminar → Pulse <code>Guardar</code> y pase a la Pestaña 8.</strong></p>
+
+
+<!-- =================== PASO 8 =================== -->
+<h1 class="chapter-title">Paso 8 — Pestaña Inventario / Hidráulica</h1>
+
+<div class="step-card">
+  <div class="step-header">
+    <div class="step-number">8</div>
+    <div class="step-label">Volumetría, Balance de Fluidos, Inventario e Hidráulica API 13D</div>
+    <div class="step-tab">PESTAÑA 8</div>
+  </div>
+  <div class="step-body">
+    <p>El motor contable y volumétrico central del sistema. Aquí se registran <strong>todas las transacciones de fluidos</strong>,
+    se cuadra el balance y se consulta la hidráulica de circulación.</p>
+  </div>
+</div>
+
+<h2 class="section-title">8.1 Registrar Tickets de Productos</h2>
+<ol>
+  <li>Acceda al modal <strong>Tickets de Productos</strong>.</li>
+  <li>Registre las remisiones de productos químicos recibidos y devueltos.</li>
+  <li>Los movimientos actualizan automáticamente el saldo del inventario.</li>
+</ol>
+
+<h2 class="section-title">8.2 Transacciones de Fluidos</h2>
+<p>Utilice los 4 botones transaccionales principales:</p>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Botón</th><th>Uso</th></tr>
+  <tr>
+    <td><strong>⚗ Agregar Químicos</strong></td>
+    <td>Seleccione fosa destino, volumen de fluido base, agua y dosificación de productos del inventario. El sistema descuenta existencias automáticamente.</td>
+  </tr>
+  <tr>
+    <td><strong>🛢 Agregar Lodo Reciclado</strong></td>
+    <td>Reciba lodo formulado de planta u otro pozo: fosa, producto, origen, volumen (bbl) y peso (ppg).</td>
+  </tr>
+  <tr>
+    <td><strong>⇆ Transferencia</strong></td>
+    <td>Movimiento de fluido entre fosas transaccionales del sistema.</td>
+  </tr>
+  <tr>
+    <td><strong>⇆ Pérdida / Devolución</strong></td>
+    <td>Pérdida: volumen perdido con categoría. Devolución: envío fuera del pozo.</td>
+  </tr>
+</table>
+</div>
+
+<div class="callout callout-tip">
+  <div class="callout-title">💡 Consejo</div>
+  Use <strong>Movimientos del Día</strong> (📋) para revisar la bitácora de transacciones. Si detecta un error, use <strong>Deshacer último</strong> para revertirlo.
+</div>
+
+<h2 class="section-title">8.3 Volúmenes de Fosas</h2>
+<ol>
+  <li>Asigne el <strong>Tipo</strong> a cada fosa: Activa, Reserva, Premezcla, Píldora o Vacía.</li>
+  <li>Ingrese el <strong>Volumen Final Real Medido (bbl)</strong> — medición física de tanques al cierre del día.</li>
+  <li>Registre el <strong>Peso (ppg)</strong> y <strong>Temperatura (°F)</strong> de cada fosa.</li>
+</ol>
+
+<div class="callout callout-warning">
+  <div class="callout-title">⛔ Importante</div>
+  Si una fosa tiene volumen pero queda como <em>"Sin tipo"</em> o <em>"Vacía"</em>, sus barriles quedarán fuera del balance y el sistema no los contabilizará.
+</div>
+
+<h2 class="section-title">8.4 Balance de Fluidos — La Regla de Oro</h2>
+<p>Acceda a la sub-pestaña <strong>Balance de Volumen</strong>. El sistema presenta:</p>
+
+<div class="formula-box">
+  Inicial + Base + Agua + Químicos + Lodo Recibido − Devuelto + Transf. In − Transf. Out − Pérdidas = <strong>Volumen Final Calculado</strong>
+</div>
+
+<p>Compare el <strong>Volumen Final Calculado</strong> contra el <strong>Volumen Final Real Medido</strong>:</p>
+
+<div class="callout callout-warning" style="background: #fef2f2; border-left-color: #dc2626; border-left-width: 6px;">
+  <div class="callout-title" style="font-size: 10pt;">🔴 REGLA DE ORO: Not Accounted = 0.00 bbl</div>
+  <p style="margin-top: 6px;">
+    La casilla <strong>"Not Accounted"</strong> debe ser estrictamente <strong>0.00 bbl</strong>.<br>
+    Si no es cero, significa que hay una transacción faltante o un error de medición.<br>
+    <strong>Está terminantemente prohibido</strong> alterar el volumen real medido en tanques para forzar el balance.
+    Corrija la transacción faltante.
+  </p>
+</div>
+
+<h2 class="section-title">8.5 Inventario de Productos</h2>
+<p>Revise la tabla maestra de productos químicos:</p>
+<ul>
+  <li>Saldo Inicial → Recibido → Devuelto → Usado en fluidos → Usado en otro módulo → Ajuste → <strong>Saldo Final</strong></li>
+  <li>Verifique que el <strong>Costo Diario</strong> y <strong>Costo Acumulado</strong> sean coherentes.</li>
+  <li>Los productos sin unidad se interpretan como <em>Servicios</em> (días de ingeniero) y generan costo sin impactar volumen.</li>
+</ul>
+
+<h2 class="section-title">8.6 Concentraciones (lb/bbl)</h2>
+<p>Consulte las concentraciones residuales de cada químico activo. El sistema aplica balance de masa considerando dilución (agua/aceite), concentración (químicos) y mezcla (lodo reciclado, transferencias).</p>
+
+<h2 class="section-title">8.7 Hidráulica API RP 13D</h2>
+<ol>
+  <li>Seleccione la edición: <strong>API 4ª Edición</strong> o <strong>API 5ª Edición</strong>.</li>
+  <li>El sistema toma automáticamente:
+    <ul>
+      <li>Caudal de la Pestaña 2</li>
+      <li>Peso y Reología PV/YP del Chequeo Principal (Pestaña 3)</li>
+      <li>TFA de boquillas (Pestaña 2)</li>
+      <li>Geometría de sarta/hoyo (Pestaña 4)</li>
+    </ul>
+  </li>
+  <li>Revise los resultados: caídas de presión, ECD, velocidades anulares, régimen de flujo, HHP y HSI.</li>
+</ol>
+
+<p><strong>Al terminar → Pulse <code>Guardar</code> y proceda al cierre.</strong></p>
+
+
+<!-- =================== CIERRE =================== -->
+<h1 class="chapter-title">🏁 Cierre del Reporte</h1>
+
+<div class="step-card">
+  <div class="step-header">
+    <div class="step-number" style="background: #10b981;">✓</div>
+    <div class="step-label">Auditoría Final y Descarga del Reporte</div>
+    <div class="step-tab">BARRA SUPERIOR</div>
+  </div>
+  <div class="step-body">
+    <p>Antes de emitir el reporte, realice la verificación final de consistencia.</p>
+  </div>
+</div>
+
+<h2 class="section-title">Lista de Verificación de Cierre</h2>
+
+<ul class="checklist">
+  <li>Profundidad de Mecha coincide con la longitud de sarta (Pestaña 1 vs 4)</li>
+  <li>Al menos una bomba marcada "En Reporte" con SPM > 0 (Pestaña 2)</li>
+  <li>Chequeo #1 marcado como Principal con reología completa (Pestaña 3)</li>
+  <li>Volúmenes del pozo calculados sin alertas rojas (Pestaña 4)</li>
+  <li>Resumen del día redactado en una sola línea (Pestaña 5)</li>
+  <li>Mallas contabilizadas y tickets cuadrados (Pestaña 6)</li>
+  <li>Distribución de tiempo = 24.00 h exactas (Pestaña 7)</li>
+  <li>Not Accounted = 0.00 bbl (Pestaña 8)</li>
+  <li>Todas las fosas con tipo asignado (Pestaña 8)</li>
+</ul>
+
+<h2 class="section-title">Revisión de Costos</h2>
+<ol>
+  <li>Haga clic en <strong>Cost Overview</strong> en la barra superior.</li>
+  <li>Revise el desglose: Químicos, Personal, Equipos/Mallas, Gestión Ambiental.</li>
+  <li>Verifique que los totales diarios y acumulados sean coherentes.</li>
+</ol>
+
+<h2 class="section-title">Descarga del Reporte Excel</h2>
+<ol>
+  <li>Haga clic en el botón <strong>Descargar Reporte Excel</strong> (icono de descarga) en la barra superior.</li>
+  <li>Se genera un archivo <code>.xlsx</code> con el formato estándar ONE-TRAX.</li>
+  <li>El archivo contiene todas las pestañas en hojas separadas, listo para enviar a la operadora.</li>
+</ol>
+
+<div class="callout callout-tip">
+  <div class="callout-title">💡 Alternativa: Impresión</div>
+  También puede usar el botón <strong>Imprimir</strong> para generar una versión de impresión directa del reporte.
+</div>
+
+<hr>
+
+<h2 class="section-title">Resumen de Dependencias entre Pestañas</h2>
+
+<div class="table-wrap">
+<table>
+  <tr>
+    <th>Pestaña</th>
+    <th>Dato que Genera</th>
+    <th>Pestañas que lo Consumen</th>
+  </tr>
+  <tr>
+    <td><strong>1. General</strong></td>
+    <td>Profundidad de Mecha (Bit Depth)</td>
+    <td>4 (Geometría), 8 (Hidráulica)</td>
+  </tr>
+  <tr>
+    <td><strong>2. Bombas</strong></td>
+    <td>Caudal Total (GPM), TFA</td>
+    <td>4 (Bottoms-Up), 8 (Hidráulica)</td>
+  </tr>
+  <tr>
+    <td><strong>3. Lodo</strong></td>
+    <td>PV, YP, Peso del Chequeo Principal</td>
+    <td>8 (Hidráulica, Concentraciones)</td>
+  </tr>
+  <tr>
+    <td><strong>4. Geometría</strong></td>
+    <td>Volúmenes (Sarta, Anular, Hoyo Total)</td>
+    <td>8 (Hidráulica, Balance)</td>
+  </tr>
+  <tr>
+    <td><strong>6. Sólidos</strong></td>
+    <td>Lodo perdido en ripios (bbl)</td>
+    <td>8 (Pérdidas sugeridas)</td>
+  </tr>
+  <tr>
+    <td><strong>8. Inventario</strong></td>
+    <td>Balance final, Costos</td>
+    <td>Cost Overview (barra superior)</td>
+  </tr>
+</table>
+</div>
+
+<hr>
+
+<p style="text-align: center; color: #64748b; font-size: 8.5pt; margin-top: 30px;">
+  <strong>Sistema CHAPALA</strong> &bull; All Oil Services, C.A. &bull; Guía del Día Operativo &bull; Versión 2.0 &bull; Septiembre 2026<br>
+  Este documento es una guía operativa de referencia rápida. Para documentación técnica detallada, consulte el Manual de Usuario Maestro.
+</p>
+
+</div>
+</body>
+</html>

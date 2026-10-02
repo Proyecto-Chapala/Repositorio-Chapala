@@ -69,15 +69,6 @@
       </span>
     </a>
 
-    <a class="project-card" href="{% url 'operaciones:daily_reports_hub' pozo.pk %}" title="Las estaciones se capturan desde la pestaña 1 del reporte diario (botón Registro Direccional)">
-      <div class="project-card-icon">📐</div>
-      <div>
-        <div class="project-card-title">Registro Direccional del Pozo</div>
-        <div class="project-card-sub">Se captura en el reporte diario (pestaña 1)</div>
-      </div>
-      <span class="project-card-badge badge-ready">{{ pozo.survey_stations.count }} estaci{{ pozo.survey_stations.count|pluralize:"ón,ones" }}</span>
-    </a>
-
     <a class="project-card" href="{% url 'operaciones:benchmark_setup' pozo.pk %}">
       <div class="project-card-icon">📊</div>
       <div>
@@ -115,23 +106,6 @@
         <div class="project-card-sub">Moneda, impuestos, almacenes y distribución de tiempo</div>
       </div>
     </a>
-
-    <div class="project-card is-disabled" title="Próximamente">
-      <div class="project-card-icon">⚠️</div>
-      <div>
-        <div class="project-card-title">Eventos No Programados</div>
-        <div class="project-card-sub">Próximamente</div>
-      </div>
-    </div>
-
-    <div class="project-card is-disabled" title="Próximamente">
-      <div class="project-card-icon">💲</div>
-      <div>
-        <div class="project-card-title">Resumen de Costos</div>
-        <div class="project-card-sub">Próximamente</div>
-      </div>
-    </div>
-
   </div>
 
   <div class="project-section-title">Módulos ONE-TRAX</div>
@@ -155,31 +129,6 @@
         {% if pozo.recap.conclusiones %}Con conclusiones{% else %}Sin conclusiones{% endif %}
       </span>
     </a>
-
-    <div class="project-card is-disabled" title="Próximamente">
-      <div class="project-card-icon">♻️</div>
-      <div>
-        <div class="project-card-title">Módulo RDF</div>
-        <div class="project-card-sub">Próximamente</div>
-      </div>
-    </div>
-
-    <div class="project-card is-disabled" title="Próximamente">
-      <div class="project-card-icon">🧪</div>
-      <div>
-        <div class="project-card-title">Fluidos de Completación</div>
-        <div class="project-card-sub">Próximamente</div>
-      </div>
-    </div>
-
-    <div class="project-card is-disabled" title="Próximamente">
-      <div class="project-card-icon">🗑️</div>
-      <div>
-        <div class="project-card-title">Tratamiento y Disposición de Desechos</div>
-        <div class="project-card-sub">Próximamente</div>
-      </div>
-    </div>
-
   </div>
 
 </div>

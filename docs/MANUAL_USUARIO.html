@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Manual de Usuario Maestro — Sistema CHAPALA</title>
+<style>
+  @page {
+    size: letter portrait;
+    margin: 18mm 15mm 18mm 15mm;
+    @bottom-left {
+      content: "All Oil Services, C.A. • Sistema CHAPALA";
+      font-size: 8.5pt;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #64748b;
+    }
+    @bottom-right {
+      content: "Página " counter(page);
+      font-size: 8.5pt;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #64748b;
+      font-weight: 600;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    line-height: 1.55;
+    font-size: 9.8pt;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+  }
+
+  /* Portada Ejecutiva */
+  .cover-page {
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 88vh;
+    padding: 36px 30px;
+    border: 3px solid #14283b;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    position: relative;
+    margin-bottom: 30px;
+  }
+
+  .cover-header {
+    border-bottom: 3px solid #d97706;
+    padding-bottom: 20px;
+  }
+
+  .cover-brand {
+    font-size: 26pt;
+    font-weight: 900;
+    color: #14283b;
+    letter-spacing: .05em;
+  }
+
+  .cover-brand span {
+    color: #d97706;
+  }
+
+  .cover-company {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #475569;
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  .cover-body {
+    margin: auto 0;
+  }
+
+  .cover-title {
+    font-size: 28pt;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+
+  .cover-subtitle {
+    font-size: 13.5pt;
+    font-weight: 500;
+    color: #334155;
+    line-height: 1.45;
+    border-left: 4px solid #d97706;
+    padding-left: 16px;
+    margin-bottom: 28px;
+  }
+
+  .cover-badge {
+    display: inline-block;
+    background: #14283b;
+    color: #ffffff;
+    font-size: 9.5pt;
+    font-weight: 700;
+    padding: 7px 18px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  .cover-footer {
+    border-top: 1px solid #cbd5e1;
+    padding-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+    color: #475569;
+  }
+
+  .cover-footer strong {
+    color: #0f172a;
+  }
+
+  /* Encabezados y Secciones */
+  h1.chapter-title {
+    color: #14283b;
+    font-size: 17pt;
+    font-weight: 800;
+    border-bottom: 2px solid #14283b;
+    padding-bottom: 6px;
+    margin-top: 32px;
+    margin-bottom: 14px;
+    page-break-before: always;
+  }
+
+  h2.section-title {
+    color: #1e3a5f;
+    font-size: 12.5pt;
+    font-weight: 800;
+    margin-top: 22px;
+    margin-bottom: 10px;
+    border-left: 4px solid #d97706;
+    padding-left: 10px;
+  }
+
+  h3.subsection-title {
+    color: #334155;
+    font-size: 10.5pt;
+    font-weight: 700;
+    margin-top: 15px;
+    margin-bottom: 6px;
+  }
+
+  h4 {
+    font-size: 9.8pt;
+    font-weight: 700;
+    color: #475569;
+    margin-top: 12px;
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin-top: 0;
+    margin-bottom: 9px;
+    text-align: justify;
+  }
+
+  ul, ol {
+    margin-top: 4px;
+    margin-bottom: 10px;
+    padding-left: 22px;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+
+  /* Tablas Ejecutivas */
+  .table-wrap {
+    margin: 12px 0 16px 0;
+    width: 100%;
+    page-break-inside: avoid;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.8pt;
+    background: #ffffff;
+  }
+
+  th {
+    background: #14283b;
+    color: #ffffff;
+    font-weight: 700;
+    text-align: left;
+    padding: 7px 9px;
+    border: 1px solid #14283b;
+  }
+
+  td {
+    padding: 6px 9px;
+    border: 1px solid #cbd5e1;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  /* Callouts & Alertas */
+  .callout {
+    margin: 12px 0 14px 0;
+    padding: 10px 14px;
+    border-radius: 6px;
+    page-break-inside: avoid;
+    font-size: 9.2pt;
+  }
+
+  .callout-title {
+    font-weight: 800;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-size: 9pt;
+  }
+
+  .callout-note {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    color: #1e3a8a;
+  }
+  .callout-note .callout-title { color: #1d4ed8; }
+
+  .callout-important {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    color: #78350f;
+  }
+  .callout-important .callout-title { color: #b45309; }
+
+  .callout-warning {
+    background: #fef2f2;
+    border-left: 4px solid #ef4444;
+    color: #7f1d1d;
+  }
+  .callout-warning .callout-title { color: #b91c1c; }
+
+  .callout-caution {
+    background: #fdf2f8;
+    border-left: 4px solid #ec4899;
+    color: #831843;
+  }
+  .callout-caution .callout-title { color: #be185d; }
+
+  .callout-tip {
+    background: #f0fdf4;
+    border-left: 4px solid #10b981;
+    color: #064e3b;
+  }
+  .callout-tip .callout-title { color: #047857; }
+
+  /* Código y Cajas Técnicas */
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 8.2pt;
+    line-height: 1.4;
+    overflow-x: auto;
+    margin: 10px 0;
+    page-break-inside: avoid;
+  }
+
+  code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 8.5pt;
+    background: #f1f5f9;
+    color: #b45309;
+    padding: 2px 4px;
+    border-radius: 3px;
+    border: 1px solid #e2e8f0;
+  }
+
+  pre code {
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+  }
+
+  /* Matemáticas y Fórmulas */
+  .math-block {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #d97706;
+    padding: 8px 12px;
+    margin: 8px 0;
+    font-family: 'Cambria Math', 'Georgia', serif;
+    font-size: 9.8pt;
+    color: #0f172a;
+    text-align: center;
+    page-break-inside: avoid;
+  }
+
+  .math-inline {
+    font-family: 'Cambria Math', 'Georgia', serif;
+    color: #1e3a5f;
+    font-weight: 600;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 18px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- PORTADA -->
+<div class="cover-page">
+  <div class="cover-header">
+    <div class="cover-brand">CHAPALA <span>OPERACIONES</span></div>
+    <div class="cover-company">All Oil Services, C.A. &bull; División Técnica y de Ingeniería de Fluidos</div>
+  </div>
+
+  <div class="cover-body">
+    <div class="cover-title">MANUAL DE USUARIO MAESTRO</div>
+    <div class="cover-subtitle">
+      Plataforma Integral de Ingeniería, Inventario y Reportes Diarios de Fluidos de Perforación (Arquitectura ONE-TRAX)
+    </div>
+    <div class="cover-badge">Versión 2.0 &bull; Refactorización y Producción</div>
+  </div>
+
+  <div class="cover-footer">
+    <div><strong>Proyecto:</strong> Sistema CHAPALA</div>
+    <div><strong>Fecha de Emisión:</strong> Septiembre 2026</div>
+    <div><strong>Entorno Operativo:</strong> Web Multi-Usuario (Django &bull; PostgreSQL)</div>
+  </div>
+</div>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="content-body">
+
+<h1 class="chapter-title">📌 Introducción y Arquitectura Operativa</h1>
+
+<p>El sistema <strong>CHAPALA</strong> es una solución integral diseñada para emular y modernizar la lógica operativa, matemática y contable de <strong>ONE-TRAX (M-I SWACO)</strong> en una plataforma web ágil, multiusuario y de alto rendimiento.</p>
+
+<p>El flujo de trabajo se divide en dos grandes entornos operativos:</p>
+
+<pre><code>┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                              ARQUITECTURA DEL SISTEMA CHAPALA                          │
+├───────────────────────────────────────────┬────────────────────────────────────────────┤
+│   1. VISTA DE PROYECTO (PROJECT VIEW)     │     2. VISTA DIARIA (DAILY INFORMATION)    │
+│   (Parametrización estática previa)       │     (Matrices dinámicas y balances de lodo)│
+├───────────────────────────────────────────┼────────────────────────────────────────────┤
+│ • Asistente de Creación (Wizard 4 pasos) │ • General Diaria (Profundidades, Survey)   │
+│ • Spud Date (Fecha única de inicio)       │ • Bombas, Mecha e Hidráulica               │
+│ • Well Header (Datos generales y mercadeo)│ • Chequeos Reológicos y Retorta (WBM/OBM)  │
+│ • Intervalos de Revestimiento y Costos    │ • Geometría del Pozo y Capacidades         │
+│ • Fosas y Tanques (Pit Setup)             │ • Comentarios y Resumen Diario             │
+│ • Catálogo Activo (Productos, Mallas)     │ • Control de Sólidos y Descartes           │
+│ • Propiedades de Equipos y Benchmark      │ • Distribución de Tiempo (24h IADC)        │
+│                                           │ • Pestaña 8: Volumetría, Inventario y Conc.│
+└───────────────────────────────────────────┴────────────────────────────────────────────┘</code></pre>
+
+<h2 class="section-title">🧭 Menú de Navegación Lateral (Sidebar)</h2>
+<ul>
+  <li>💧 <strong>Pozos:</strong> Directorio central de pozos creados y acceso al Project View y Daily View de cada uno.</li>
+  <li>📦 <strong>Inventario:</strong> Catálogo global de productos químicos de AOS (stock, empaque, costos y propiedades).</li>
+  <li>🏗️ <strong>Nuevo Pozo:</strong> Asistente guiado de configuración de un nuevo proyecto.</li>
+  <li>🗂️ <strong>Catálogos Maestros:</strong> Base corporativa de modelos de zarandas, mallas, equipos de control de sólidos y parámetros.</li>
+</ul>
+
+<hr>
+
+<h1 class="chapter-title">🏗️ Fase 1: Creación del Proyecto y Parámetros Globales (Setup Inicial)</h1>
+
+<h2 class="section-title">1.1 Asistente de Nuevo Pozo (Wizard de 4 Pasos)</h2>
+<p>Ruta: Menú Lateral → 🏗️ <strong>Nuevo Pozo</strong>.</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Paso</th>
+      <th>Parámetros a Configurar</th>
+      <th>Reglas Estrictas y Validación</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Paso 1: Datos Básicos</strong></td>
+      <td>Nombre oficial del pozo (ej. <code>POZO-LC-115</code>). Opción de clonar configuración de un pozo existente como plantilla.</td>
+      <td>El nombre es único en la base de datos. Si se usa plantilla, arrastra unidades, fosas e intervalos.</td>
+    </tr>
+    <tr>
+      <td><strong>Paso 2: Unidades</strong></td>
+      <td>Selección del sistema de unidades: <strong>Campos Petroleros (Oilfield)</strong>, <strong>Métrico (Metric)</strong> o <strong>Personalizado (Custom)</strong>.</td>
+      <td>
+        <div class="callout callout-caution">
+          <div class="callout-title">Precaución</div>
+          <div class="callout-body"><strong>Regla irreversible:</strong> Una vez confirmado el pozo, el sistema de unidades queda bloqueado permanentemente en la base de datos y no puede modificarse.</div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Paso 3: Financiero y Opciones</strong></td>
+      <td>Moneda base (USD), decimales, tasa de impuesto (%), modelo de sólidos (M-I SWACO o API) y categorías de pérdida.</td>
+      <td>La moneda se bloquea al crear el pozo. La tasa de impuesto sí puede editarse posteriormente.</td>
+    </tr>
+    <tr>
+      <td><strong>Paso 4: Resumen y Confirmación</strong></td>
+      <td>Auditoría visual de los parámetros preseleccionados antes de consolidar el pozo.</td>
+      <td>Al pulsar <strong>Crear Pozo</strong>, se inicializan automáticamente los catálogos base en la base de datos.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 class="section-title">1.2 Fecha de Inicio Operativo (Spud Date)</h2>
+<div class="callout callout-important">
+  <div class="callout-title">Importante</div>
+  <div class="callout-body">Esta pantalla se presenta <strong>una sola vez</strong> al ingresar por primera vez a un pozo recién creado.</div>
+</div>
+<ul>
+  <li><strong>Primera Fecha de Datos:</strong> Fecha calendario en la que inician los reportes diarios.</li>
+  <li><strong>Tipo de Fluido Inicial:</strong> Selección del sistema de lodo primario con el que inicia la perforación.</li>
+  <li>Al confirmar, se consolida la línea de tiempo operativa y se habilita la <strong>Vista Principal del Pozo (Project View)</strong>.</li>
+</ul>
+
+<h2 class="section-title">1.3 Información General del Pozo (Well Header Dashboard)</h2>
+<p>Ruta: Menú Lateral → 💧 <strong>Pozos</strong> → Seleccionar Pozo → <strong>Información General del Pozo</strong>.</p>
+<p>El nuevo diseño del Well Header se organiza en un <strong>Dashboard balanceado a dos columnas</strong> que optimiza el espacio en pantalla para verse perfectamente al 100% de zoom en cualquier monitor:</p>
+
+<h3 class="subsection-title">Pestaña 1: Información del Pozo</h3>
+<ul>
+  <li><strong>Columna Izquierda (Datos del Pozo):</strong>
+    <ul>
+      <li>Operador, Campo/Área, Descripción del Proyecto, Ubicación geográfica.</li>
+      <li>Almacén base de despacho, Contratista de perforación, Nombre del Taladro.</li>
+      <li>Coordinador de Fluido, Ingenieros de Fluidos / AOS en campo (1 y 2).</li>
+      <li>Fecha de Spud, Fecha de TD, Días de TD, Profundidad de reentrada, Coordenadas (Lat N/S, Lon E/O).</li>
+    </ul>
+  </li>
+  <li><strong>Columna Derecha (Parámetros Especiales y Control):</strong>
+    <ul>
+      <li>🌊 <strong>Proyecto Offshore & Riser:</strong>
+        <ul>
+          <li>Checkbox <em>Proyecto Offshore</em>: activa campos obligatorios de <strong>Altura Libre (Air Gap en ft)</strong>, <strong>Profundidad de Agua (ft)</strong> y <strong>Temperatura del Lecho Marino (°F)</strong>.</li>
+          <li>Checkbox <em>El pozo usa Riser</em>: habilita el <strong>Diámetro Interno (ID en in)</strong> y <strong>Longitud del Riser (ft)</strong>. Si se deja en blanco, la longitud asume automáticamente <code>Air Gap + Profundidad de Agua</code>.</li>
+        </ul>
+      </li>
+      <li>🌡️ <strong>API 5ª Edición:</strong>
+        <ul>
+          <li><em>Temperatura Superficial (°F)</em> y <em>Gradiente de Temperatura (°F/100ft)</em>: requeridos para los cálculos dinámicos de reología e hidráulica de fondo.</li>
+        </ul>
+      </li>
+      <li>🏁 <strong>Fin del Pozo:</strong>
+        <ul>
+          <li>Profundidad Total (ft), TVD final, Días totales, Fecha de fin, Temperatura máxima de fondo y Costo total del proyecto.</li>
+        </ul>
+      </li>
+      <li>💬 <strong>Comentarios y Control de Proyecto:</strong>
+        <ul>
+          <li>Notas generales del pozo y <strong>Número de Control Log-It</strong> (código único corporativo).</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h3 class="subsection-title">Pestaña 2: Códigos de Mercadeo y Clasificación ONE-TRAX</h3>
+<p>Campos estandarizados para reportes ejecutivos centrales y licitaciones:</p>
+<ul>
+  <li>Tipo de Lodo Principal (Código y Descripción).</li>
+  <li>Tipo de Pozo (Código y Descripción).</li>
+  <li>Tipo de Contrato (Código y Descripción).</li>
+  <li>Fluido de Completación (Código y Descripción).</li>
+</ul>
+
+<h2 class="section-title">1.4 Catálogo Maestro e Inventario Global de Productos</h2>
+<p>Ruta: Menú Lateral → 📦 <strong>Inventario</strong>.</p>
+<p>El inventario es una entidad centralizada compartida. Cada producto cuenta con campos normalizados para su control de stock y formulación química:</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Campo</th>
+      <th>Descripción</th>
+      <th>Ejemplo / Valores Válidos</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Código</strong></td>
+      <td>Identificador único del producto</td>
+      <td><code>AOS-1002</code>, <code>BARITE-4.2</code></td>
+    </tr>
+    <tr>
+      <td><strong>Descripción</strong></td>
+      <td>Nombre comercial y técnico completo</td>
+      <td><code>CARBONATO DE CALCIO MEDIANO</code></td>
+    </tr>
+    <tr>
+      <td><strong>Empaque</strong></td>
+      <td>Tipo de contenedor físico oficial</td>
+      <td><code>SACOS</code>, <code>TAMBOR</code>, <code>TOTE</code>, <code>LATA</code>, <code>GRANEL</code></td>
+    </tr>
+    <tr>
+      <td><strong>Unidad</strong></td>
+      <td>Unidad de medida pura</td>
+      <td><code>LBS</code>, <code>GAL</code>, <code>BBL</code>, <code>KG</code>, <code>L</code></td>
+    </tr>
+    <tr>
+      <td><strong>Libraje / Tamaño</strong></td>
+      <td>Capacidad o peso unitario del empaque en libras</td>
+      <td><code>55</code> (saco de 55 lb), <code>400</code> (tambor de 55 gal)</td>
+    </tr>
+    <tr>
+      <td><strong>Gravedad Específica (<span class="math-inline"><i>SG</i></span>)</strong></td>
+      <td>Densidad relativa del producto respecto al agua (1.00)</td>
+      <td><code>4.20</code> (Barita), <code>2.70</code> (Carbonato), <code>0.84</code> (Aceite)</td>
+    </tr>
+    <tr>
+      <td><strong>Costo Unitario ($)</strong></td>
+      <td>Precio de compra/facturación por unidad</td>
+      <td><code>$18.50</code></td>
+    </tr>
+    <tr>
+      <td><strong>Cantidad (Stock)</strong></td>
+      <td>Saldo físico actual en el almacén central</td>
+      <td>Unidades enteras en existencia</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 class="section-title">1.5 Configuración de Catálogo Activo en el Pozo</h2>
+<p>Ruta: <strong>Project View</strong> del Pozo:</p>
+<ol>
+  <li><strong>Productos Activos:</strong> Selecciona qué químicos del inventario general están autorizados en este pozo. Define el precio acordado con el cliente, el <strong>Código de Costo Diario</strong> (1: Químicos, 2: Ing. Fluidos, 3: Ing. Sólidos) y la casilla <strong>Show Conc?</strong> (activa el cálculo dinámico de concentración en piscinas en lb/bbl).</li>
+  <li><strong>Equipos Activos:</strong> Da de alta los equipos mecánicos presentes en taladro (Zarandas, Desarenadores, Centrífugas, Limpiadores). Requiere ingresar el <strong>Número de Serie</strong>, tarifa de renta operativa diaria y tarifa en reserva (<em>Stand-by</em>).</li>
+  <li><strong>Mallas Activas:</strong> Asocia los modelos de mallas homologadas para las zarandas en locación, indicando precio y porcentaje de descuento pactado.</li>
+</ol>
+
+<h2 class="section-title">1.6 Configuración de Tanques y Fosas (Pit Setup)</h2>
+<p>Ruta: <strong>Project View</strong> → <strong>Información de Fosas</strong>.</p>
+<p>Se registran todas las fosas y tanques de superficie disponibles en el taladro:</p>
+<ul>
+  <li><strong>Fosas Transaccionales (Activas en Balance):</strong> Aquellas que participan directamente en el circuito de perforación o tratamiento de fluidos. Cualquier adición de productos o transferencia altera su volumen y concentración.</li>
+  <li><strong>Fosas No Transaccionales (Almacenamiento Pasivo):</strong> Tanques dedicados a reserva estratégica (salmuera cruda, gasoil a granel) que no deben afectar el balance diario ni facturarse hasta su dosificación.</li>
+  <li><strong>Tipos de Fosas:</strong>
+    <ul>
+      <li><code>Activa (Active)</code>: Integrada al circuito cerrado de circulación del hoyo.</li>
+      <li><code>Reserva (Reserve)</code>: Almacenamiento de lodo tratado listo para reemplazo.</li>
+      <li><code>Premezcla (Premix)</code>: Preparación de píldoras o fluidos densificados.</li>
+      <li><code>Píldora (Pill)</code> / <code>Espaciador (Spacer)</code>: Volúmenes segregados para baches operativos.</li>
+      <li><code>Vacía (Empty)</code>: Tanque fuera de servicio.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 class="section-title">1.7 Configuración de Intervalos de Revestimiento y Pérdidas</h2>
+<ul>
+  <li><strong>Intervalos de Costo:</strong> Se define cada sección perforada (Conductor, Superficie, Intermedio, Producción, Liner).
+    <ul>
+      <li>Diámetro Externo (Casing OD) y Diámetro Interno (Casing ID en pulgadas).</li>
+      <li>Diámetro de Hoyo Abierto (Bit / Hole Size en pulgadas).</li>
+      <li>Profundidad de la zapata (Shoe Depth en ft) y tope de liner si aplica.</li>
+      <li>Días estimados, longitud planeada y Gradiente de Fractura (lpg).</li>
+    </ul>
+  </li>
+  <li><strong>Pérdidas de Fluido (Loss Setup):</strong> Mapeo de categorías predefinidas clasificadas en:
+    <ul>
+      <li><em>Superficiales:</em> Descartes por zarandas, hidrociclones, evaporación, botes en bombas.</li>
+      <li><em>Subsuperficiales:</em> Filtración a la formación, pérdidas parciales, cavernas, detrás del revestidor.</li>
+    </ul>
+  </li>
+</ul>
+
+<hr>
+
+<h1 class="chapter-title">📅 Fase 2: Vista Diaria Operativa (Daily Information View)</h1>
+
+<h2 class="section-title">2.1 Apertura del Día Operativo</h2>
+<p>Ruta: <strong>Project View</strong> → <strong>Fluidos de Perforación y Equipos</strong> → <strong>+ Nuevo Reporte</strong>.</p>
+<ol>
+  <li><strong>Fecha Operativa:</strong> Consecutiva al último reporte emitido (o la fecha de Spud si es el primero).</li>
+  <li><strong>Intervalo de Costo por Defecto:</strong> Fase en curso a la cual se imputarán contablemente los costos químicos del día.</li>
+  <li><strong>Sistema de Lodo Principal:</strong> Base del fluido activo en perforación.</li>
+  <li><strong>Casilla "Copiar datos del reporte anterior":</strong> Arrastra automáticamente la última geometría cargada, personal, representantes y lecturas de referencia para evitar recaptura redundante.</li>
+</ol>
+
+<h2 class="section-title">2.2 Pestaña 1: General Diaria</h2>
+<ul>
+  <li><strong>Profundidades Operativas:</strong> Profundidad Medida (MD en ft), Profundidad Verdadera Vertical (TVD en ft) y <strong>Profundidad de la Mecha (Bit Depth en ft)</strong>.</li>
+  <li><strong>Actividad y Operaciones:</strong> Resumen de la operación en progreso (perforando, bajando sarta, viaje corto, registro).</li>
+  <li><strong>Distribución de Tiempo (Matriz 24h IADC):</strong>
+    <div class="callout callout-warning">
+      <div class="callout-title">Advertencia</div>
+      <div class="callout-body"><strong>Regla estricta:</strong> La sumatoria de horas registradas en las actividades IADC del período debe ser exactamente <strong>24.0 horas</strong> (salvo el día de inicio/cierre con horas parciales). Si la suma difiere, el sistema resalta el total en rojo.</div>
+    </div>
+  </li>
+  <li><strong>Registro Direccional (Survey):</strong> Matriz de estaciones con MD, Inclinación (°) y Azimut (°). El motor calcula automáticamente el TVD resultante, Dogleg Severity (DLS) y sección vertical.</li>
+  <li><strong>Problemas Operacionales:</strong> Bitácora de tiempos no productivos (NPT), pega de tubería, pérdidas masivas o embolamiento de mecha.</li>
+</ul>
+
+<h2 class="section-title">2.3 Pestaña 2: Bombas, Mecha e Hidráulica</h2>
+<ul>
+  <li><strong>Matriz de Bombas:</strong>
+    <ul>
+      <li>Diámetro de camisa (<em>Liner</em> en pulgadas), longitud de carrera (<em>Stroke</em> en pulgadas).</li>
+      <li>Eficiencia volumétrica (%) y velocidad operativa (<em>Pump Rate</em> en SPM).</li>
+      <li>El sistema computa el caudal total entregado en galones por minuto (<span class="math-inline"><i>GPM</i></span>).</li>
+    </ul>
+  </li>
+  <li><strong>Información de la Mecha (Bit Data):</strong>
+    <ul>
+      <li>Diámetro de la mecha, marca, tipo y distribución de boquillas (<em>Nozzles</em> en 32avos de pulgada).</li>
+      <li>Cálculo instantáneo del <strong>Área Total de Flujo (TFA en <span class="math-inline"><i>in^2</i></span>)</strong>.</li>
+    </ul>
+  </li>
+  <li><strong>Parámetros de Perforación:</strong>
+    <ul>
+      <li>Peso sobre la mecha (<span class="math-inline"><i>WOB</i></span>), RPM de mesa/top-drive, horas de rotación, Tasa de Penetración (<span class="math-inline"><i>ROP</i></span> promedio), presión de bombeo de superficie (<span class="math-inline"><i>SPP</i></span>) y caídas de presión en herramientas de fondo (MWD, motor de lodo).</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 class="section-title">2.4 Pestaña 3: Propiedades y Chequeos del Fluido (Fluid Checks)</h2>
+<p>Permite documentar hasta 4 chequeos diarios completos (mañana, tarde, noche y chequeo especial):</p>
+<ul>
+  <li><strong>Chequeo Principal:</strong> Selección obligatoria del chequeo que gobierna el reporte impreso y la hidráulica de fondo.</li>
+  <li><strong>Matriz Reológica Fann:</strong>
+    <ul>
+      <li>Lecturas de viscosímetro: θ_600, θ_300, θ_200, θ_100, θ_6, θ_3.</li>
+      <li>Temperatura de medición del fluido (°F).</li>
+      <li><strong>Cálculo automático:</strong>
+        <div class="math-block">Viscosidad Plástica (PV, cP) = θ_600 - θ_300</div>
+        <div class="math-block">Punto Cedente (YP, lb/100ft²) = θ_300 - PV</div>
+      </li>
+      <li>Lectura de geles a 10 segundos, 10 minutos y 30 minutos (lb/100ft²).</li>
+    </ul>
+  </li>
+  <li><strong>Análisis de Sólidos y Retorta:</strong>
+    <ul>
+      <li><strong>Lodos Base Agua (WBM):</strong> Ingreso de % Agua, % Aceite y % Sólidos totales por retorta, Gravedad Específica de la Barita (<span class="math-inline"><i>SG</i></span>), fracción de arcilla bentonítica comercial (<em>Frac Bent</em>) y sólidos químicos disueltos (<em>Chem Conc</em>).
+        <ul><li>Computa automáticamente: % Sólidos de Baja Gravedad (%LGS), % Sólidos de Alta Gravedad (%HGS) y % Sólidos Perforados (%Drill Solids).</li></ul>
+      </li>
+      <li><strong>Lodos Base Aceite o Sintéticos (OBM/SBM):</strong> Ajuste del volumen de retorta por dilatación térmica, <span class="math-inline"><i>SG</i></span> del aceite base, salinidad de la fase acuosa (cloruros, CaCl₂ o NaCl) y Relación Aceite/Agua (<span class="math-inline"><i>O/W Ratio</i></span>).</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 class="section-title">2.5 Pestaña 4: Geometría Mecánica del Pozo</h2>
+<p>Ensambla el circuito hidráulico integral desde el fondo hasta la superficie:</p>
+<ol>
+  <li><strong>Perfil del Hoyo:</strong> Tramos de revestidor, liner y hoyo abierto con su factor de ensanchamiento o lavado (<strong>% Washout</strong>).</li>
+  <li><strong>Sarta de Perforación (Drill String):</strong>
+    <ul>
+      <li>Configuración <strong>desde la mecha hacia arriba</strong> (Fila 1 = Mecha).</li>
+      <li>Componentes: Mecha, Motores de fondo, Estabilizadores, Drill Collars (DC), Heavy Weight (HWDP) y Tubería de Perforación (DP).</li>
+      <li>Parámetros: Tipo, longitud (ft), Diámetro Externo (OD in), Diámetro Interno (ID in) y dimensiones de acoples (<em>Tool Joints</em>).</li>
+    </ul>
+  </li>
+  <li><strong>Módulo de Desvíos (Side-Track):</strong>
+    <ul>
+      <li>Control específico para aislar la profundidad de ventana de arranque y calcular exclusivamente el nuevo volumen anular perforado.</li>
+    </ul>
+  </li>
+  <li><strong>Matriz de Capacidad Hidráulica Calculada:</strong>
+    <ul>
+      <li>Volumen interno de la sarta (<strong>DS Volume</strong>, bbl).</li>
+      <li>Volumen en el espacio anular (<strong>Annular Volume</strong>, bbl).</li>
+      <li>Volumen bajo la mecha (<strong>Under-bit Volume</strong>, bbl).</li>
+      <li>Emboladas de retorno de fondo a superficie (<strong>Bottoms-Up Strokes</strong> y tiempo en minutos).</li>
+      <li>Desplazamiento metálico de tubería.</li>
+    </ul>
+  </li>
+</ol>
+
+<h2 class="section-title">2.6 Pestaña 5: Comentarios y Resumen Operativo</h2>
+<ul>
+  <li><strong>Especificaciones del Lodo:</strong> Rangos operacionales tolerados para densidad, viscosidad de embudo, PV, YP y pH.</li>
+  <li><strong>Resumen del Día:</strong> Resumen conciso de <strong>una sola línea</strong> que se consolida directamente en el dossier final del pozo (<em>Recap Report</em>).</li>
+  <li><strong>Observaciones y Tratamiento Químico:</strong> Descripción técnica de píldoras bombeadas, tratamientos de alcalinidad, baches de limpieza y notas operativas IADC.</li>
+</ul>
+
+<h2 class="section-title">2.7 Pestaña 6: Desempeño de Equipos y Mallas de Control de Sólidos</h2>
+<h3 class="subsection-title">Gestión de Mallas (Shaker Screens):</h3>
+<ol>
+  <li><strong>Ticket de Recepción:</strong> Ingreso físico de mallas recibidas en locación (nuevas o reutilizables).</li>
+  <li><strong>Matriz de Posición en Zarandas:</strong> Muestra las zarandas activas y sus camas numeradas (posiciones 1 a 12, donde 1 es la más cercana a la línea de flujo).</li>
+  <li><strong>Acciones Operativas:</strong>
+    <ul>
+      <li><em>Install New / Used:</em> Instala una malla en una posición libre. Si es nueva, genera el cargo financiero al costo diario.</li>
+      <li><em>Remove & Reuse:</em> Retira la malla en buen estado y la regresa al almacén de usados.</li>
+      <li><em>Remove & Dispose:</em> Descarte definitivo por rotura o fin de vida útil.</li>
+      <li><em>Undo:</em> Revierte el último movimiento en caso de error de captura sin afectar el balance histórico.</li>
+    </ul>
+  </li>
+</ol>
+
+<h3 class="subsection-title">Desempeño de Equipos Mecánicos:</h3>
+<ul>
+  <li>Horas trabajadas por zarandas primarias, desarenadores, deslimpiadores y centrífugas decantadoras.</li>
+  <li><strong>Cálculo de Lodo Descartado con Ripios:</strong>
+    <ul>
+      <li>El usuario estima el % de ripios descartados por equipo y la relación de lodo adherido en ripios (<em>Mud on Cuttings</em>, lb/lb o vol/vol).</li>
+      <li>El motor multiplica el volumen de hoyo perforado del día por el porcentaje asignado y calcula el volumen neto de lodo perdido en ripios húmedos.</li>
+    </ul>
+  </li>
+  <li><strong>Tarifas de Facturación:</strong> Asignación de cobro operativo (<em>Full Charge</em>), reserva (<em>Stand-by</em>) o sin costo (<em>No Charge</em>).</li>
+</ul>
+
+<hr>
+
+<h1 class="chapter-title">⚗️ Fase 3: Balance Volumétrico e Inventario (Volume Accounting - Pestaña 8)</h1>
+
+<p>La Pestaña 8 es el <strong>motor contable y volumétrico central</strong> de CHAPALA. Gobierna el balance de materia de todos los fluidos y productos químicos.</p>
+
+<pre><code>┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        FLUJO TRANSACCIONAL DE LA PESTAÑA 8                             │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                        │
+│   [Volumen Inicial en Fosas]                                                           │
+│              +                                                                         │
+│   [Transacciones del Día] ──► (Químicos preparados, Lodo reciclado recibido)              │
+│              -                                                                         │
+│   [Pérdidas y Salidas]    ──► (Zarandas, filtración, transferencias externas)          │
+│              =                                                                         │
+│   [Volumen Teórico Calculado]                                                          │
+│              vs                                                                        │
+│   [Volumen Físico Real Medido al Cierre]                                               │
+│              ║                                                                         │
+│              ▼                                                                         │
+│   [Balance / Not Accounted] ──► ¡Debe ser estrictamente 0.00 bbl!                     │
+│                                                                                        │
+└────────────────────────────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2 class="section-title">3.1 Matriz de Fosas y Estado del Hueco</h2>
+<ul>
+  <li><strong>Volumen de Cierre (End Volume):</strong> Medición de nivel físico real en barriles (bbl) en cada piscina al corte de las 24:00 horas.</li>
+  <li><strong>Fluidos en el Hoyo (Fluids in Hole):</strong> Volumen teórico ocupado dentro del pozo calculado por la geometría mecánica.</li>
+  <li><strong>Volumen Fuera del Sistema (Volume Not Fluids):</strong> Volumen dentro del pozo que no está ocupado por el lodo en circulación (por ejemplo, salmuera detrás de una válvula o agua de desplazamiento) para no desfasar el balance contable.</li>
+</ul>
+
+<h2 class="section-title">3.2 Botones Transaccionales (Motor Contable)</h2>
+
+<h3 class="subsection-title">1. ⚗️ Agregar Químicos (Add Chemicals):</h3>
+<ul>
+  <li>Incorpora agua o aceite base más cantidades exactas de productos químicos a un tanque transaccional específico.</li>
+  <li><strong>Volumen físico generado:</strong> El motor calcula el volumen añadido mediante la densidad y gravedad específica (<span class="math-inline"><i>SG</i></span>) de los aditivos dosificados:
+    <div class="math-block">Volumen Aportado (bbl) = (Unidades × Libraje) / (SG × 350.5)</div>
+  </li>
+  <li><strong>Descuento en Inventario:</strong> Descuenta automáticamente las unidades en la columna <em>Used for Fluid</em> del inventario del pozo y rebaja el stock del almacén central.</li>
+  <li><strong>Asignación de Costo:</strong> Imputa el monto en dólares al Intervalo de Costo activo.</li>
+  <li><strong>Casilla "Is Dilution":</strong> Identifica si el tratamiento tuvo fines de dilución para abatir LGS en los KPIs operacionales.</li>
+</ul>
+
+<h3 class="subsection-title">2. 🛢️ Agregar Lodo Reciclado (Add Whole Mud):</h3>
+<ul>
+  <li>Registra el ingreso de lodo formulado previamente, traído de una planta de mezcla central o transferido desde otro pozo.</li>
+  <li>Requiere densidad del lodo recibido (lpg) y concentraciones de productos para asimilarlo al balance de materia.</li>
+</ul>
+
+<h3 class="subsection-title">3. ⇆ Transferencias (Transfer):</h3>
+<ul>
+  <li>Desplaza volumen de fluido entre tanques transaccionales (ej. de Fosa de Mezcla a Fosa Activa) sin alterar los costos totales del día.</li>
+</ul>
+
+<h3 class="subsection-title">4. 📉 Pérdidas de Fluido (Loss):</h3>
+<ul>
+  <li>Declara volúmenes perdidos imputados a las categorías de superficie o subsuperficie.</li>
+</ul>
+
+<h3 class="subsection-title">5. 🤖 Pérdidas Automáticas de Equipos (Create Equipment Loss Transaction):</h3>
+<ul>
+  <li>Lee la pérdida teórica de lodo calculada en la Pestaña 6 (control de sólidos en ripios húmedos) y genera la transacción contable de pérdida con un solo clic, sin intervención manual.</li>
+</ul>
+
+<h2 class="section-title">3.3 Regla de Oro: Balance Cero (Not Accounted = 0.00 bbl)</h2>
+<p>El cuadro de <strong>Balance de Fluidos (Fluids Balance)</strong> compara el volumen final teórico deducido por las transacciones contra la medición física real efectuada en tanques y hoyo.</p>
+
+<div class="callout callout-important">
+  <div class="callout-title">Importante</div>
+  <div class="callout-body">
+    <strong>Regla contable estricta:</strong> Para que el día operativo se considere cerrado y válido, la casilla <strong>Not Accounted</strong> debe ser estrictamente <strong><code>0.00 bbl</code></strong>.<br>
+    Si presenta un valor diferente de cero:<br>
+    • Si es positivo (+): Se midió más volumen del que ingresó formalmente (falta registrar agua de adición, lodo recibido o influjo).<br>
+    • Si es negativo (-): Hay una pérdida no declarada o una transferencia incompleta.<br>
+    • <strong>Nunca altere artificialmente el volumen real medido en tanques para forzar el balance a cero.</strong>
+  </div>
+</div>
+
+<h2 class="section-title">3.4 Motor de Concentraciones Químicas (lb/bbl)</h2>
+<p>Calcula en tiempo real la concentración residual de cada producto activo presente en el fluido:</p>
+<ul>
+  <li>El agua y los fluidos base <strong>diluyen</strong> las concentraciones existentes.</li>
+  <li>La dosificación de productos químicos <strong>incrementa</strong> la concentración de ese compuesto.</li>
+  <li>El lodo reciclado y las transferencias internas <strong>mezclan</strong> proporcionalmente las concentraciones entre tanques.</li>
+  <li>Las pérdidas de lodo o descartes en zarandas <strong>reducen el volumen total pero preservan la concentración</strong> (lb/bbl) del fluido remanente.</li>
+</ul>
+
+<h2 class="section-title">3.5 Motor de Modelado Hidráulico API 13D</h2>
+<p>Permite alternar entre las especificaciones <strong>API 4ª Edición</strong> y <strong>API 5ª Edición</strong>:</p>
+<ul>
+  <li>Modela la reología mediante el modelo de Ley de Potencia Modificada (Herschel-Bulkley).</li>
+  <li>Determina la velocidad crítica de flujo y régimen (Laminar, Transición, Turbulento) para cada sección del espacio anular y sarta.</li>
+  <li>Genera la matriz analítica de caídas de presión por fricción:
+    <ul>
+      <li>Pérdidas en sarta de perforación (<strong>DS Loss</strong>, psi).</li>
+      <li>Pérdidas en espacio anular (<strong>Annular Loss</strong>, psi).</li>
+      <li>Caída de presión en boquillas de la mecha (<strong>Bit Loss</strong>, psi).</li>
+    </ul>
+  </li>
+  <li>Computa la <strong>Densidad Circulante Equivalente (ECD en lpg)</strong> a nivel de zapata y a profundidad total.</li>
+  <li>Entrega los indicadores de potencia hidráulica de impacto: Potencia Hidráulica en Mecha (<strong>HHP</strong>) y Fuerza de Impacto por pulgada cuadrada (<strong>HSI</strong>).</li>
+</ul>
+
+<hr>
+
+<h1 class="chapter-title">📊 Fase 4: Reportes, Recaps y Cierre de Pozo (Closeout)</h1>
+
+<h2 class="section-title">4.1 Generación de Reportes Diarios y Libro Excel ONE-TRAX</h2>
+<p>Desde la barra de navegación superior del reporte diario, el botón <strong>Excel</strong> compila y descarga automáticamente el libro oficial en formato <code>.xlsx</code> con todas las hojas corporativas parametrizadas en español:</p>
+<ol>
+  <li><strong>Reporte de Lodo (Daily Mud Report):</strong> Formato ejecutivo adaptado al tipo de fluido (WBM, OBM o Sintético).</li>
+  <li><strong>Propiedades Extra:</strong> Historial de las 60 variables analíticas de laboratorio.</li>
+  <li><strong>Contabilidad de Volumen (Volume Accounting):</strong> Detalle de inventario de tanques, transacciones y balance diario.</li>
+  <li><strong>Inventario Químico:</strong> 3 hojas con desglose DF, consolidado alfabético y matriz de balance general.</li>
+  <li><strong>Control de Sólidos:</strong> Equipos de superficie, horas de marcha, pérdidas en ripios y vida útil de mallas.</li>
+  <li><strong>Inventario de Mallas:</strong> Trazabilidad de recepción, instalaciones y descartes.</li>
+</ol>
+
+<h2 class="section-title">4.2 Cierre Final del Pozo (Project Closeout & Recap)</h2>
+<p>Ruta: <strong>Project View</strong> → <strong>Reporte Final del Pozo (Recap)</strong>.</p>
+<p>Al alcanzar la profundidad objetivo (TD) y finalizar la operación:</p>
+<ol>
+  <li><strong>Auditoría de Integridad:</strong> El sistema valida que no existan balances desfasados en los días operativos, que todos los intervalos tengan sus volúmenes y costos cerrados y que el stock consumido coincida con las salidas de inventario.</li>
+  <li><strong>Emisión del Dossier Final (Recap):</strong>
+    <ul>
+      <li><strong>Reporte Final Imprimible (PDF):</strong> Documento encuadernable con portada oficial, resumen ejecutivo, estadísticas de consumo por fase, indicadores de desempeño de mallas, gráfica de avance diario y análisis de costo por pie perforado ($/ft).</li>
+      <li><strong>Libro Maestro Excel Recap:</strong> Archivo maestro consolidado para su archivo histórico y envío a la gerencia de operaciones de AOS.</li>
+    </ul>
+  </li>
+</ol>
+
+<hr>
+
+<h1 class="chapter-title">🛠️ Guía Rápida de Solución de Problemas Frecuentes</h1>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Mensaje de Error / Síntoma</th>
+      <th>Causa Técnica</th>
+      <th>Solución Rápida</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Not Accounted ≠ 0.00 en Pestaña 8</strong></td>
+      <td>El volumen teórico de transacciones no coincide con el volumen físico medido al cierre.</td>
+      <td>Revise las transacciones con <strong>Gestionar Transacciones</strong>: verifique si faltó ingresar agua de adición, un bache preparado o una pérdida hacia zarandas.</td>
+    </tr>
+    <tr>
+      <td><strong>"Inventario de X: hay N y se necesitan M"</strong></td>
+      <td>El almacén central no tiene unidades suficientes del producto que intenta añadir.</td>
+      <td>Vaya a la pantalla central de 📦 <strong>Inventario</strong>, busque el producto y actualice la existencia real con <strong>✏️ Modificar</strong>.</td>
+    </tr>
+    <tr>
+      <td><strong>"Registra primero el ticket de recepción" (Mallas)</strong></td>
+      <td>Se intentó instalar una malla en una zaranda sin haber registrado su ingreso previo al taladro.</td>
+      <td>En la Pestaña 6, ingrese primero el Ticket de Recepción de mallas (fecha, tipo y cantidad recibida).</td>
+    </tr>
+    <tr>
+      <td><strong>"La posición X del equipo Y ya tiene una malla"</strong></td>
+      <td>Se intenta montar una malla sobre una cama que ya tiene una en uso.</td>
+      <td>Debe retirar primero la malla actual marcándola como <em>Remove & Dispose</em> o <em>Remove & Reuse</em>.</td>
+    </tr>
+    <tr>
+      <td><strong>Volúmenes del pozo salen en 0 bbl (Pestaña 4)</strong></td>
+      <td>Falta definir la profundidad de la mecha, la sarta o los diámetros del revestidor.</td>
+      <td>Asegúrese de: 1) Guardar la profundidad de mecha en Pestaña 1; 2) Cargar la sarta en Pestaña 4; 3) Haber configurado los intervalos de revestidor con su ID en el Project View.</td>
+    </tr>
+    <tr>
+      <td><strong>La hidráulica muestra aviso de datos incompletos</strong></td>
+      <td>Alguna variable esencial para el modelo reológico API no fue completada.</td>
+      <td>El sistema indica exactamente qué falta: complete el caudal de bombas (Pestaña 2), el chequeo principal con viscosímetro (Pestaña 3) y la sarta con ID/OD (Pestaña 4).</td>
+    </tr>
+    <tr>
+      <td><strong>Las horas del día aparecen en rojo (Pestaña 1 / 7)</strong></td>
+      <td>La distribución horaria IADC no totaliza exactamente 24.0 horas.</td>
+      <td>Ajuste la matriz de distribución de tiempo para que la sumatoria dé exactamente 24 horas.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+</div>
+
+</body>
+</html>

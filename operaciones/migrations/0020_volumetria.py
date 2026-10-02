@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('secuencia', models.PositiveIntegerField(verbose_name='N° de Movimiento')),
-                ('tipo', models.CharField(choices=[('QUIMICOS', 'Agregar químicos'), ('LODO_ENTERO', 'Agregar lodo entero'), ('TRANSFERENCIA', 'Transferencia entre fosas'), ('DEVOLUCION', 'Devolución'), ('PERDIDA', 'Pérdida y descarte')], max_length=15, verbose_name='Tipo')),
+                ('tipo', models.CharField(choices=[('QUIMICOS', 'Agregar químicos'), ('LODO_ENTERO', 'Agregar lodo reciclado'), ('TRANSFERENCIA', 'Transferencia entre fosas'), ('DEVOLUCION', 'Devolución'), ('PERDIDA', 'Pérdida y descarte')], max_length=15, verbose_name='Tipo')),
                 ('fosa_numero', models.PositiveSmallIntegerField(verbose_name='Fosa')),
                 ('fosa_descripcion', models.CharField(blank=True, max_length=100)),
                 ('destino_numero', models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='Fosa destino')),

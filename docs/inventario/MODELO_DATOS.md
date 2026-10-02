@@ -48,8 +48,8 @@ Formato que devuelve la API: todos los campos anteriores como números, más `ca
 | Modelo | Campo | Para qué |
 |---|---|---|
 | `ProductoActivoPozo` | `producto` | Lista de productos activos de un pozo, con **datos propios del pozo**: abreviatura, tamaño de unidad (`unit_size`), unidad, empaque, precio, gravedad, categoría de costo, si calcula concentración |
-| `TransaccionVolumen` | `lodo_producto` | Producto "lodo entero" consumido al agregar lodo a una fosa |
-| `TransaccionVolumenProducto` | `producto` | Químicos agregados (o concentraciones del lodo entero) |
+| `TransaccionVolumen` | `lodo_producto` | Producto "lodo reciclado" consumido al agregar lodo a una fosa |
+| `TransaccionVolumenProducto` | `producto` | Químicos agregados (o concentraciones del lodo reciclado) |
 | `InventarioProductoDia` | `producto` | Ajustes manuales del inventario del pozo en un día |
 | `TicketProductoDetalle` | `producto` | Cantidades de un ticket de entrega o devolución al pozo |
 

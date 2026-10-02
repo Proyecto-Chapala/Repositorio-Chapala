@@ -4,7 +4,7 @@ Motor de la volumetría e inventario de productos (pestaña 8).
 Función pura, sin Django. Repite, día por día y en orden, los movimientos de todo el pozo:
 
 - Volumen de cada fosa: inicial (= real medido del día anterior, o el calculado si no se
-  midió) + químicos, fluido base y agua, lodo entero, transferencias, devoluciones y pérdidas.
+  midió) + químicos, fluido base y agua, lodo reciclado, transferencias, devoluciones y pérdidas.
 - Sistema activo: incluye el HOYO. Inicial = fosas activas + fluido en el hoyo del día
   anterior. Real = fosas activas medidas + fluido en el hoyo de hoy. Por eso el calculado de
   la fosa activa y su volumen real NO tienen que coincidir (nota especial del manual, pág. 146).
@@ -82,7 +82,7 @@ def volumen_quimico_bbl(cantidad, unidad, tamano, gravedad):
 
 
 def consumo_lodo_entero(volumen_bbl, unidad, tamano):
-    """Unidades del producto 'lodo entero' que se consumen al agregar un volumen de lodo."""
+    """Unidades del producto 'lodo reciclado' que se consumen al agregar un volumen de lodo."""
     f = FACTOR_VOLUMEN_BBL.get(_unidad(unidad))
     t = float(tamano or 0) or 1.0
     if f is None:

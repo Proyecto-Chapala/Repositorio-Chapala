@@ -24,8 +24,8 @@ class ReporteDiario(models.Model):
     # --- Tab 1: General (Contactos y Representantes) ---
     operador_representante = models.CharField(max_length=150, blank=True, verbose_name="Representante del Operador")
     contratista_representante = models.CharField(max_length=150, blank=True, verbose_name="Representante del Contratista")
-    mi_representante_1 = models.CharField(max_length=150, blank=True, verbose_name="Ingeniero M-I SWACO 1")
-    mi_representante_2 = models.CharField(max_length=150, blank=True, verbose_name="Ingeniero M-I SWACO 2")
+    mi_representante_1 = models.CharField(max_length=150, blank=True, verbose_name="Ingeniero Fluidos 1")
+    mi_representante_2 = models.CharField(max_length=150, blank=True, verbose_name="Ingeniero Fluidos 2")
     telefono_taladro = models.CharField(max_length=100, blank=True, verbose_name="Teléfono del Taladro")
     telefono_almacen = models.CharField(max_length=100, blank=True, verbose_name="Teléfono del Almacén")
     telefonos = models.CharField(max_length=255, blank=True, verbose_name="Otros Teléfonos")

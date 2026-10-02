@@ -1,0 +1,89 @@
+Claude outputs\urls.py:28 -> # --- Spud Date (pantalla única al abrir el pozo por primera vez) ---
+Claude outputs\urls.py:29 -> path('pozos/<int:pk>/spud-date/', views.pozo_spud_date_view, name='pozo_spud_date'),
+Claude outputs\urls.py:30 -> path('api/pozos/<int:pk>/spud-date/', views.api_pozo_spud_date, name='api_pozo_spud_date'),
+docs\API_ENDPOINTS.md:55 -> ## 2. Pozos: lista, wizard y Spud Date
+docs\API_ENDPOINTS.md:69 -> | GET | `/pozos/<pk>/spud-date/` | Pantalla Spud Date |
+docs\API_ENDPOINTS.md:70 -> | POST | `/api/pozos/<pk>/spud-date/` | Confirma Spud Date (una sola vez) |
+docs\API_ENDPOINTS.md:71 -> | GET | `/pozos/<pk>/` | Pantalla principal del pozo (redirige al wizard si está en BORRADOR, a Spud Date si falta) |
+docs\API_ENDPOINTS.md:89 -> // spud-date
+docs\ARQUITECTURA.md:70 -> │   │   ├── pozos/            Wizard, Spud Date, pantalla principal y pantallas de configuración
+docs\GUIA_DIA_OPERATIVO.html:973 -> <li>Día de <strong>Spud</strong> (inicio de perforación)</li>
+docs\MANUAL_USUARIO.html:363 -> │ • Spud Date (Fecha única de inicio)       │ • Bombas, Mecha e Hidráulica               │
+docs\MANUAL_USUARIO.html:426 -> <h2 class="section-title">1.2 Fecha de Inicio Operativo (Spud Date)</h2>
+docs\MANUAL_USUARIO.html:448 -> <li>Fecha de Spud, Fecha de TD, Días de TD, Profundidad de reentrada, Coordenadas (Lat N/S, Lon E/O).</li>
+docs\MANUAL_USUARIO.html:595 -> <li><strong>Fecha Operativa:</strong> Consecutiva al último reporte emitido (o la fecha de Spud si es el primero).</li>
+docs\MANUAL_USUARIO.md:21 -> │ • Spud Date (Fecha única de inicio)       │ • Bombas, Mecha e Hidráulica               │
+docs\MANUAL_USUARIO.md:53 -> ### 1.2 Fecha de Inicio Operativo (Spud Date)
+docs\MANUAL_USUARIO.md:72 -> * Fecha de Spud, Fecha de TD, Días de TD, Profundidad de reentrada, Coordenadas (Lat N/S, Lon E/O).
+docs\MANUAL_USUARIO.md:150 -> 1. **Fecha Operativa:** Consecutiva al último reporte emitido (o la fecha de Spud si es el primero).
+docs\PENDIENTES_Y_DECISIONES.md:19 -> | Spud Date | La primera fecha de datos y el tipo de fluido inicial se confirman **una sola vez** | `PozoSpudDateForm` |
+docs\PENDIENTES_Y_DECISIONES.md:82 -> | 3.7 | `pozos_list.html` muestra `pozo.operador` y `pozo.spud_date`, que no existen en `Pozo` (están en `WellHeaderInfo`) | Las tarjetas siempre dicen "Operador no definido" y nunca muestran el Spud | ✅ **Corregido (25/09/2026).** |
+docs\README.md:27 -> | [reportes/WIZARD_POZO.md](reportes/WIZARD_POZO.md) | Desarrollo / soporte | Creación del pozo (4 pasos), Spud Date y pantallas de configuración |
+docs\reportes\MANUAL_USUARIO.md:22 -> ### 1.2 Fecha de inicio (Spud Date)
+docs\reportes\MANUAL_USUARIO.md:34 -> 1. **Información General del Pozo** — operador, campo, taladro, ingenieros, **fecha de Spud** (la usa el reporte), temperatura de superficie y gradiente (para la hidráulica de 5ª edición). Si es costa afuera: Air Gap, profundidad de agua, temperatura del lecho marino y, si hay riser, su diámetro interno. Luego la pestaña **Códigos de Mercadeo**.
+docs\reportes\MANUAL_USUARIO.md:57 -> 2. La fecha sugerida es el día siguiente al último reporte (o la fecha de Spud si es el primero). El tipo de lodo sugerido es el del último reporte.
+docs\reportes\MODELO_DATOS.md:113 -> | Spud Date | `fecha_primera_captura`, `tipo_fluido_inicial` (`WATER_BASE`, `WATER_BASE_CACL2`, `OIL_BASE`, `SYNTHETIC_BASE`, `COMPLETION_FLUIDS`), `con_tratamiento_disposicion`, `numero_control_logit`, `spud_date_completado` |
+docs\reportes\WIZARD_POZO.md:6 -> 2. **Spud Date** (pantalla única) → queda lista la captura diaria.
+docs\reportes\WIZARD_POZO.md:13 -> /pozos/<id>/spud-date/  (una sola vez)
+docs\reportes\WIZARD_POZO.md:27 -> Un pozo en BORRADOR no abre su pantalla principal ni Spud Date: el sistema redirige al wizard.
+docs\reportes\WIZARD_POZO.md:76 -> ## Spud Date (fecha de inicio de captura)
+docs\reportes\WIZARD_POZO.md:82 -> | Primera fecha de este archivo | Obligatoria. Puede ser anterior al spud real. **Inmutable** |
+docs\reportes\WIZARD_POZO.md:89 -> > La fecha de Spud que usa el reporte diario (para sugerir la fecha del primer reporte y calcular días) es otra: `WellHeaderInfo.spud_date`, que se captura en Información General del Pozo.
+docs\reportes\WIZARD_POZO.md:101 -> | Información General del Pozo | `well-header/` | Dos pestañas: **Well Information** (offshore, riser, operador, campo, taladro, ingenieros, spud, TD, temperatura de superficie y gradiente, datos de cierre) y **Marketing Codes**. Marca "Listo" cuando se guardó al menos una vez |
+docs\reportes\pestanas\PESTANA_1_GENERAL.md:19 -> | Fecha Spud | `WellHeaderInfo.spud_date` | Solo lectura; viene de Información General del Pozo |
+documentation\Contexto\Well Pits Setup.md:31 -> *   Asigna estrictamente un `Operational Mode` (`Drilling` o `Completion`) a un `Fluid System` específico (ej. `VERSACLEAN`, `Spud Mud`, `Calcium Chloride`)[cite: 2].
+operaciones\admin-1.py:53 -> ("Spud Date (pantalla única)", {
+operaciones\admin.py:60 -> ("Spud Date (pantalla única)", {
+operaciones\forms_pozo.py:99 -> Pantalla única 'Spud Date' — aparece solo la primera vez que se
+operaciones\models-1.py:242 -> # --- Pantalla única "Spud Date" (se muestra la 1ra vez que se abre el pozo) ---
+operaciones\models-1.py:246 -> help_text="Inmutable una vez confirmada. Puede ser anterior a la fecha de spud."
+operaciones\models-1.py:263 -> verbose_name="Pantalla Spud Date completada"
+operaciones\models.py:254 -> # --- Pantalla única "Spud Date" (se muestra la 1ra vez que se abre el pozo) ---
+operaciones\models.py:258 -> help_text="Inmutable una vez confirmada. Puede ser anterior a la fecha de spud."
+operaciones\models.py:275 -> verbose_name="Pantalla Spud Date completada"
+operaciones\models.py:588 -> spud_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Spud")
+operaciones\reporte_excel.py:152 -> spud = (h.spud_date if h and h.spud_date else None) or getattr(pozo, 'fecha_primera_captura', None)
+operaciones\reporte_excel.py:153 -> _fecha(ws, 'I5', spud)
+operaciones\reporte_excel.py:166 -> spud = (h.spud_date if h and h.spud_date else None) or getattr(pozo, 'fecha_primera_captura', None)
+operaciones\reporte_excel.py:171 -> 'spud': datetime(spud.year, spud.month, spud.day) if spud else None,
+operaciones\reporte_excel.py:648 -> spud = (h.spud_date if h and h.spud_date else None) or getattr(pozo, 'fecha_primera_captura', None)
+operaciones\reporte_excel.py:681 -> ('Ubicación', h.ubicacion if h else '', 'Fecha de inicio (spud)',
+operaciones\reporte_excel.py:682 -> datetime(spud.year, spud.month, spud.day) if spud else ''),
+operaciones\reporte_excel.py:811 -> 'spud': 'J4', 'contratista': 'B5', 'ubicacion': 'F5', 'lodo': 'J5',
+operaciones\reporte_excel.py:841 -> 'spud': 'M4', 'contratista': 'B5', 'ubicacion': 'H5', 'lodo': 'M5',
+operaciones\urls.py:37 -> # --- Spud Date (pantalla única al abrir el pozo por primera vez) ---
+operaciones\urls.py:38 -> path('pozos/<int:pk>/spud-date/', views.pozo_spud_date_view, name='pozo_spud_date'),
+operaciones\urls.py:39 -> path('api/pozos/<int:pk>/spud-date/', views.api_pozo_spud_date, name='api_pozo_spud_date'),
+operaciones\views-1.py:528 -> # Spud Date — pantalla única al abrir un pozo (estado ACTIVO)
+operaciones\views-1.py:534 -> Renderiza la pantalla de Spud Date. Si el pozo todavía está en
+operaciones\views-1.py:549 -> Confirma la pantalla Spud Date. fecha_primera_captura y
+operaciones\views.py:575 -> # Spud Date — pantalla única al abrir un pozo (estado ACTIVO)
+operaciones\views.py:581 -> Renderiza la pantalla de Spud Date. Si el pozo todavía está en
+operaciones\views.py:596 -> Confirma la pantalla Spud Date. fecha_primera_captura y
+operaciones\views.py:642 -> BORRADOR redirige al wizard, y si le falta Spud Date redirige allá.
+operaciones\plantillas\crear_plantilla.py:35 -> 'Spud Date :': 'Fecha Spud :', 'Mud Type :': 'Tipo de Lodo :', 'Activity :': 'Actividad :',
+operaciones\static\operaciones\js\pozos.js:320 -> window.location.href = `/pozos/${state.pozoId}/spud-date/`;
+operaciones\static\operaciones\js\spud_date.js:2 -> spud_date.js — Confirmación de la pantalla única Spud Date
+operaciones\static\operaciones\js\spud_date.js:46 -> const res = await fetch(`/api/pozos/${window.POZO_ID}/spud-date/`, {
+operaciones\templates\operaciones\pozos_list.html:28 -> {% if pozo.well_header_info.spud_date %} · Spud: {{ pozo.well_header_info.spud_date|date:"d/M/Y" }}{% endif %}
+operaciones\templates\operaciones\avances_19_sep\daily_reports_hub.html:254 -> <button type="button" class="date-chip-btn" onclick="fijarFechaSpud('{{ spud_date_str }}')">&#9875; Fecha Spud</button>
+operaciones\templates\operaciones\avances_19_sep\daily_reports_hub.html:584 -> function fijarFechaSpud(spud){
+operaciones\templates\operaciones\avances_19_sep\daily_reports_hub.html:586 -> el.value = spud;
+operaciones\templates\operaciones\avances_19_sep\daily_reports_hub.html:587 -> actualizarInfoFecha(spud);
+operaciones\templates\operaciones\avances_19_sep\reporte_diario_detalle.html:102 -> <label class="report-field-label" title="Fecha de inicio de perforación (Heredada del pozo)">Fecha Spud</label>
+operaciones\templates\operaciones\pozos\well_header.html:51 -> <div class="form-group"><label for="inputSpudDate">Fecha de Spud</label><input type="date" id="inputSpudDate" class="form-input"></div>
+proyecto chapala - claude\admin_pozo.py:47 -> ("Spud Date (pantalla única)", {
+proyecto chapala - claude\forms_pozo.py:102 -> Pantalla única 'Spud Date' — aparece solo la primera vez que se
+proyecto chapala - claude\models_pozo.py:109 -> # --- Pantalla única "Spud Date" (se muestra la 1ra vez que se abre el pozo) ---
+proyecto chapala - claude\models_pozo.py:113 -> help_text="Inmutable una vez confirmada. Puede ser anterior a la fecha de spud."
+proyecto chapala - claude\models_pozo.py:130 -> verbose_name="Pantalla Spud Date completada"
+proyecto chapala - claude\pozos.js:320 -> window.location.href = `/operaciones/pozos/${state.pozoId}/spud-date/`;
+proyecto chapala - claude\spud_date.js:2 -> spud_date.js — Confirmación de la pantalla única Spud Date
+proyecto chapala - claude\spud_date.js:46 -> const res = await fetch(`/operaciones/api/pozos/${window.POZO_ID}/spud-date/`, {
+proyecto chapala - claude\urls_pozo.py:18 -> # --- Spud Date (pantalla única al abrir el pozo por primera vez) ---
+proyecto chapala - claude\urls_pozo.py:19 -> path('pozos/<int:pk>/spud-date/', views.pozo_spud_date_view, name='pozo_spud_date'),
+proyecto chapala - claude\urls_pozo.py:20 -> path('api/pozos/<int:pk>/spud-date/', views.api_pozo_spud_date, name='api_pozo_spud_date'),
+proyecto chapala - claude\views_pozo.py:274 -> # Spud Date — pantalla única al abrir un pozo (estado ACTIVO)
+proyecto chapala - claude\views_pozo.py:280 -> Renderiza la pantalla de Spud Date. Si el pozo todavía está en
+proyecto chapala - claude\views_pozo.py:295 -> Confirma la pantalla Spud Date. fecha_primera_captura y
+scripts\seed_pozo_prueba.py:41 -> # --- Spud date ---

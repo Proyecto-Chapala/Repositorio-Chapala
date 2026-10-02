@@ -220,7 +220,7 @@ async function guardarPestanaInventario(silent = false){
 
    Lo medido y escrito a mano (tipo y volumen real de fosas, hoyo e
    inventario) se guarda con "Guardar volumetría". Los movimientos
-   (químicos, lodo entero, transferencias, devoluciones, pérdidas) y los
+   (químicos, lodo reciclado, transferencias, devoluciones, pérdidas) y los
    tickets se registran al momento y el servidor valida toda la línea de
    tiempo del pozo. Espejo de volumetria.py: vaVolumenQuimico / vaMasaLb.
    ===================================================================== */
@@ -522,7 +522,7 @@ function vaRenderBalance(){
     fila('Agua agregada', g => v(g, 'agua')) +
     fila('Volumen de químicos agregados', g => v(g, 'quimicos')) +
     fila('Total construido', construido, 'va-fila-sub') +
-    fila('Lodo entero recibido', g => v(g, 'recibido')) +
+    fila('Lodo reciclado recibido', g => v(g, 'recibido')) +
     fila('Devuelto', g => -v(g, 'devuelto')) +
     fila('Transferido desde otros grupos', g => v(g, 'entra')) +
     fila('Transferido a otros grupos', g => -v(g, 'sale')) +
@@ -625,7 +625,7 @@ function vaRenderConcentracion(){
   const c = lista.find(x => x.clave === sel.value) || lista[0];
   const cont = document.getElementById('vaConcentracion');
   if(!c){
-    cont.innerHTML = '<div class="cs-vacio">Todavía no hay productos con concentración. Aparecen al agregar químicos medidos en peso o lodo entero con su concentración.</div>';
+    cont.innerHTML = '<div class="cs-vacio">Todavía no hay productos con concentración. Aparecen al agregar químicos medidos en peso o lodo reciclado con su concentración.</div>';
     return;
   }
   const kg = vaConcUnidad === 'kgm3';
@@ -659,7 +659,7 @@ function vaRenderConcentracion(){
       <div class="cs-eq-dato"><span>Fluido base agregado</span><strong>${csFmt(c.aceite || 0, 1)} bbl</strong></div>
       <div class="cs-eq-dato"><span>Agua agregada</span><strong>${csFmt(c.agua || 0, 1)} bbl</strong></div>
       <div class="cs-eq-dato"><span>Aumento de volumen por material</span><strong>${csFmt(c.vol_quimicos || 0, 1)} bbl</strong></div>
-      <div class="cs-eq-dato"><span>Lodo entero recibido</span><strong>${csFmt(c.lodo || 0, 1)} bbl</strong></div>
+      <div class="cs-eq-dato"><span>Lodo reciclado recibido</span><strong>${csFmt(c.lodo || 0, 1)} bbl</strong></div>
     </div>
     <div class="cs-tabla-wrapper">
       <table class="cs-tabla">
@@ -671,7 +671,7 @@ function vaRenderConcentracion(){
           <td class="cs-num cs-final"><strong>${vaCant(tFin, 2)}</strong></td></tr></tfoot>
       </table>
     </div>
-    <p class="cs-nota">Las concentraciones salen de los movimientos de la volumetría: el agua o el fluido base diluyen, los productos concentran, el lodo entero y las transferencias mezclan, y las pérdidas no cambian la concentración.</p>`;
+    <p class="cs-nota">Las concentraciones salen de los movimientos de la volumetría: el agua o el fluido base diluyen, los productos concentran, el lodo reciclado y las transferencias mezclan, y las pérdidas no cambian la concentración.</p>`;
   cont.querySelectorAll('.va-conc-btn').forEach(btn => btn.addEventListener('click', () => {
     vaConcUnidad = btn.dataset.unidad;
     vaRenderConcentracion();
@@ -704,7 +704,7 @@ async function guardarVolumetria(silent = false){
 }
 
 /* =====================================================================
-   MODALES: químicos, lodo entero, transferencia/pérdida, movimientos, tickets
+   MODALES: químicos, lodo reciclado, transferencia/pérdida, movimientos, tickets
    ===================================================================== */
 
 function vaFosasConTipo(){
@@ -781,7 +781,7 @@ function vaRenderModal(inicial = false){
 
   } else if(vaModalTipo === 'lodo'){
     if(!inicial) return;
-    titulo.textContent = 'Agregar lodo entero a una fosa';
+    titulo.textContent = 'Agregar lodo reciclado a una fosa';
     const prods = vaDatos.inventario.filter(r => r.activo && !r.servicio);
     const lodos = prods.slice().sort((a, b) => ((b.unidad || '').toUpperCase().startsWith('B') ? 1 : 0) - ((a.unidad || '').toUpperCase().startsWith('B') ? 1 : 0));
     const conc = prods.filter(r => r.concentracion && vaMasaLb(1, r.unidad, r.tamano) !== null);
@@ -789,7 +789,7 @@ function vaRenderModal(inicial = false){
       <div class="va-grid-2 va-grid-lodo">
         <div>
           <label class="cs-campo"><span class="cs-campo-label">1. Fosa</span><select id="vaLFosa" class="report-input">${vaOpcionesFosa()}</select></label>
-          <label class="cs-campo"><span class="cs-campo-label">2. Producto de lodo entero</span><select id="vaLProducto" class="report-input">
+          <label class="cs-campo"><span class="cs-campo-label">2. Producto de lodo reciclado</span><select id="vaLProducto" class="report-input">
             <option value="">Elige…</option>${lodos.map(r => `<option value="${r.producto_id}">${csEsc(r.descripcion)} (${csEsc(r.codigo)}) — ${csFmt(r.final)} ${csEsc(r.unidad || '')} disponibles</option>`).join('')}</select>
             <small class="cs-campo-ayuda">Se descuenta del inventario el volumen agregado.</small></label>
           <label class="cs-campo"><span class="cs-campo-label">3. Recibido de</span><select id="vaLOrigen" class="report-input">${vaOpcionesDestinoExterno()}</select></label>
@@ -811,7 +811,7 @@ function vaRenderModal(inicial = false){
         </div>
       </div>`;
     pie.innerHTML = `<span class="cs-flex"></span><button type="button" class="btn-modern-secondary btn-sm" data-va-cerrar>Cancelar</button>
-      <button type="button" class="btn-modern-primary btn-sm" id="vaLRegistrar"><span>&#10004;</span><span>Registrar lodo entero</span></button>`;
+      <button type="button" class="btn-modern-primary btn-sm" id="vaLRegistrar"><span>&#10004;</span><span>Registrar lodo reciclado</span></button>`;
 
   } else if(vaModalTipo === 'transferencia'){
     if(!inicial) return;

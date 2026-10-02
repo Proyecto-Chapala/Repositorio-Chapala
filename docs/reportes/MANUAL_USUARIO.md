@@ -121,7 +121,7 @@ Reparta las horas del día entre las actividades. Las 4 primeras siempre aparece
 1. **Ticket de productos** con lo que llegó a la locación (y los de devolución), como registro. No cambia la existencia.
 2. **Movimientos** del día:
    - ⚗ **Agregar químicos**: fosa, fluido base, agua y cantidades de productos.
-   - 🛢 **Agregar lodo entero**: fosa, volumen, peso, producto de lodo y sus concentraciones.
+   - 🛢 **Agregar lodo reciclado**: fosa, volumen, peso, producto de lodo y sus concentraciones.
    - ⇆ **Transferencia / pérdida**: entre fosas, devolución (a dónde) o pérdida (tipo).
 3. **Volúmenes de fosas**: tipo de cada fosa y **volumen real medido** al cierre, peso y temperatura. Indique cuánto volumen del hoyo no es fluido del sistema, si aplica.
 4. Revise el **Balance de volumen**: el "no contabilizado" debería quedar cerca de 0. **No cambie el volumen real para cuadrar**: si no cuadra, falta registrar algún movimiento o pérdida.

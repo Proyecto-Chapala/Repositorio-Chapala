@@ -2,7 +2,7 @@
 title Construir CHAPALA.exe (version de prueba)
 cd /d "%~dp0"
 
-set PY=..\.venv\Scripts\python.exe
+set PY=..\env\Scripts\python.exe
 if not exist "%PY%" (
     echo [ERROR] No se encontro el entorno virtual en ..\.venv
     pause

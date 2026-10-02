@@ -99,7 +99,7 @@
             <input type="date" id="f_fecha" class="report-input" value="{{ reporte.fecha|date:'Y-m-d' }}">
           </div>
           <div class="report-field-row">
-            <label class="report-field-label" title="Fecha de inicio de perforación (Heredada del pozo)">Fecha Spud</label>
+            <label class="report-field-label" title="Fecha de inicio de perforación (Heredada del pozo)">Fecha Inicio</label>
             <input type="text" class="report-input" value="{{ spud_date|date:'d/m/Y'|default:'-' }}" disabled title="Heredado de Well Header Information">
           </div>
           <div class="report-field-row">
@@ -182,11 +182,11 @@
         <!-- Izquierda: Representantes M-I y Teléfonos -->
         <div>
           <div class="report-field-row">
-            <label class="report-field-label" title="Ingeniero Principal de Fluidos M-I SWACO">Rep. M-I SWACO 1</label>
+            <label class="report-field-label" title="Ingeniero Principal de Fluidos">Rep. Fluidos 1</label>
             <input type="text" id="f_mi_representante_1" class="report-input" value="{{ reporte.mi_representante_1 }}" placeholder="Ingeniero principal...">
           </div>
           <div class="report-field-row">
-            <label class="report-field-label" title="Ingeniero de Soporte / Guardia M-I SWACO">Rep. M-I SWACO 2</label>
+            <label class="report-field-label" title="Ingeniero de Soporte / Guardia">Rep. Fluidos 2</label>
             <input type="text" id="f_mi_representante_2" class="report-input" value="{{ reporte.mi_representante_2 }}" placeholder="Ingeniero soporte...">
           </div>
           <div class="report-field-row">
@@ -2235,7 +2235,7 @@
       <div class="va-barra">
         <div class="va-acciones">
           <button type="button" class="btn-modern-secondary btn-sm" data-va-modal="quimicos"><span>&#9879;</span><span>Agregar químicos</span></button>
-          <button type="button" class="btn-modern-secondary btn-sm" data-va-modal="lodo"><span>&#128738;</span><span>Agregar lodo entero</span></button>
+          <button type="button" class="btn-modern-secondary btn-sm" data-va-modal="lodo"><span>&#128738;</span><span>Agregar lodo reciclado</span></button>
           <button type="button" class="btn-modern-secondary btn-sm" data-va-modal="transferencia"><span>&#8646;</span><span>Transferencia / pérdida</span></button>
           <button type="button" class="btn-modern-secondary btn-sm" data-va-modal="movimientos"><span>&#128220;</span><span>Movimientos del día</span><span class="cs-badge" id="vaBadgeMov" hidden>0</span></button>
         </div>
@@ -2434,7 +2434,7 @@
       <div class="cs-card-cabecera">
         <div>
           <span class="cs-card-titulo">Concentración de productos (lb/bbl)</span>
-          <span class="cs-card-subtitulo">Inicial y final del día, calculadas con los químicos y el lodo entero agregados, las transferencias y las pérdidas. Solo cuentan los productos que se miden en peso y tienen marcado "¿Calcular concentración?".</span>
+          <span class="cs-card-subtitulo">Inicial y final del día, calculadas con los químicos y el lodo reciclado agregados, las transferencias y las pérdidas. Solo cuentan los productos que se miden en peso y tienen marcado "¿Calcular concentración?".</span>
         </div>
         <label class="cs-campo va-campo-inline">
           <span class="cs-campo-label">Fosa</span>

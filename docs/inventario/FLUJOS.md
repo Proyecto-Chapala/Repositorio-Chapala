@@ -64,7 +64,7 @@ Desde el **25/09/2026 hay un solo inventario**: la cantidad de esta pantalla (`P
 | Acción en el reporte diario | Efecto en la cantidad de esta pantalla |
 |---|---|
 | Agregar químicos a una fosa | Resta la cantidad usada |
-| Agregar lodo entero | Resta las unidades del producto de lodo entero consumidas |
+| Agregar lodo reciclado | Resta las unidades del producto de lodo reciclado consumidas |
 | "Usado en otro módulo" | Resta |
 | Ajuste (+ / −) | Suma o resta |
 | Deshacer el último movimiento | Devuelve lo que ese movimiento había restado |

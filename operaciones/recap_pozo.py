@@ -394,7 +394,7 @@ def generar_recap_excel(d, secciones):
         v = d['volumenes']
         fila = tabla(ws, 4, ['Concepto', 'Volumen (bbl)'], [
             ['Fluido base agregado', round(v.get('aceite', 0))], ['Agua agregada', round(v.get('agua', 0))],
-            ['Volumen de químicos', round(v.get('quimicos', 0))], ['Lodo entero recibido', round(v.get('recibido', 0))],
+            ['Volumen de químicos', round(v.get('quimicos', 0))], ['Lodo reciclado recibido', round(v.get('recibido', 0))],
             ['Devuelto', round(v.get('devuelto', 0))], ['Perdido y descartado', round(v.get('perdida', 0))],
         ], None, [36, 16])
         ws.cell(row=fila, column=1, value='Pérdidas por categoría').font = neg
