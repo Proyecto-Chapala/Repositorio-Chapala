@@ -1,0 +1,329 @@
+(Transcrito por TurboScribe. Actualizar a Ilimitado para eliminar este mensaje.)
+
+No se podía cambiar para mañana, para él también está pues. No, no, eso fue el martes, porque ya está en la programación. Es más bien, tengo que llevar mañana este carajo para que haga la comida, a ver.
+
+Porque ahora somos seis, más dos, tres, somos ocho comidas. Y es que todos los días, la meriendita, la vainita, la bonada. Tengo una merienda de 20 carajos que tengo acá, ¿no? Tío, en el sistema se manejan dos monedas.
+
+Usted había mencionado algo sobre una tercera moneda, pero por barriles. O sea, ¿me podría indicar cómo funcionaría eso para nosotros? A ver, ya voy, ya voy. Vamos a ver.
+
+Coño, ahora mismo que yo no veo aquí. Vamos a ver, vamos a revisar el momento que probamos. La gente ya estaba aplicándolo, muchachos, y no vi la vaina del carril.
+
+En la volumetría, el no fluido ese. Hablamos mucho de los sidetracks, muchachos. Hay que hacer demasiado sidetracks, esa cosa que vamos a hacer.
+
+Hay que trabajar mucho con sidetracks. Entonces, ahí no se va a bajar, sino un suelo revestido. Y lo demás pudo sidetrack, sidetrack, sidetrack, sidetrack.
+
+Entonces, en el sidetrack se usa el no fluido. Entonces, dije, me quedé con la duda del no fluido. No lo vi.
+
+Entonces, quiero ver primero eso. Me quedé con la duda. Estaba buscando el no fluido.
+
+Le puse sidetrack a la vaina. Marqué sidtrack. Y no me dio el no fluido.
+
+Un momentito. No, por lo menos, hasta el momento, ellos lo que quieren ver es que van a meter los datos como en el pozo y que va a corregir. Eso es lo que quieren.
+
+Y que lo van a imprimir y que todo va a quedar fino. Volumetría. Imprimir.
+
+Yo no sé si aquí, solamente, esto considera nada más los activos o puede aparecer aquí una vaina que diga reserva. Lo que pasa es que todo está en los activos. Por eso que dicen activo, activo, activo.
+
+Y ahí reserva y prensa. Sí. Pero... Sí, pero lo que pasa es que los prensas están en el activo.
+
+Y todas esas vainas van en el activo. Entonces, este... Pero como aquí dice sin tipo, entonces el tipo, cuando tú te metes en tipo ya solamente te da la opción activo. Yo creo que todos los cálculos lo hacen nada más con el activo.
+
+Aquí, no ocupado por fluido. Ese era este. Está el anular, está el asalto y el bajo del mecha.
+
+Sí, pero ahí está el parrate, ¿no? Ajá. Y por esto que hablamos de no fluido. El volumen del hoyo viene de las pestañas cuatrénicas, cuando ese volumen ocupa el fluido del sistema activo.
+
+Por ejemplo, cemento o espaciador. Sí, cuando nosotros, cuando nos poníamos el... Este es para el no fluido. Este aquí se coloca cuando no ocupado por fluido.
+
+Este es el que va de atrapado. Que tienes que ponerlo aquí y después lo pones abajo, aquí lo pones como no fluido. Como lo dejaron en el hoyo.
+
+Sí, ahí sale la opción de poner manualmente. Sí, aquí mete valores, ¿verdad? Ajá, claro. 600.
+
+Muy bien, esta parte aquí. Y el inventario. El inventario, ¿dónde está el inventario? Al lado.
+
+¿Dónde está el inventario? Ahí está el inventario. Ahí está, está bien. El inventario también.
+
+Yo vi que está recibido, está como... Usa de otro modo. ¿Estás viendo la vaina? Yo cargo, uso hoy. Este agarra carga.
+
+¿Estás viendo? Pero eso tiene que usarse en su... En su área. No, no, yo no tengo como... Al menos que... Esto no fue yo lo que elegí yo para cargar el inventario. Correcto, pero hay una vaina en que no me deja cargar.
+
+Esto tiene que ser manual. Yo lo he recibido, lo he vuelto. Eso tiene que ser manual.
+
+Claro, claro, está bloqueado. Eso tiene que ser manual. Esto tiene que ser manual.
+
+Esto lo pongo yo, lo he usado, lo he vuelto hasta el día. Porque está bloqueado, yo no... Estaba viendo y cargó. Vamos a revisar eso.
+
+A ver si es que está en otra parte y se refleja aquí o... Claro, claro. Yo necesito meter esto. Y aquí hay unos costos que yo voy a quitar.
+
+Este costo, los precios, este. Esto viene en la matriz, debería ser cero. Aquí no debe aparecer nada, porque el precio yo lo voy a poner también.
+
+Entonces, el precio tiene que venir de aquí. No de ninguna matriz, porque ese precio, como yo les dije a ustedes, viene desde el día del contrato. Esto tengo yo que ponerlo, que no tiene que venir de otra vaina.
+
+Ahí está. Y yo tengo que cargar estos datos. Usa otro módulo, entonces aquí sí me da la chance.
+
+Y algún ajuste. Sí, claro. Vamos a meterlo aquí como para apagar los gastos finales.
+
+Y la gravedad específica, ¿dónde la pusieron ustedes? La pusieron en algún sitio porque está calculando. Pero yo debería tener una gravedad específica de los productos que yo meteba. Porque no he visto gravedad específica.
+
+Vamos a poner gravedad específica. Porque ahí identifico. Aquí dice libras en el tanto.
+
+En lo que vienen las unidades. Pero no. Esto tengo yo que cargar.
+
+Recibido el tanto. Pues yo voy a recibir. Y hay una vaina que dice recibido de dónde también.
+
+En la vaina te pone. Si a usted le gusta, pues se lo mete. Aquí.
+
+Le da más C. Aquí está la vaina. Ahí dice recibido. ¿De dónde recibiste? La vaina es inventaria.
+
+Ahí la concentración es el producto. Aquí está pasando algo feísimo. ¿Dónde es que cargamos esta vaina? Dice no hay producto.
+
+Entonces esto trae una vaina de otro lado. Lo que dice tanque sin datos. Y dice todavía no hay productos con concentración.
+
+Aparecerán al agregar químicos medidos en peso o luego reciclados en su concentración. Aquí también sale inicial y final del día. Ya veo.
+
+¿Dónde carga esto? En las concentraciones. Agregar químicos. Aquí lo meto.
+
+Ahí sale electricidad. Te está esperando la cantidad ahí. Este volumen viene por la gravedad específica.
+
+¿Dónde está la gravedad específica? Yo no la veo buena ahora. Hay que pegar los cálculos de volumen. Los materiales.
+
+Y ahí se pone la cantidad. Correcto. Pero en el menú de salud.
+
+Te da aquí. 120. Está a 120 y abajo el costo del producto.
+
+El costo de lo que nos va a costar. Volumen. 290.
+
+290 por el incremento que da este. Se registra en el registro. ¿Y esto que ha ido de más aquí? Este que está aquí.
+
+Si vamos a la volumetría. En volumen cuando lo vemos aquí. No tiene balance volumétrico.
+
+Debería aparecer el volumen por material. Cuando usted lo agregó, no lo iban a guardar. Ahora se registra y se guarda.
+
+Mientras el día después hay esas transferencias. Tanque a tanque la vaina. Aquí transferencia.
+
+Aquí. Transferencia y pérdida. De dónde a dónde.
+
+De un tanque a otro tanque. Y para tratar tanto volumen. Entonces ahí te va.
+
+Te va quitando el tanque que tiene. Y te va haciendo. Ahora te dice que menos.
+
+Pero entonces seguimos con la vaina de gravedad específica. ¿Qué es lo que no le voy a poder dar? No, la gravedad específica está en la parte del producto. ¿Ahí adelante? ¿Aquí? Sí.
+
+¿En el inventario? Sí. ¿Aquí? El sólido y el líquido. Porque quiero que aquí la vaina va por allá.
+
+Aquí la gravedad específica. Ah, pero entonces esto la mete aquí. ¿De dónde está aquí? No la vi, ¿oíste? No sé dónde la metiera.
+
+No se ha agregado ni nada. Parece que no se ha agregado ni nada. Porque esta está bloqueada porque está seleccionando una de las que está ahí.
+
+Claro, pero ¿dónde está? Por ejemplo, estos costos tienen que ser los ceros. Aquí no debe aparecer ningún costo. Están en equipo 9-0.
+
+El costo lo voy a meter yo ya. De acuerdo al contrato. ¿Verdad? Y la cantidad.
+
+Esto es de almacén. Este sí, para que vean la cantidad que tenemos. Además, la cantidad la meto yo ya de lo que estoy recibiendo en el pozo.
+
+Este simplemente, esta es la matriz. Es toda la cantidad de material que yo tengo. Pero cuando meto en el pozo, tengo que meter lo que está llegando ya.
+
+¿Verdad? Pero falta la gravedad específica. Aquí no tengo un ejemplo. No veo ningún ejemplo de gravedad específica.
+
+Tiene que estar la gravedad específica. ¿Cómo me está calculando los volúmenes? Sí, sí. Verga, yo no tengo nada específico.
+
+¿Está bien? Sí. Aquí está. Pero no lo veo reflejado por ningún lado.
+
+Sí, porque si nos vamos otra vez al pozo. Vamos a seguir revisando. A ver, revuelvas el... ¿Aquí? El producto.
+
+¿Está bien o no? Que no veo gravedad específica. ¿Está bien o no? Debería estar gravedad específica por algún lado. Porque ahí está la configuración de renta de equipo.
+
+Y la otra es la configuración de movilidad de salud. Correcto. Entonces, no me está dando gravedad específica por ningún lado.
+
+Está ya para meterla. Pero no me está tomando cuenta. Tiene que meterla porque es el que me hace el cálculo de materiales.
+
+Ok. Sí, verga. La busqué, la busqué.
+
+Están identificando y mire, no está la gravedad específica aquí. Y si me echan la pregunta, verga, no me la diré. Porque no la veía por ningún lado.
+
+Todo eso lo vamos a revisar. Ok. ¿Aquí? Lo está anotando.
+
+Ok. Esta parte. Esto es cambiable, ¿verdad? Esto se llena aquí, ¿no? Esto se llena.
+
+Lo único que no se llena es lo amarillo. Ok. Lo amarillo es lo único que no va a llenar.
+
+¿Y le queda azul menos lo más grande? Este tiene azul. Mira, prueba. Yo metí dos pruebitas.
+
+¿Está viendo? Porcentaje de carbonato. Y química. Ahí está bien.
+
+Entonces yo le pongo un valor aquí. Por decir algo, ¿no? Bueno, 20 aquí. Ahí dice propiedades extras del reporte.
+
+Chequeo diario. Ah, 20. Chequeo diario.
+
+20. Bueno, aquí 20. 20 aquí.
+
+Y aquí a mí, ¿no? Le pongo 5. Ok. ¿Guardado? Está guardado, ¿no? Sí, ahí dice que se guardó. Se guardó, pero no.
+
+Yo quiero que se me refleje. Porque no aparece por ningún lado. Eso tiene que aparecer en las propiedades.
+
+¿Ves? No está apareciendo. ¿Viste? Queda igualito. Esta habilidad de la electrónica no va a aparecer en la propiedad de poner una parte.
+
+Ellos pueden cogerla y si la quieren poner en la 2, en la 3, en el 2 ya puede aparecer cualquiera. En donde la aparece. ¿Ves? Eso tiene que ser lo que aparezca aquí.
+
+Que aparezca así como esta propiedad. ¿Viste? Está quedando ahí guardado. No, no.
+
+No me interesa. Porque si me la pide el compañero de imágenes, entonces yo no vería, ¿no? ¿Dónde la...? Está aquí, bebé. Ahí está.
+
+Pero cuando dice guardar, no, no. Se queda ahí. Se queda guardado ahí y no me... No me... No me da para ningún lado.
+
+Porque lo que da es cerrar y guardar datos. Yo guardo datos. Guarda los dobles.
+
+Tiene que meterlo para acá. Tiene que aparecer aquí, pues. En la que tú le dijiste que apareciera.
+
+Y no está apareciendo. Está quedando en cero. Tiene que aparecer.
+
+Porque me pidió una propiedad extra. Yo la cargo y le digo, ¿dónde la quiero ver? Quiero verla en la última prueba. Para que la vea el compañero de imágenes.
+
+Ahí está. Y tiene que aparecer aquí. Señala aquí, bebé.
+
+Ella tiene que aparecer con su nombre, la criatura. Claro. Y esta es la lectura.
+
+Aquí es donde va a leer. Te va a decir en qué unidad está y debe aparecer en donde la está llamando. ¿Verdad? Eso tiene que pasar.
+
+Bueno, entonces, eso es lo que yo no vi en la vaina de... Porque esa vaina es de inventar y le vamos a dar coñazo. Que jode un mal rato. Entonces, aquí es.
+
+Ahí es donde nos vamos a estar metidos y dándole coñazo a esta vaina. A darle coñazo. Otro.
+
+Buena hidráulica. Hidráulica. Hidráulica, no sé.
+
+Falta onda. Geometría de pozo. Aquí te está dando el... Por supuesto que tenemos que meter herramientas que juegan aquí para... Claro, por eso está la lectura de los componentes.
+
+Los componentes. Vamos a buscar componentes. Vamos a meter componentes a la vaina.
+
+Para alimentar bien la vaina. Una cosa de la vaina. Unos datos aquí.
+
+La bomba, la bomba. Aquí. La bomba... Tiene desplazamiento, tiene caudal.
+
+Aquí falta la capacidad, ¿no? Desplazamiento. Que es capacidad, que es igualito que la fórmula. Del diámetro.
+
+De la... ¿No está bien? ¿Está bien? Sí, está bien. Porque te está dando... Desplazamiento. Sí, yo lo puedo agregar rápido.
+
+Barriles por estrope. No, está bien aquí. Está bien, está bien.
+
+Porque esta es la bomba. La tubería, bueno... Debería darnos la misma capacidad. Con los... Con los alimentos que medían.
+
+Aquí está también. Presión. Aquí está todo lo que la vamos a dar.
+
+Está bien. Y esto es... Esto es lo que está desde la mesa para arriba. Estos son... Los cuadrantes de esa vaina.
+
+De esta empalla. O sea, el que estás usando arriba. O sea, es para que te consideres... Cuando calcules la presión, te lo consideres.
+
+Para las caídas de presión. Entonces, ya me imagino, cuando metes todos los datos, aparece la presión en tu superficie. Cada vez desaparece esa presión.
+
+Ah, ok. ¿Está bien? Ajá. ¿Estás anotando ahora? Sí.
+
+Ok, aquí estamos bien. Si ellos piden otro valor aquí, otra vaina... Aquí ya no... Ya... No debería... Aquí porque... Riser no tenemos. No estamos en plataforma.
+
+Aquí debería de aparecer Riser. Boomer Riser. Y otra cosa.
+
+Pero esto está completito. Aquí está la mecha. Aquí está la vaina.
+
+Está hecho un pico. Esto está completo. Esto es lo que se pide... Para la hidráulica.
+
+Y... En la propiedad del lodo. El reporte... Propiedad de Ezelebra. Que llenamos, ¿verdad? Esto se llena, ¿verdad? No, eso no se llena.
+
+Porque ese es como que... La foto de cómo se ve el reporte. La imagen de cómo se ve el reporte. Sí, ya voy, ya voy.
+
+De cómo se verá. Ah, pero el otro damos un reportito de 8 horas cada 8 horas. Es el que le pedí para nosotros llenarlo.
+
+Para entregarlo a los clientes con un comentario. Yo creo que es este. Ah, ahí es donde se llena.
+
+Ahí es donde se llena el comentario. Sí, pero las propiedades... Yo lo puedo llenar y poner las propiedades aquí. Ah, ok.
+
+O sea, también tiene que... La heca esa parte también se escriba. Ah, correcto. Tiene que liberarme.
+
+Liberarme esto para hacer las propiedades. ¿Qué hace? Ve. ¿Qué hace el ingeniero? Llenó este reportito.
+
+Y en base... Él va a cargar después el otro. Eso es. Él llena su reportito.
+
+Y en base a esto después carga el otro. Sí. Este está apareciendo en Excel.
+
+Y en Excel debería aparecer también con su comentario. El reportito de comentario. Yo creo que no está apareciendo cuando lo imprime.
+
+Ah, te vas a... Te vas aquí a... ¿Cómo te vas aquí? A reportito de propiedades. Este es el reportito este, ¿verdad? Entonces, yo lo quiero imprimir en Excel. En Excel está apareciendo.
+
+Pero creo que está apareciendo sin... Sin... Sin este... Vamos a revisar porque este es el momento. Este es el momento. Y quiere decir que ustedes al martes llenó con todo.
+
+Por aquí está el reportito este. Este es el reportito este, ¿verdad? Este reporte tiene que darme la propiedad del reportito. Su comentario es... Este está llenado de... Esto tiene que darme... Este mismo reportito así.
+
+Donde yo voy llenando mi vaina. Donde yo lo tomé. La muestra es donde... Aquí tienen que aparecer todas las propiedades.
+
+A mí igualito. Todas las propiedades. Esto tiene que tener las propiedades aquí.
+
+Aquí está. Los comentarios abajo. Y las pruebitas que yo iba haciendo.
+
+El reporte ese se puede... Se tiene que... Cuando tú imprimes todo el reporte, Ese reporte no se imprime... Junto con todos los demás. Uno que ese se pone aparte. O sea, usted puede ir a la parte esa donde está el reporte.
+
+Y le da el descargar en Excel. Y creo que si tiene un comentario, sí debe estar. Ok, vamos a buscarlo.
+
+Vamos a hacerlo bien. Vamos a hacerlo bien porque... Vámonos al reporte. Vámonos.
+
+Voy a hacer la parte del reporte donde estábamos yo. Aquí hay uno. ¿Por qué? ¿Por qué? Ah, este es el reportito.
+
+Y allá en la esquina dice guardar. Ah, aquí guardo. ¿Ok? Y ahora lo quiero imprimir, ¿verdad? Lo quiero... Y dice para imprimirlo en... Pero yo no quiero... Quiero que salga en Excel.
+
+¿Eso es PDF? Sí, eso es PDF. Bueno, lo importante es que le llegue la información al cliente. Está bien, está bien.
+
+Pero lo que queremos es lo que te digo, pues. Que yo... Tengo que modificar esto. Yo tengo que poner las propiedades de mi comentario.
+
+Y después imprimo y eso lo llevo yo con varias manos. Y aquí tiene el audio. Está bien.
+
+Si lo imprimes así, así. Y también, aquí está tu reporte. Cuando pides que te venda el reporte, tú te lo entregas con tu comentario.
+
+Y le dices dónde es la prueba, dónde lo tomó, y aquí está tomándolo, de dónde lo está tomando. Ahí está. Prueba 1, de una entrada, pero de dónde.
+
+Aquí dice Flowline, aquí dice Solution. De dónde está tomando. Muy bien.
+
+Eso, eso... Pero necesito que me liberen esto para poder cargar. Sí, sí, sí. Porque esto es aparte.
+
+Y este es el que alimenta al principal. Luego, mi propiedad, el carajo me dice, no me la deja a las 12. Quiero una a las 10.
+
+Entonces, tú la vas a poner, con todo tu reporte general, tú vas a poner que esa propiedad la tomaste a las 10 de la mañana. ¿Verdad? Eso es. La tomé a las 10.
+
+Y le vas a poner la hora a las 10. Entonces, cuando yo ponga aquí, donde dice hora, cuando yo venga mi reporte, donde dice hora, aquí es la hora, ¿viste? Entonces yo le voy a poner que fue a las 10 que lo tomé. Que no lo tomé a las 12, la hora.
+
+Porque me la pidió el carajo que quería ver una a las 10. Entonces, este reportito que yo le estoy entregando ya, es el que yo voy a descargar aquí. ¿Ves? Ese yo lo voy a descargar.
+
+Es aparte. Es una vaina que tú estás entregando aparte y tienes que... tienes que... imprimirlo así. Si lo estás imprimiendo en lo que es el... en ese modelo, está bien.
+
+Está bien. ¿Viste las propiedades que no aparecen? No aparecen. Eso.
+
+Ok. Aquí me da... entonces estoy viendo que si es identificado el lodo, si es no identificado. Esto es la hueá.
+
+Pues en base a eso te va a decir si hay varitas o no hay varitas. Está bien. Y entonces la gravedad específica... Pero ahora lo que yo estoy diciendo es que tú... Ustedes me encajaron una vaina.
+
+Donde estaba un reporte, donde estaba en la volumetría, estaba la cantidad de volumen de... Y si él no tiene la gravedad específica, no puede calcular volumen del producto. No lo puede calcular. Por eso es que no me dio volumen, ¿ya viste? Porque no tiene gravedad específica.
+
+Cuando le hicimos la prueba y le pusimos la cantidad, no me dio volumetría. Porque no tiene... Él no tiene gravedad específica. Por eso es que no me lo dio.
+
+Y es la formulita de las libradas 350 por la gravedad específica. Esa es la formulita que tiene que darme aquí. Eso... Yo cuando le decía ¿Por qué no vende aquí? Fue la... En la parte de inventario.
+
+Aquí está. Cargamos la vaina. Le pusimos las cantidades de vaina.
+
+Pero no me... No me dio este... Volumetría. Alguna vez, prácticamente... Entonces, eso tiene que ser cargable. Porque no me puede bloquear eso.
+
+Porque ese es el día a día. El ingeniero va a cargar aquí. ¿Quieren que cargue ahí? Claro.
+
+Él va a seleccionar de la matriz qué es lo que va a usar y va a empezar a cargar. Recibí tanto el día, ¿verdad? Después... Ese primer día no lo devolví. Y lo que usó en el fluido.
+
+Si usaba en otro módulo si lo usó para cementación para vaina. Esto también... Creo que aquí se pone... Lo ha usado en otro módulo que si lo usó en cemento para otra cosa. Usted tiene que poner la cantidad ahí y entonces esto cuando usa en otro módulo no lo mete en las concentraciones.
+
+Vean lo que hace este programa. ¿Por qué otro módulo? Porque él agarra aquí cuando tú le pones la cantidad aquí en otro módulo él no entra en la concentración en el otro módulo porque no... Usted está diciendo que eso no está entrando en el otro módulo porque lo está usando en otro módulo. Tenemos que generar un reporte que saben que sale de aquí que ya la ingeniería de ahí se vaya y decimos, mira, no está bien, no le falta nada.
+
+Ahora, tiene seguridad esto, se habla con Oscar y dice, mire, van ese día para la compañía aquí estamos entregando todo bien, aquí está aprobado, aquí estamos listos y ahora nosotros bueno, en el negocio usted no va. Pero entonces eso es lo que veo cuando usamos en otro módulo es como es como entrar estos ajustes estos ajustes por, imagino que es por por vaina este es dólar este es billete ¿no? Esto es una real. Tiene una vaina ahí tiene un valorcito ahí en la vaina que se le ve.
+
+Sí, tiene un signo ahí Mire, pareciera que eso era dólar ahora que veo no sé si es dólar No, no parece dólar Este ajuste este ajuste Ah, no, esto tiene que ver con ajustarla a la a la vaina Cuando uno da la vaina tiene que ajustarla a un decimal 101 Entonces, para que juegue el ingeniero para que le dé ya la la para que le dé la el volumen cuando le algo tiene demás entonces va ajustando aquí Entonces, esta cantidad la va ajustando para que para que el volumen vaya cuadrando Esto tiene que tener que ver con el volumen Esa voy y aquí te va a contestar de hoy corto diario acumulado viste, pero tienes que liberarme porque no puedo no puedo estar cerrado Sí, yo digo, ¿Cómo meto yo un valor aquí? ¿Cómo pongo el ingeniero a meter valores si no, si esto está bloqueado? Aquí sí, aquí aquí te voy diciendo Aquí está el ingeniero Aquí está el ingeniero que buscaba a los costos Entonces, aquí creo que se le da valor No, ahí no se le da valor ¿Ah? Ahí no se le da valor ¿Dónde se le da valor a eso? Eso es lo que estamos buscando por eso es lo que vamos a revisar Claro Eh, ¿Ustedes van a ir a trabajar mañana? No Ah, ok, porque eh, cuando tengamos los cambios yo les escribo cuando ustedes vengan y pasamos el programa con los cambios y ya Necesitamos este valor Sí, el ingeniero coño, necesitamos el ingeniero Sí, ¿Dónde está ese ingeniero? Bueno, a través de él le podemos meter por aquí por aquí vale, por ahí Sí, ya lo podemos no, no está apareciendo ¿Dónde está el ingeniero? ¿Dónde está el ingeniero? ¿Dónde está el? a meterlo Sí, porque te lo voy a, te lo voy a terminar de las observaciones ¿No? Para terminar de pulirlo y ya ya mañana si lo tenemos le escribo usted para que venga y se lo paso con los cambios a ver qué tal Sí, ahí tenemos los tickets de almacén y tiene que, hay que meterlo Hay que meterlo porque esto es administrativo de evolución el almacén también tiene que vencerlo, tiene eso por allá, ¿verdad? Volumen de químicos para fluidos, hoy. Recepción desde otro pozo, a mitad, de otro pozo. Eso es importante.
+
+Entonces ahora tenemos que ver de dónde carajos salen para... Esto sale de aquí, de la volumetría. Tiene que salir todos estos valores, todos estos tamaños. Entonces aquí está la vena.
+
+Esto tiene que ver con los fluidos, entonces tiene que ver con la volumetría ya. Cuando hacemos las transferencias y la vaina. Recepción desde el almacén.
+
+Este producto. Volumen, químicos para fluidos, hoy. Recepción desde otro pozo.
+
+Esto es cuando me viene una vaina, envío a otro pozo. Necesito una transferencia.
+
+(Transcrito por TurboScribe. Actualizar a Ilimitado para eliminar este mensaje.)

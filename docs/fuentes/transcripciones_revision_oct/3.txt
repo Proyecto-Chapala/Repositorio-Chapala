@@ -1,0 +1,276 @@
+(Transcrito por TurboScribe. Actualizar a Ilimitado para eliminar este mensaje.)
+
+(0:00 - 0:08)
+El número de ticket se puede poner claramente. Ok, correcto, ahí está. ¿Dónde recibimos el número de ticket? Y ahí se pone el pedido portal y recibió el portal.
+
+(0:08 - 0:16)
+Ah, aquí le puse que son 35, vamos a poner aquí 8888, puede ser. Hola, guarda el ticket. Debería aparecer ese número de ticket, cuando me voy a inventario.
+
+(0:17 - 0:26)
+Cerro aquí. Solamente dice ticket. Pero, ¿dónde está el ticket? No, ya está listo, ya no... Pero ya está guardado ahí.
+
+(0:27 - 0:29)
+Sí. Ya está guardado. Pero dice que ticket.
+
+(0:30 - 0:36)
+Aquí dice ticket. Entonces, esta vaina que va a estar recibida. Ok, ya aquí está.
+
+(0:38 - 0:47)
+Y entonces, esto me alimenta la inicial. Me alimenta la inicial y cada vez que yo la recibo va alimentando la inicial. ¿Para qué? Para que yo consuma, yo use el plata y me doy final.
+
+(0:48 - 1:00)
+Cuando yo termino el taladro, cuando termino la operación, debe haber un volumen final. Que si esa vaina se la van a llevar para armar almacén, ya yo tengo un número que va para almacén. ¿Recepción de almacén? Ahí está, el 888.
+
+(1:00 - 1:05)
+Ahí está el número recibido, el 888. Guardar camión. Aquí está.
+
+(1:05 - 1:19)
+Guarda y esto debe estar metido por otro modo. Si es de recepción de otro modo, te va a decir que fue de otro modo. Y lo va guardando y te va diciendo que es lo que es.
+
+(1:20 - 1:31)
+Aclarito, hola. Dato alimentario, peso químico en el inventario. Cuando yo meto todos mis productos, me va a decir cuántas libras yo estoy manejando.
+
+(1:32 - 1:48)
+Y yo en base a las libras sé cuántos volúmenes me van a quitar. Y esto te va a dar un volumen. Por eso es que no da, ¿ve? Porque usted tiene que decir, el químico cuando yo lo use, debe darte aquí mi peso en libras.
+
+(1:48 - 1:54)
+Y te da un volumen, que es el volumen que yo le digo. Este volumen se va para el inventario, para el volumen. Eso se va para el volumen.
+
+(1:55 - 2:07)
+Este valor que está aquí, cuando yo cierro mi inventario, se va para allá. Y te dice volumen agregado por químico. Entonces, si ponemos aquí, lo que pasa es que no tengo... Si yo pusiera aquí, usado diario.
+
+(2:10 - 2:21)
+Usado hoy, pero no puedo usar. Cuando yo use aquí, él me va a hacer mi cálculo de libras y me va a dar mi volumen. Y para calcular volumen, tiene que tener grada de aspecto.
+
+(2:22 - 2:28)
+Porque si no, no va a calcular. No lo va a calcular. Entonces, eso es lo que yo observé en el químico.
+
+(2:28 - 2:34)
+Ahora vamos a la parte de precios. Aquí está el precio. Precio.
+
+(2:34 - 2:57)
+¿Verdad? Este precio puede ser... La que este precio venga, cuando yo pongo mi precio. Porque yo puedo tener aquí... Yo puedo tener aquí... Yo puedo tener aquí, con un código, salmuera de 8.5. Unidad barril. Tiene un precio por barril.
+
+(2:57 - 3:07)
+Precio por barril. Así como le doy el precio de... Porque aquí podemos ver precios por libras saco o algo así. Yo le doy un precio por barril.
+
+(3:07 - 3:21)
+Entonces, cuando yo pongo mi precio por barril aquí. Él me va a calcular mi precio por barril. Igualito, yo le puedo dar mi precio por barril en materiales.
+
+(3:22 - 3:34)
+¿Cuánto me cuesta el barril de esta? O puede haber una mezcla entre libras y... Puede haber una mezcla entre libras y barril. Lo que es barril, yo lo coloco como barril. Y lo que viene en libras saco, lo pongo aquí.
+
+(3:35 - 3:46)
+¿Verdad? Entonces, va a tener una ventanita que me ponga un precio por barril. Eso depende de cuánto. Sí, porque yo puedo cobrar mi barril aquí.
+
+(3:46 - 4:00)
+Y cuando yo meto mis libras, él me va a calcular mi barril y me va a poner mi precio por barril. Ahí hay una vaina que se cobra en libras. Porque simplemente es precio.
+
+(4:00 - 4:11)
+Y el precio que yo pongo ahí es que le va a multiplicar y me va a dar para allá. ¿Verdad? Por la cantidad. O le ponemos aquí.
+
+(4:12 - 4:31)
+Aquí le ponemos la leyenda precio en libras. Pero no se va a entender cuando... Como si no se va a entender cuando le ponga, cuando vaya a cobrar en libras, cuando vaya a cobrar en barril. No lo va a entender así, ¿verdad? Yo creo que si independizamos un precio en libras, un precio en barril.
+
+(4:35 - 4:43)
+Este precio puede ser en libras, saco, tambores, vainas. Y un precio que dice por barril. Cuando tú pones precio por barril, es precio por barril.
+
+(4:43 - 4:53)
+Pero este puede ser en libras, saco, tambores. Todo te cuñete. Esa es la especificación.
+
+(4:57 - 5:08)
+Precio por unidad, precio por barril. Ahí se ve. ¿Verdad? Pero el precio por barril ya cambia, porque ya tú sabes que le estás poniendo un precio por barril.
+
+(5:08 - 5:22)
+Salmón era de 8.5. Las precios por barril, unitario, precio unitario por barril, cuesta tanto. Ya ponemos aquí. El día si usaste 50 barriles, cantidad usada.
+
+(5:23 - 5:34)
+Ya con el precio que te va a decir la cantidad, te va a multiplicar. Y te va a decir que te estás gastando tanto. Claro, porque simplemente es una mida de cobro.
+
+(5:36 - 5:40)
+Por kilo. Vendí 20 kilos de esta vaina. El kilo cuesta 3 dólares.
+
+(5:41 - 5:47)
+Ya son 60 bolígrafos. Ahí se ve. Ahora si te estoy vendiendo un líquido.
+
+(5:47 - 5:52)
+Mira, esta vaina es por barril. Tú me vas a comprar 10 barriles. Yo te voy a vender barril, tengo un precio por barril.
+
+(5:53 - 6:08)
+Pero si lo dejas así, no se va a entender en qué contrato puede estar, ¿verdad? La idea es que el inventario me diga que yo pueda estar en cualquier evento. Porque yo puedo cobrar también por libra un contrato y también cobrar los barriles. O sea, la libra me dice, todos los sacos que usas me los cobras por la libra.
+
+(6:09 - 6:18)
+La libra te vale tanto, la meto aquí. Todo lo que usas por barril, barril se vale tanto y lo colocas aquí. ¿Lo viste? Eso es todo.
+
+(6:18 - 6:41)
+Yo digo que debería aparecer un precio por unidad y un precio por barril. Entonces, ustedes buscan ahí la mejor manera de ayudarme con esta parte. Yo creo que ahí está, vale, definido ya, ¿verdad? Sí, aquí se ve la observación de que esto es solamente con existencia o movimiento.
+
+(6:42 - 6:57)
+Si no hay nada, se deja en blanco, tranquilo. Y ya vimos que el ticket se crea, que aquí está la vaina que está recibiéndose. Y aquí tiene los materiales que seleccionaste, que están entrando en el inventario.
+
+(6:57 - 7:13)
+Lo mismo que haces es lo que tú vas a hacer. Y entonces aquí te va a decir cuánto vas a recibir de cada uno. Ahora lo que yo no veo, porque aparece en un ticket aparecen estos materiales.
+
+(7:16 - 7:32)
+Acá, pues ya tú seleccionaste que es un ticket, eso es lo que vas a seleccionar, porque son los productos que tú estás recibiendo. En tu vaina vas a seleccionar este, este, este, este, este, y es lo que vas a seleccionar y le vas a meter las cantidades que estás recibiendo. Bueno, ahí está.
+
+(7:32 - 7:42)
+Coño, yo creo que está bien, que vamos a tener éxito. Vamos a tener éxito. Ya lo que, coño, lo que sí va a ser engorroso es la volumetría que vamos a robar con esos carajos.
+
+(7:43 - 7:48)
+Metan ahí datos, vámonos, vámonos. Escribulineando esta vaina. Y bueno, cierra.
+
+(7:49 - 7:53)
+Llegamos hasta la profundidad. Tanto, tanto. Reporte número uno.
+
+(7:53 - 7:59)
+Profundidad fina. Cerraste. Le metiste el revestidor.
+
+(8:00 - 8:06)
+Vas al revestidor de nueve cincuenta horas. Calcula volumen. Háganos cálculos de dónde está.
+
+(8:07 - 8:13)
+Mira, eso está mal hecho. Ahí vamos a hacer los cálculos manuales. A ver si esto está dando los cálculos exactos.
+
+(8:15 - 8:23)
+Está bien. O sea, cada tica que tú vayas recibiendo, los cargas te van cargando y se está yendo para acá. Esto tiene que automáticamente irse para acá.
+
+(8:24 - 8:30)
+Para que te vaya dando un volumen de materiales aquí. Así mismo es. Ahí se va a ir para acá.
+
+(8:31 - 8:37)
+Y eso, así va a trabajar así. Esto va a estar, así está mal hecho. Y esto sí, esto sí es verdad que hay que buscarlo, carajo.
+
+(8:38 - 8:46)
+Este ingeniero de fluido, ¿dónde coño está? Necesito este valor. Este es el ingeniero. Categorías.
+
+(8:47 - 8:51)
+Químicos. Esta categoría puede estar en una que diga trailer. Ajá.
+
+(8:52 - 8:57)
+Busca esta categoría y meta en trailer. Ok. Cuando ustedes consigan esto.
+
+(8:58 - 9:11)
+Ah, bueno, esa es la otra pregunta que también quería hacer. Lo del trailer. La del trailer, ¿se tendría que hacer ya mismo o eso se podía dejar para después? Sí, la idea es... Ahorita no voy a usar trailer.
+
+(9:11 - 9:14)
+Pero puedo usarlo la semana que viene. Ok. Entonces ve.
+
+(9:15 - 9:26)
+Pero al menos, ya por lo menos... Si usted dice, por ejemplo, que se podría usar la semana que viene. Por lo menos esta semana se podría buscar como usted, la gente que sabe de eso. O sea, de la parte de trailer.
+
+(9:26 - 9:35)
+¿Cómo se pondría? ¿Cómo se usaría? No, no, es que trailer tiene que venir algo así como esto. Aquí están los químicos. Aquí están los químicos.
+
+(9:35 - 9:40)
+Esto tiene un costo. Esto simplemente es costo. Un costo diario y un costo acumulado.
+
+(9:41 - 9:48)
+Entonces... Y esto es igualito. Tú vas a poner un trailer aquí en vez de químicos. Porque esto viene acumulado de los químicos, ¿verdad? De aquí.
+
+(9:49 - 9:53)
+Una categoría que tú pongas. Se llama trailer. Y le pongas esta vaina.
+
+(9:54 - 9:58)
+Recibido. Una unidad. Y le vas cargando cuánto puede estar el diario.
+
+(9:58 - 10:01)
+Bebe. El diario es lo que va a aparecer acumulado. Ok.
+
+(10:01 - 10:08)
+Es que algo así como esto. Simplemente es eso. Pero como tú metes el trailer como equipo, te va a aparecer como un control de solio.
+
+(10:09 - 10:14)
+Y esa no es la idea. Porque no es un control de solio. Pero los trailers los podemos poner nosotros.
+
+(10:14 - 10:22)
+Tiene que aparecer... Mira, en esta categoría tú vas a conseguir la respuesta. Cuando tú consigas el ingeniero y consigas los químicos que ya lo tienen. Los químicos vienen de aquí.
+
+(10:23 - 10:25)
+Porque nos hemos dado cuantidades. Esto está listo. Esto está muerto.
+
+(10:26 - 10:31)
+Y le vas a dar un diario acumulado. Ingeniero te va a dar un diario acumulado. El trailer es igualito.
+
+(10:31 - 10:38)
+El trailer es... Hay una categoría de trailer que te da un diario acumulado. No es nada. El diario es lo que va a costarte el día.
+
+(10:38 - 10:43)
+El acumulado. Lo que sea el acumulado. Y ese no tiene que ver con gravedad específica.
+
+(10:43 - 10:48)
+Que no da volumen en el pollo. Ese es como un ingeniero. Ese es como un ingeniero.
+
+(10:49 - 10:54)
+Sí, que va a cobrar un... Tiene una tasa diaria y que te va a dar un acumulado. Eso. Esta misma interpretación.
+
+(10:55 - 11:00)
+Construirte en esta parte. Desglose y meta un trailer también de esta misma manera. Los químicos vienen de aquí.
+
+(11:01 - 11:04)
+Pasa para acá. Diario acumulado. ¿Cuánto fue el día? Cuánto acumulado.
+
+(11:05 - 11:09)
+Viene el ingeniero. El ingeniero lleva un día. ¿Vale tanto? Aquí va acumulando.
+
+(11:09 - 11:13)
+Si metes un... De control... El ingeniero controla eso. Si lo tiene. Son tantos.
+
+(11:13 - 11:16)
+Y da tantos. Así como esta línea. Aparece un trailer.
+
+(11:16 - 11:22)
+El trailer. Este va a aparecer... Un diario y va acumulado. Porque no afecta.
+
+(11:22 - 11:25)
+No afecta como inventario. No tiene movimiento. Es una sola vaina que llegó ahí.
+
+(11:25 - 11:29)
+Y va a cobrar una... Va a cobrar una tarifa. Entonces. El trato es que te dale.
+
+(11:30 - 11:32)
+Es ese. Es tipo sí. Es tipo ingeniero.
+
+(11:32 - 11:34)
+Tipo químico. Tipo eso. A ver.
+
+(11:34 - 11:38)
+Vamos a leer. Lo de la moneda del barril. Ah, la moneda.
+
+(11:39 - 11:45)
+¿Cómo sería eso? Ajá, la moneda. Aquí estamos en la parte más alta. No, la moneda.
+
+(11:45 - 11:50)
+O sea, como que... Ajá. Como usted dijo. Que usted había mencionado sobre una tercera moneda.
+
+(11:50 - 11:57)
+Pero de barriles. O sea, ¿cómo se indicaría eso para nosotros? No, no. Porque eso tiene... El barril es un precio.
+
+(11:58 - 12:03)
+Eso no tiene que ver con... Con monedas. Sin monedas. Simplemente tú le dices que esa vaina es de tantos dólares.
+
+(12:03 - 12:05)
+Es lo que vale el dólar. Ok. Entonces, también.
+
+(12:05 - 12:15)
+Y si tú tienes una tarifa en bolívares y una tarifa en dólares, tienes que reflejar una tarifa. Que se vea. Dos tarifas.
+
+(12:15 - 12:22)
+Por ejemplo, el barril en dólares cuesta tanto. Y en bolívares cuesta tanto. Y usted elige la otra moneda, que si es en bolívares, en bolívares es esto.
+
+(12:22 - 12:34)
+Exactamente. Si hay que hacer las modificaciones, mira qué tal. Necesitamos reflejar el costo.
+
+(12:34 - 12:50)
+Porque el contrato dice que son tantos bolívares, tantos dólares. ¿Por qué? Porque el contrato dice que son tantos bolívares, tantos dólares. ¿Por qué? Porque el contrato dice que son tantos bolívares, tantos dólares.
+
+(12:51 - 12:59)
+¿Por qué? Porque el contrato dice que son tantos bolívares, tantos dólares. ¿Por qué? Porque el contrato dice que son tantos bolívares, tantos dólares. ¿Por qué? Porque el contrato dice que son tantos bolívares, tantos dólares.
+
+(13:00 - 13:36)
+¿Por qué? Porque el contrato dice que son tantos bolívares, tantos dólares. ¿Por qué? Porque el contrato dice que son tantos bolívares, tantos dólares. ¿Por qué? Porque el contrato dice que son tantos bolívares, tantos bolívares.
+
+(13:36 - 13:38)
+Porque el contrato dice que son tantos bolívares, tantos bolívares. ¿Por qué? ¿Por qué?
+
+(Transcrito por TurboScribe. Actualizar a Ilimitado para eliminar este mensaje.)

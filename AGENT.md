@@ -8,6 +8,7 @@ Si eres un asistente o un desarrollador que empieza a trabajar en este proyecto 
 
 | Tema | Documento |
 |---|---|
+| Correcciones de la revisión de octubre (inventario, GE, precios, trailer, sidetrack, reportito) | `docs/23_CORRECCIONES_REVISION_OCT.md` |
 | Cambios del 02-oct (Smart Mud, logos, tanques, monedas, intervalos, hub, `.exe`) | `docs/22_CAMBIOS_02OCT_SMART_MUD.md` |
 | Concentraciones, side track, hoyo piloto | `docs/20_CONCENTRACIONES_Y_CASOS_ESPECIALES.md` |
 | Decisiones del 27-sep (imágenes y audios) | `docs/21_ANALISIS_MATERIAL_REVISION_27SEP.md` |
@@ -31,3 +32,15 @@ Si eres un asistente o un desarrollador que empieza a trabajar en este proyecto 
 - Imágenes, audios o notas del cliente: guardar el original en `docs/fuentes/` y **dejar el análisis documentado** en `docs/`.
 - **Toda la documentación vive en `docs/`.** No crear otras carpetas de documentación. Lo que queda viejo va a `docs/_archivo/`.
 - Al terminar un cambio: actualizar `docs/00_TRASPASO.md`, `docs/16_…` y el documento del tema.
+
+## Reglas esenciales de código (obligatorias)
+
+Nada de parches: una solución que oculta el problema no deja el código limpio ni escalable.
+
+- **Nombres descriptivos** para variables, funciones y clases; evitar abreviaciones ambiguas.
+- **Estilo consistente** con el proyecto y sus convenciones (ver las reglas anteriores).
+- **DRY**: no duplicar lógica; si dos partes hacen lo mismo, se extrae a un solo lugar.
+- **KISS y YAGNI**: la solución más simple que resuelva el caso real; nada de sobreingeniería ni de código "por si acaso".
+- **Diseñar para cambios futuros**: separar responsabilidades (lógica pura, datos, interfaz) para que crecer no obligue a reescribir.
+- **Causa raíz, no parches**: no aplicar soluciones a corto plazo que oculten problemas; identificar por qué falla y corregir ahí.
+- **Pruebas unitarias al día**: todo cambio actualiza o agrega sus pruebas, y la suite debe pasar antes de dar el cambio por terminado.
