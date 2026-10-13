@@ -20,6 +20,7 @@ Las pruebas automáticas (`python manage.py test operaciones`) cubren los cálcu
 | 12 | [Propiedades extra que aparecen](12_PROPIEDADES_EXTRA.md) | 15 | — | Sin probar |
 | 13 | [Reportito: comentario y Excel](13_REPORTITO.md) | 16 | 0032 | Sin probar |
 | 14 | [Papelera de pozos](14_PAPELERA_POZOS.md) | — (doc 24) | 0034 | Sin probar |
+| 15 | [Servicios del pozo](15_SERVICIOS_DEL_POZO.md) | — (doc 25) | 0035 | Sin probar |
 
 ## Antes de empezar
 

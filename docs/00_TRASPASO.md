@@ -1,6 +1,6 @@
 # 00 — Traspaso: estado actual y cómo se trabaja
 
-> **Léelo primero** (después de `AGENTS.md`). Actualizado el **12-oct-2026**. Con este archivo, [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y el documento del tema se retoma el proyecto sin la conversación anterior.
+> **Léelo primero** (después de `AGENTS.md`). Actualizado el **13-oct-2026**. Con este archivo, [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y el documento del tema se retoma el proyecto sin la conversación anterior.
 
 ## 0. Cómo se trabaja (reglas del usuario)
 
@@ -15,12 +15,13 @@
 - Si el usuario comparte imágenes o audios, **analizarlos y dejar el análisis en `docs/`** (fuentes en `docs/fuentes/`).
 - Al terminar un cambio: actualizar este traspaso, el [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y el documento del tema, y crear su archivo de prueba en [`pruebas/`](pruebas/README.md).
 
-## 1. Estado (12-oct-2026)
+## 1. Estado (13-oct-2026)
 
+- **Servicios del pozo (13-oct):** ingenieros, trailers y demás servicios se cobran por día en la pestaña 8 › **Servicios**, con categoría y tarifa propias (migración **0035**). "Usado en otro módulo" queda solo para productos transferidos a otra línea (por ejemplo, cementación). Ver [25](25_SERVICIOS_DEL_POZO.md) y [pruebas/15](pruebas/15_SERVICIOS_DEL_POZO.md).
 - **Programadas todas las correcciones de la revisión de octubre** (20 puntos): ver [23](23_CORRECCIONES_REVISION_OCT.md). Fuentes: `docs/fuentes/transcripciones_revision_oct/` (usar las `*_mejorado.txt`).
 - **Base de datos revisada** antes de empaquetar y **papelera de pozos** (eliminar ya no borra): ver [24](24_PAPELERA_Y_TIPOS_DE_DATOS.md). **La base definitiva es SQLite.** **Licencia eliminada** y `SmartMud.exe` listo para la prueba en producción (`empaquetado\dist\SmartMud_Pruebas.zip`).
-- **Pruebas automáticas:** 98, todas pasan (`python manage.py test operaciones`). **Nada probado aún en pantalla.**
-- **Migraciones:** el usuario aplicó hasta la **0034**.
+- **Pruebas automáticas:** 109, todas pasan (`python manage.py test operaciones`). **Nada probado aún en pantalla.**
+- **Migraciones:** el usuario aplicó hasta la **0034**. Falta aplicar la **0035_servicios_del_pozo** (`python manage.py migrate`).
 - **El usuario todavía no hizo commit** de los cambios de octubre.
 - Próximo hito con el cliente: prueba integral con los ingenieros (pozo nuevo: piloto 8½", ampliación 12¼", tres side tracks e impresión). Después de esa sesión se cierra la revisión.
 
@@ -41,10 +42,11 @@
                                                             └─ 0032_comentario_propiedades
                                                                  └─ 0033_inventario_inicial_manual
                                                                       └─ 0034_papelera_pozos_y_tipos_opcionales
+                                                                           └─ 0035_servicios_del_pozo
 ```
 
 - `0022_sidetrack` **depende de 0021** (así quedó aplicada; cambiarla rompe con `InconsistentMigrationHistory`).
-- La próxima migración nueva debe depender de **`0034_papelera_pozos_y_tipos_opcionales`**.
+- La próxima migración nueva debe depender de **`0035_servicios_del_pozo`**.
 - La `0030` (generada con `makemigrations` el 12-oct) puso al día los `verbose_name` atrasados. Desde ahí, `makemigrations --check` no detecta cambios: modelos y migraciones están sincronizados.
 
 ## 2. Dónde está cada cosa (lo más reciente)
@@ -55,6 +57,7 @@
 | Logos | `operaciones/static/operaciones/img/` (`logo_reporte.png` = AOS para reportes; `smartmud_icono.png`, `smartmud_logo.png`, `favicon.png`) |
 | Monedas y segunda moneda | `Pozo.MONEDAS_COMUNES`, `moneda_secundaria`, `cobrar_en_secundaria`, `Pozo.moneda_cobro`/`Pozo.tarifa()`, campos `*_secundaria` de productos, equipos y mallas activos, `GeneralSetupForm`, `general_setup.html/js` (ver [13](13_COSTOS.md)) |
 | Intervalos abierto/cerrado | `IntervaloRevestimiento.cerrado`, `views.api_intervalo_cerrar/reabrir`, `casing_intervals.html/js` |
+| Servicios del pozo (ingenieros, trailers) | `models_servicios.py`, `views_inventario._servicios_del_dia/api_servicio_guardar/api_servicio_eliminar`, `resumen_costos`, `recap_pozo.py`, pestaña `vaPanelServicios` en `reporte_diario_detalle.html`, `reporte_inventario.js/css` (ver [25](25_SERVICIOS_DEL_POZO.md)) |
 | Eliminar pozo y papelera | `Pozo.objects` excluye la papelera (`Pozo.todos` la incluye); `views.api_pozo_eliminar/api_pozo_restaurar/pozos_papelera_view`, `pozo_main.js`, `pozos_papelera.js`, `pozos/main.html`, `pozos/papelera.html` |
 | Hub bloqueado | `avances_19_sep/daily_reports_hub.html` |
 | Tanques (textos) | `pits.*`, `reporte_inventario.js`, `reporte_diario_detalle.html`, `views_inventario.py`, `volumetria.py`, `reporte_excel._textos_tanques` |

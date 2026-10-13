@@ -60,7 +60,8 @@ def datos_recap(pozo, hasta=None):
     from .views_control_solidos import _eventos_pozo, _nombres_malla, _contexto_hoyo
     from .models_opcionales import EventoNoProgramado
 
-    qs = pozo.reportes_diarios.order_by('fecha').select_related('intervalo_costo', 'comentarios')
+    qs = (pozo.reportes_diarios.order_by('fecha').select_related('intervalo_costo', 'comentarios')
+          .prefetch_related('servicios_dia'))
     if hasta:
         qs = qs.filter(fecha__lte=hasta)
     reportes = list(qs)
@@ -154,7 +155,12 @@ def datos_recap(pozo, hasta=None):
             fila['perdidas'] = None
             fila['vol_activo'] = None
 
+        # Servicios cobrados por día (ingenieros, trailers...)
+        for s in r.servicios_dia.all():
+            por_columna[vol.columna_resumen(s.categoria_costo)] += float(s.costo)
+
         # Equipos y mallas
+
         equipos = sum(u.costo_diario for u in r.usos_equipo.all())
         mallas = 0.0
         if eventos_mallas:

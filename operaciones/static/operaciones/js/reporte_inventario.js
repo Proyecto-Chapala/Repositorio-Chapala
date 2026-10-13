@@ -331,6 +331,10 @@ function vaAplicar(data, conservar){
       const p = previo.inventario.find(x => x.producto_id === r.producto_id);
       if(p){ r.inicial_manual = csNum(p.inicial_manual); r.usado_otro = csNum(p.usado_otro) || 0; r.ajuste = csNum(p.ajuste) || 0; r.en_pedido = csNum(p.en_pedido) || 0; r.no_imprimir = p.no_imprimir; }
     });
+    vaDatos.servicios.forEach(s => {
+      const p = previo.servicios.find(x => x.servicio_id === s.servicio_id);
+      if(p){ s.dias = csNum(p.dias) || 0; s.tarifa = csNum(p.tarifa) ?? s.tarifa; }
+    });
   } else {
     vaSucio = false;
     vaTiposCambiados = false;
@@ -338,6 +342,7 @@ function vaAplicar(data, conservar){
     document.getElementById('vaEstado').textContent = '';
   }
   vaDatos.inventario.forEach(r => { r._otro_guardado = r.usado_otro; r._ajuste_guardado = r.ajuste; });
+  vaDatos.servicios.forEach(s => { s._costo_guardado = s.costo_diario; });
   vaDatos.fosas.forEach(f => { f._tipo_guardado = f.tipo_codigo; });
 
   const alerta = document.getElementById('vaAlerta');
@@ -358,7 +363,8 @@ function vaCapturar(){
   return {
     fosas: vaDatos.fosas.map(f => ({ numero: f.numero, tipo_codigo: f.tipo_codigo, real: f.real, peso: f.peso, temperatura: f.temperatura })),
     hoyo: Object.assign({}, vaDatos.hoyo.no_fluido),
-    inventario: vaDatos.inventario.map(r => ({ producto_id: r.producto_id, inicial_manual: r.inicial_manual, usado_otro: r.usado_otro, ajuste: r.ajuste, en_pedido: r.en_pedido, no_imprimir: r.no_imprimir }))
+    inventario: vaDatos.inventario.map(r => ({ producto_id: r.producto_id, inicial_manual: r.inicial_manual, usado_otro: r.usado_otro, ajuste: r.ajuste, en_pedido: r.en_pedido, no_imprimir: r.no_imprimir })),
+    servicios: vaDatos.servicios.map(s => ({ servicio_id: s.servicio_id, dias: s.dias, tarifa: s.tarifa }))
   };
 }
 
@@ -367,6 +373,7 @@ function vaRenderTodo(){
   vaRenderAvisos();
   if(vaTab === 'fosas'){ vaRenderFosas(); vaRenderResumen(); vaRenderOtras(); }
   else if(vaTab === 'balance'){ vaRenderHoyo(); vaRenderBalance(); vaRenderPerdidas(); }
+  else if(vaTab === 'servicios'){ vaRenderServicios(); }
   else { vaRenderInventario(); vaRenderCostos(); }
   if(ivVista === 'concentracion') vaRenderConcentracion();
 }
@@ -377,6 +384,7 @@ function vaCambiarTab(tab){
   document.getElementById('vaPanelFosas').hidden = tab !== 'fosas';
   document.getElementById('vaPanelBalance').hidden = tab !== 'balance';
   document.getElementById('vaPanelInventario').hidden = tab !== 'inventario';
+  document.getElementById('vaPanelServicios').hidden = tab !== 'servicios';
   vaRenderTodo();
 }
 
@@ -633,6 +641,7 @@ function vaRenderCostos(){
   let diario = 0, acum = 0;
   const vivo = {};
   vaDatos.inventario.forEach(r => { vivo[r.categoria] = (vivo[r.categoria] || 0) + (vaCostoVivo(r) - r.costo_diario); });
+  vaDatos.servicios.forEach(s => { vivo[s.categoria] = (vivo[s.categoria] || 0) + (vaSrvCostoVivo(s) - s._costo_guardado); });
   document.getElementById('vaCostos').innerHTML = vaDatos.costos.map(c => {
     const d = c.diario + (vivo[c.categoria] || 0);
     const a = c.acumulado + (vivo[c.categoria] || 0);
@@ -649,6 +658,68 @@ function vaRenderCostos(){
     ${vaDatoFluido('Envío a otro pozo (hoy)', 'enviado_otro_pozo')}`;
   document.getElementById('vaUltimosTickets').innerHTML = vaDatos.ultimos_tickets.map(t =>
     `<div class="cs-eq-dato"><span>${csEsc(t.tipo)}</span><strong>${t.numero ? csEsc(t.numero) : '—'}</strong></div>`).join('');
+}
+
+/* ---------- Servicios (ingenieros, trailers...) ---------- */
+
+let vaSrvEditando = null;   // id del servicio que se está editando en el formulario
+
+function vaSrvCostoVivo(s){
+  return (csNum(s.dias) || 0) * (csNum(s.tarifa) || 0);
+}
+
+function vaRenderServicios(){
+  const sel = document.getElementById('vaSrvCategoria');
+  if(!sel.options.length){
+    sel.innerHTML = vaDatos.categorias_servicio.map(c => `<option value="${c.codigo}">${csEsc(c.nombre)}</option>`).join('');
+  }
+  const tbody = document.getElementById('vaFilasServicios');
+  if(!vaDatos.servicios.length){
+    tbody.innerHTML = '<tr class="cs-fila-vacia"><td colspan="8">El pozo no tiene servicios. Agrégalos abajo con su categoría y tarifa diaria.</td></tr>';
+    document.getElementById('vaServiciosPie').innerHTML = '';
+    return;
+  }
+  tbody.innerHTML = vaDatos.servicios.map(s => `<tr class="${s.activo ? '' : 'cs-fila-inactiva'}">
+      <td>${csEsc(s.descripcion)}${s.activo ? '' : ' <span class="cs-tenue">(inactivo)</span>'}</td>
+      <td>${csEsc(s.categoria_nombre)}</td>
+      <td class="cs-num">${csDinero(s.tarifa_contrato)}</td>
+      <td class="cs-num"><input type="number" class="cs-input-cant va-input" min="0" max="31" step="any" data-srv="${s.servicio_id}" data-campo="dias" value="${s.dias || ''}" placeholder="0"></td>
+      <td class="cs-num"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-srv="${s.servicio_id}" data-campo="tarifa" value="${s.tarifa}"></td>
+      <td class="cs-num cs-final" data-srv-costo="${s.servicio_id}">${csDinero(vaSrvCostoVivo(s))}</td>
+      <td class="cs-num" data-srv-acum="${s.servicio_id}">${csDinero(s.costo_acumulado - s._costo_guardado + vaSrvCostoVivo(s))}</td>
+      <td class="cs-centro">
+        <button type="button" class="btn-modern-secondary btn-sm" data-srv-editar="${s.servicio_id}">Editar</button>
+        <button type="button" class="btn-modern-secondary btn-sm" data-srv-quitar="${s.servicio_id}">Quitar</button>
+      </td>
+    </tr>`).join('');
+  vaRenderServiciosPie();
+}
+
+function vaRenderServiciosPie(){
+  const diario = vaDatos.servicios.reduce((a, s) => a + vaSrvCostoVivo(s), 0);
+  const acum = vaDatos.servicios.reduce((a, s) => a + s.costo_acumulado - s._costo_guardado + vaSrvCostoVivo(s), 0);
+  document.getElementById('vaServiciosPie').innerHTML = `<tr class="cs-fila-total"><td colspan="5">Total de servicios (${csEsc(vaDatos.moneda)})</td><td class="cs-num">${csDinero(diario)}</td><td class="cs-num">${csDinero(acum)}</td><td></td></tr>`;
+}
+
+function vaSrvLlenarFormulario(s){
+  vaSrvEditando = s ? s.servicio_id : null;
+  document.getElementById('vaSrvTitulo').textContent = s ? `Editar servicio: ${s.descripcion}` : 'Agregar servicio';
+  document.getElementById('vaSrvDescripcion').value = s ? s.descripcion : '';
+  document.getElementById('vaSrvCategoria').value = s ? s.categoria : vaDatos.categorias_servicio[0].codigo;
+  document.getElementById('vaSrvTarifa').value = s ? s.tarifa_contrato : '';
+  document.getElementById('vaSrvActivo').checked = s ? s.activo : true;
+  document.getElementById('vaSrvCancelar').hidden = !s;
+}
+
+async function vaSrvGuardar(){
+  const data = await vaPost('servicio/guardar/', {
+    id: vaSrvEditando,
+    descripcion: document.getElementById('vaSrvDescripcion').value,
+    categoria_costo: document.getElementById('vaSrvCategoria').value,
+    tarifa_diaria: document.getElementById('vaSrvTarifa').value,
+    activo: document.getElementById('vaSrvActivo').checked
+  });
+  if(data) vaSrvLlenarFormulario(null);
 }
 
 /* ---------- Concentración ---------- */
@@ -1108,6 +1179,24 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('vaSoloMovimiento').addEventListener('change', vaRenderInventario);
   document.getElementById('vaConcFosa').addEventListener('change', vaRenderConcentracion);
 
+  document.getElementById('vaSrvGuardar').addEventListener('click', vaSrvGuardar);
+  document.getElementById('vaSrvCancelar').addEventListener('click', () => vaSrvLlenarFormulario(null));
+  document.getElementById('vaPanelServicios').addEventListener('click', function(ev){
+    const editar = ev.target.closest('[data-srv-editar]');
+    if(editar){
+      vaSrvLlenarFormulario(vaDatos.servicios.find(s => s.servicio_id === Number(editar.dataset.srvEditar)));
+      return;
+    }
+    const quitar = ev.target.closest('[data-srv-quitar]');
+    if(quitar){
+      const s = vaDatos.servicios.find(x => x.servicio_id === Number(quitar.dataset.srvQuitar));
+      if(window.confirm(`¿Quitar "${s.descripcion}" del pozo? Si ya tiene días cobrados solo se desactiva y su costo se conserva.`)){
+        vaPost(`servicio/${s.servicio_id}/eliminar/`, {});
+      }
+    }
+  });
+
+
   // Edición en las tablas: no se redibuja el campo activo; solo lo que depende de él.
   document.getElementById('ivVistaVolumetria').addEventListener('input', function(ev){
     const el = ev.target;
@@ -1141,6 +1230,12 @@ document.addEventListener('DOMContentLoaded', function(){
       const co = document.querySelector(`[data-inv-costo="${id}"]`);
       if(co) co.textContent = csDinero(vaCostoVivo(r));
       vaRenderCostos();
+    } else if(el.dataset.srv){
+      const s = vaDatos.servicios.find(x => x.servicio_id === Number(el.dataset.srv));
+      s[el.dataset.campo] = el.value;
+      document.querySelector(`[data-srv-costo="${s.servicio_id}"]`).textContent = csDinero(vaSrvCostoVivo(s));
+      document.querySelector(`[data-srv-acum="${s.servicio_id}"]`).textContent = csDinero(s.costo_acumulado - s._costo_guardado + vaSrvCostoVivo(s));
+      vaRenderServiciosPie();
     }
     vaMarcarSucio();
     vaRenderKpis();

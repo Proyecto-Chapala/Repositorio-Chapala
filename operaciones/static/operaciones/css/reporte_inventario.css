@@ -546,3 +546,22 @@
   background: var(--color-orange);
   color: #fff;
 }
+
+/* Pestaña Servicios: formulario para agregar o editar un servicio */
+.va-srv-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) minmax(180px, 1fr) minmax(120px, 1fr) auto auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.va-srv-form label:not(.cs-check) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .va-srv-form { grid-template-columns: 1fr; }
+}

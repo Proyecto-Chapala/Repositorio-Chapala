@@ -52,6 +52,9 @@ CATEGORIAS_COSTO = {
     4: 'Ingeniero IFE',
     5: 'Trailer',
 }
+CATEGORIA_QUIMICOS = 1
+# Categorías de los servicios cobrados por día (pestaña 8, "Servicios"): todas menos químicos.
+CATEGORIAS_SERVICIO = {c: n for c, n in CATEGORIAS_COSTO.items() if c != CATEGORIA_QUIMICOS}
 
 # Columna del resumen de costos (pestaña 1, Excel, recap) en la que suma cada categoría.
 QUIMICOS_PERSONAL_DF = 'df_chem'

@@ -115,6 +115,9 @@ urlpatterns = [
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/<int:secuencia>/eliminar/', views_inventario.api_volumetria_transaccion_eliminar, name='api_volumetria_transaccion_eliminar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/ticket/guardar/', views_inventario.api_ticket_producto_guardar, name='api_ticket_producto_guardar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/ticket/<int:ticket_pk>/eliminar/', views_inventario.api_ticket_producto_eliminar, name='api_ticket_producto_eliminar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/servicio/guardar/', views_inventario.api_servicio_guardar, name='api_servicio_guardar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/servicio/<int:servicio_pk>/eliminar/', views_inventario.api_servicio_eliminar, name='api_servicio_eliminar'),
+
 
     # --- Well Header Information ---
 

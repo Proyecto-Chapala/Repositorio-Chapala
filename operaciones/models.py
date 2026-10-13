@@ -1496,3 +1496,4 @@ from .models_control_solidos import *
 from .models_inventario import *
 from .models_opcionales import *
 from .models_recap import *
+from .models_servicios import *

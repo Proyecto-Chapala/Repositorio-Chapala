@@ -222,7 +222,7 @@ Cada pestaña tiene su botón **Guardar**. **Guarda antes de cambiar de pestaña
    - **Pérdida**: tanque, volumen y **tipo de pérdida**.
 3. **Al cierre, mide los tanques** y escribe el **volumen real** de cada una (y su tipo si cambió). Si hay volumen del hoyo que no es fluido (cemento, tapón), indícalo en **Volumen no fluido**. **Guarda.**
 4. Revisa el **"No contabilizado"** de cada grupo (activo, reserva, premezcla): **debe quedar en 0**. Si no, falta registrar alguna pérdida o movimiento. **No cambies el volumen real para cuadrar.**
-5. En el inventario, si hace falta, llena **usado en otro módulo** (por ejemplo, días de ingeniero), **ajuste**, **en pedido** o **no imprimir**, y **guarda**.
+5. En el inventario, si hace falta, llena **usado en otro módulo** (productos que se pasan a otra línea, por ejemplo cementación), **ajuste**, **en pedido** o **no imprimir**, y **guarda**. Los días de ingenieros y trailers se cargan en la pestaña **Servicios**: la primera vez se agrega cada servicio con su categoría y tarifa diaria, y cada día se escriben los días cobrados.
 
 **b) Concentraciones.** Consulta. Muestra cuántas libras de cada producto hay por barril de lodo, en el **sistema activo** (tanques activos + hoyo) o en **cada tanque** (elige en la lista). Con los botones **lb/bbl** y **kg/m³** cambias la unidad.
 - Arriba: volumen inicial y final, **cambio en volumen**, fluido base y agua agregados, aumento de volumen por material y lodo reciclado recibido.

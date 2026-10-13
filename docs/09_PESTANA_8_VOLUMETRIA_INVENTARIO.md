@@ -84,7 +84,7 @@ final = inicial + recibido − devuelto − usado en fluidos − usado en otro m
 | Inicial | Final del día anterior **del pozo** (0 el primer día) |
 | Recibido / devuelto | **Tickets de productos** del día: suma la cantidad *real*; la *según ticket* queda para comparar |
 | Usado en fluidos | Movimientos *Agregar químicos* y *Lodo entero* |
-| Usado en otro módulo | A mano (ej. días de ingeniero, personal de servicio). Genera costo |
+| Usado en otro módulo | A mano: productos transferidos a otra línea (ej. cementación). Genera costo y no cuenta en las concentraciones |
 | Ajuste | A mano (+/−) |
 | En pedido · No imprimir | A mano, informativos |
 
@@ -143,7 +143,7 @@ Cada producto tiene una **categoría de costo** (código de costo diario del pro
 | 4 | Ingeniero IFE | Ingeniero IFE / Control de sólidos |
 | 5 | Trailer | Otros costos |
 
-El reparto está en un solo lugar: `volumetria.COLUMNA_RESUMEN`. Lo usan el resumen de costos, el recap y el Excel. Los **servicios** (ingeniero, trailer) son productos activos con **unidad vacía**: los días se cargan en *Usado otro módulo* y generan costo sin existencias. Paso a paso: [pruebas/05](pruebas/05_TRAILER.md). *(Pendiente confirmar con AOS los códigos 1-4.)* Resumen completo de costos en [13](13_COSTOS.md).
+El reparto está en un solo lugar: `volumetria.COLUMNA_RESUMEN`. Lo usan el resumen de costos, el recap y el Excel. Los **servicios** (ingenieros, trailers…) se cobran en la pestaña **Servicios** de la pestaña 8, con su categoría y tarifa diaria: ver [25](25_SERVICIOS_DEL_POZO.md). El mecanismo anterior (producto activo con **unidad vacía** y días en *Usado otro módulo*, [pruebas/05](pruebas/05_TRAILER.md)) sigue calculando para los pozos que ya lo usaron. *(Pendiente confirmar con AOS los códigos 1-4.)* Resumen completo de costos en [13](13_COSTOS.md).
 
 ## 8. Modelos
 
