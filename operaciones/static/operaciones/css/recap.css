@@ -245,6 +245,10 @@
   color: var(--rc-suave);
 }
 
+@media (max-width: 1050px) {
+  .rc-grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 800px) {
   .rc-hoja { margin: 0; padding: 18px 16px; border-radius: 0; }
   .rc-kpis { grid-template-columns: repeat(2, 1fr); }
@@ -263,7 +267,7 @@
 
 /* Logo AOS en la esquina superior izquierda */
 .rc-portada .logo-empresa {
-  height: 56px;
+  height: 60px;
   width: auto;
   flex: 0 0 auto;
   align-self: flex-start;

@@ -90,11 +90,11 @@ class Command(BaseCommand):
                 marketing_codes_completado=True,
             )
         )
-        self.stdout.write("  ✓ Información General del Pozo")
+        self.stdout.write("  + Información General del Pozo")
 
         # ── 3. CATEGORÍAS DE PÉRDIDA ───────────────────────────────────────
         CategoriaPerdidaItem.sembrar_estandar(p)
-        self.stdout.write("  ✓ Categorías de Pérdida (15 categorías estándar M-I)")
+        self.stdout.write("  + Categorías de Pérdida (15 categorías estándar M-I)")
 
         # ── 4. INTERVALOS DE REVESTIMIENTO ────────────────────────────────
         intervalos = [
@@ -123,11 +123,11 @@ class Command(BaseCommand):
             IntervaloRevestimiento.objects.get_or_create(
                 pozo=p, numero_intervalo=data['numero_intervalo'], defaults=data
             )
-        self.stdout.write("  ✓ Intervalos de Revestimiento (4 intervalos)")
+        self.stdout.write("  + Intervalos de Revestimiento (4 intervalos)")
 
         # ── 5. TIPOS DE FOSA ───────────────────────────────────────────────
         TipoFosa.sembrar_estandar(p)
-        self.stdout.write("  ✓ Tipos de Fosa (7 tipos estándar)")
+        self.stdout.write("  + Tipos de Fosa (7 tipos estándar)")
 
         # ── 6. FOSAS ──────────────────────────────────────────────────────
         fosas = [
@@ -141,7 +141,7 @@ class Command(BaseCommand):
                 pozo=p, numero=num,
                 defaults={'descripcion': desc, 'capacidad': Decimal(str(cap))}
             )
-        self.stdout.write("  ✓ Fosas (4 fosas)")
+        self.stdout.write("  + Fosas (4 fosas)")
 
         # ── 7. ALMACENES ──────────────────────────────────────────────────
         almacenes = [
@@ -153,11 +153,11 @@ class Command(BaseCommand):
             AlmacenCodigo.objects.get_or_create(
                 pozo=p, codigo=cod, defaults={'nombre': nom}
             )
-        self.stdout.write("  ✓ Almacenes (3 almacenes)")
+        self.stdout.write("  + Almacenes (3 almacenes)")
 
         # ── 8. DISTRIBUCIÓN DE TIEMPO ─────────────────────────────────────
         TipoDistribucionTiempo.sembrar_estandar(p)
-        self.stdout.write("  ✓ Distribución de Tiempo (20 categorías estándar)")
+        self.stdout.write("  + Distribución de Tiempo (20 categorías estándar)")
 
         # ── 9. PRODUCTOS DEL CATÁLOGO MAESTRO + ACTIVOS EN EL POZO ────────
         productos_data = [
@@ -187,7 +187,7 @@ class Command(BaseCommand):
                     es_producto_mi=True,
                 )
             )
-        self.stdout.write("  ✓ Productos / Equipos Activos (6 productos)")
+        self.stdout.write("  + Productos / Equipos Activos (6 productos)")
 
         # ── 10. EQUIPOS ───────────────────────────────────────────────────
         equipos_data = [
@@ -204,7 +204,7 @@ class Command(BaseCommand):
                 pozo=p, numero_serie=f'SN-{cod}',
                 defaults={'equipo': eq, 'descripcion': nom}
             )
-        self.stdout.write("  ✓ Equipos (3 equipos activos)")
+        self.stdout.write("  + Equipos (3 equipos activos)")
 
         # ── 11. ESTACIONES DE SURVEY (Registro Direccional) ────────────────
         stations = [
@@ -224,7 +224,7 @@ class Command(BaseCommand):
                     azimut_deg=azi,
                 )
             )
-        self.stdout.write("  ✓ Registro Direccional (5 estaciones de survey)")
+        self.stdout.write("  + Registro Direccional (5 estaciones de survey)")
 
         # ── RESUMEN ────────────────────────────────────────────────────────
         self.stdout.write("")

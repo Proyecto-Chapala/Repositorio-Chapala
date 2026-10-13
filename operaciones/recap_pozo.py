@@ -300,35 +300,40 @@ def generar_recap_excel(d, secciones):
             # Logo AOS en la esquina superior izquierda; el título se corre a la derecha del logo
             from openpyxl.drawing.image import Image as ImagenXl
             img = ImagenXl(LOGO)
-            escala = 45.0 / img.height if img.height else 1
-            img.height, img.width = img.height * escala, img.width * escala
+            img.height = 46.0
+            img.width = 185.0
             ws.add_image(img, 'A1')
-            ws.row_dimensions[1].height = 20
-            ws.row_dimensions[2].height = 18
-            ws['A1'].alignment = Alignment(indent=10, vertical='center')
-            ws['A2'].alignment = Alignment(indent=12, vertical='center')
+            ws.row_dimensions[1].height = 24
+            ws.row_dimensions[2].height = 24
+            ws['A1'].alignment = Alignment(indent=22, vertical='center')
+            ws['A2'].alignment = Alignment(indent=24, vertical='center')
         return ws
 
-    def tabla(ws, fila, cabeceras, filas, formatos=None, anchos=None):
+    def tabla(ws, fila, cabeceras, filas, formatos=None, anchos=None, col_inicio=1, freeze=True):
         formatos = formatos or {}
-        for j, t in enumerate(cabeceras, 1):
-            c = ws.cell(row=fila, column=j, value=t)
+        for idx, t in enumerate(cabeceras):
+            col_num = col_inicio + idx
+            c = ws.cell(row=fila, column=col_num, value=t)
             c.font, c.fill, c.border = blanco_neg, naranja, borde
             c.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
         for i, valores in enumerate(filas, 1):
-            for j, v in enumerate(valores, 1):
-                c = ws.cell(row=fila + i, column=j, value=v)
+            for idx, v in enumerate(valores):
+                col_num = col_inicio + idx
+                c = ws.cell(row=fila + i, column=col_num, value=v)
                 c.border = borde
-                if j in formatos and isinstance(v, (int, float)):
-                    c.number_format = formatos[j]
+                fmt_key = idx + 1
+                if fmt_key in formatos and isinstance(v, (int, float)):
+                    c.number_format = formatos[fmt_key]
                 if isinstance(v, str) and len(v) > 40:
                     c.alignment = envolver
                 if i % 2 == 0:
                     c.fill = gris
         if anchos:
-            for j, a in enumerate(anchos, 1):
-                ws.column_dimensions[get_column_letter(j)].width = a
-        ws.freeze_panes = ws.cell(row=fila + 1, column=1)
+            for idx, a in enumerate(anchos):
+                col_num = col_inicio + idx
+                ws.column_dimensions[get_column_letter(col_num)].width = a
+        if freeze:
+            ws.freeze_panes = ws.cell(row=fila + 1, column=1)
         return fila + len(filas) + 2
 
     ENT, D1, D2 = '#,##0', '#,##0.0', '#,##0.00'
@@ -339,26 +344,41 @@ def generar_recap_excel(d, secciones):
 
     if 'resumen' in secciones and d.get('hay_reportes'):
         ws = hoja('Datos del pozo', 'Resumen')
-        datos = [
-            ('Pozo', pozo.nombre), ('Operador', h.operador if h else ''), ('Campo / Área', h.field_area if h else ''),
-            ('Ubicación', h.ubicacion if h else ''), ('Contratista', h.contratista if h else ''),
-            ('Taladro', h.nombre_taladro if h else ''),
-            ('Ingenieros', ' / '.join(x for x in ((h.ingeniero_miswaco_1, h.ingeniero_miswaco_2) if h else ()) if x)),
-            ('Tipo de lodo principal', h.primary_mud_type_descripcion if h else ''),
-            ('Primer reporte', k['desde'].strftime('%d/%m/%Y')), ('Último reporte', k['hasta_fecha'].strftime('%d/%m/%Y')),
-            ('Días con reporte', k['dias']), ('Profundidad final (ft)', round(k['profundidad_final'])),
-            ('Hoyo perforado (ft)', round(k['perforado'])), ('Volumen de hoyo perforado (bbl)', round(k['hoyo_bbl'])),
-            ('Densidad mín. / máx. (lb/gal)', f"{k['densidad_min'] or 0:.1f} / {k['densidad_max'] or 0:.1f}" if k['densidad_max'] else ''),
-            ('Side tracks', k['sidetracks']), ('Eventos no programados', k['eventos']),
-            ('Pérdidas totales (bbl)', round(d['total_perdidas'])),
-            (f"Costo total ({moneda})", round(d['costos']['total'], 2)),
-            (f"Costo por pie ({moneda}/ft)", round(k['costo_por_ft'], 2) if k['costo_por_ft'] else ''),
+        datos_generales = [
+            ['Pozo', pozo.nombre],
+            ['Operador', (h.operador if h and h.operador else '') or '—'],
+            ['Campo / Área', (h.field_area if h and h.field_area else '') or '—'],
+            ['Ubicación', (h.ubicacion if h and h.ubicacion else '') or '—'],
+            ['Contratista', (h.contratista if h and h.contratista else '') or '—'],
+            ['Taladro', (h.nombre_taladro if h and h.nombre_taladro else '') or '—'],
+            ['Ingenieros de fluidos', (' / '.join(x for x in ((h.ingeniero_miswaco_1, h.ingeniero_miswaco_2) if h else ()) if x)) or '—'],
+            ['Tipo de lodo principal', (h.primary_mud_type_descripcion if h and h.primary_mud_type_descripcion else '') or '—'],
+            ['Primer reporte', k['desde'].strftime('%d/%m/%Y') if k.get('desde') else '—'],
+            ['Último reporte', k['hasta_fecha'].strftime('%d/%m/%Y') if k.get('hasta_fecha') else '—'],
         ]
-        for i, (et, v) in enumerate(datos, 4):
-            ws.cell(row=i, column=1, value=et).font = neg
-            ws.cell(row=i, column=2, value=v)
-        ws.column_dimensions['A'].width = 34
-        ws.column_dimensions['B'].width = 44
+        datos_kpis = [
+            ['Días con reporte', k.get('dias', 0)],
+            ['Profundidad final (ft)', round(k.get('profundidad_final', 0))],
+            ['Hoyo perforado (ft)', round(k.get('perforado', 0))],
+            ['Volumen de hoyo perforado (bbl)', round(k.get('hoyo_bbl', 0))],
+            ['Densidad mín. / máx. (lb/gal)', f"{k['densidad_min'] or 0:.1f} / {k['densidad_max'] or 0:.1f}" if k.get('densidad_max') else '—'],
+            ['Side tracks', k.get('sidetracks', 0)],
+            ['Eventos no programados', k.get('eventos', 0)],
+            ['Pérdidas totales (bbl)', round(d.get('total_perdidas', 0))],
+            [f'Costo total ({moneda})', round(d['costos']['total'], 2)],
+            [f'Costo por pie ({moneda}/ft)', round(k['costo_por_ft'], 2) if k.get('costo_por_ft') else '—'],
+        ]
+
+        ws.column_dimensions['C'].width = 4
+        tabla(ws, 4, ['Información del Pozo', 'Detalle'], datos_generales, None, [28, 34], col_inicio=1, freeze=False)
+        tabla(ws, 4, ['Métricas Operativas y KPIs', 'Valor Acumulado'], datos_kpis, None, [32, 22], col_inicio=4, freeze=False)
+        for row_idx, val in enumerate(datos_kpis, 5):
+            cell_val = ws.cell(row=row_idx, column=5)
+            if isinstance(val[1], float):
+                cell_val.number_format = D2
+            elif isinstance(val[1], int):
+                cell_val.number_format = ENT
+        ws.freeze_panes = ws['A5']
 
     if 'conclusiones' in secciones and d.get('hay_reportes'):
         ws = hoja('Conclusiones y recomendaciones', 'Conclusiones')

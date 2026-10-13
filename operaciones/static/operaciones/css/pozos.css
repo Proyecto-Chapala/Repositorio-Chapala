@@ -17,6 +17,7 @@
 .wizard-card {
   width: 100%;
   max-width: 780px;
+  margin: auto;
   background: var(--color-surface, #ffffff);
   border: 1px solid var(--color-border, #e2dbc9);
   border-radius: 16px;
@@ -607,6 +608,11 @@
   display: flex;
   border-bottom: 1px solid var(--color-border-soft, #efe9d9);
   padding: 0 24px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .tab-nav-item {
@@ -621,6 +627,8 @@
   border-left: none;
   border-right: none;
   border-top: none;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tab-nav-item.is-active {
@@ -992,6 +1000,11 @@
   border-bottom: 1.5px solid var(--color-border-soft, #efe9d9);
   display: flex;
   gap: 8px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .subpage-wide .tab-nav-item {
@@ -1005,6 +1018,8 @@
   color: var(--color-text-secondary, #8c7a5e);
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .subpage-wide .tab-nav-item.is-active {
@@ -1194,7 +1209,7 @@
 }
 
 /* Adaptación para pantallas de laptops o baja altura vertical */
-@media (max-height: 780px) {
+@media (max-height: 840px) {
   .subpage.subpage-wide {
     padding-top: 6px;
     padding-bottom: 12px;

@@ -499,6 +499,8 @@ def _ecd_zapata(d, secciones):
 
 
 def _hoja_lodo(ws, d, variante):
+    ws.column_dimensions['H'].width = 18.0
+    ws.column_dimensions['I'].width = 15.0
     titulos = {'WBM': 'REPORTE DE LODO BASE AGUA N° ', 'WBM_CACL2': 'REPORTE DE LODO CALDRIL N° ',
                'OBM': 'REPORTE DE LODO BASE ACEITE N° ', 'SBM': 'REPORTE DE LODO BASE SINTÉTICA N° '}
     _encabezado_lodo(ws, d, titulos[variante])
@@ -643,7 +645,7 @@ def _hoja_concentraciones(wb, d, despues_de):
     centro = Alignment(horizontal='center', vertical='center', wrap_text=True)
     derecha = Alignment(horizontal='right')
 
-    for col, ancho in zip('ABCDEFGHIJ', (34, 16, 12, 11, 11, 11, 11, 11, 11, 4)):
+    for col, ancho in zip('ABCDEFGHIJ', (40, 16, 12, 11, 11, 11, 11, 11, 11, 4)):
         ws.column_dimensions[col].width = ancho
 
     principal = next((c for c in d['checks'] if c.is_primary), d['checks'][0] if d['checks'] else None)
@@ -663,11 +665,15 @@ def _hoja_concentraciones(wb, d, despues_de):
             c.number_format = formato
         return c
 
+    ws.row_dimensions[1].height = 24
+    ws.row_dimensions[2].height = 24
+    ws.row_dimensions[3].height = 10
+
     bloques = [c for c in d['vol'].get('concentraciones', []) if c.get('productos')]
-    fila = 3                      # filas 1-2 libres para el logo
+    fila = 4                      # filas 1-2 libres para el logo (48 pt), fila 3 espacio de separación
     if not bloques:
-        celda('A3', 'REPORTE DE CONCENTRACIONES', titulo_f)
-        celda('A5', 'Sin productos con concentración: se calculan al agregar químicos medidos en peso '
+        celda('A4', 'REPORTE DE CONCENTRACIONES', titulo_f)
+        celda('A6', 'Sin productos con concentración: se calculan al agregar químicos medidos en peso '
                     'o lodo reciclado con su concentración (pestaña 8).')
         return
 
@@ -962,8 +968,8 @@ def generar_reporte_excel(pozo, reporte):
         from openpyxl.drawing.image import Image
         for ws in wb.worksheets:
             img = Image(LOGO)
-            escala = 45.0 / img.height if img.height else 1  # logo AOS, esquina superior izquierda
-            img.height, img.width = img.height * escala, img.width * escala
+            img.height = 46.0  # logo AOS, altura ajustada para filas 1-2
+            img.width = 185.0  # alargado a 185 px abarcando columnas A y B como en la plantilla de referencia
             ws.add_image(img, 'A1')
 
     wb.active = 0

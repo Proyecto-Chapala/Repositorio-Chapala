@@ -10,15 +10,22 @@
 
 {% block content %}
 <div style="display:none;">{% csrf_token %}</div>
-<!-- BARRA SUPERIOR CON TABS SEGMENTADAS Y BÚSQUEDA -->
-<header class="catalogos-topbar topbar">
-  <div class="catalogos-header-left topbar-left">
+<!-- BARRA SUPERIOR CON TÍTULO, BÚSQUEDA Y PESTAÑAS SEGMENTADAS RESPONSIVAS -->
+<header class="catalogos-header">
+  <div class="catalogos-header-row">
     <div class="catalogos-title-area">
-      <h1 class="catalogos-title page-title">Catálogos Maestros</h1>
+      <h1 class="catalogos-title">Catálogos Maestros</h1>
       <p class="catalogos-subtitle">Configuración y mantenimiento de componentes, equipos y parámetros globales</p>
     </div>
-    
-    <div class="catalogos-tabs category-badges" role="tablist">
+
+    <div class="catalogos-search-box search-box">
+      <span class="catalogos-search-icon search-icon">🔍</span>
+      <input type="text" id="searchInput" class="catalogos-search-input search-input" placeholder="Buscar por código o nombre...">
+    </div>
+  </div>
+
+  <div class="catalogos-tabs-nav-wrapper">
+    <div class="catalogos-tabs category-badges" role="tablist" aria-label="Catálogos">
       <button type="button" class="catalogos-tab-btn cat-badge active" id="tabEquipos">
         <span class="catalogos-tab-icon">⚙️</span>
         <span>Equipos</span>
@@ -45,11 +52,6 @@
         <span class="catalogos-tab-counter" id="tabBadgeComponentes">{{ counts.componentes|default:0 }}</span>
       </button>
     </div>
-  </div>
-
-  <div class="catalogos-search-box search-box topbar-right">
-    <span class="catalogos-search-icon search-icon">🔍</span>
-    <input type="text" id="searchInput" class="catalogos-search-input search-input" placeholder="Buscar por código o nombre...">
   </div>
 </header>
 

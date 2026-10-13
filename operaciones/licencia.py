@@ -25,8 +25,12 @@ import hashlib
 import hmac
 import json
 import os
+import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+_LOCK_LICENCIA = threading.RLock()
+_INTERVALO_REGISTRO_USO = timedelta(minutes=5)
 
 # ------------------------------------------------------------------------------
 # Configuración
@@ -103,23 +107,36 @@ def _leer_estados():
     for ruta in rutas_estado():
         try:
             if ruta.exists():
-                datos = _verificar(ruta.read_text(encoding='utf-8'))
+                texto = ruta.read_text(encoding='utf-8')
+                if not texto.strip():
+                    continue
+                datos = _verificar(texto)
                 if datos is None:
                     alterada = True
                 else:
                     validas.append(datos)
         except OSError:
             continue
+    # Si al menos una copia es criptográficamente válida, un fallo transitorio de lectura
+    # en una segunda ruta no debe marcar la licencia como alterada.
+    if validas and alterada:
+        alterada = False
     return validas, alterada
 
 
 def _guardar(datos):
     texto = _firmar(datos)
     guardado = False
+    pid = os.getpid()
+    tid = threading.get_ident()
     for ruta in rutas_estado():
         try:
             ruta.parent.mkdir(parents=True, exist_ok=True)
-            ruta.write_text(texto, encoding='utf-8')
+            # Escritura atómica vía archivo temporal para que los hilos concurrentes
+            # nunca lean un archivo truncado o a medio escribir.
+            temp_path = ruta.with_suffix(f'.tmp_{pid}_{tid}')
+            temp_path.write_text(texto, encoding='utf-8')
+            temp_path.replace(ruta)
             guardado = True
         except OSError:
             continue
@@ -137,35 +154,36 @@ def estado_licencia(ahora=None, registrar_uso=True):
         vence: datetime | None
         aviso: bool  -> mostrar "vencerá pronto"
     """
-    ahora = ahora or _ahora()
-    validas, alterada = _leer_estados()
+    with _LOCK_LICENCIA:
+        ahora = ahora or _ahora()
+        validas, alterada = _leer_estados()
 
-    if alterada:
-        return {'estado': ALTERADA, 'dias_restantes': 0, 'vence': None, 'aviso': False}
-    if not validas:
-        return {'estado': SIN_ACTIVAR, 'dias_restantes': 0, 'vence': None, 'aviso': False}
+        if alterada:
+            return {'estado': ALTERADA, 'dias_restantes': 0, 'vence': None, 'aviso': False}
+        if not validas:
+            return {'estado': SIN_ACTIVAR, 'dias_restantes': 0, 'vence': None, 'aviso': False}
 
-    # Se toma la activación más antigua y el último uso más reciente de todas las copias.
-    activado = min(datetime.fromisoformat(d['activado']) for d in validas)
-    ultimo_uso = max(datetime.fromisoformat(d['ultimo_uso']) for d in validas)
-    vence = activado + timedelta(days=DIAS_PRUEBA)
+        # Se toma la activación más antigua y el último uso más reciente de todas las copias.
+        activado = min(datetime.fromisoformat(d['activado']) for d in validas)
+        ultimo_uso = max(datetime.fromisoformat(d['ultimo_uso']) for d in validas)
+        vence = activado + timedelta(days=DIAS_PRUEBA)
 
-    if ahora + TOLERANCIA_RELOJ < ultimo_uso:
-        return {'estado': ALTERADA, 'dias_restantes': 0, 'vence': vence, 'aviso': False}
-    if ahora >= vence:
-        return {'estado': VENCIDA, 'dias_restantes': 0, 'vence': vence, 'aviso': False}
+        if ahora + TOLERANCIA_RELOJ < ultimo_uso:
+            return {'estado': ALTERADA, 'dias_restantes': 0, 'vence': vence, 'aviso': False}
+        if ahora >= vence:
+            return {'estado': VENCIDA, 'dias_restantes': 0, 'vence': vence, 'aviso': False}
 
-    if registrar_uso and ahora > ultimo_uso:
-        _guardar({'activado': activado.isoformat(), 'ultimo_uso': ahora.isoformat()})
+        if registrar_uso and (ahora - ultimo_uso) >= _INTERVALO_REGISTRO_USO:
+            _guardar({'activado': activado.isoformat(), 'ultimo_uso': ahora.isoformat()})
 
-    restante = vence - ahora
-    dias = restante.days + (1 if restante.seconds or restante.microseconds else 0)
-    return {
-        'estado': ACTIVA,
-        'dias_restantes': dias,
-        'vence': vence,
-        'aviso': restante <= timedelta(days=DIAS_AVISO),
-    }
+        restante = vence - ahora
+        dias = restante.days + (1 if restante.seconds or restante.microseconds else 0)
+        return {
+            'estado': ACTIVA,
+            'dias_restantes': dias,
+            'vence': vence,
+            'aviso': restante <= timedelta(days=DIAS_AVISO),
+        }
 
 
 def activar(clave, ahora=None):
@@ -173,16 +191,17 @@ def activar(clave, ahora=None):
     Activa la prueba con la clave del programador.
     Devuelve (ok, mensaje).
     """
-    ahora = ahora or _ahora()
-    actual = estado_licencia(ahora, registrar_uso=False)['estado']
+    with _LOCK_LICENCIA:
+        ahora = ahora or _ahora()
+        actual = estado_licencia(ahora, registrar_uso=False)['estado']
 
-    if not clave_valida(clave):
-        return False, 'La clave ingresada no es válida.'
-    if actual == ACTIVA:
-        return True, 'La licencia ya estaba activa.'
-    if actual in (VENCIDA, ALTERADA):
-        return False, 'El período de prueba ya fue utilizado en este equipo. Contacte al programador.'
+        if not clave_valida(clave):
+            return False, 'La clave ingresada no es válida.'
+        if actual == ACTIVA:
+            return True, 'La licencia ya estaba activa.'
+        if actual in (VENCIDA, ALTERADA):
+            return False, 'El período de prueba ya fue utilizado en este equipo. Contacte al programador.'
 
-    if not _guardar({'activado': ahora.isoformat(), 'ultimo_uso': ahora.isoformat()}):
-        return False, 'No se pudo guardar la licencia en este equipo (permisos).'
-    return True, f'Versión de prueba activada por {DIAS_PRUEBA} días.'
+        if not _guardar({'activado': ahora.isoformat(), 'ultimo_uso': ahora.isoformat()}):
+            return False, 'No se pudo guardar la licencia en este equipo (permisos).'
+        return True, f'Versión de prueba activada por {DIAS_PRUEBA} días.'

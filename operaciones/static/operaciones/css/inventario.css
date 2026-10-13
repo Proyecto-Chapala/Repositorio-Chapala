@@ -42,7 +42,7 @@
 .split-view {
   flex: 1;
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: minmax(0, 1.2fr) minmax(430px, 0.9fr);
   min-height: 0;
 }
 
@@ -83,11 +83,13 @@
 .table-wrapper {
   flex: 1;
   overflow-y: auto;
+  overflow-x: auto;
   min-height: 0;
 }
 
 .table-wrapper::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 .table-wrapper::-webkit-scrollbar-thumb {
   background: var(--color-border-dark);
@@ -96,6 +98,7 @@
 
 .custom-table {
   width: 100%;
+  min-width: 680px;
   border-collapse: collapse;
   text-align: left;
   font-size: 0.86rem;
@@ -268,22 +271,26 @@
 .right-column {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 1.5rem;
+  justify-content: flex-start;
+  gap: 0.95rem;
+  padding: 1.5rem 1.5rem 3.5rem 1.5rem;
   background: var(--color-bg);
   overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
 
 .form-header-title {
   font-size: 1.1rem;
   font-weight: 800;
   color: var(--color-navy);
-  margin-bottom: 1.2rem;
+  margin-bottom: 0.85rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-bottom: 0.75rem;
   border-bottom: 1.5px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .form-mode-tag {
@@ -314,16 +321,20 @@
   color: var(--color-text-primary);
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.25rem;
 }
 
 .form-input, .form-select, .form-textarea {
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 0.6rem 0.85rem;
   background: #ffffff;
   border: 1.5px solid var(--color-border);
   border-radius: 8px;
   color: var(--color-text-primary);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-family: inherit;
   outline: none;
   transition: var(--transition);
@@ -345,6 +356,12 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.85rem;
+}
+
+@media (max-width: 480px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .form-textarea {
@@ -401,31 +418,38 @@
 }
 
 /* ==========================================================================
-   Pantallas pequeñas / laptops: que el formulario "Nuevo producto" se vea
-   completo sin tener que reducir el zoom del navegador.
+   Pantallas pequeñas / laptops / zoom elevado (>= 125%):
+   Asegurar que la tabla y el formulario se vean completos sin tener que
+   reducir el zoom del navegador, permitiendo scroll fluido si sobrepasa la pantalla.
    ========================================================================== */
 .right-column {
   min-height: 0;
 }
 
-@media (max-height: 760px), (max-width: 1100px) {
+@media (max-width: 1180px), (max-height: 840px) {
   .content-area {
-    overflow-y: auto;
+    overflow-y: auto !important;
     padding: 1rem;
+    min-height: 0;
   }
   .wireframe-card {
     flex: 0 0 auto;
     overflow: visible;
+    min-height: auto;
   }
   .split-view {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
   .left-column {
     border-right: none;
     border-bottom: 1.5px solid var(--color-border);
-    max-height: 70vh;
+    max-height: 52vh;
+    min-height: 320px;
   }
   .right-column {
     overflow: visible;
+    padding: 1.25rem 1.25rem 2.5rem 1.25rem;
+    min-height: auto;
   }
 }

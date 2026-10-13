@@ -53,7 +53,7 @@
 .split-view {
   flex: 1;
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: minmax(0, 1.2fr) minmax(430px, 0.9fr);
   min-height: 0;
 }
 
@@ -410,4 +410,22 @@
 }
 .btn-cancelar:hover {
   background: #e4e7ec;
+}
+
+/* Responsividad para pantallas reducidas, laptops o zoom elevado */
+@media (max-width: 1180px), (max-height: 840px) {
+  .split-view {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .left-column {
+    border-right: none;
+    border-bottom: 1.5px solid var(--color-border);
+    max-height: 52vh;
+    min-height: 320px;
+  }
+  .right-column {
+    overflow: visible;
+    min-height: auto;
+  }
 }

@@ -143,7 +143,7 @@ body {
 
 /* Logo AOS en la esquina superior izquierda */
 .rp-encabezado .logo-empresa {
-  height: 48px;
+  height: 52px;
   width: auto;
   flex: 0 0 auto;
   align-self: flex-start;
