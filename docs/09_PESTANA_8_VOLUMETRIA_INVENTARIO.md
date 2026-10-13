@@ -56,8 +56,8 @@ Se registran al instante, cada uno con `secuencia` por pozo. Desde la ventana *M
 
 | Tipo | Datos | Efecto |
 |---|---|---|
-| **Agregar químicos** (`QUIMICOS`) | Fosa · cantidades de productos activos · fluido base (bbl) · agua (bbl) | Suma volumen = fluido base + agua + **volumen de químicos**. Descuenta los productos del inventario. Genera costo. Suma masa para concentraciones |
-| **Agregar lodo reciclado** (`LODO_ENTERO`; antes "lodo entero") | Fosa · volumen · peso · **producto "lodo reciclado"** (de los activos) · origen · concentraciones del lodo (lb/bbl) | Suma volumen. Consume unidades del producto de lodo reciclado (`volumen / (tamaño × factor de volumen)`) y genera su costo. Las concentraciones solo sirven para calcular concentraciones |
+| **Agregar químicos** (`QUIMICOS`) | Fosa · cantidades de productos activos · fluido base (bbl) · agua (bbl) | Suma volumen = fluido base + agua + **volumen de químicos** y suma masa para concentraciones. No toca inventario ni genera costo |
+| **Agregar lodo reciclado** (`LODO_ENTERO`; antes "lodo entero") | Tanque · volumen · peso · origen · concentraciones del lodo (lb/bbl) | Suma volumen. No toca el inventario ni genera costo. Las concentraciones solo sirven para calcular concentraciones |
 | **Transferencia** (`TRANSFERENCIA`) | Fosa origen · fosa destino · volumen | Mueve volumen (y la masa de productos proporcional). Origen y destino no pueden ser la misma fosa |
 | **Devolución** (`DEVOLUCION`) | Fosa · volumen · a dónde (texto obligatorio) | Resta volumen |
 | **Pérdida** (`PERDIDA`) | Fosa · volumen · **tipo de pérdida** (categoría del pozo) | Resta volumen y lo suma al total de esa categoría |
@@ -76,19 +76,20 @@ La GE y el tamaño de unidad se cargan en *Productos activos*. Para los producto
 ## 3. Inventario de productos del pozo
 
 ```
-final = inicial + recibido − devuelto − usado en fluidos − usado en otro módulo ± ajuste
+final = inicial + recibido − devuelto − usado en fluidos (a mano) − usado en otro módulo (a mano) ± ajuste
 ```
 
 | Columna | Origen |
 |---|---|
-| Inicial | Final del día anterior **del pozo** (0 el primer día) |
-| Recibido / devuelto | **Tickets de productos** del día: suma la cantidad *real*; la *según ticket* queda para comparar |
-| Usado en fluidos | Movimientos *Agregar químicos* y *Lodo entero* |
+| Inicial | Final del día anterior **del pozo** (0 el primer día, o escrito a mano) |
+| Recibido / devuelto | **Tickets de productos** del día: la entrada a mano son los tickets (recepción suma, devolución resta) |
+| Usado en fluidos | A mano: consumo del día en el lodo del pozo |
 | Usado en otro módulo | A mano: productos transferidos a otra línea (ej. cementación). Genera costo y no cuenta en las concentraciones |
 | Ajuste | A mano (+/−) |
+| Acumulado del pozo | Suma acumulada del pozo hasta este reporte: recibido, devuelto, usado en fluidos, usado otro módulo |
 | En pedido · No imprimir | A mano, informativos |
 
-- **Si la existencia del pozo no alcanza, se rechaza** el movimiento: *"Registra primero el ticket de recepción."*
+- **Si la existencia final queda negativa al guardar, se rechaza**: *"Registra primero el ticket de recepción."*
 - El **precio** lo carga el usuario en *Productos activos* según el contrato. Arranca en 0 y **nunca** se toma de la matriz.
 - **Cobrar por unidad o por barril** (selector por producto). Si es por barril: `precio por unidad = precio por barril × barriles de una unidad` (peso: `tamaño × factor / (350 × GE)`; volumen: conversión directa). La tabla muestra "X /bbl" y, al pasar el mouse, el equivalente por unidad.
 - **Servicios**: los productos activos con **unidad vacía** son servicios. Solo generan costo y no llevan existencias (inicial y final siempre 0).

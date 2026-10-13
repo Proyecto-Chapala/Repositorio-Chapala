@@ -55,7 +55,7 @@ class IdentidadDelBalanceTests(SimpleTestCase):
                 hoyo=120),
             dia(2, fosas, [
                 quimicos(5, 1, sacos=20, agua=10, aceite=5),
-                movimiento(6, 'LODO_ENTERO', 3, 40, lodo_producto=SALMUERA, lodo_cantidad=40, lodo_precio=0),
+                movimiento(6, 'LODO_ENTERO', 3, 40),
                 movimiento(7, 'TRANSFERENCIA', 3, 60, destino=1),
                 movimiento(8, 'TRANSFERENCIA', 1, 15, destino=2),        # dentro del mismo grupo
                 movimiento(9, 'TRANSFERENCIA', 4, 25, destino=1),

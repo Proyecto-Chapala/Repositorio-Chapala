@@ -38,14 +38,12 @@ class PrecioPorUnidadTests(SimpleTestCase):
 
     def test_costo_del_dia_con_precio_por_barril(self):
         # 50 bbl de salmuera a 30 por barril
-        dias = [{'id': 1, 'fecha_texto': 'dia 1', 'hoyo_fluido': 0, 'manual': {},
+        precio = vol.precio_por_unidad(30, vol.COBRO_BARRIL, 'BBL', 1, 0)
+        manual = {1: {'fluido': 50, 'precio': precio, 'categoria': 1}}
+        dias = [{'id': 1, 'fecha_texto': 'dia 1', 'hoyo_fluido': 0, 'manual': manual,
                  'fosas': [{'numero': 1, 'grupo': vol.ACTIVO, 'real': None}],
                  'tickets': [{'sentido': 'ENTRADA', 'detalles': [{'producto': 1, 'real': 100, 'ticket': 100}]}],
-                 'transacciones': [{'secuencia': 1, 'tipo': 'QUIMICOS', 'fosa': 1, 'aceite': 0, 'agua': 0,
-                                    'productos': [{'producto': 1, 'cantidad': 50, 'unidad': 'BBL', 'tamano': 1,
-                                                   'gravedad': 0,
-                                                   'precio': vol.precio_por_unidad(30, vol.COBRO_BARRIL, 'BBL', 1, 0),
-                                                   'categoria': 1, 'concentracion': False}]}]}]
+                 'transacciones': []}]
         self.assertEqual(vol.simular(dias, 1)['inventario'][1]['costo_diario'], 1500)
 
 

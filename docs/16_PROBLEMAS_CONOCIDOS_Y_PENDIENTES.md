@@ -19,6 +19,8 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 | Hub bloqueado | Fluidos de Perforación y Equipos | Solo *Nuevo Reporte* y *Abrir*; etiquetas con *Modificar etiquetas* |
 | Eliminar pozo | Pantalla del pozo | Escribir el nombre; la matriz no debe cambiar |
 | **Servicios del pozo** (migración 0035) | Pestaña 8 › Servicios | Guía [pruebas/15](pruebas/15_SERVICIOS_DEL_POZO.md) |
+| **Lodo reciclado solo volumen** | Pestaña 8 | Guía [pruebas/16](pruebas/16_LODO_RECICLADO_SOLO_VOLUMEN.md) |
+| **Acumulados por columna en inventario** | Pestaña 8 | Guía [pruebas/17](pruebas/17_ACUMULADOS_INVENTARIO.md) |
 | **Correcciones de octubre (20 puntos)** | Varias | 13 guías con pasos y casillas en [`pruebas/`](pruebas/README.md) (01 a 13), más verificar los puntos 6 y 19 del [23](23_CORRECCIONES_REVISION_OCT.md) |
 | Tanques (antes fosas) | Pestaña 8 y Excel | Textos, mensajes de error y hoja *Contabilidad de Volumen* |
 | Excel diario | Botón Excel | Logo AOS arriba a la izquierda, una sola hoja de inventario, **sin páginas 2 y 3 vacías**, "Fecha Inicial" |

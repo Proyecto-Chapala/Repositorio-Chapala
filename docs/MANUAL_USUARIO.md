@@ -213,16 +213,16 @@ Cada pestaña tiene su botón **Guardar**. **Guarda antes de cambiar de pestaña
 
 **a) Volumetría e inventario.** Es la pestaña más importante del cierre del día:
 
-1. **Inventario**: es el **mismo** de la pantalla *Inventario* (almacén). Lo que se usa aquí se descuenta de allá; si un producto sale en 0, carga la existencia en *Inventario*. Los *Tickets de productos* son **solo registro** (quién pidió, quién recibió, diferencias con el papel).
+1. **Inventario de productos**: la existencia es la de este pozo. Arranca de lo recibido por **tickets de recepción** y las devoluciones se registran con **tickets de devolución**. Lo consumido en el día (**usado en fluidos**, **usado en otro módulo**) y el **ajuste** se escriben a mano en la tabla de inventario.
 2. **Registra los movimientos del día**, en orden:
-   - **Agregar químicos**: tanque, productos y cantidades, fluido base y agua.
-   - **Agregar lodo reciclado**: tanque, volumen, producto "lodo reciclado", su origen y, si se conocen, las **concentraciones** del lodo que llega (lb/bbl).
+   - **Agregar químicos**: tanque, productos y cantidades, fluido base y agua. Suma volumen al tanque y masa a las concentraciones. **No descuenta inventario ni genera costos**: el consumo se escribe en *Inventario de productos*.
+   - **Agregar lodo reciclado**: tanque, volumen, peso, origen y, si se conocen, las **concentraciones** del lodo que llega (lb/bbl). Suma volumen; no descuenta inventario.
    - **Transferencia**: de un tanque a otro.
    - **Devolución**: fluido que sale del pozo (indica a dónde).
    - **Pérdida**: tanque, volumen y **tipo de pérdida**.
 3. **Al cierre, mide los tanques** y escribe el **volumen real** de cada una (y su tipo si cambió). Si hay volumen del hoyo que no es fluido (cemento, tapón), indícalo en **Volumen no fluido**. **Guarda.**
 4. Revisa el **"No contabilizado"** de cada grupo (activo, reserva, premezcla): **debe quedar en 0**. Si no, falta registrar alguna pérdida o movimiento. **No cambies el volumen real para cuadrar.**
-5. En el inventario, si hace falta, llena **usado en otro módulo** (productos que se pasan a otra línea, por ejemplo cementación), **ajuste**, **en pedido** o **no imprimir**, y **guarda**. Los días de ingenieros y trailers se cargan en la pestaña **Servicios**: la primera vez se agrega cada servicio con su categoría y tarifa diaria, y cada día se escriben los días cobrados.
+5. En el inventario, llena **usado en fluidos** (consumo en el lodo del día), **usado en otro módulo** (productos pasados a otra línea como cementación), **ajuste**, **en pedido** o **no imprimir**, y **guarda**. La tabla muestra también el **acumulado del pozo** (recibido, devuelto, usado en fluidos y usado en otro módulo) hasta este reporte. Los días de ingenieros y trailers se cargan en la pestaña **Servicios**: la primera vez se agrega cada servicio con su categoría y tarifa diaria, y cada día se escriben los días cobrados.
 
 **b) Concentraciones.** Consulta. Muestra cuántas libras de cada producto hay por barril de lodo, en el **sistema activo** (tanques activos + hoyo) o en **cada tanque** (elige en la lista). Con los botones **lb/bbl** y **kg/m³** cambias la unidad.
 - Arriba: volumen inicial y final, **cambio en volumen**, fluido base y agua agregados, aumento de volumen por material y lodo reciclado recibido.
