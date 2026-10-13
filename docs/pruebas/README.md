@@ -14,6 +14,11 @@ Las pruebas automáticas (`python manage.py test operaciones`) cubren los cálcu
 | 06 | [Tarifas en dos monedas](06_TARIFAS_DOS_MONEDAS.md) | 9 | 0031 | Sin probar |
 | 07 | [El balance cierra en 0](07_BALANCE_CIERRA.md) | 10 | — | Sin probar |
 | 08 | [Editar y eliminar movimientos](08_EDITAR_MOVIMIENTOS.md) | 11 (y 1) | — | Sin probar |
+| 09 | [Recepción y envío de fluido](09_FLUIDO_OTROS_POZOS.md) | 12 | — | Sin probar |
+| 10 | [Cerrar un intervalo como side track](10_CERRAR_SIDETRACK.md) | 14 | — | Sin probar |
+| 11 | [Dejar volumen en el hoyo](11_DEJAR_EN_HOYO.md) | 13 | — | Sin probar |
+| 12 | [Propiedades extra que aparecen](12_PROPIEDADES_EXTRA.md) | 15 | — | Sin probar |
+| 13 | [Reportito: comentario y Excel](13_REPORTITO.md) | 16 | 0032 | Sin probar |
 
 ## Antes de empezar
 

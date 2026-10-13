@@ -1,0 +1,275 @@
+A continuación se presenta la transcripción completa y de principio a fin de este segundo audio, identificando a los dos interlocutores (**Hablante 1** y **Hablante 2**):
+
+---
+
+**Hablante 2:** Este número aquí sí de verdad que no sé qué carajo es esto.
+
+**Hablante 1:** Ah, esas son las fechas de los reportes.
+
+**Hablante 2:** Ah, la fecha de reporte. Y aquí, no importa. Este, ah no, esta es la base de datos. Bueno, esto esto yo sé interpretarlo: que un volumen cuando cuando hace una transferencia de este recibí desde tanto tantos barriles, le mandé para allá tanto, entonces toda esa vaina lo va sacando del inventario. ¿Mmm? Tanto en me tanto en volúmenes como en en producto si si es transferencia. Pero aquí están los ingenieros y está toda esta vaina, no sabemos de verdad que no sé de dónde viene esto. El de ticket viene ¿de dónde viene esto? No importa, entendí.
+
+*(Pausa con tecleo mientras revisa en pantalla)*
+
+**Hablante 2:** Solo con existencia o movimiento. Existencia era de del inventario general, ajá, solo para todos los pozos. Okey. No usado... el otro modo... ajuste de la cuenta. Y guardar... y devolver... y volver... Son todas las listas... Todas las celdas blancas... Solo con existencia o movimiento.
+
+**Hablante 1:** Bueno, y lo de lo de lo que le había preguntado del del...
+
+**Hablante 2:** Ticket de entrega.
+
+**Hablante 1:** ...de que si en el sistema se manejan dos monedas, usted había mencionado algo sobre una tercera moneda, pero pero por barril. O sea, para que me me me indicara cómo funciona eso para para nosotros colocarlo.
+
+**Hablante 2:** Ya va. Ah, esto aquí está bien, una vaina, que son los tickets. Ah, sí, ticket de entrega. Aquí está. Ese es cuando tú vas a hacer la transferencia.
+
+**Hablante 1:** Sí, nuevo ticket, sí.
+
+**Hablante 2:** Este es nuevo ticket. Cuando vas a enviar, ese es para hacer la transferencia. Qué es lo que estás enviando y ese... Un segundo ticket es lo que dice el papel, o sea, lo que llegó o salió de verdad. «Inventario usa la cantidad real, la diferencia se marca en ámbar». En ámbar, sí. En ámbar. En el ámbar que es este. Okey. Esto de todas maneras lo vamos a empezar de cero. Vamos a hacer un pozo nuevo, le vamos a empezar a meter datos, ¿ves? Entonces aquí estamos. Vamos a agarrar un ticket y lo vamos a mandar, pa que esté aquí... guardar ticket. Entonces este es el que va para... el que se va para el almacén cuando enviamos, cuando hacemos transferencia. Y el almacén recibe, con ese número le da entrada, ¿verdad? Y a ese, ese es un buen control. ¿Tú entiendes esto? Entrada y devolución, muy bien.
+
+**Hablante 1:** No, el para devolverse es arriba.
+
+**Hablante 2:** Ya vamos a revisar algo más. Entonces ya estamos en la etiqueta, ya la... Si quiere modificar el ticket...
+
+**Hablante 1:** Y ahí se abre para modificarlo. Okey. Y se le da en guardar y se cierra otra vez.
+
+**Hablante 2:** Y otra vez se cierra. Okey. Ahora vamos a ver esto con calma. Esto es lo más... Lo más tedioso para trabajar es esto.
+
+**Hablante 1:** Lo que más se usa...
+
+**Hablante 2:** Aquí es donde... Aquí es donde está el verguero. El inventario, la volumetría, pues tiene que cuadrar. Todo tiene que quedar igualito, por ejemplo... Por ejemplo, aquí está un 3 que ya no cuadra, mira, ¿ves? Este 3 que está aquí.
+
+**Hablante 1:** Ese ese ese es el no no contabilizado.
+
+**Hablante 2:** ¿Estás viendo? Porque no puede dar 1003, tiene que dar 1000, ¿ves?
+
+**Hablante 1:** 1000, 1000 1010, como se había...
+
+**Hablante 2:** 1010 tiene que dar todo. Ya hay un 3... Ya hay un 3 que está desbalanceado. Pero yo yo yo supongo que eso está desbalanceado porque no me está diciendo que que hay un volumen que hay un volumen por materiales. ¿Entiendes? Algo así parecido, puede ser. Entonces cuando yo le doy aquí: balance de volumen, okey. Aquí está, 1010, 1010. Aquí está aquí está... Aquí está todo completo, este está balanceadito, ¿ves? Así es que tiene que dar el cierre. Pero cuando usted... cuando dice volumen de químicos agregados, este volumen viene de los... la gravedad específica por la cantidad que vas metiendo. Y esto va eso va entrando aquí. Que si lo hiciste en reserva, lo hiciste en una vaina en la premezcla, o lo hiciste en otro. ¿Sabes? Esto esto va va complementando aquí. Volumen final... Así tiene que dar el cierre. Mira, cuando tú metes material aquí, metes esto, igualito tiene que cuadrar todo esto, tiene que cuadrar igualito.
+
+**Hablante 1:** El mismo resultado.
+
+**Hablante 2:** El mismo resultado, tiene que ser para que dé cero. Eso no no puede no puede quedar diferencia porque si no ya creas un desbalance en el volumen. Entonces tienes que cuadrarlo, tienes que cuadrarlo. Entonces lo que nos está faltando de aquí es la gravedad específica para que para que no haya fallo. Pues yo creo que cuando empecemos a agregar transferido desde otro grupo ya ya aquí ya esto... esto ya viene de vuelta y ya va a aparecer aquel el tal ticket allá cuánto cuánto mandaste para otro. Eso tiene que estar en la en la parte de de transferencia. Volumen... Ah, ese es volumétrico. Aquí están las pérdidas. Ajá, entonces esa es la otra cosa más. Yo quiero yo quiero que la... descarga dos... lodos perdidos... Aquí están los la parte de lodos perdidos. Ajá, entonces otra cosa, esto yo también tengo aquí tengo yo que meter...
+
+**Hablante 1:** Modificarlo también quiere usted.
+
+**Hablante 2:** Claro, claro, yo... No, no me deja. No me no me deja, entonces no no no no puedo. Eso tiene que estar libre porque si no no no... No puedo no puedo meter nada. Aquí si van apareciendo como fórmula, ¿verdad? Y esto viene eh eh me imagino si yo transfiero de aquí de una vaina, se viene para acá. Cuando hago mi transferencia transferencia y pérdida aquí. Cuando yo empiezo a hacer mi transferencia, eh yo aquí estaba declarada devolución, entonces todo eso va apareciendo allá: perdidos y descartados. Ajá, tanque de origen, va a poner tanque origen; tipo de pérdida, elige la pérdida; volumen perdido, está bien, eso eso te va a dar. Ahora, si si esto esto esto afecta aquí, esto va para acá. Pero no no no dice no hay tanque con tipo de designación. Entonces, me imagino que vamos a... tanque activo, por ejemplo, ¿verdad?
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Entonces, tipo de pérdida: pérdida eh aquí, puede ser en zaranda. Volumen perdido, eso lo pones, ¿verdad?, vamos a ver, 20 por decir algo, 30, 40. Okey, registrar. «Elige el tanque»... Ah, si eliges el tanque. Entonces, ¿qué quiere decir? Que las pérdidas te van a aparecer aquí.
+
+**Hablante 1:** Sí.
+
+**Hablante 2:** Pero tenemos que definir los tanques.
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** O sea, que aquí primero tienen que tenemos que meter todos los tanques. Allá.
+
+**Hablante 1:** Pero ¿y igual de todos modos quiere que esa parte sea modificable?
+
+**Hablante 2:** Bueno, sí sí, pues déjalo modificable mejor.
+
+**Hablante 1:** O sea, se puede hacer de que ajá, de que se llene lo que tenga tenga que llenarse, pero por si acaso modificable.
+
+**Hablante 2:** Exacto. O sea, modificable también así. Es mejor, sí. Es mejor para que por si acaso una vaina, ¿ves? Porque a veces tú tienes que aju- hacer un ajuste, verga, no hay que quedar como amarrado, verga, pero yo quiero ajustar aquí para que para que para que esto dé...
+
+**Hablante 1:** Para no devolverse para allá.
+
+**Hablante 2:** Exacto, para que y para que esta vaina dé, pues. Verga, le voy a meter un poquito más que se metió un poquito más para acá para ir cuadrando aquí las pérdidas y entonces me va a dar... Uno uno va buscando hoy en día cuando se le enreda la vaina que no que no te cuadra esto, verga, tienes que tener libertad para meter cualquier vaina. Entonces liberen esto, pero igualito que tenga su formulación para acá.
+
+**Hablante 1:** Que siga funcionando normalmente, pero modificable.
+
+**Hablante 2:** Modificable, modificable por si acaso se le enreda la voladora al ingeniero.
+
+**Hablante 1:** Claro, claro.
+
+**Hablante 2:** Sí, sí. Yo sé que esto no es modificable, esto no es modificable porque esto trae toda la fórmula de toda esta vaina, ¿verdad? Esto, claro. Pero este no no ocupado por fluido. Ese no fluido, pues. Eh lo que pasa es que allá parecía no fluido, ¿verdad? Eh aquí se refiere como a todo lo que está por debajo de un sidetrack, que ya lo tienes que colocar aquí. Y el otro es entrampado en el hoyo, que tú le vas a dar ya la vaina que que ya perdido en el perdido entrampado entrampado en el hoyo. Lodo reciclado aquí en la parte de... en la otra parte de la pérdida. Aquí dice: «detrás del revestimiento, retornado, eh deformación»... Bueno, «entrampado en el hoyo», que que que tienen que ponerlo así para que ese es en los sidetrack.
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Okey, estamos hasta ahorita estamos estamos bien. Si yo estaba pidiendo, yo dije: «Coño, ¿y cómo pusiste el sidetrack?». Ya va, vamos a ir ahora aquí, vamos a regresar un ratico, vamos a regresar y vamos a ir a otra vez a reporte. Ah, este... no, esto esto es aquí. Esto es aquí, ya va, ya va, ¿dónde está? Creo que está en la en la parte baja de... Aquí, cuando entramos al pozo por primera vez. Creo que cuando le doy, ¿qué es lo que estoy haciendo?
+
+**Hablante 1:** Le da para atrás para atrás.
+
+**Hablante 2:** Vamos... Ah, sí, para atrás. Okey. Yo creo que en la parte de configuración de revestimiento, algo así, mira, creo que es... ya va. Okey, ya. Vamos a ver si está abierto, no importa. Cuando yo pongo los sidetrack, ¿verdad?
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Que es un sidetrack, ¡pum! Ahí puedo cerrar. Ahí puedo cerrar porque ya hizo un sidetrack. El sidetrack cierra, así como se cierra el revestidor, cierran los revestidores y cierran los sidetrack porque ya yo metí un tapón de cemento y ya tengo que cerrarlo de dónde a dónde fue el sidetrack, dónde lo hizo. Entonces eso tiene su su... tiene su su desvío, voy a desviar. Entonces te te dice cuál es el diámetro en ese momento, el revestimiento que estaba detrás. Todo eso hay que considerarlo...
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** ...para los sidetrack. Y está en otra vaina por aquí... Yo creo que ya está en el reporte. Que está diámetro del hoyo... Ya va, ya va, ya va, que está también por aquí, ya va. Vamos a buscarlo en el pozo. Que también lo vi por aquí, porque está bien definido esa vaina del sidetrack. Voy a alertar a los muchachos porque cualquier cosa ellos mismos también como son los que manejan esta vaina más más reciente que yo, porque yo tengo tiempo que no hacía un reporte, pero verga, sí sí dice conozco pues de la vaina, porque sí lo manejé pues. Pero que tienen la la ahorita lo están manejando más fresco... Ajá, eh orientarse en lo que es el sidetrack. Este, yo creo que está aquí en la parte de... ¿cómo es que se llama?, geometría, algo así. Aquí. Aquí está el sidetrack. ¿Estás viendo?
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Entonces, si yo voy a hacer un sidetrack, hoy arranca el sidetrack, día desde kick off, profundidad de kick off. Ahí de donde arranca.
+
+**Hablante 1:** Y ahí se sale el mensaje de cómo se registra.
+
+**Hablante 2:** Okey, ya yo le puse aquí, hoy arranca el sidetrack, desde el sidetrack. Ellos van a poner la profundidad del sidetrack, que está a 500 pies, por ejemplo, que eh más o menos los sidetrack que vamos a hacer, ¿verdad? 500 pies. 500, pin pin tan, ponemos 500 pies y arrancó su sidetrack, ¿verdad? Ahí va, ahí está su sidetrack arrancando aquí, pero ya le está diciendo que estamos haciendo un sidetrack, ¿verdad? Entonces, si vamos con el hoyo piloto, este también le va a dar diámetro de hoyo piloto y su profundidad a donde... «El hoyo piloto ocupa el tramo más profundo del pozo, desde el fondo del hoyo hacia arriba hasta su propia profundidad. Déjalo en cero si no aplica». Eso sí si no hay hoyo piloto. Si hay hoyo piloto, hay que hay que meterle datos.
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Entonces, lo que te digo, en el sidetrack ya nosotros dijimos que vamos a hacer un sidetrack, ¿verdad?
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Cuando cuando nosotros perforamos el sidetrack, tú vas perforando normalmente y hay un sidetrack que estamos haciendo, ¿verdad? Ta ta ta ta, va a perforar, va a llegar a profundidad final a la última profundidad. Cuando tú lo cierras, cuando tú lo cierras, lo cierras allá como sidetrack. Tienes que cerrarlo. Tienes que cerrarlo aquí en en a donde fuimos. Entonces aquí, sidetrack, y cuando lo terminas, que vas a meter el tapón de cemento en el sidetrack, tienes que ponerle el volumen no fluido. Todo lo que está por debajo del sidetrack, que vas a meter el tapón, tienes que tirar la volumetría...
+
+**Hablante 1:** Tiene que estar todo.
+
+**Hablante 2:** ...y tienes que meterle el no fluido.
+
+**Hablante 1:** Okey.
+
+**Hablante 2:** Que todo el volumen que quedó por debajo de él, del sidetrack, que te dice aquí, ¿verdad?, tienes que poner no fluido dejado en el hoyo, en el pozo. Ese es ese es el el lo perdido, ¿verdad? Y... ajá: «Va a crear intervalo tipo sidetrack para llevar sus costos. Día siguiente no hay que hacer nada, la casilla solo se marca el día del kick off». O sea, aquí está está listo. Ya tú le dijiste que que el sidetrack comienza ahí, vas perforando, dejándolo ahí, taqui taqui ta ta, lo terminaste y después cuando cuando ya lo vas a cerrar, lo cierras como sidetrack, que llegó hasta cierta profundidad y vuelves a hacer otro sidetrack este poniéndole la profundidad nueva y deja ese hasta la profundidad final, no tienes que regresarte, y después le dices que ahora que este arranca profundidad de sidetrack ahora es tanto. Entonces resulta que ya tú regresaste otra vez aquí.
+
+**Hablante 1:** Mmm, okey, okey.
+
+**Hablante 2:** Sí, ese para sidetrack. Pero entonces aquí, donde está la opción, aquí está la opción de de aquí está la opción de de de cerrar como sidetrack, ¿verdad? Yo le puedo poner este que no es de producción, que es un sidetrack, ¿verdad? Que es un sidetrack, pin. Entonces, diámetro pipi por decir algo. Entonces, cerrar intervalo. Aceptar. Cerrado. Ah, pero lo cerró como producción. O sea que ya no vio no vio el cambio, ¿oíste?
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Se cerró pero no no...
+
+**Hablante 1:** Falta el guardar cambios.
+
+**Hablante 2:** Sí, porque él tiene que guardarse como sidetrack. Entonces, esto esto se lo explicamos a los gringos y los gringos llenan. Sidetrack hay que hacer mañana. En este programa que le voy a dar mañana, el martes, no joda, es puro sidetrack. Van a hacer... Pero está interesante, porque vamos a hacer un hoyo un hoyo de 8 y medio piloto, vamos a marcar piloto, pum pum pum. Luego, y lo vamos a trabar con fluidos. Después lo vamos a ampliar a 12 y 1/4, ampliación 12 y 1/4 y vamos a ir analizando cómo lo vamos a atacar. Después viene, vamos a hacer sidetrack, sidetrack, sidetrack, tres sidetrack. O sea, que este cuando nos graduamos con ese, porque están todos los eventos y vamos viendo cómo corre esto y después vamos a pedir una impresión. Eso nos va a agarrar el día. Vamos a empezar temprano, nos vamos a las 6:30...
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** ...llegamos a hora de antes de las 8:30 ya que vayan los ingenieros, ustedes van armando las otras computadoras con el programa...
+
+**Hablante 1:** Claro.
+
+**Hablante 2:** ...para para poner varias varias para poner dos por lo menos dos por equipo y una una que se vea en la pantalla.
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Entonces ellos van haciendo la consulta y nosotros vamos este observando y viendo la vaina.
+
+**Hablante 1:** Observando y anotando.
+
+**Hablante 2:** Y anotando para para dar los últimos los últimos toques y decirle: «Bueno, muchachos, ve, esta es la esta es la última revisión. Ya lo que salga de aquí ya salió, se cerró para que ellos entren en la parte de seguridad del programa...
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** ...y listo». Entonces lo lo amarramos así. Y este chamo va a estar aquí cualquier consulta de ustedes para el para el el tercero, este chamito, ¿no?, cualquier vaina...
+
+**Hablante 1:** Ah, sí, sí.
+
+**Hablante 2:** Sí, entonces están están todos en en comunicación para para ir trabajando cómo cómo es esta vaina. Pero ya esto este, o sea, lo que es la esencia del programa nosotros la conocemos.
+
+**Hablante 1:** Sí.
+
+**Hablante 2:** Sabemos cómo trabaja, que es lo más importante, y cada y cada ventana sabemos interpretar qué es lo que está haciendo, que eso es lo más importante. Por ejemplo, esto de de cerrado, esto es importantísimo, porque si no te va tomando los otros datos y se vuelve loco el programa.
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Dice: «Verga, ¿pero por dónde coño estoy yo? ¿Dónde estoy? Si me dejaste abierto aquí, me estás calculando aquí, me estás calculando allá», él va a decir: «No no entiendo», no va a entender. Pero cuando ya tú cierres, le dices que hay un revestidor de 9 5/8, él va a calcular el volumen del revestidor de 9 5/8. Y cada tiene que saber qué herramientas tienes, por eso tenemos que meter todo. Mañana entonces el martes buscamos todas las herramientas que hay en el mercado y vamos alimentando, alimenten ahí, pa pa pa pa pa. Eso es todo. Y la señora esa que crea los que crea que cree su los los tickets de envío, la porque eso lo vamos a cargar nosotros aquí para efectos para darle a ella para darle a ella la la la información cuando salga el taladro, con qué guía está saliendo, el número que le estamos dando, ella tiene que decirnos más o menos qué vamos a usar nosotros de de de codificación para las entregas. Tiene que decirnos: «Oye, mira, los códigos que vamos a manejar para entrega del taladro para allá son estos, así lo van a cargar ustedes». Eso hay que preguntárselo mañana a administración...
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** ...para que no quede nada nada guindando por ahí.
+
+**Hablante 1:** No sé.
+
+**Hablante 2:** Bueno, yo creo que ahí, coño, eso está casi completo, yo creo que ya no falta mucho.
+
+**Hablante 1:** Bueno, a a lo que lo que le estaba preguntando de la...
+
+**Hablante 2:** Los los benchmark enseñan mucho porque aquí vas llenando tú lo que está mejor o lo que está malo...
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** ...y entonces eso se va para el recap y te va ayudando te va ayudando a a a los parámetros que tú quieras que tú quieras y la entrada de los objetivos. «Ingresa el valor objetivo mínimo y máximo para cada parámetro seleccionado por columna... por hueco... Aplica a todo el pozo, no se ha seleccionado ningún parámetro todavía. Ve a la pestaña Definición de parámetros primero». Esa es esa es la que vimos por aquí. Aquí parámetros, configuración... Ya va. Configuración benchmark.
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Aquí está. Aquí están los los los parámetros que tú vas a coger de la del catálogo, ¿verdad? Y todos los los grupos. Todos los grupos que... y la entrada de objetivos. Está bien. Ahí está el chamo que maneja Guantar y este él este él dijo: «Coño, es muy importante esto, los benchmark», porque habíamos hablado de los benchmark porque esta vaina esto es importantísimo. Entonces vamos a la pregunta ahora que es parte de de inventario. Inventario... Vamos a ver la partecita aquí, vamos a... Estamos cerquita, falta poquito ya. Ayer eliminamos... Bueno, abrimos otro pozo, ya ya vamos a abrir un pozo nuevo, le vamos a dar nombre y... Vamos a hacer que baje ese de... Vamos a hacer ese que va para Junín, vamos a hacer ese. Vamos a hacer ese pozo. Yo mañana mañana yo yo agarro y cuadro el el programa para para llevárselo para que, mira, ve, vamos a ir haciendo esto.
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Ajá, este... Estamos aquí, inventario. Inventario sí estoy jodido porque vimos que no que no podía cargar un carajo. Inventario... Sí, aquí estábamos. Porque esto fue la esta fue la selección que yo hice allá de los inventarios que iba a usar en el pozo, ¿verdad?
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Sí, pero aquí me tranca porque no puedo recibir, no puedo devolver, no puedo usar. Entonces aquí está y si usé en otro módulo tampoco no tengo...
+
+**Hablante 1:** Ajá.
+
+**Hablante 2:** Entonces no...
+
+**Hablante 1:** Habría que hacerlo modificable y ya.
+
+**Hablante 2:** Sí, sea modificable. Bueno, entonces no... ¿Y los costos? Los costos de precio...
+
+**Hablante 1:** En cero, que ustedes lo tengan que...
+
+**Hablante 2:** Ya, claro, yo voy a poner mis costos aquí. Y el inicial sería esto con este inicial creo... esto... Ah, este es el inicial que está allá...
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** ...el que está en la en el almacén, ¿verdad?
+
+**Hablante 1:** Sí.
+
+**Hablante 2:** El que viene este viene de allá de la de la de la primera. Todo esto yo recibí tanto, pero me va me va a contabilizar esto que no debería contabilizarlo. ¿Ves? Eh este inventario tiene que estar un poco independiente en lo que es en lo que yo te decía, lo que es el lo que es el inicial de producto que yo le estoy dando de entrada, ¿verdad?, que tiene que ver con lo que yo estoy recibiendo. Pero lo que es de la matriz no debería aparecer cantidades, lo que decía, bueno, las cantidades que no se reflejen aquí. Ni ni ni los costos de la matriz deben deben de estar aquí. O sea, esto no puede aparecer aquí. El precio es el que le voy a dar yo del contrato...
+
+**Hablante 1:** Okey.
+
+**Hablante 2:** ...y el inicial es el que yo estoy recibiendo, recibido. Entonces esto tiene que tener una relación estos dos.
+
+**Hablante 1:** Mmm, está bueno.
+
+**Hablante 2:** Sí. Inicio con con eh o sea algo que mira, cuando recibiste y entonces te da aquí este inicial, te va a dar el inicial con que arrancaste. Y después te va dando el final, ¿verdad? ¿Cuánto queda al final?
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Mmm. Entonces, inicial, ¿con cuánto vas a iniciar? Ta ta ta ta, vas a poner los valores aquí. Recibido va a quedar ahí, porque si ese día no recibiste nada, deja el inicial. El inicial va a ser igual a... Pero si usaste, te va a quitar aquí. ¿Ya lo estás viendo, verdad?
+
+**Hablante 1:** Sí, sí.
+
+**Hablante 2:** Pero esto tiene que ser no esto no puede no me puede traer eso de la matriz porque no que me tiene que traer es esta vaina, estos con su libraje y sus cuestiones, esa vaina, pero no no me puede traer cantidades porque esto es lo que estoy diciendo yo en el taladro. En la matriz es como para tener una referencia de qué es lo que hay en el almacén. Pero yo marco y yo marco, pero no debería no me debería traer estos valores para acá. ¿Oíste? No debería traerme nada para acá porque solamente traer qué es lo que yo tengo, su libraje y su código. Que es como el catálogo que yo estoy tomando, que lo pero solamente este como tú vas a un almacén: «Coño, me gusta este me gusta este producto». Entonces te: «Ah, sí, ah, dame las características», tú lo pides por Amazon. Entonces te: «Mira, este tiene esto, esto, coño me gusta, este sí cumple con la vaina». Hasta ahí, pero ahora tú ese producto compraste 100 unidades, yo los voy a vender a mi criterio. Esto tiene que trabajar así. No tiene que vender el almacén ese que está allá, sino de lo que yo voy a hacer después para venderlo en mi local. ¿Lo viste?
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Así así es que tiene que manejarse eso. Entonces, el inicial es el que yo le voy a dar en el pozo. El recibido es si recibí este si recibí este un si recibí este eh o si este inicié y después recibí, ya ya aparece este recibido que le estoy dando con con con el ticket. Ahora, cuando tengo mi ticket de entrada, que tengo que estar que tengo que hacer las entradas, porque este es un ticket de recepción, ¿verdad?
+
+**Hablante 1:** Sí.
+
+**Hablante 2:** Lógico. Yo voy a tener yo voy a tener un un un un este... Inicialmente me imagino que cuando cuando yo hago este ticket me va no sé si carga al inventario, porque yo le estoy dando aquí según ticket ta ta ta ta tanto. ¿Viste? Ahí está el precio, este precio no no debería tenerlo. El precio se lo voy a dar se lo tengo que se lo tengo que dar yo. Este precio tengo que dárselo yo según programa. O aquí me aparece el ticket sin precio, no debe porque porque no eh el contratista no debería ver qué precio tengo yo de mi producto.
+
+**Hablante 1:** Okey, eliminar ese... entonces el precio del del de los tickets.
+
+**Hablante 2:** Correcto, de los tickets porque no no no debería... El precio se lo voy a dar yo según contrato, él no debe saber cuánto cuánto me cuesta a mí ese producto. El producto almacén no debería tener ningún precio. Solamente verse como un como un producto que viene este de tanto libraje, que está pero no no me dice cuánto cuesta. Ya el precio me lo da ya cuando tú lo llevas a a tu negocio, entonces yo le voy a poner el precio. Así, así es. Sí, valor... Aquí tiene el valor real de cuánto estás recibiendo según el ticket, según ticket. Y este de ticket no sé esta vaina según ticket, eso es la cantidad de tanto, ¿verdad? ¿Real? Tanto. Claro, tú dices: «El ticket dice que tengo que tengo 30, ¿verdad?
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Pero yo recibí este eh 25». Es decir, cuando vienen 8. Entonces te va a cargar, pero te está diciendo 35, o sea, recibiste más, recibiste menos. Entonces eso tiene que ver con esto. En el ticket el ticket es como como el primer el primer arranque hacia recepción de almacén. Esto es lo que está recibiendo el almacén, tiene que llenar todos tus tickets con lo que recibiste. Entonces te va aquí está guardado, ¿viste?, aquí está. Y ya es lo que estás recibiendo. Y lo que estás recibiendo por ticket según ticket te debería dar tu inicial. Esto tiene que pasar para acá porque es tu valor inicial.
+
+**Hablante 1:** Mmm, bueno. Sí.
+
+**Hablante 2:** ¿Viste? Y entonces tú aquí arrancas tú. Y cuando tú recibas otro ticket, él te va te va te va a seguir alimentando alimentando tu tu valor tu valor inicial. Y este y te va te cambia el valor aquí y te entonces si tú eres si tú devolviste, te tú usaste, ta ta, entonces te va te va dando un final real, ¿verdad? Es lógico. Si si tú recibiste 35, tienes 35, y después recibiste 100, 135, y usaste 35, aquí deberías tener 100. Pero no tiene que ver con con el con la matriz. No tiene que ver con la matriz porque la matriz me me me me enturbia lo que hay en realidad en el taladro. La matriz no tiene tener que no tiene que tener nada de relación con esto, no puede venir para acá. O sea, cuando cuando cuando tú metes que tú llamas a estos señores, cuando tú los llamas, ellos sí se parecen aquí de la matriz, pero no puede no puede tener influencia en mi movimiento porque me altera el movimiento. Y entonces dice: «Oye, este... verga, aquí aparecen 100». ¡No!, porque estos 100 no están en el taladro. Este que aparece este que tú estás recibiendo viene para acá.
+
+**Hablante 1:** Okey.
+
+**Hablante 2:** Y cada vez que según ticket y el ticket es el número que que va que va a dar la gente allá, que el número que le vamos a dar. Ticket, debería aparecer un numerito aquí. Debería aparecer un numerito, aquí está. Entonces tú vas viendo: «Oye, está recibido», y va para acá. Y lo demás son los movimientos, chamo. Y si usaste en otro módulo, ¿ves?, te va quitando y te va poniendo aquí la... Otro módulo es en cementación. Dice: «Dame dos tres cuatro sacos de bentonita», pero no te lo no te da cálculo no te lo consideran en el en el cálculo de de volumetría. No te lo va a calcular. Sí. Te te dice este... te dice: «No, no, no, no te lo voy a calcular aquí porque te va a afectar la la las concentraciones». Mmm, ¿pero estás viendo, verdad?
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** La por eso lo uso en otro módulo para que no me no me afecte no me afecte el el el el contenido de las concentraciones del producto como tal. Okey. Este este es mi inicial prácticamente. Debería aparecer como inicial, pum, dice para acá, ¡paz! Este es igual a este y a medida que yo voy metiendo aquí recibido, se te va alimentando cuánto... O mi final. O aquí. El final, ¿verdad? Porque si yo inicié con 35 y entonces vuelvo a recibir, entonces debería estar como afectando al final. ¿Mmm? O sea, esto esto es como algo así, ¿ves? La primera recepción debería de- debería ponerse como inicial...
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** ...porque tú partiste de de esa cantidad. Pero si tú disminuyes esto, lo vas poniendo más chiquito, va a llegar un momento que que no te va a dar la cantidad, o sea, el inicial siempre tiene que considerarlo. Entonces todo lo que vas recibiendo tiene que ir sumando. ¿Verdad? ¿Verdad que sí, verdad? Porque si si esto si esto se va haciendo cero, entonces y vas a a usar, entonces ¿de dónde lo voy a usar? Tú tú tienes que recibir. Ahora, si yo recibí aquí 1000 y entonces me da mi inicial que son 1000, yo yo cada vez que le quite, mi final va a estar afectado por mi 1000. Mmm, así es la vaina. Entonces este tiene que alimentar a este.
+
+**Hablante 1:** Okey.
+
+**Hablante 2:** Sí, claro, porque yo de este puedo se me pueden quedar en 40 y ese día yo voy a usar 40, pero recibí 1000, entonces tengo que recibir 1000 para que me dé 1040, entonces tiene que afectar el inicial. Porque del inicial es donde yo voy a poder ir a mi balance para que me dé un final. Y es lo que me va quedando. Así mismo es. ¿Tiene lógica?
+
+**Hablante 1:** Mmm.
+
+**Hablante 2:** Lógico, tiene lógica porque no me puede venir de de la matriz porque tiene que venir de aquí. Y aquí tiene que aparecer este valor. Para que este agarre la fórmula de esta. Ya cuando guardas, al siguiente día ya no debería aparecer recibido, ya no va a aparecer en inicial el siguiente reporte, eso hay que chequearlo. Porque ya no estoy recibiendo nada, ese día ya la recepción es cero. Eso esto aparece cada vez que yo meta un ticket. O si recibes de otro taladro, aquí está la recepción. Te debe te y debe venir debe venir con un ticket también de otro taladro, si viene. Entonces tú tú recibes tu guía de otro taladro y pones ese observación: «Recibido de otro de otro taladro». Ahí también te vi que también está la la la vaina de entrega. Aparece que que parece es un ticket... Aquí dice de dónde viene. Aquí está. De almacén, de almacén Anaco, de de un taladro. Y aquí tú vas seleccionando, yo creo que tú le vas metiendo esta es otra vaina donde tú puedes esta vaina lo puede: almacén taladro, almacén patio...
+
+**Hablante 1:** Lo que usted estaba dicho de...

@@ -374,7 +374,9 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 costo = otro * float(m.get('precio') or 0)
                 costo_dia_prod[p] += costo
                 costo_dia_cat[m.get('categoria') or 1] += costo
-            ini = stock[p]
+            ini_auto = stock[p]
+            # Existencia inicial escrita a mano: manda sobre el final del día anterior.
+            ini = ini_auto if m.get('inicial') is None or p in servicios else float(m['inicial'])
             if p in servicios:
                 fin = ini
             else:
@@ -390,7 +392,7 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
             acum_recibido[p] += recibido[p]
             acum_devuelto[p] += devuelto[p]
             inventario[p] = {
-                'inicial': ini, 'recibido': recibido[p], 'devuelto': devuelto[p],
+                'inicial': ini, 'inicial_auto': ini_auto, 'recibido': recibido[p], 'devuelto': devuelto[p],
                 'recibido_ticket': recibido_ticket[p], 'devuelto_ticket': devuelto_ticket[p],
                 'usado_fluido': usado_fluido[p], 'usado_otro': otro, 'ajuste': ajuste,
                 'final': fin, 'usado_dia': usado_fluido[p] + otro,

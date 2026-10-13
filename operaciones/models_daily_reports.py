@@ -697,6 +697,10 @@ class ReporteDiarioComentarios(models.Model):
         blank=True, verbose_name="Observaciones de Operaciones",
         help_text="Operaciones generales del taladro; normalmente se toma de la hoja IADC."
     )
+    comentario_propiedades = models.TextField(
+        blank=True, verbose_name="Comentario del Reporte de Propiedades",
+        help_text="Lo que el ingeniero le escribe al Company Man en el reporte de propiedades (reportito)."
+    )
 
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
@@ -727,6 +731,34 @@ class ReporteDiarioComentarios(models.Model):
             'remarks': self.remarks,
             'tiene_contenido': self.tiene_contenido,
         }
+
+
+def tipo_fluido_extra(tipo_lodo):
+    """Tipo de las propiedades extra que usa un reporte: base agua (WBM) o aceite/sintético (OBM)."""
+    return 'WBM' if tipo_lodo in ('WBM', 'WBM_CACL2') else 'OBM'
+
+
+def propiedades_extra_del_reporte(reporte, checks):
+    """
+    Propiedades extra que se muestran en el reporte (grilla de la pestaña 3 y reporte de propiedades):
+    las del tipo de fluido del reporte, con etiqueta, que tienen orden de impresión o algún valor
+    cargado ese día. Así un valor cargado siempre aparece, aunque la propiedad no tenga orden.
+    Orden: primero las de orden de impresión (1, 2, …), luego las demás por número.
+    Devuelve [{'id', 'numero', 'etiqueta', 'unidad', 'valores': [valor del chequeo 1..n]}].
+    """
+    valores = {}
+    for c in checks:
+        for v in c.extra_values.all():
+            if (v.valor or '').strip():
+                valores[(c.check_number, v.propiedad_extra_id)] = v.valor
+    con_valor = {pid for _, pid in valores}
+    filas = []
+    propiedades = reporte.pozo.propiedades_extra.filter(tipo_fluido=tipo_fluido_extra(reporte.tipo_lodo)).exclude(etiqueta='')
+    for p in sorted(propiedades, key=lambda p: (p.orden_impresion == 0, p.orden_impresion, p.numero)):
+        if p.orden_impresion > 0 or p.id in con_valor:
+            filas.append({'id': p.id, 'numero': p.numero, 'etiqueta': p.etiqueta, 'unidad': p.unidad or '',
+                          'valores': [valores.get((c.check_number, p.id), '') for c in checks]})
+    return filas
 
 
 class ReporteDiarioMudExtraValue(models.Model):

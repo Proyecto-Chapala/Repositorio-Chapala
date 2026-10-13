@@ -103,3 +103,24 @@ class InventarioPorPozoTests(SimpleTestCase):
                                         servicios={INGENIERO})
         self.assertEqual(inventario['final'], 0)
         self.assertEqual(inventario['costo_diario'], 500)
+
+
+class InicialManualTests(SimpleTestCase):
+
+    def test_el_inicial_manual_reemplaza_al_final_del_dia_anterior(self):
+        manual = {BARITA: {'inicial': 50, 'otro': 0, 'ajuste': 0, 'precio': 0, 'categoria': 1}}
+        dias = [dia(1, tickets=[ticket_recepcion(BARITA, 5)], transacciones=[agregar_quimico(1, BARITA, 20)], manual=manual)]
+        inventario = inventario_del_dia(dias, 1)
+        self.assertEqual(inventario['inicial'], 50)
+        self.assertEqual(inventario['inicial_auto'], 0)
+        self.assertEqual(inventario['final'], 35)   # 50 + 5 − 20
+
+    def test_el_inicial_manual_permite_usar_sin_ticket(self):
+        manual = {BARITA: {'inicial': 30, 'otro': 0, 'ajuste': 0, 'precio': 0, 'categoria': 1}}
+        inventario = inventario_del_dia([dia(1, transacciones=[agregar_quimico(1, BARITA, 10)], manual=manual)], 1)
+        self.assertEqual(inventario['final'], 20)
+
+    def test_el_dia_siguiente_parte_del_final_con_el_inicial_manual(self):
+        manual = {BARITA: {'inicial': 30, 'otro': 0, 'ajuste': 0, 'precio': 0, 'categoria': 1}}
+        inventario = inventario_del_dia([dia(1, manual=manual), dia(2)], 2)
+        self.assertEqual(inventario['inicial'], 30)

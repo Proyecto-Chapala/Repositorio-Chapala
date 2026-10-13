@@ -20,6 +20,7 @@ from .models_daily_reports import (
     ReporteDiarioMudConfig, ReporteDiarioMudCheck, ReporteDiarioMudExtraValue,
     TramoSarta, ReporteDiarioComentarios,
     ReporteDiarioTiempo, ReporteDiarioActividadTiempo,
+    propiedades_extra_del_reporte, tipo_fluido_extra,
 )
 from .geometria_pozo import construir_perfil_confinamiento, calcular_geometria
 
@@ -338,8 +339,9 @@ def reporte_diario_detalle_view(request, pk, reporte_pk):
     # Datos para Tab 3: Mud Properties
     mud_config, mud_checks = obtener_o_crear_mud_checks(reporte)
 
-    # Propiedades extra de lodo activas para el pozo
-    props_extra = pozo.propiedades_extra.all().order_by('numero')
+    # Propiedades extra: todas en la ventana de carga; en la grilla, las que corresponden al reporte
+    props_extra = pozo.propiedades_extra.filter(tipo_fluido=tipo_fluido_extra(reporte.tipo_lodo)).exclude(etiqueta='').order_by('numero')
+    extras_grilla = propiedades_extra_del_reporte(reporte, sorted(mud_checks, key=lambda c: c.check_number))
 
     # Datos para Tab 4: Well Geometry
     intervalos_pozo = pozo.intervalos_revestimiento.all().order_by('numero_intervalo')
@@ -380,6 +382,7 @@ def reporte_diario_detalle_view(request, pk, reporte_pk):
         'mud_config': mud_config,
         'mud_checks': mud_checks,
         'props_extra': props_extra,
+        'extras_grilla': extras_grilla,
     })
 
 
@@ -868,15 +871,11 @@ def _par_prop(a, b, dec=0):
     return f"{_fmt_prop(a, dec)}/{_fmt_prop(b, dec)}"
 
 
-def reporte_propiedades_view(request, pk, reporte_pk):
+def datos_reporte_propiedades(pozo, reporte):
     """
-    Reporte corto SOLO con las propiedades del lodo y un comentario, para entregar al
-    compañero un avance antes del reporte completo (pedido del ingeniero, 27-sep).
-    Página imprimible: el navegador la guarda como PDF.
+    Datos del reporte de propiedades (reportito): los usan la página y su Excel, para que digan
+    lo mismo. Las propiedades, el punto de muestreo y la hora salen de la pestaña 3.
     """
-    from .views import _version_estaticos
-    pozo = get_object_or_404(Pozo, pk=pk)
-    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
     header = getattr(pozo, 'well_header_info', None)
     checks = list(reporte.mud_checks.all().order_by('check_number'))[:4]
     base_agua = reporte.tipo_lodo not in ('OBM', 'SBM')
@@ -929,25 +928,59 @@ def reporte_propiedades_view(request, pk, reporte_pk):
             fila('Estabilidad eléctrica', 'V', lambda c: _fmt_prop(c.electrical_stability, 0)),
         ]
 
-    # Propiedades extra 1-8 del tipo de fluido (las que se imprimen en el reporte de lodo)
-    tipo_extra = 'WBM' if base_agua else 'OBM'
-    valores = {}
-    for c in checks:
-        for v in c.extra_values.all():
-            valores[(c.id, v.propiedad_extra_id)] = v.valor
-    for p in pozo.propiedades_extra.filter(orden_impresion__gt=0, tipo_fluido=tipo_extra, numero__lte=8).order_by('orden_impresion', 'numero'):
-        filas.append({'etiqueta': p.etiqueta, 'unidad': p.unidad or '',
-                      'valores': [valores.get((c.id, p.id)) or '' for c in checks]})
+    # Propiedades extra del reporte: las que tienen orden de impresión o un valor cargado ese día
+    for p in propiedades_extra_del_reporte(reporte, checks):
+        filas.append({'etiqueta': p['etiqueta'], 'unidad': p['unidad'], 'valores': p['valores']})
 
     # Solo las filas con algún dato
     filas = [f for f in filas if any(str(v).strip() for v in f['valores'])]
 
     comentarios = getattr(reporte, 'comentarios', None)
-    return render(request, 'operaciones/avances_19_sep/reporte_propiedades.html', {
+    return {
         'pozo': pozo, 'reporte': reporte, 'header': header, 'checks': checks, 'filas': filas,
         'base_agua': base_agua, 'comentarios': comentarios,
-        'version_estaticos': _version_estaticos('operaciones/css/reporte_propiedades.css'),
-    })
+        'comentario': comentarios.comentario_propiedades if comentarios else '',
+    }
+
+
+def reporte_propiedades_view(request, pk, reporte_pk):
+    """
+    Reporte corto SOLO con las propiedades del lodo y un comentario, para entregar al Company Man
+    aparte del reporte completo. Se imprime como PDF o se descarga en Excel.
+    """
+    from .views import _version_estaticos
+    pozo = get_object_or_404(Pozo, pk=pk)
+    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+    contexto = datos_reporte_propiedades(pozo, reporte)
+    contexto['version_estaticos'] = _version_estaticos('operaciones/css/reporte_propiedades.css',
+                                                       'operaciones/js/reporte_propiedades.js')
+    return render(request, 'operaciones/avances_19_sep/reporte_propiedades.html', contexto)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_reporte_propiedades_comentario(request, pk, reporte_pk):
+    """Guarda el comentario del reporte de propiedades."""
+    pozo = get_object_or_404(Pozo, pk=pk)
+    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+    try:
+        texto = str(json.loads(request.body).get('comentario') or '').strip()
+    except (TypeError, ValueError):
+        return JsonResponse({'ok': False, 'error': 'Datos inválidos.'}, status=400)
+    ReporteDiarioComentarios.objects.update_or_create(reporte=reporte, defaults={'comentario_propiedades': texto})
+    return JsonResponse({'ok': True, 'mensaje': 'Comentario guardado.'})
+
+
+@require_http_methods(["GET"])
+def reporte_propiedades_excel(request, pk, reporte_pk):
+    """Descarga el reporte de propiedades en Excel (aparte del reporte general)."""
+    from .reporte_excel import generar_reporte_propiedades_excel
+    pozo = get_object_or_404(Pozo, pk=pk)
+    reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+    contenido, nombre = generar_reporte_propiedades_excel(datos_reporte_propiedades(pozo, reporte))
+    respuesta = HttpResponse(contenido, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    respuesta['Content-Disposition'] = f'attachment; filename="{nombre}"'
+    return respuesta
 
 
 # =====================================================================

@@ -7,11 +7,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'operaciones/css/reporte_propiedades.css' %}?v={{ version_estaticos }}">
 </head>
-<body>
+<body data-url-comentario="{% url 'operaciones:api_reporte_propiedades_comentario' pozo.pk reporte.pk %}"
+      data-url-excel="{% url 'operaciones:reporte_propiedades_excel' pozo.pk reporte.pk %}">
 
 <div class="rp-barra no-imprimir">
   <a href="{% url 'operaciones:reporte_diario_detalle' pozo.pk reporte.pk %}" class="rp-btn rp-btn-sec">&larr; Volver al reporte</a>
-  <span class="rp-barra-nota">Escribe el comentario y luego imprime o guarda como PDF.</span>
+  <a href="{% url 'operaciones:reporte_diario_detalle' pozo.pk reporte.pk %}?pestana=3" class="rp-btn rp-btn-sec"
+     title="Las propiedades, el punto de muestreo y la hora se cargan en la pestaña 3">Editar propiedades</a>
+  <span class="rp-barra-nota" id="rpEstado">Escribe el comentario, guárdalo y descarga o imprime.</span>
+  <button type="button" class="rp-btn rp-btn-sec" id="rpGuardar">Guardar comentario</button>
+  <button type="button" class="rp-btn rp-btn-sec" id="rpExcel">Descargar Excel</button>
   <button type="button" class="rp-btn" onclick="window.print()">Imprimir / Guardar PDF</button>
 </div>
 
@@ -70,7 +75,7 @@
 
   <section>
     <div class="rp-seccion">Comentario</div>
-    <div class="rp-comentario" contenteditable="true" data-placeholder="Escribe aquí el comentario para el compañero (tratamiento, tendencia, recomendaciones)…"></div>
+    <textarea class="rp-comentario" id="rpComentario" rows="6" placeholder="Escribe aquí el comentario para el Company Man (tratamiento, tendencia, recomendaciones)…">{{ comentario }}</textarea>
   </section>
 
   <footer class="rp-pie">
@@ -79,5 +84,6 @@
   </footer>
 </main>
 
+<script src="{% static 'operaciones/js/reporte_propiedades.js' %}?v={{ version_estaticos }}"></script>
 </body>
 </html>

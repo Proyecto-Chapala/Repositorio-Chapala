@@ -1252,6 +1252,22 @@
               </td>
             {% endfor %}
           </tr>
+          {% if extras_grilla %}
+          <tr class="mud-section-divider-row">
+            <td colspan="6">Propiedades Extra</td>
+          </tr>
+          {% for pe in extras_grilla %}
+          <tr>
+            <td class="cell-prop-label" title="Propiedad extra {{ pe.numero }}">{{ pe.etiqueta }}</td>
+            <td class="cell-unit">{{ pe.unidad|default:'&mdash;' }}</td>
+            {% for valor in pe.valores %}
+              <td class="{% if forloop.first %}cell-primary{% endif %}">
+                <input type="text" class="mud-cell-input mud-extra-input" data-extra-prop="{{ pe.id }}" data-check="{{ forloop.counter }}" value="{{ valor }}">
+              </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -2315,6 +2331,12 @@
                 </table>
               </div>
               <p class="cs-nota">El volumen del hoyo viene de la pestaña 4. Indica cuánto de ese volumen NO ocupa el fluido del sistema activo (por ejemplo, cemento o un espaciador).</p>
+              <div class="va-aviso-sidetrack" id="vaAvisoSidetrack" hidden></div>
+              <div class="va-acciones-hoyo">
+                <button type="button" class="btn-modern-secondary btn-sm" data-va-modal="hoyo" title="Tapón de cemento / abandono antes de un side track: registra el no fluido y la pérdida juntos">
+                  <span>&#9660;</span><span>Dejar volumen en el hoyo (tapón / side track)</span>
+                </button>
+              </div>
             </div>
             <div class="report-card-modern">
               <div class="cs-card-titulo">Balance de fluidos (bbl)</div>
@@ -2350,7 +2372,7 @@
           <div class="cs-card-cabecera">
             <div>
               <span class="cs-card-titulo">Inventario diario de productos</span>
-              <span class="cs-card-subtitulo">La existencia es la del Inventario general (una sola para todos los pozos): lo usado en fluidos, en otro módulo y los ajustes la descuentan al guardar. Recibido y devuelto vienen de los tickets y son solo registro. Solo las celdas blancas se escriben aquí.</span>
+              <span class="cs-card-subtitulo">La existencia es la de este pozo: Inicial = final del día anterior (o el número que escribas a mano). Recibido y devuelto salen de los tickets (cantidad real); lo usado en fluidos, en otro módulo y el ajuste se descuentan. Solo las celdas blancas se escriben aquí.</span>
             </div>
             <div class="cs-eq-acciones">
               <label class="cs-check"><input type="checkbox" id="vaSoloMovimiento"><span>Solo con existencia o movimiento</span></label>
@@ -3049,7 +3071,7 @@
           </thead>
           <tbody>
             {% for pe in props_extra %}
-              <tr>
+              <tr data-extra-prop="{{ pe.id }}" data-etiqueta="{{ pe.etiqueta }}" data-unidad="{{ pe.unidad }}">
                 <td style="text-align:center; font-weight:700; color:#64748b;">{{ pe.numero }}</td>
                 <td class="cell-prop-label">{{ pe.etiqueta }}</td>
                 <td class="cell-unit">{{ pe.unidad|default:'&mdash;' }}</td>
@@ -3175,6 +3197,12 @@ function showToast(msg, ok=true){
 }
 
 let currentTabNum = 1;
+
+// ?pestana=N abre el reporte en esa pestaña (por ejemplo, "Editar propiedades" del reportito → 3).
+document.addEventListener('DOMContentLoaded', function () {
+  const pestana = parseInt(new URLSearchParams(window.location.search).get('pestana'), 10);
+  if (pestana >= 1 && pestana <= 8 && pestana !== currentTabNum) switchTab(pestana);
+});
 
 // Marca y modelo de bombas: el <datalist> solo sugiere lo que coincide con el texto ya
 // escrito. Al entrar al campo se vacía para mostrar todas las opciones; si el usuario no
@@ -5229,6 +5257,13 @@ async function guardarMudProperties(silent = false){
     sg_drill_solids: parseFloat(document.getElementById('modal_sg_drill_solids') ? document.getElementById('modal_sg_drill_solids').value : 2.60) || 2.60,
   };
 
+  // Propiedades extra que se ven en la grilla (se guardan junto con el resto).
+  const extraPayload = Array.from(document.querySelectorAll('.mud-extra-input')).map(inp => ({
+    check_number: parseInt(inp.dataset.check, 10),
+    propiedad_extra_id: parseInt(inp.dataset.extraProp, 10),
+    valor: inp.value.trim()
+  }));
+
   try {
     const res = await fetch(API_MUD_PROPERTIES_GUARDAR, {
       method: 'POST',
@@ -5239,7 +5274,8 @@ async function guardarMudProperties(silent = false){
       body: JSON.stringify({
         config: configPayload,
         checks: checksPayload,
-        primary_check_number: 1
+        primary_check_number: 1,
+        extra_values: extraPayload
       })
     });
     const result = await res.json();
@@ -5308,6 +5344,33 @@ async function cargarExtraPropertiesValores(){
   }
 }
 
+/* La grilla de la pestaña 3 muestra las propiedades extra con orden de impresión o con valor.
+   Al guardar desde la ventana se actualiza la celda, y si la propiedad aún no tenía fila
+   (recién recibió su primer valor) se agrega, igual que la dibuja el servidor. */
+function ponerExtraEnGrilla(propId, checkNum, valor){
+  let input = document.querySelector(`.mud-extra-input[data-extra-prop="${propId}"][data-check="${checkNum}"]`);
+  if(!input){
+    if(!valor) return;
+    const fuente = document.querySelector(`#tabla-modal-extra-props tr[data-extra-prop="${propId}"]`);
+    const tbody = document.getElementById('chk_1_excess_lime')?.closest('tbody');
+    if(!fuente || !tbody) return;
+    if(!tbody.querySelector('.mud-extra-input')){
+      const divisor = document.createElement('tr');
+      divisor.className = 'mud-section-divider-row';
+      divisor.innerHTML = '<td colspan="6">Propiedades Extra</td>';
+      tbody.appendChild(divisor);
+    }
+    const fila = document.createElement('tr');
+    const celda = c => `<td class="${c === 1 ? 'cell-primary' : ''}"><input type="text" class="mud-cell-input mud-extra-input" data-extra-prop="${propId}" data-check="${c}"></td>`;
+    fila.innerHTML = `<td class="cell-prop-label"></td><td class="cell-unit"></td>${[1, 2, 3, 4].map(celda).join('')}`;
+    fila.cells[0].textContent = fuente.dataset.etiqueta;
+    fila.cells[1].textContent = fuente.dataset.unidad || '—';
+    tbody.appendChild(fila);
+    input = fila.querySelector(`[data-check="${checkNum}"]`);
+  }
+  input.value = valor;
+}
+
 async function guardarExtraPropertiesModal(){
   const extraInputs = document.querySelectorAll('[id^="extra_"]');
   const extraPayload = [];
@@ -5339,6 +5402,7 @@ async function guardarExtraPropertiesModal(){
     const result = await res.json();
     if(result.ok){
       showToast('Valores de propiedades extra guardados.');
+      extraPayload.forEach(v => ponerExtraEnGrilla(v.propiedad_extra_id, v.check_number, v.valor));
       cerrarExtraPropertiesModal();
     } else {
       showToast(result.error || 'Error al guardar propiedades extra.', false);

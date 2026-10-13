@@ -229,7 +229,6 @@ const VA_BASE = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/volumetria/`;
 const VA_GRUPOS = ['ACTIVO', 'RESERVA', 'PREMEZCLA', 'OTRAS'];
 const VA_FACTOR_MASA = { LB: 1, LBS: 1, KG: 2.20462, TN: 2000, TON: 2000, ST: 2000, MT: 2204.62, TM: 2204.62, T: 2204.62 };
 const VA_LB_POR_BBL = 350;
-const VA_OTRO_DESTINO = 'Otro taladro / pozo';
 
 let vaCargado = false;
 let vaListo = false;
@@ -330,7 +329,7 @@ function vaAplicar(data, conservar){
     ['anular', 'sarta', 'bajo_mecha'].forEach(k => { vaDatos.hoyo.no_fluido[k] = csNum(previo.hoyo[k]) || 0; });
     vaDatos.inventario.forEach(r => {
       const p = previo.inventario.find(x => x.producto_id === r.producto_id);
-      if(p){ r.usado_otro = csNum(p.usado_otro) || 0; r.ajuste = csNum(p.ajuste) || 0; r.en_pedido = csNum(p.en_pedido) || 0; r.no_imprimir = p.no_imprimir; }
+      if(p){ r.inicial_manual = csNum(p.inicial_manual); r.usado_otro = csNum(p.usado_otro) || 0; r.ajuste = csNum(p.ajuste) || 0; r.en_pedido = csNum(p.en_pedido) || 0; r.no_imprimir = p.no_imprimir; }
     });
   } else {
     vaSucio = false;
@@ -359,7 +358,7 @@ function vaCapturar(){
   return {
     fosas: vaDatos.fosas.map(f => ({ numero: f.numero, tipo_codigo: f.tipo_codigo, real: f.real, peso: f.peso, temperatura: f.temperatura })),
     hoyo: Object.assign({}, vaDatos.hoyo.no_fluido),
-    inventario: vaDatos.inventario.map(r => ({ producto_id: r.producto_id, usado_otro: r.usado_otro, ajuste: r.ajuste, en_pedido: r.en_pedido, no_imprimir: r.no_imprimir }))
+    inventario: vaDatos.inventario.map(r => ({ producto_id: r.producto_id, inicial_manual: r.inicial_manual, usado_otro: r.usado_otro, ajuste: r.ajuste, en_pedido: r.en_pedido, no_imprimir: r.no_imprimir }))
   };
 }
 
@@ -498,6 +497,26 @@ function vaRenderHoyo(){
     <tr><td>Volumen del hoyo</td>${ks.map(k => `<td class="cs-num">${vaVol(h.volumen[k])}</td>`).join('')}<td class="cs-num cs-final">${vaVol(h.total_volumen)}</td></tr>
     <tr><td>No ocupado por fluido</td>${ks.map(k => `<td class="cs-num">${inp(k)}</td>`).join('')}<td class="cs-num" id="vaHoyoNoFluido">${vaVol(ks.reduce((a, k) => a + (csNum(h.no_fluido[k]) || 0), 0))}</td></tr>
     <tr class="cs-fila-total"><td>Fluido en el hoyo</td>${ks.map(k => `<td class="cs-num" data-hoyo-fluido="${k}">${vaVol(fl(k))}</td>`).join('')}<td class="cs-num" id="vaHoyoFluido">${vaVol(vaFluidoHoyo())}</td></tr>`;
+  const aviso = document.getElementById('vaAvisoSidetrack');
+  if(aviso){
+    const ko = vaDatos.kickoff_sidetrack_ft;
+    aviso.hidden = !ko;
+    aviso.innerHTML = ko ? `<strong>Hoy arranca un side track desde ${csFmt(ko, 0)} ft.</strong> El hoyo viejo bajo el tapón tiene que quedar registrado como dejado en el hoyo (normalmente el día del tapón). Si no se hizo, usa "Dejar volumen en el hoyo".` : '';
+  }
+}
+
+function vaFosasActivas(){
+  return vaFosasConTipo().filter(f => vaGrupoDeTipo(f._tipo_guardado) === 'ACTIVO');
+}
+
+async function vaRegistrarDejarEnHoyo(){
+  const data = await vaPost('dejar-en-hoyo/', {
+    parte: document.getElementById('vaHParte').value,
+    volumen: document.getElementById('vaHVolumen').value,
+    fosa: document.getElementById('vaHFosa').value,
+    perdida_codigo: document.getElementById('vaHPerdida').value,
+  });
+  if(data) vaCerrarModal();
 }
 
 function vaRenderBalance(){
@@ -553,9 +572,14 @@ function vaRenderPerdidas(){
 
 /* ---------- Inventario ---------- */
 
+function vaInicialVivo(r){
+  const m = csNum(r.inicial_manual);
+  return m === null ? r.inicial_auto : m;
+}
+
 function vaFinalVivo(r){
   if(r.servicio) return 0;
-  return r.final - (csNum(r.usado_otro) || 0) + r._otro_guardado + (csNum(r.ajuste) || 0) - r._ajuste_guardado;
+  return r.final + (vaInicialVivo(r) - r.inicial) - (csNum(r.usado_otro) || 0) + r._otro_guardado + (csNum(r.ajuste) || 0) - r._ajuste_guardado;
 }
 
 function vaCostoVivo(r){
@@ -583,7 +607,7 @@ function vaRenderInventario(){
       <td>${csEsc(r.unidad ? `${r.tamano ? csFmt(r.tamano, r.tamano % 1 ? 2 : 0) + ' ' : ''}${r.unidad}` : '—')}${r.empaque ? ` <span class="cs-tenue">${csEsc(r.empaque)}</span>` : ''}</td>
       <td class="cs-num">${r.gravedad ? csFmt(r.gravedad, 2) : '—'}</td>
       <td class="cs-num" ${r.cobro_por === 'BARRIL' ? `title="Equivale a ${csDinero(r.precio)} por unidad"` : ''}>${r.cobro_por === 'BARRIL' ? `${csDinero(r.precio_cargado)} /bbl` : csDinero(r.precio)}</td>
-      <td class="cs-num cs-grupo-nuevas">${vaCant(r.inicial)}</td>
+      <td class="cs-num cs-grupo-nuevas"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="inicial_manual" value="${r.inicial_manual ?? ''}" placeholder="${csFmt(r.inicial_auto)}" title="Vacío = final del día anterior (${csFmt(r.inicial_auto)}). Escribe un número para fijar la existencia inicial a mano." ${r.servicio ? 'disabled' : ''}></td>
       <td class="cs-num cs-grupo-nuevas cs-mas" ${dif(r.recibido, r.recibido_ticket) ? `title="Según ticket: ${csFmt(r.recibido_ticket)}"` : ''}>${vaCant(r.recibido)}${dif(r.recibido, r.recibido_ticket) ? ' <span class="cs-dif-chip">≠ ticket</span>' : ''}${vaChipsTicket(r.tickets_recibido)}</td>
       <td class="cs-num cs-grupo-nuevas cs-menos">${vaCant(r.devuelto)}${vaChipsTicket(r.tickets_devuelto)}</td>
       <td class="cs-num cs-grupo-nuevas cs-menos">${vaCant(r.usado_fluido)}</td>
@@ -600,6 +624,11 @@ function vaRenderInventario(){
   }).join('');
 }
 
+function vaDatoFluido(etiqueta, clave){
+  const v = (vaDatos.fluido_externo || {})[clave] || 0;
+  return `<div class="cs-eq-dato" title="Sale de los movimientos de lodo reciclado y devolución del día"><span>${etiqueta}</span><strong>${csFmt(v, 1)} bbl</strong></div>`;
+}
+
 function vaRenderCostos(){
   let diario = 0, acum = 0;
   const vivo = {};
@@ -613,7 +642,11 @@ function vaRenderCostos(){
   document.getElementById('vaCostosPie').innerHTML = `<tr class="cs-fila-total"><td>Subtotal (${csEsc(vaDatos.moneda)})</td><td class="cs-num">${csDinero(diario)}</td><td class="cs-num">${csDinero(acum)}</td></tr>`;
   document.getElementById('vaDatosInv').innerHTML = `
     <div class="cs-eq-dato"><span>Peso de químicos en inventario</span><strong>${csFmt(vaDatos.peso_quimicos_lb, 0)} lb</strong></div>
-    <div class="cs-eq-dato"><span>Volumen de químicos para fluidos (hoy)</span><strong>${csFmt(vaDatos.volumen_quimicos_bbl, 1)} bbl</strong></div>`;
+    <div class="cs-eq-dato"><span>Volumen de químicos para fluidos (hoy)</span><strong>${csFmt(vaDatos.volumen_quimicos_bbl, 1)} bbl</strong></div>
+    ${vaDatoFluido('Recepción desde almacén (hoy)', 'recibido_almacen')}
+    ${vaDatoFluido('Recepción desde otro pozo (hoy)', 'recibido_otro_pozo')}
+    ${vaDatoFluido('Devolución a almacén (hoy)', 'enviado_almacen')}
+    ${vaDatoFluido('Envío a otro pozo (hoy)', 'enviado_otro_pozo')}`;
   document.getElementById('vaUltimosTickets').innerHTML = vaDatos.ultimos_tickets.map(t =>
     `<div class="cs-eq-dato"><span>${csEsc(t.tipo)}</span><strong>${t.numero ? csEsc(t.numero) : '—'}</strong></div>`).join('');
 }
@@ -726,13 +759,17 @@ function vaOpcionesFosa(seleccion){
 function vaOpcionesDestinoExterno(){
   return '<option value="">Elige…</option>' +
     vaDatos.almacenes.map(a => `<option value="Almacén ${csEsc(a.codigo)} — ${csEsc(a.nombre)}">Almacén ${csEsc(a.codigo)} — ${csEsc(a.nombre)}</option>`).join('') +
-    `<option value="${VA_OTRO_DESTINO}">${VA_OTRO_DESTINO}</option>`;
+    `<option value="${csEsc(vaDatos.texto_otro_pozo)}">${csEsc(vaDatos.texto_otro_pozo)}</option>`;
 }
 
 function vaAbrirModal(tipo){
   if(!vaDatos) return;
-  if(vaSucio && ['quimicos', 'lodo', 'transferencia'].includes(tipo) && vaTiposCambiados){
+  if(vaSucio && ['quimicos', 'lodo', 'transferencia', 'hoyo'].includes(tipo) && vaTiposCambiados){
     showToast('Guarda primero los cambios de tipo de tanque: los movimientos usan los tipos guardados.', false);
+    return;
+  }
+  if(tipo === 'hoyo' && vaSucio){
+    showToast('Guarda primero la volumetría: esta acción suma al "No ocupado por fluido" ya guardado.', false);
     return;
   }
   vaModalTipo = tipo;
@@ -845,6 +882,29 @@ function vaRenderModal(inicial = false){
     pie.innerHTML = `<span class="cs-flex"></span><button type="button" class="btn-modern-secondary btn-sm" data-va-cerrar>Cancelar</button>
       <button type="button" class="btn-modern-primary btn-sm" id="vaTRegistrar"><span>&#10004;</span><span>${vaEditando ? 'Guardar cambios' : 'Registrar'}</span></button>`;
     if(vaEditando) vaLlenarEdicion(vaEditando);
+
+  } else if(vaModalTipo === 'hoyo'){
+    if(!inicial) return;
+    titulo.textContent = 'Dejar volumen en el hoyo (tapón / side track)';
+    const h = vaDatos.hoyo;
+    const libre = Math.max((h.volumen.bajo_mecha || 0) - (csNum(h.no_fluido.bajo_mecha) || 0), 0);
+    const activas = vaFosasActivas();
+    const codigoHoyo = vaDatos.categoria_perdida_en_hoyo;
+    cuerpo.innerHTML = `
+      <p class="cs-nota">Para el día del tapón de cemento (abandono antes de un side track). Registra juntos los dos pasos que el balance necesita: el volumen pasa a <strong>"No ocupado por fluido"</strong> y se registra la <strong>pérdida</strong> por el mismo volumen. Así el sistema activo sigue cuadrando.</p>
+      <div class="va-form-col">
+        <label class="cs-campo"><span class="cs-campo-label">Parte del hoyo</span><select id="vaHParte" class="report-input">
+          <option value="bajo_mecha" selected>Bajo la mecha (hoyo bajo el tapón)</option><option value="anular">Anular</option><option value="sarta">Sarta</option></select></label>
+        <label class="cs-campo"><span class="cs-campo-label">Volumen <em>(bbl)</em></span><input type="number" id="vaHVolumen" class="report-input" min="0" step="any" value="${libre ? libre.toFixed(2) : ''}">
+          <small class="cs-campo-ayuda">Se sugiere el fluido que hoy queda bajo la mecha (${csFmt(libre, 1)} bbl). Para eso, en la pestaña 1 la mecha va en el tope del tapón.</small></label>
+        <label class="cs-campo"><span class="cs-campo-label">Tanque activo de la pérdida</span><select id="vaHFosa" class="report-input">${activas.length
+          ? activas.map(f => `<option value="${f.numero}">${csEsc(f.descripcion)}</option>`).join('')
+          : '<option value="">No hay tanques activos con tipo guardado</option>'}</select></label>
+        <label class="cs-campo"><span class="cs-campo-label">Tipo de pérdida</span><select id="vaHPerdida" class="report-input">
+          ${vaDatos.categorias_perdida.map(c => `<option value="${c.codigo}" ${c.codigo === codigoHoyo ? 'selected' : ''}>${c.codigo} · ${csEsc(c.descripcion)}</option>`).join('')}</select></label>
+      </div>`;
+    pie.innerHTML = `<span class="cs-flex"></span><button type="button" class="btn-modern-secondary btn-sm" data-va-cerrar>Cancelar</button>
+      <button type="button" class="btn-modern-primary btn-sm" id="vaHRegistrar"><span>&#10004;</span><span>Registrar</span></button>`;
 
   } else if(vaModalTipo === 'movimientos'){
     titulo.textContent = 'Movimientos de fluidos del día';
@@ -1113,6 +1173,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(id === 'vaQRegistrar') vaRegistrarQuimicos();
     else if(id === 'vaLRegistrar') vaRegistrarLodo();
     else if(id === 'vaTRegistrar') vaRegistrarTransferencia();
+    else if(id === 'vaHRegistrar') vaRegistrarDejarEnHoyo();
     else if(id === 'vaDeshacer'){
       const u = vaDatos.ultima_transaccion;
       if(u && window.confirm(`¿Deshacer el movimiento #${u.secuencia}?`)) vaPost('transaccion/deshacer/', {});

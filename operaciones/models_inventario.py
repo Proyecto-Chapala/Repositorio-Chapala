@@ -178,6 +178,9 @@ class InventarioProductoDia(models.Model):
 
     reporte = models.ForeignKey(ReporteDiario, on_delete=models.CASCADE, related_name='inventario_productos')
     producto = models.ForeignKey(Producto, on_delete=models.PROTECT, related_name='+')
+    inicial = models.DecimalField(
+        max_digits=12, decimal_places=3, null=True, blank=True, verbose_name="Existencia inicial (manual)",
+        help_text="Si se llena, reemplaza el final del día anterior como existencia inicial de este día.")
     usado_otro = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Usado en otro módulo")
     ajuste = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Ajuste (+ suma / − resta)")
     en_pedido = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="En pedido")

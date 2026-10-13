@@ -104,17 +104,21 @@ body {
 .rp-spec-fila { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 
 .rp-comentario {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   min-height: 110px;
   padding: 10px 12px;
   border: 1px solid var(--rp-borde);
   border-radius: 8px;
+  font: inherit;
   line-height: 1.5;
-  white-space: pre-wrap;
+  resize: vertical;
   outline: none;
+  overflow: hidden;   /* la altura se ajusta al texto (reporte_propiedades.js), también al imprimir */
 }
 
 .rp-comentario:focus { border-color: var(--rp-naranja); }
-.rp-comentario:empty::before { content: attr(data-placeholder); color: #9ca3af; }
 
 .rp-pie {
   display: flex;
@@ -136,8 +140,8 @@ body {
   body { background: #fff; }
   .no-imprimir { display: none !important; }
   .rp-hoja { margin: 0; padding: 0; max-width: none; box-shadow: none; }
-  .rp-comentario { border-color: #d1d5db; }
-  .rp-comentario:empty { display: none; }
+  .rp-comentario { border-color: #d1d5db; resize: none; }
+  .rp-comentario:placeholder-shown { display: none; }
   @page { margin: 14mm; }
 }
 

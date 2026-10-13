@@ -3,6 +3,9 @@
 ### ¿La pestaña 8 usa el mismo inventario que la pantalla *Inventario*?
 Sí. Desde el 25-sep-2026 hay **un solo inventario**: lo que se usa en el reporte diario se descuenta de la cantidad de la pantalla *Inventario* (de todos los pozos). Si un producto sale en 0, carga la existencia en *Inventario*. Los tickets de productos son solo registro. Detalle en [15](15_INVENTARIO_ALMACEN.md).
 
+### ¿Cómo pongo la existencia inicial de un producto a mano?
+En el inventario diario (pestaña 8) la celda **Inicial** se puede escribir. Vacía, vale el final del día anterior (se ve en gris como sugerencia); con un número, ese número manda para ese día y los siguientes parten de su final. Sirve para cargar lo que el pozo ya tenía antes del primer ticket.
+
 ### No me deja instalar una malla nueva: "no hay mallas nuevas en stock".
 Primero registra en la pestaña 6 un **ticket de mallas** de tipo entrada con las mallas **nuevas** recibidas (cantidad real). (Con los productos es distinto: su existencia se carga en *Inventario*.)
 

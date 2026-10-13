@@ -321,6 +321,23 @@
   font-weight: 700;
 }
 
+/* Hoyo: aviso de side track y acción "Dejar volumen en el hoyo" */
+.va-aviso-sidetrack {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 12px;
+}
+
+.va-acciones-hoyo {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
 /* Número de ticket junto a Recibido / Devuelto */
 .va-chip-ticket {
   display: inline-block;
