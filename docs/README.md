@@ -27,6 +27,7 @@
 | 21 | [Análisis de la revisión del 27-sep](21_ANALISIS_MATERIAL_REVISION_27SEP.md) | De dónde salió cada decisión del 27-sep (imágenes y audios) |
 | 22 | [Cambios del 02-oct: Smart Mud](22_CAMBIOS_02OCT_SMART_MUD.md) | Nombre, logos, tanques, monedas, intervalos, hub bloqueado, `.exe` sin consola |
 | 23 | [Correcciones de la revisión de octubre](23_CORRECCIONES_REVISION_OCT.md) | Inventario por pozo, GE, precios, monedas, trailer, sidetrack, reportito (pendiente) |
+| — | [Pruebas en pantalla](pruebas/README.md) | Un archivo por cambio: cómo funciona y pasos para verificar |
 
 ### Usuario
 

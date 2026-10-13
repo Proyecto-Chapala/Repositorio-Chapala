@@ -66,7 +66,7 @@ def datos_recap(pozo, hasta=None):
     reportes = list(qs)
     header = getattr(pozo, 'well_header_info', None)
     recap = getattr(pozo, 'recap', None)
-    moneda = pozo.moneda_simbolo or 'USD'
+    moneda = pozo.moneda_cobro
 
     base = {
         'pozo': pozo, 'header': header, 'recap': recap, 'moneda': moneda,
@@ -128,7 +128,7 @@ def datos_recap(pozo, hasta=None):
         fila['recap'] = (cm.mud_recap_remarks if cm else '') or ''
 
         # Volumetría y costos de químicos / ingenieros del día
-        chem = ife = 0.0
+        por_columna = defaultdict(float)
         sim = None
         if dias:
             try:
@@ -137,10 +137,7 @@ def datos_recap(pozo, hasta=None):
                 dias_con_error.append(r.fecha.strftime('%d/%m/%Y'))
         if sim:
             for cat, v in sim['costo_dia_cat'].items():
-                if cat in (1, 2):
-                    chem += v
-                else:
-                    ife += v
+                por_columna[vol.columna_resumen(cat)] += v
             for g in sim['flujos'].values():
                 for k in ('aceite', 'agua', 'quimicos', 'recibido', 'devuelto', 'perdida'):
                     vol_tot[k] += g.get(k, 0.0)
@@ -166,10 +163,11 @@ def datos_recap(pozo, hasta=None):
                 mallas = sum(x['costo_diario'] for x in m['movimientos'].values())
             except ErrorMallas:
                 pass
-        fila['costo_quimicos'] = chem
-        fila['costo_ingenieria'] = ife
+        fila['costo_quimicos'] = por_columna[vol.QUIMICOS_PERSONAL_DF]
+        fila['costo_ingenieria'] = por_columna[vol.INGENIERIA_IFE_SOLIDOS]
+        fila['costo_otros'] = por_columna[vol.OTROS_COSTOS]
         fila['costo_equipos'] = equipos + mallas
-        fila['costo_dia'] = chem + ife + equipos + mallas
+        fila['costo_dia'] = sum(por_columna.values()) + equipos + mallas
         costo_acum += fila['costo_dia']
         fila['costo_acum'] = costo_acum
 
@@ -241,6 +239,7 @@ def datos_recap(pozo, hasta=None):
     costos = {
         'quimicos': sum(f['costo_quimicos'] for f in filas),
         'ingenieria': sum(f['costo_ingenieria'] for f in filas),
+        'otros': sum(f['costo_otros'] for f in filas),
         'equipos': sum(f['costo_equipos'] for f in filas),
     }
     costos['total'] = sum(costos.values())
@@ -448,7 +447,7 @@ def generar_recap_excel(d, secciones):
         c = d['costos']
         fila = tabla(ws, 4, ['Concepto', f'Costo ({moneda})'], [
             ['Químicos / Personal DF', round(c['quimicos'], 2)], ['Ingeniero IFE / Control de sólidos', round(c['ingenieria'], 2)],
-            ['Equipos y mallas', round(c['equipos'], 2)], ['TOTAL', round(c['total'], 2)]], {2: D2}, [38, 18])
+            ['Otros costos (trailer)', round(c['otros'], 2)], ['Equipos y mallas', round(c['equipos'], 2)], ['TOTAL', round(c['total'], 2)]], {2: D2}, [38, 18])
         ws.cell(row=fila, column=1, value='Por intervalo').font = neg
         tabla(ws, fila + 1, ['Intervalo', 'Días', f'Costo real ({moneda})', f'Costo planeado ({moneda})', 'Diferencia'],
               [[f"{iv['iv'].numero_intervalo} {iv['tipo']}".strip(), iv['dias'], round(iv['costo'], 2), iv['costo_planeado'],

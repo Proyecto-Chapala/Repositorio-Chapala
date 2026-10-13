@@ -50,14 +50,12 @@ Cada **malla nueva instalada** cuesta su **precio neto** = `precio × (100 − d
 
 Si la línea de tiempo de la volumetría o de las mallas tiene un error (por ejemplo, tras borrar un reporte con tickets), `resumen_costos` **omite** esa parte en silencio (costo 0) para no romper la pantalla. Si los costos se ven en 0 de repente, hay que abrir la pestaña 6 u 8 de ese reporte: allí sí aparece el mensaje de error.
 
-## Cobro en dos monedas (02-oct-2026)
+## Tarifas en dos monedas (oct-2026, reemplaza el reparto por % y tasa del 02-oct)
 
-Si el pozo tiene **segunda moneda** (Configuración General), la *Pantalla Detallada de Costos* del reporte muestra un recuadro con el reparto del total del día y del acumulado:
+Decisión del usuario (punto 9 del [23](23_CORRECCIONES_REVISION_OCT.md)): el contrato fija **una tarifa en cada moneda** y las dos son **alternativas**.
 
-```
-a cobrar en la moneda del pozo  = total × (1 − %/100)
-a cobrar en la segunda moneda   = total × %/100 × tasa
-total expresado en la segunda   = total × tasa
-```
-
-Los costos se siguen calculando y guardando en la moneda del pozo; no hay conversión de precios. Función `cobro_dos_monedas()` en `views_daily_reports.py`. El Excel diario todavía no muestra este reparto.
+- *Configuración General*: moneda principal, **segunda moneda** (opcional) y **Cobrar en** (principal o segunda).
+- Cada producto, equipo (renta y stand-by) y malla activo tiene su precio en la moneda principal y, si el pozo tiene segunda moneda, también en esa.
+- Todos los costos se calculan con la tarifa de la moneda de cobro (`Pozo.tarifa(principal, secundaria)`) y se muestran con su código (`Pozo.moneda_cobro`). No hay tasa de cambio y nunca se mezclan monedas.
+- Con reportes cargados, **la moneda de cobro no se puede cambiar**, porque los movimientos guardan el precio del momento. Los nombres de las monedas sí se pueden corregir.
+- Lo eliminado: `tasa_cambio_secundaria`, `porcentaje_cobro_secundaria`, `cobro_dos_monedas()` y el recuadro de reparto. Migración `0031_tarifas_dos_monedas`. Pruebas en pantalla: [pruebas/06](pruebas/06_TARIFAS_DOS_MONEDAS.md).

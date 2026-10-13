@@ -106,6 +106,8 @@ urlpatterns = [
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/guardar/', views_inventario.api_volumetria_guardar, name='api_volumetria_guardar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/', views_inventario.api_volumetria_transaccion, name='api_volumetria_transaccion'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/deshacer/', views_inventario.api_volumetria_deshacer, name='api_volumetria_deshacer'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/<int:secuencia>/editar/', views_inventario.api_volumetria_transaccion_editar, name='api_volumetria_transaccion_editar'),
+    path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/<int:secuencia>/eliminar/', views_inventario.api_volumetria_transaccion_eliminar, name='api_volumetria_transaccion_eliminar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/ticket/guardar/', views_inventario.api_ticket_producto_guardar, name='api_ticket_producto_guardar'),
     path('api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/ticket/<int:ticket_pk>/eliminar/', views_inventario.api_ticket_producto_eliminar, name='api_ticket_producto_eliminar'),
 

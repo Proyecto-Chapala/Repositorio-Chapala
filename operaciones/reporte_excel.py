@@ -17,6 +17,7 @@ campo); los volúmenes de tanques con 1 decimal; los costos no se redondean más
 
 import io
 import os
+from copy import copy
 from datetime import datetime
 
 import openpyxl
@@ -451,12 +452,13 @@ def _bloques_inferiores(ws, d, variante):
     # Costos (diario / acumulado) y contactos
     rc = 67 if base_agua else 68
     cd, ca = d['costo_dia'], d['costo_acum']
+    fila_totales = _agregar_fila_otros_costos(ws, rc)
     for i, (dia, acu) in enumerate([(cd['df_chem'], ca['df_chem']), (cd['ife_sc'], ca['ife_sc']),
-                                    (cd['df_equip'], ca['df_equip'])]):
+                                    (cd['df_equip'], ca['df_equip']), (cd['other_cost'], ca['other_cost'])]):
         ws[f'G{rc + i}'].value = dia
         ws[f'I{rc + i}'].value = acu
-    ws[f'G{rc + 3}'].value = cd['total']
-    ws[f'I{rc + 3}'].value = ca['total']
+    ws[f'G{fila_totales}'].value = cd['total']
+    ws[f'I{fila_totales}'].value = ca['total']
     rep = d['reporte']
     ingenieros = ' / '.join(x for x in (rep.mi_representante_1, rep.mi_representante_2) if x)
     fila_con = rc + 2
@@ -829,7 +831,7 @@ def _hoja_equipos(ws, d):
     _encabezado_corto(ws, d, {'operador': 'B3', 'pozo': 'F3', 'fecha': 'J3', 'rep1': 'B4', 'campo': 'F4',
                               'spud': 'J4', 'contratista': 'B5', 'ubicacion': 'F5', 'lodo': 'J5',
                               'rep2': 'B6', 'actividad': 'J6'})
-    ws['J9'].value = f"Costo ({d['pozo'].moneda_simbolo or 'USD'})"
+    ws['J9'].value = f"Costo ({d['pozo'].moneda_cobro})"
     grupos = {0: 0.0, 1: 0.0, 3: 0.0}
     filas = [e for e in d['equipos'].get('equipos', []) if e.get('activo') or e.get('guardado')]
     for i, e in enumerate(filas[:36]):
@@ -892,6 +894,25 @@ def _pillow_disponible():
         return True
     except ImportError:
         return False
+
+
+def _agregar_fila_otros_costos(ws, rc):
+    """
+    La plantilla de ONE-TRAX trae 3 filas de costo (fluidos, C.S. e ingeniería, equipos) y TOTALES.
+    Agrega "Otros (Trailer)" donde estaba TOTALES y baja TOTALES a la fila libre de abajo, que ya
+    está dentro del área de impresión, copiando su formato. Devuelve la fila nueva de TOTALES.
+    """
+    fila_otros, fila_totales = rc + 3, rc + 4
+    for col in 'FGHIJ':
+        ws[f'{col}{fila_totales}']._style = copy(ws[f'{col}{fila_otros}']._style)
+        ws[f'{col}{fila_otros}']._style = copy(ws[f'{col}{rc + 2}']._style)
+    ws.row_dimensions[fila_totales].height = ws.row_dimensions[fila_otros].height
+    ws.row_dimensions[fila_otros].height = ws.row_dimensions[rc + 2].height
+    ws.merge_cells(f'G{fila_totales}:H{fila_totales}')
+    ws.merge_cells(f'I{fila_totales}:J{fila_totales}')
+    ws[f'F{fila_totales}'].value = ws[f'F{fila_otros}'].value
+    ws[f'F{fila_otros}'].value = 'Otros (Trailer)'
+    return fila_totales
 
 
 def _textos_tanques(wb):

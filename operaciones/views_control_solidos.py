@@ -41,9 +41,14 @@ class _Rechazo(Exception):
 # Utilidades
 # =====================================================================
 
+def _precio_bruto(malla_activa):
+    """Precio de la malla en la moneda de cobro del pozo."""
+    return Decimal(malla_activa.pozo.tarifa(malla_activa.precio, malla_activa.precio_secundaria) or 0)
+
+
 def _precio_neto(malla_activa):
     """Precio con el descuento del pozo aplicado, redondeado a centavos."""
-    precio = Decimal(malla_activa.precio or 0)
+    precio = _precio_bruto(malla_activa)
     descuento = Decimal(malla_activa.descuento_porcentaje or 0)
     neto = precio * (Decimal(100) - descuento) / Decimal(100)
     return neto.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
@@ -174,7 +179,7 @@ def _resumen(pozo, reporte):
             'descripcion': malla.descripcion,
             'mesh_size': malla.mesh_size,
             'activa': activa is not None,
-            'precio_bruto': float(activa.precio) if activa else None,
+            'precio_bruto': float(_precio_bruto(activa)) if activa else None,
             'descuento_porcentaje': float(activa.descuento_porcentaje) if activa else None,
             'precio_neto': float(_precio_neto(activa)) if activa else None,
             'en_equipos': en_equipos.get(malla_id, 0),
@@ -640,9 +645,10 @@ def _datos_uso(uso):
 def _tarifa_actual(equipo_activo, codigo_cobro):
     if equipo_activo is None or codigo_cobro == UsoEquipoDia.COBRO_SIN:
         return 0.0
+    tarifa = equipo_activo.pozo.tarifa
     if codigo_cobro == UsoEquipoDia.COBRO_STANDBY:
-        return float(equipo_activo.precio_standby or 0)
-    return float(equipo_activo.precio_renta or 0)
+        return float(tarifa(equipo_activo.precio_standby, equipo_activo.precio_standby_secundaria) or 0)
+    return float(tarifa(equipo_activo.precio_renta, equipo_activo.precio_renta_secundaria) or 0)
 
 
 def _acumulados_previos(pozo, reporte):

@@ -321,6 +321,19 @@
   font-weight: 700;
 }
 
+/* Número de ticket junto a Recibido / Devuelto */
+.va-chip-ticket {
+  display: inline-block;
+  margin-left: 2px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .va-datos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -421,6 +434,25 @@
   border-radius: 8px;
   font-size: 12.5px;
   color: var(--color-text-primary);
+}
+
+.va-log-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Editar / Eliminar de cada movimiento */
+.va-log-acciones {
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+@media print {
+  .va-log-acciones {
+    display: none;
+  }
 }
 
 .va-log ul {

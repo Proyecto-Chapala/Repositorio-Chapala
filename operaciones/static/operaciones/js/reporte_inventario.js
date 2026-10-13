@@ -238,6 +238,7 @@ let vaSucio = false;
 let vaTiposCambiados = false;
 let vaTab = 'fosas';
 let vaModalTipo = null;
+let vaEditando = null;   // movimiento que se está corrigiendo en el modal de transferencia/pérdida
 let vaTicketSel = null;
 let vaOcupado = false;
 
@@ -561,12 +562,16 @@ function vaCostoVivo(r){
   return r.costo_diario + ((csNum(r.usado_otro) || 0) - r._otro_guardado) * r.precio;
 }
 
+function vaChipsTicket(numeros){
+  return (numeros || []).map(n => ` <span class="va-chip-ticket" title="Ticket N° ${csEsc(n)}">N° ${csEsc(n)}</span>`).join('');
+}
+
 function vaRenderInventario(){
   const solo = document.getElementById('vaSoloMovimiento').checked;
   const filas = vaDatos.inventario.filter(r => !solo || r.inicial || r.final || r.usado_dia || r.recibido || r.devuelto || csNum(r.usado_otro) || r.costo_acumulado);
   const tbody = document.getElementById('vaFilasInv');
   if(!filas.length){
-    tbody.innerHTML = `<tr class="cs-fila-vacia"><td colspan="17">${vaDatos.inventario.length ? 'Ningún producto con existencia o movimiento.' : `El pozo no tiene productos activos. <a href="${vaDatos.enlaces.productos}" target="_blank" rel="noopener">Agrégalos &rarr;</a>`}</td></tr>`;
+    tbody.innerHTML = `<tr class="cs-fila-vacia"><td colspan="18">${vaDatos.inventario.length ? 'Ningún producto con existencia o movimiento.' : `El pozo no tiene productos activos. <a href="${vaDatos.enlaces.productos}" target="_blank" rel="noopener">Agrégalos &rarr;</a>`}</td></tr>`;
     return;
   }
   tbody.innerHTML = filas.map(r => {
@@ -576,10 +581,11 @@ function vaRenderInventario(){
       <td class="cs-codigo">${csEsc(r.codigo)}</td>
       <td>${csEsc(r.descripcion)}${r.servicio ? ' <span class="va-chip-servicio">Servicio</span>' : ''}</td>
       <td>${csEsc(r.unidad ? `${r.tamano ? csFmt(r.tamano, r.tamano % 1 ? 2 : 0) + ' ' : ''}${r.unidad}` : '—')}${r.empaque ? ` <span class="cs-tenue">${csEsc(r.empaque)}</span>` : ''}</td>
-      <td class="cs-num">${csDinero(r.precio)}</td>
+      <td class="cs-num">${r.gravedad ? csFmt(r.gravedad, 2) : '—'}</td>
+      <td class="cs-num" ${r.cobro_por === 'BARRIL' ? `title="Equivale a ${csDinero(r.precio)} por unidad"` : ''}>${r.cobro_por === 'BARRIL' ? `${csDinero(r.precio_cargado)} /bbl` : csDinero(r.precio)}</td>
       <td class="cs-num cs-grupo-nuevas">${vaCant(r.inicial)}</td>
-      <td class="cs-num cs-grupo-nuevas cs-mas" ${dif(r.recibido, r.recibido_ticket) ? `title="Según ticket: ${csFmt(r.recibido_ticket)}"` : ''}>${vaCant(r.recibido)}${dif(r.recibido, r.recibido_ticket) ? ' <span class="cs-dif-chip">≠ ticket</span>' : ''}</td>
-      <td class="cs-num cs-grupo-nuevas cs-menos">${vaCant(r.devuelto)}</td>
+      <td class="cs-num cs-grupo-nuevas cs-mas" ${dif(r.recibido, r.recibido_ticket) ? `title="Según ticket: ${csFmt(r.recibido_ticket)}"` : ''}>${vaCant(r.recibido)}${dif(r.recibido, r.recibido_ticket) ? ' <span class="cs-dif-chip">≠ ticket</span>' : ''}${vaChipsTicket(r.tickets_recibido)}</td>
+      <td class="cs-num cs-grupo-nuevas cs-menos">${vaCant(r.devuelto)}${vaChipsTicket(r.tickets_devuelto)}</td>
       <td class="cs-num cs-grupo-nuevas cs-menos">${vaCant(r.usado_fluido)}</td>
       <td class="cs-num cs-grupo-nuevas"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="usado_otro" value="${r.usado_otro || ''}" placeholder="0"></td>
       <td class="cs-num cs-grupo-nuevas"><input type="number" class="cs-input-cant va-input" step="any" data-inv="${id}" data-campo="ajuste" value="${r.ajuste || ''}" placeholder="0" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}></td>
@@ -738,6 +744,7 @@ function vaAbrirModal(tipo){
 function vaCerrarModal(){
   document.getElementById('vaModal').hidden = true;
   vaModalTipo = null;
+  vaEditando = null;
 }
 
 function vaRenderModal(inicial = false){
@@ -815,7 +822,7 @@ function vaRenderModal(inicial = false){
 
   } else if(vaModalTipo === 'transferencia'){
     if(!inicial) return;
-    titulo.textContent = 'Transferencia, devolución o pérdida';
+    titulo.textContent = vaEditando ? `Modificar el movimiento #${vaEditando.secuencia}` : 'Transferencia, devolución o pérdida';
     cuerpo.innerHTML = `
       <div class="cs-condicion va-opciones" role="radiogroup">
         <button type="button" class="cs-condicion-btn is-active" data-va-op="TRANSFERENCIA">Entre tanques</button>
@@ -836,15 +843,21 @@ function vaRenderModal(inicial = false){
       </div>`;
     cuerpo.dataset.op = 'TRANSFERENCIA';
     pie.innerHTML = `<span class="cs-flex"></span><button type="button" class="btn-modern-secondary btn-sm" data-va-cerrar>Cancelar</button>
-      <button type="button" class="btn-modern-primary btn-sm" id="vaTRegistrar"><span>&#10004;</span><span>Registrar</span></button>`;
+      <button type="button" class="btn-modern-primary btn-sm" id="vaTRegistrar"><span>&#10004;</span><span>${vaEditando ? 'Guardar cambios' : 'Registrar'}</span></button>`;
+    if(vaEditando) vaLlenarEdicion(vaEditando);
 
   } else if(vaModalTipo === 'movimientos'){
     titulo.textContent = 'Movimientos de fluidos del día';
     const u = vaDatos.ultima_transaccion;
     cuerpo.innerHTML = vaDatos.movimientos.length ? `<ol class="va-log">${vaDatos.movimientos.map(m => `
       <li><span class="va-log-num">${m.secuencia}</span>
-        <div><span class="cs-accion-chip va-mov-${m.tipo.toLowerCase()}">${csEsc(m.tipo_display)}</span> ${csEsc(m.titulo)}
-          ${m.lineas.length ? `<ul>${m.lineas.map(l => `<li>${csEsc(l)}</li>`).join('')}</ul>` : ''}</div></li>`).join('')}</ol>`
+        <div class="va-log-texto"><span class="cs-accion-chip va-mov-${m.tipo.toLowerCase()}">${csEsc(m.tipo_display)}</span> ${csEsc(m.titulo)}
+          ${m.lineas.length ? `<ul>${m.lineas.map(l => `<li>${csEsc(l)}</li>`).join('')}</ul>` : ''}</div>
+        <div class="va-log-acciones">
+          ${m.editable ? `<button type="button" class="btn-modern-secondary btn-sm" data-va-editar="${m.secuencia}" title="Corregir tanque, volumen o tipo">Editar</button>` : ''}
+          <button type="button" class="btn-modern-secondary btn-sm" data-va-eliminar="${m.secuencia}">Eliminar</button>
+        </div></li>`).join('')}</ol>
+      <p class="cs-nota">Al editar o eliminar un movimiento se recalcula todo el pozo. Si algo deja de ser posible (un tanque sin tipo, un producto sin existencia), el cambio no se guarda. Los químicos y el lodo reciclado no se editan: se eliminan y se cargan de nuevo.</p>`
       : '<div class="cs-vacio">Sin movimientos en este reporte.</div>';
     const nota = !u ? '' : (u.es_de_este_reporte ? `Deshace el movimiento #${u.secuencia}, el último del pozo.` : `El último movimiento del pozo (#${u.secuencia}) es del ${u.fecha}; solo se deshace desde ese reporte.`);
     pie.innerHTML = `<span class="cs-nota va-pie-nota">${nota}</span><span class="cs-flex"></span>
@@ -908,14 +921,35 @@ function vaCambiarOperacion(op){
   document.getElementById('vaTCampoPerdida').hidden = op !== 'PERDIDA';
 }
 
+function vaLlenarEdicion(m){
+  // El tipo de un movimiento no cambia al editarlo: solo se muestran sus campos.
+  vaCambiarOperacion(m.tipo);
+  document.querySelectorAll('#vaModalCuerpo [data-va-op]').forEach(b => { b.disabled = b.dataset.vaOp !== m.tipo; });
+  const poner = (id, valor) => {
+    const el = document.getElementById(id);
+    if(el.tagName === 'SELECT' && valor && !Array.from(el.options).some(o => o.value === String(valor))){
+      el.add(new Option(String(valor), String(valor)));   // destino guardado que ya no está en la lista
+    }
+    el.value = valor ?? '';
+  };
+  poner('vaTFosa', m.fosa);
+  poner('vaTVolumen', m.volumen);
+  if(m.tipo === 'TRANSFERENCIA') poner('vaTDestino', m.destino);
+  if(m.tipo === 'DEVOLUCION') poner('vaTDevuelto', m.destino_texto);
+  if(m.tipo === 'PERDIDA') poner('vaTPerdida', m.perdida);
+}
+
 async function vaRegistrarTransferencia(){
   const op = document.getElementById('vaModalCuerpo').dataset.op;
   const payload = { tipo: op, fosa: document.getElementById('vaTFosa').value, volumen: document.getElementById('vaTVolumen').value };
   if(op === 'TRANSFERENCIA') payload.destino = document.getElementById('vaTDestino').value;
   if(op === 'DEVOLUCION') payload.destino_texto = document.getElementById('vaTDevuelto').value;
   if(op === 'PERDIDA') payload.perdida_codigo = document.getElementById('vaTPerdida').value;
-  const data = await vaPost('transaccion/', payload);
-  if(data) vaCerrarModal();
+  const ruta = vaEditando ? `transaccion/${vaEditando.secuencia}/editar/` : 'transaccion/';
+  const data = await vaPost(ruta, payload);
+  if(!data) return;
+  if(vaEditando){ vaEditando = null; vaAbrirModal('movimientos'); }
+  else vaCerrarModal();
 }
 
 /* ---------- Tickets de productos ---------- */
@@ -1089,6 +1123,20 @@ document.addEventListener('DOMContentLoaded', function(){
       if(window.confirm('¿Eliminar este ticket? Sus cantidades salen del inventario.')){
         vaPost(`ticket/${vaTicketSel}/eliminar/`, {}).then(d => { if(d){ vaTicketSel = d.tickets.length ? d.tickets[0].id : null; vaRenderModal(); } });
       }
+    }
+    const editar = ev.target.closest('[data-va-editar]');
+    if(editar){
+      vaEditando = vaDatos.movimientos.find(m => m.secuencia === Number(editar.dataset.vaEditar)) || null;
+      if(vaEditando) vaAbrirModal('transferencia');
+      return;
+    }
+    const eliminar = ev.target.closest('[data-va-eliminar]');
+    if(eliminar){
+      const sec = Number(eliminar.dataset.vaEliminar);
+      if(window.confirm(`¿Eliminar el movimiento #${sec}? Se recalcula todo el pozo.`)){
+        vaPost(`transaccion/${sec}/eliminar/`, {}).then(d => { if(d) vaRenderModal(); });
+      }
+      return;
     }
     const tk = ev.target.closest('[data-va-ticket]');
     if(tk){ vaTicketSel = Number(tk.dataset.vaTicket); vaRenderModal(); }

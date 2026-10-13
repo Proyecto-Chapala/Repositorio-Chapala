@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django import forms
 from .models import Pozo, PropiedadUnidadPozo, CategoriaPerdidaItem
 
@@ -253,8 +255,7 @@ class GeneralSetupForm(forms.ModelForm):
     class Meta:
         model = Pozo
         fields = [
-            'moneda_simbolo',
-            'moneda_secundaria', 'tasa_cambio_secundaria', 'porcentaje_cobro_secundaria',
+            'moneda_simbolo', 'moneda_secundaria', 'cobrar_en_secundaria',
             'tasa_impuesto', 'con_tratamiento_disposicion',
             'usar_api_5ta_edicion_hidraulica',
             'ecuacion_solidos_base_agua', 'ecuacion_solidos_base_aceite',
@@ -273,21 +274,25 @@ class GeneralSetupForm(forms.ModelForm):
         return tasa
 
     def clean(self):
+        """
+        Los nombres de las monedas se pueden corregir, pero la elección de en cuál se cobra no
+        cambia cuando el pozo ya tiene reportes: los movimientos guardan el precio del momento y
+        los costos viejos quedarían en otra moneda.
+        """
         datos = super().clean()
         segunda = (datos.get('moneda_secundaria') or '').strip().upper()
         datos['moneda_secundaria'] = segunda
         if not segunda:
-            datos['tasa_cambio_secundaria'] = None
-            datos['porcentaje_cobro_secundaria'] = 0
-            return datos
-        if segunda == (datos.get('moneda_simbolo') or '').strip().upper():
+            datos['cobrar_en_secundaria'] = False
+        elif segunda == (datos.get('moneda_simbolo') or '').strip().upper():
             self.add_error('moneda_secundaria', "La segunda moneda debe ser distinta a la moneda del pozo.")
-        tasa = datos.get('tasa_cambio_secundaria')
-        if tasa is None or tasa <= 0:
-            self.add_error('tasa_cambio_secundaria', "Indica la tasa de cambio (mayor que 0).")
-        pct = datos.get('porcentaje_cobro_secundaria')
-        if pct is None or pct < 0 or pct > 100:
-            self.add_error('porcentaje_cobro_secundaria', "El porcentaje debe estar entre 0 y 100.")
+
+        pozo = self.instance
+        if (pozo.pk and bool(datos.get('cobrar_en_secundaria')) != pozo.cobrar_en_secundaria
+                and pozo.reportes_diarios.exists()):
+            self.add_error('cobrar_en_secundaria',
+                           f"El pozo ya tiene reportes y cobra en {pozo.moneda_cobro}: "
+                           "la moneda de cobro no se puede cambiar.")
         return datos
 
 
@@ -313,17 +318,68 @@ class ProductoActivoPozoForm(forms.ModelForm):
     class Meta:
         model = ProductoActivoPozo
         fields = [
-            'producto', 'abreviatura', 'unit_size', 'unidad', 'empaque', 'precio',
+            'producto', 'abreviatura', 'unit_size', 'unidad', 'empaque', 'precio', 'precio_secundaria', 'cobro_por',
             'gravedad_especifica', 'calcular_concentracion', 'es_producto_mi',
             'grupo_producto', 'codigo_costo_diario', 'calcular_wmgt_conc',
             'categoria_costo_wmgt', 'categoria_costo_cf',
         ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['cobro_por'].required = False
 
-class EquipoActivoPozoForm(forms.ModelForm):
+    def clean_cobro_por(self):
+        """Si no se indica, se cobra por unidad (como se hacía antes de existir el campo)."""
+        return self.cleaned_data.get('cobro_por') or ProductoActivoPozo.COBRO_UNIDAD
+
+    def clean(self):
+        """
+        Un producto medido en peso necesita tamaño de unidad y gravedad específica: sin ellos el
+        volumen que aporta al fluido (lb / (350 × GE)) sale en cero y la volumetría no cuadra.
+        """
+        from .volumetria import se_mide_en_peso, barriles_por_unidad
+        datos = super().clean()
+        if se_mide_en_peso(datos.get('unidad')):
+            if not datos.get('unit_size') or datos['unit_size'] <= 0:
+                self.add_error('unit_size', "Falta el tamaño de unidad (lb por saco, tambor...).")
+            if not datos.get('gravedad_especifica') or datos['gravedad_especifica'] <= 0:
+                self.add_error('gravedad_especifica', "Falta la gravedad específica: sin ella no se calcula el volumen.")
+        if (datos.get('cobro_por') == ProductoActivoPozo.COBRO_BARRIL and not self.errors
+                and barriles_por_unidad(datos.get('unidad'), datos.get('unit_size'),
+                                        datos.get('gravedad_especifica')) is None):
+            self.add_error('cobro_por', "Para cobrar por barril la unidad tiene que ser de peso (lb, kg, t) "
+                                        "o de volumen (bbl, gal, l), con su tamaño de unidad.")
+        return datos
+
+
+class TarifaSecundariaOpcionalMixin:
+    """
+    Las tarifas en la segunda moneda solo se llenan si el pozo tiene segunda moneda: si no vienen,
+    quedan en 0. Cada formulario indica sus campos en CAMPOS_TARIFA_SECUNDARIA.
+    """
+
+    CAMPOS_TARIFA_SECUNDARIA = ()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for campo in self.CAMPOS_TARIFA_SECUNDARIA:
+            self.fields[campo].required = False
+
+    def clean(self):
+        datos = super().clean()
+        for campo in self.CAMPOS_TARIFA_SECUNDARIA:
+            if datos.get(campo) is None:
+                datos[campo] = Decimal('0')
+        return datos
+
+
+class EquipoActivoPozoForm(TarifaSecundariaOpcionalMixin, forms.ModelForm):
+    CAMPOS_TARIFA_SECUNDARIA = ('precio_renta_secundaria', 'precio_standby_secundaria')
+
     class Meta:
         model = EquipoActivoPozo
-        fields = ['equipo', 'numero_serie', 'descripcion', 'precio_renta', 'precio_standby']
+        fields = ['equipo', 'numero_serie', 'descripcion', 'precio_renta', 'precio_standby',
+                  'precio_renta_secundaria', 'precio_standby_secundaria']
 
     def clean_numero_serie(self):
         numero = self.cleaned_data['numero_serie'].strip()
@@ -332,10 +388,12 @@ class EquipoActivoPozoForm(forms.ModelForm):
         return numero
 
 
-class MallaActivaPozoForm(forms.ModelForm):
+class MallaActivaPozoForm(TarifaSecundariaOpcionalMixin, forms.ModelForm):
+    CAMPOS_TARIFA_SECUNDARIA = ('precio_secundaria',)
+
     class Meta:
         model = MallaActivaPozo
-        fields = ['malla', 'precio', 'descuento_porcentaje']
+        fields = ['malla', 'precio', 'precio_secundaria', 'descuento_porcentaje']
 
 
 # ============================================================

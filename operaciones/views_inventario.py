@@ -94,7 +94,7 @@ from decimal import Decimal
 from django.db.models import Max
 from django.db.models.deletion import RestrictedError, ProtectedError
 
-from .models import Producto, TipoFosa
+from .models import Producto, ProductoActivoPozo, TipoFosa
 from .models_daily_reports import ReporteDiario
 from .models_control_solidos import TipoTicketMalla, UsoEquipoDia
 from .models_inventario import (
@@ -162,15 +162,23 @@ def _productos_pozo(pozo):
         p = a.producto
         unidad = (a.unidad or '').strip()
         categoria = a.codigo_costo_diario if a.codigo_costo_diario in vol.CATEGORIAS_COSTO else 1
+        tamano = float(a.unit_size) if a.unit_size is not None else 0.0
+        gravedad = float(a.gravedad_especifica) if a.gravedad_especifica is not None else float(p.gravedad or 0)
+        tarifa = pozo.tarifa(a.precio, a.precio_secundaria)
         datos[p.id] = {
             'producto_id': p.id,
             'codigo': p.codigo,
             'descripcion': p.descripcion,
             'unidad': unidad,
-            'tamano': float(a.unit_size) if a.unit_size is not None else 0.0,
+            'tamano': tamano,
             'empaque': a.empaque,
-            'precio': float(a.precio) if a.precio is not None else float(p.costo or 0),
-            'gravedad': float(a.gravedad_especifica) if a.gravedad_especifica is not None else float(p.gravedad or 0),
+            # El precio lo pone el usuario según el contrato (en la moneda de cobro del pozo); nunca
+            # viene de la matriz. 'precio' es siempre por unidad (lo que usan los costos);
+            # 'precio_cargado' es el escrito.
+            'precio': vol.precio_por_unidad(tarifa, a.cobro_por, unidad, tamano, gravedad),
+            'precio_cargado': float(tarifa or 0),
+            'cobro_por': a.cobro_por,
+            'gravedad': gravedad,
             'concentracion': bool(a.calcular_concentracion),
             'categoria': categoria,
             'servicio': unidad == '',
@@ -185,84 +193,11 @@ def _completar_productos(datos, ids):
     for p in Producto.objects.filter(id__in=faltan):
         datos[p.id] = {
             'producto_id': p.id, 'codigo': p.codigo, 'descripcion': p.descripcion,
-            'unidad': '', 'tamano': 0.0, 'empaque': '', 'precio': float(p.costo or 0),
+            'unidad': '', 'tamano': 0.0, 'empaque': '', 'precio': 0.0, 'precio_cargado': 0.0, 'cobro_por': ProductoActivoPozo.COBRO_UNIDAD,
             'gravedad': float(p.gravedad or 0), 'concentracion': False, 'categoria': 1,
             'servicio': False, 'activo': False,
         }
     return datos
-
-
-# ---------- Inventario unificado (Producto.cantidad) ----------
-#
-# La existencia de cada producto es UNA: Producto.cantidad, la de la pantalla Inventario.
-# Cada consumo del reporte diario la descuenta al guardarse y la devuelve al deshacerse o al
-# borrar el reporte. Los campos `stock_aplicado` guardan cuánto se descontó.
-
-from django.db.models import Sum
-
-
-def _mover_stock(consumos):
-    """
-    Aplica consumos al inventario general. consumos: {producto_id: cantidad}; positivo = se
-    usa (resta), negativo = se devuelve (suma). Rechaza si alguna existencia queda negativa.
-    Debe llamarse dentro de transaction.atomic() para que un rechazo deshaga todo.
-    """
-    ids = [pid for pid, c in consumos.items() if abs(c) > 1e-9]
-    if not ids:
-        return
-    for prod in Producto.objects.select_for_update().filter(id__in=ids).order_by('id'):
-        consumo = Decimal(str(round(consumos[prod.id], 3)))
-        disponible = prod.cantidad or Decimal('0')
-        nuevo = disponible - consumo
-        if nuevo < Decimal('-0.0005'):
-            raise _Rechazo(
-                f"Inventario de {prod.descripcion} ({prod.codigo}): hay {disponible:g} {prod.unidad} "
-                f"y se necesitan {consumo:g}. Actualiza la existencia en la pantalla Inventario."
-            )
-        prod.cantidad = max(nuevo, Decimal('0'))
-        prod.save()
-
-
-def _sumar(destino, filas):
-    for pid, cant in filas:
-        if cant:
-            destino[pid] = destino.get(pid, 0.0) + float(cant)
-
-
-def consumo_aplicado_reporte(reporte):
-    """Todo lo que el reporte descontó del inventario general, por producto."""
-    total = {}
-    _sumar(total, TransaccionVolumenProducto.objects.filter(transaccion__reporte=reporte)
-           .values_list('producto_id', 'stock_aplicado'))
-    _sumar(total, TransaccionVolumen.objects.filter(reporte=reporte, lodo_producto__isnull=False)
-           .values_list('lodo_producto_id', 'lodo_stock_aplicado'))
-    _sumar(total, InventarioProductoDia.objects.filter(reporte=reporte)
-           .values_list('producto_id', 'stock_aplicado'))
-    return total
-
-
-def devolver_stock_reporte(reporte):
-    """Devuelve al inventario general lo que consumió el reporte (antes de borrarlo)."""
-    _mover_stock({pid: -c for pid, c in consumo_aplicado_reporte(reporte).items()})
-
-
-def _consumo_aplicado_por_fecha(fecha, ids):
-    """(consumo de ese día, consumo de días posteriores) en TODOS los pozos, por producto."""
-    del_dia, despues = {}, {}
-    consultas = (
-        (TransaccionVolumenProducto.objects.filter(producto_id__in=ids),
-         'producto_id', 'stock_aplicado', 'transaccion__reporte__fecha'),
-        (TransaccionVolumen.objects.filter(lodo_producto_id__in=ids),
-         'lodo_producto_id', 'lodo_stock_aplicado', 'reporte__fecha'),
-        (InventarioProductoDia.objects.filter(producto_id__in=ids),
-         'producto_id', 'stock_aplicado', 'reporte__fecha'),
-    )
-    for qs, campo_p, campo_c, campo_f in consultas:
-        _sumar(del_dia, qs.filter(**{campo_f: fecha}).values(campo_p)
-               .annotate(s=Sum(campo_c)).values_list(campo_p, 's'))
-        _sumar(despues, qs.filter(**{f"{campo_f}__gt": fecha}).values(campo_p)
-               .annotate(s=Sum(campo_c)).values_list(campo_p, 's'))
-    return del_dia, despues
 
 
 # ---------- Línea de tiempo del pozo ----------
@@ -405,7 +340,7 @@ def _simular_pozo(pozo, reporte):
     nombres_p = {i: f"{p['descripcion']} ({p['codigo']})" for i, p in productos.items()}
     nombres_f = {f['numero']: f['descripcion'] for f in extra.get('fosas', [])}
     servicios = {i for i, p in productos.items() if p['servicio']}
-    sim = vol.simular(dias, reporte.id, nombres_p, nombres_f, servicios, validar_stock=False)
+    sim = vol.simular(dias, reporte.id, nombres_p, nombres_f, servicios)
     return sim, extra, tipos, productos
 
 
@@ -417,8 +352,7 @@ def _validar(pozo, reporte):
         productos = _completar_productos(_productos_pozo(pozo), ids)
         nombres_p = {i: f"{p['descripcion']} ({p['codigo']})" for i, p in productos.items()}
         servicios = {i for i, p in productos.items() if p['servicio']}
-        vol.simular(dias, ultimo.id, nombres_p, {f.numero: f.descripcion for f in pozo.fosas.all()}, servicios,
-                    validar_stock=False)
+        vol.simular(dias, ultimo.id, nombres_p, {f.numero: f.descripcion for f in pozo.fosas.all()}, servicios)
     except ErrorVolumetria as e:
         raise _Rechazo(str(e))
 
@@ -463,6 +397,23 @@ def _texto_movimiento(t, fosas):
     if t.tipo == TransaccionVolumen.DEVOLUCION:
         return f"Devueltos {v} de {origen} a {t.origen_destino or 'destino sin indicar'}", []
     return f"Perdidos y descartados {v} de {origen} ({t.perdida_descripcion or 'sin tipo'})", []
+
+
+def numeros_ticket_por_producto(reporte):
+    """
+    Números de los tickets del reporte por sentido y producto:
+    {'ENTRADA': {producto_id: ['8888', ...]}, 'SALIDA': {...}}. Los tickets sin número no aparecen.
+    """
+    resultado = {'ENTRADA': {}, 'SALIDA': {}}
+    for ticket in reporte.tickets_producto.select_related('tipo').prefetch_related('detalles'):
+        if not ticket.numero:
+            continue
+        por_producto = resultado['ENTRADA' if ticket.tipo.sentido == 'ENTRADA' else 'SALIDA']
+        for detalle in ticket.detalles.all():
+            numeros = por_producto.setdefault(detalle.producto_id, [])
+            if ticket.numero not in numeros:
+                numeros.append(ticket.numero)
+    return resultado
 
 
 def _redondear(d, n=2):
@@ -540,24 +491,15 @@ def _estado_volumetria(pozo, reporte):
     for m in InventarioProductoDia.objects.filter(reporte__pozo=pozo, reporte__fecha__lt=reporte.fecha).order_by('reporte__fecha'):
         ultimo_manual[m.producto_id] = m
     inv_sim = (sim or {}).get('inventario', {})
+    tickets_hoy = numeros_ticket_por_producto(reporte)
     inventario = []
     ids_inv = [i for i, p in productos.items() if p['activo']] + [i for i in inv_sim if not productos.get(i, {}).get('activo')]
-    # Existencia: inventario general (Producto.cantidad) llevado a la fecha del reporte.
-    #   final del día  = existencia actual + lo consumido en días posteriores (todos los pozos)
-    #   inicial        = final + lo consumido ese día (todos los pozos)
-    ids_stock = [pid for pid in ids_inv if pid in productos and not productos[pid]['servicio']]
-    existencia = dict(Producto.objects.filter(id__in=ids_stock).values_list('id', 'cantidad'))
-    consumo_dia, consumo_despues = _consumo_aplicado_por_fecha(reporte.fecha, ids_stock)
     peso_total = 0.0
     for pid in ids_inv:
         p = productos.get(pid)
         if not p:
             continue
-        s = dict(inv_sim.get(pid, {}))
-        if pid in existencia:
-            fin_general = float(existencia[pid] or 0) + consumo_despues.get(pid, 0.0)
-            s['final'] = fin_general
-            s['inicial'] = fin_general + consumo_dia.get(pid, 0.0)
+        s = inv_sim.get(pid, {})
         m = manual_hoy.get(pid)
         base_ni = m or ultimo_manual.get(pid)
         peso = vol.masa_lb(s.get('final', 0.0), p['unidad'], p['tamano'])
@@ -569,6 +511,8 @@ def _estado_volumetria(pozo, reporte):
             devuelto=round(s.get('devuelto', 0.0), 3),
             recibido_ticket=round(s.get('recibido_ticket', 0.0), 3),
             devuelto_ticket=round(s.get('devuelto_ticket', 0.0), 3),
+            tickets_recibido=tickets_hoy['ENTRADA'].get(pid, []),
+            tickets_devuelto=tickets_hoy['SALIDA'].get(pid, []),
             usado_fluido=round(s.get('usado_fluido', 0.0), 3),
             usado_otro=float(m.usado_otro) if m else 0.0,
             ajuste=float(m.ajuste) if m else 0.0,
@@ -627,7 +571,9 @@ def _estado_volumetria(pozo, reporte):
     for t in reporte.transacciones_volumen.prefetch_related('productos').order_by('secuencia'):
         titulo, lineas = _texto_movimiento(t, nombres_fosa)
         movimientos.append({'secuencia': t.secuencia, 'tipo': t.tipo, 'tipo_display': t.get_tipo_display(),
-                            'titulo': titulo, 'lineas': lineas})
+                            'titulo': titulo, 'lineas': lineas, 'editable': t.tipo in TIPOS_EDITABLES,
+                            'fosa': t.fosa_numero, 'destino': t.destino_numero, 'volumen': float(t.volumen_bbl),
+                            'perdida': t.perdida_codigo, 'destino_texto': t.origen_destino})
     ultima = (TransaccionVolumen.objects.filter(reporte__pozo=pozo)
               .select_related('reporte').order_by('-secuencia').first())
 
@@ -658,7 +604,7 @@ def _estado_volumetria(pozo, reporte):
         'ok': True,
         'error_linea_tiempo': error,
         'fecha': reporte.fecha.strftime('%d/%m/%Y'),
-        'moneda': pozo.moneda_simbolo or 'USD',
+        'moneda': pozo.moneda_cobro,
         'tipos_fosa': [{'codigo': c, 'descripcion': d} for c, d in sorted(tipos.items())],
         'fosas': filas_fosa,
         'hoyo': {k: (_redondear(v) if isinstance(v, dict) else round(v, 2)) for k, v in hoyo.items()},
@@ -768,7 +714,6 @@ def api_volumetria_guardar(request, pk, reporte_pk):
                 reporte=reporte, producto_id=pid, usado_otro=_dec(otro), ajuste=_dec(ajuste),
                 en_pedido=_dec(pedido), no_imprimir=no_imp, precio=_dec(p['precio'], 2),
                 categoria_costo=p['categoria'],
-                stock_aplicado=_dec(0 if p['servicio'] else otro - ajuste),
             ))
 
         with transaction.atomic():
@@ -780,11 +725,6 @@ def api_volumetria_guardar(request, pk, reporte_pk):
                 'no_fluido_sarta': _dec(no_fluido['sarta'], 2),
                 'no_fluido_bajo_mecha': _dec(no_fluido['bajo_mecha'], 2),
             })
-            # Inventario general: se aplica solo la diferencia contra lo ya descontado.
-            consumos = {}
-            _sumar(consumos, [(m.producto_id, -m.stock_aplicado) for m in reporte.inventario_productos.all()])
-            _sumar(consumos, [(m.producto_id, m.stock_aplicado) for m in filas_inv])
-            _mover_stock(consumos)
             reporte.inventario_productos.all().delete()
             InventarioProductoDia.objects.bulk_create(filas_inv)
             _validar(pozo, reporte)
@@ -802,6 +742,43 @@ def _fosa_valida(pozo, reporte, numero, etiqueta):
     if f is None:
         raise _Rechazo(f"{etiqueta.capitalize()} no existe en la lista de tanques del pozo.")
     return f
+
+
+TIPOS_EDITABLES = (TransaccionVolumen.TRANSFERENCIA, TransaccionVolumen.DEVOLUCION, TransaccionVolumen.PERDIDA)
+
+
+def _llenar_movimiento_de_volumen(pozo, reporte, t, body):
+    """
+    Datos de una transferencia, devolución o pérdida (los movimientos que solo mueven volumen).
+    Los usan el registro y la edición, con las mismas validaciones. t.tipo y el tanque ya vienen.
+    """
+    v = _num(body.get('volumen'), 'Volumen', 0.01, 100000, permitir_vacio=False)
+    t.volumen_bbl = _dec(v, 2)
+    t.destino_numero, t.destino_descripcion = None, ''
+    t.origen_destino = ''
+    t.perdida_codigo, t.perdida_descripcion = None, ''
+    if t.tipo == TransaccionVolumen.TRANSFERENCIA:
+        destino = _fosa_valida(pozo, reporte, body.get('destino'), 'el tanque destino')
+        if destino.numero == t.fosa_numero:
+            raise _Rechazo('El tanque de origen y el de destino son el mismo.')
+        t.destino_numero, t.destino_descripcion = destino.numero, destino.descripcion[:100]
+    elif t.tipo == TransaccionVolumen.DEVOLUCION:
+        t.origen_destino = str(body.get('destino_texto') or '').strip()[:120]
+        if not t.origen_destino:
+            raise _Rechazo('Indica a dónde se devuelve el fluido (almacén u otro taladro).')
+    else:
+        codigo = int(body.get('perdida_codigo') or 0)
+        cat = pozo.categorias_perdida.filter(codigo=codigo).first()
+        if cat is None:
+            raise _Rechazo('Elige el tipo de pérdida.')
+        t.perdida_codigo, t.perdida_descripcion = cat.codigo, cat.descripcion[:100]
+
+
+def _movimiento_del_reporte(reporte, secuencia):
+    t = reporte.transacciones_volumen.filter(secuencia=secuencia).first()
+    if t is None:
+        raise _Rechazo(f"El movimiento #{secuencia} no es de este reporte.")
+    return t
 
 
 @csrf_exempt
@@ -844,7 +821,6 @@ def api_volumetria_transaccion(request, pk, reporte_pk):
             if lp is None:
                 raise _Rechazo('Elige el producto de lodo reciclado (de los productos activos del pozo).')
             t.lodo_producto_id = lp['producto_id']
-            lodo_servicio = lp['servicio']
             t.lodo_producto_texto = f"{lp['descripcion']}"[:255]
             t.lodo_cantidad = _dec(vol.consumo_lodo_entero(v, lp['unidad'], lp['tamano']))
             t.lodo_precio = _dec(lp['precio'], 2)
@@ -859,35 +835,10 @@ def api_volumetria_transaccion(request, pk, reporte_pk):
                 if c > 0:
                     lineas.append((p, c))
 
-        elif tipo in (TransaccionVolumen.TRANSFERENCIA, TransaccionVolumen.DEVOLUCION, TransaccionVolumen.PERDIDA):
-            v = _num(body.get('volumen'), 'Volumen', 0.01, 100000, permitir_vacio=False)
-            t.volumen_bbl = _dec(v, 2)
-            if tipo == TransaccionVolumen.TRANSFERENCIA:
-                destino = _fosa_valida(pozo, reporte, body.get('destino'), 'el tanque destino')
-                if destino.numero == fosa.numero:
-                    raise _Rechazo('El tanque de origen y el de destino son el mismo.')
-                t.destino_numero, t.destino_descripcion = destino.numero, destino.descripcion[:100]
-            elif tipo == TransaccionVolumen.DEVOLUCION:
-                t.origen_destino = str(body.get('destino_texto') or '').strip()[:120]
-                if not t.origen_destino:
-                    raise _Rechazo('Indica a dónde se devuelve el fluido (almacén u otro taladro).')
-            else:
-                codigo = int(body.get('perdida_codigo') or 0)
-                cat = pozo.categorias_perdida.filter(codigo=codigo).first()
-                if cat is None:
-                    raise _Rechazo('Elige el tipo de pérdida.')
-                t.perdida_codigo, t.perdida_descripcion = cat.codigo, cat.descripcion[:100]
-
-        if tipo == TransaccionVolumen.LODO_ENTERO and not lodo_servicio:
-            t.lodo_stock_aplicado = t.lodo_cantidad
-        consumos = {}
-        if tipo == TransaccionVolumen.QUIMICOS:
-            _sumar(consumos, [(p['producto_id'], c) for p, c in lineas if not p['servicio']])
-        elif t.lodo_producto_id:
-            _sumar(consumos, [(t.lodo_producto_id, t.lodo_stock_aplicado)])
+        elif tipo in TIPOS_EDITABLES:
+            _llenar_movimiento_de_volumen(pozo, reporte, t, body)
 
         with transaction.atomic():
-            _mover_stock(consumos)
             ultima = TransaccionVolumen.objects.filter(reporte__pozo=pozo).aggregate(m=Max('secuencia'))['m'] or 0
             t.secuencia = ultima + 1
             t.save()
@@ -898,7 +849,6 @@ def api_volumetria_transaccion(request, pk, reporte_pk):
                     unidad=p['unidad'][:30], tamano=_dec(p['tamano']), gravedad=_dec(p['gravedad'], 4),
                     precio=_dec(p['precio'], 2), categoria_costo=p['categoria'],
                     calcula_concentracion=p['concentracion'],
-                    stock_aplicado=_dec(c if (tipo == TransaccionVolumen.QUIMICOS and not p['servicio']) else 0),
                 ) for p, c in lineas
             ])
             _validar(pozo, reporte)
@@ -907,6 +857,48 @@ def api_volumetria_transaccion(request, pk, reporte_pk):
     except _Rechazo as e:
         return _error(str(e))
     return _respuesta(pozo, reporte, 'Movimiento registrado.')
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_volumetria_transaccion_editar(request, pk, reporte_pk, secuencia):
+    """
+    Corrige una transferencia, devolución o pérdida del reporte (tanque, destino, volumen o tipo de
+    pérdida), en cualquier posición. Se repite toda la línea de tiempo; si algo deja de ser posible
+    (tanque sin tipo, producto sin existencia), no se guarda.
+    """
+    pozo, reporte = _obtener(pk, reporte_pk)
+    try:
+        body = _leer(request)
+        t = _movimiento_del_reporte(reporte, secuencia)
+        if t.tipo not in TIPOS_EDITABLES:
+            raise _Rechazo('Los movimientos de químicos y de lodo reciclado no se editan: elimínalo y cárgalo de nuevo.')
+        fosa = _fosa_valida(pozo, reporte, body.get('fosa'), 'el tanque')
+        t.fosa_numero, t.fosa_descripcion = fosa.numero, fosa.descripcion[:100]
+        _llenar_movimiento_de_volumen(pozo, reporte, t, body)
+        with transaction.atomic():
+            t.save()
+            _validar(pozo, reporte)
+    except (TypeError, ValueError):
+        return _error('Datos inválidos en el movimiento.')
+    except _Rechazo as e:
+        return _error(f"No se puede modificar: {e}")
+    return _respuesta(pozo, reporte, f"Movimiento #{secuencia} modificado.")
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_volumetria_transaccion_eliminar(request, pk, reporte_pk, secuencia):
+    """Elimina cualquier movimiento del reporte (no solo el último). Se repite toda la línea de tiempo."""
+    pozo, reporte = _obtener(pk, reporte_pk)
+    try:
+        t = _movimiento_del_reporte(reporte, secuencia)
+        with transaction.atomic():
+            t.delete()
+            _validar(pozo, reporte)
+    except _Rechazo as e:
+        return _error(f"No se puede eliminar: {e}")
+    return _respuesta(pozo, reporte, f"Movimiento #{secuencia} eliminado.")
 
 
 @csrf_exempt
@@ -921,12 +913,7 @@ def api_volumetria_deshacer(request, pk, reporte_pk):
         return _error(f"El último movimiento del pozo (#{ultima.secuencia}) es del reporte del "
                       f"{ultima.reporte.fecha.strftime('%d/%m/%Y')}. Deshazlo desde ese reporte.")
     try:
-        devuelto = {}
-        _sumar(devuelto, [(p.producto_id, -p.stock_aplicado) for p in ultima.productos.all()])
-        if ultima.lodo_producto_id:
-            _sumar(devuelto, [(ultima.lodo_producto_id, -ultima.lodo_stock_aplicado)])
         with transaction.atomic():
-            _mover_stock(devuelto)
             ultima.delete()
             _validar(pozo, reporte)
     except _Rechazo as e:
@@ -1020,7 +1007,7 @@ def resumen_costos(pozo, reporte):
     """
     Costos reales del día y acumulados, en las columnas del reporte de ONE-TRAX:
     Químicos/Personal DF (químicos + ingeniero de fluidos), Ingeniero IFE/Control de sólidos,
-    Total perforación, Equipos/Mallas (pestaña 6) y Otros (DWM/CF, sin módulo todavía).
+    Total perforación, Equipos/Mallas (pestaña 6) y Otros (trailer). Reparto: vol.COLUMNA_RESUMEN.
     """
     from .views_control_solidos import _simular as simular_mallas
     from .control_solidos import ErrorMallas
@@ -1035,15 +1022,14 @@ def resumen_costos(pozo, reporte):
         sim, productos = None, {}
     if sim:
         for cat in vol.CATEGORIAS_COSTO:
-            clave = 'df_chem' if cat in (1, 2) else 'ife_sc'
+            clave = vol.columna_resumen(cat)
             diario[clave] += sim['costo_dia_cat'].get(cat, 0.0)
             acumulado[clave] += sim['costo_acum_cat'].get(cat, 0.0)
         for pid, s in sim['inventario'].items():
             if s['costo_diario']:
                 p = productos.get(pid, {})
-                cat = p.get('categoria', 1)
                 items.append({
-                    'categoria': 'Químicos / Personal DF' if cat in (1, 2) else 'Ingeniero IFE / Control de sólidos',
+                    'categoria': vol.NOMBRE_COLUMNA_RESUMEN[vol.columna_resumen(p.get('categoria', 1))],
                     'descripcion': p.get('descripcion', ''), 'cantidad': round(s['usado_dia'], 3),
                     'unidad': p.get('unidad') or 'servicio',
                     'costo_unitario': round(s['costo_diario'] / s['usado_dia'], 2) if s['usado_dia'] else 0.0,

@@ -551,11 +551,7 @@ def api_reporte_diario_crear(request, pk):
 def api_reporte_diario_eliminar(request, pk, reporte_pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
-    # Inventario unificado: lo que el reporte consumió vuelve al inventario general.
-    from .views_inventario import devolver_stock_reporte
-    with transaction.atomic():
-        devolver_stock_reporte(reporte)
-        reporte.delete()
+    reporte.delete()
     return JsonResponse({'ok': True})
 
 
@@ -807,42 +803,13 @@ def api_well_survey_guardar(request, pk):
 # API: Cost Overview (Pantalla Detallada de Costos)
 # =====================================================================
 
-def cobro_dos_monedas(pozo, total_dia, total_acumulado):
-    """
-    Reparto del cobro cuando el pozo tiene una segunda moneda (ej. parte en USD y parte en Bs).
-    Devuelve None si no hay segunda moneda configurada.
-    """
-    if not pozo.moneda_secundaria or not pozo.tasa_cambio_secundaria:
-        return None
-    tasa = float(pozo.tasa_cambio_secundaria)
-    pct = float(pozo.porcentaje_cobro_secundaria or 0) / 100.0
-
-    def repartir(total):
-        parte_secundaria = total * pct
-        return {
-            'principal': round(total - parte_secundaria, 2),
-            'secundaria_equivalente': round(parte_secundaria, 2),
-            'secundaria': round(parte_secundaria * tasa, 2),
-            'total_en_secundaria': round(total * tasa, 2),
-        }
-
-    return {
-        'moneda_principal': pozo.moneda_simbolo or 'USD',
-        'moneda_secundaria': pozo.moneda_secundaria,
-        'tasa': tasa,
-        'porcentaje_secundaria': round(pct * 100, 2),
-        'dia': repartir(total_dia),
-        'acumulado': repartir(total_acumulado),
-    }
-
-
 @require_http_methods(["GET"])
 def api_cost_overview_detail(request, pk, reporte_pk):
     """Devuelve el balance detallado de costos para el modal de Cost Overview."""
     pozo = get_object_or_404(Pozo, pk=pk)
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
 
-    moneda = pozo.moneda_simbolo or "USD"
+    moneda = pozo.moneda_cobro
 
     # Costos reales: químicos y personal (pestaña 8), equipos y mallas (pestaña 6).
     from .views_inventario import resumen_costos
@@ -857,7 +824,6 @@ def api_cost_overview_detail(request, pk, reporte_pk):
         'daily': daily_data,
         'cumulative': cumulative_data,
         'items': desglose_items,
-        'cobro': cobro_dos_monedas(pozo, daily_data['total'], cumulative_data['total']),
     })
 
 

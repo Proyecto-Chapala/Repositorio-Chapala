@@ -2,6 +2,8 @@ from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 
+from . import volumetria
+
 
 class Producto(models.Model):
     CATEGORIA_CHOICES = [
@@ -256,18 +258,14 @@ class Pozo(models.Model):
         max_digits=5, decimal_places=2, default=0,
         verbose_name="Tasa de Impuesto (%)"
     )
-    # Segunda moneda de cobro (contratos que se pagan parte en una moneda y parte en otra).
+    # Segunda moneda (oct-2026): el contrato fija una tarifa en cada moneda para cada producto,
+    # equipo y malla; el pozo elige en cuál cobra. No hay tasa de cambio ni reparto.
     moneda_secundaria = models.CharField(
-        max_length=6, blank=True, default='', verbose_name="Segunda Moneda de Cobro"
+        max_length=6, blank=True, default='', verbose_name="Segunda Moneda"
     )
-    tasa_cambio_secundaria = models.DecimalField(
-        max_digits=18, decimal_places=4, null=True, blank=True,
-        verbose_name="Tasa de Cambio",
-        help_text="Cuántas unidades de la segunda moneda equivalen a 1 de la moneda del pozo."
-    )
-    porcentaje_cobro_secundaria = models.DecimalField(
-        max_digits=5, decimal_places=2, default=0,
-        verbose_name="% Cobrado en la Segunda Moneda"
+    cobrar_en_secundaria = models.BooleanField(
+        default=False, verbose_name="Cobrar en la Segunda Moneda",
+        help_text="Si está marcado, los costos usan las tarifas en la segunda moneda.",
     )
     ecuacion_solidos_base_agua = models.CharField(
         max_length=5, choices=ECUACION_SOLIDOS_CHOICES, default='API',
@@ -336,6 +334,19 @@ class Pozo(models.Model):
     def __str__(self):
         return self.nombre
 
+    @property
+    def moneda_cobro(self):
+        """Moneda en la que se calculan y muestran los costos del pozo."""
+        if self.cobrar_en_secundaria and self.moneda_secundaria:
+            return self.moneda_secundaria
+        return self.moneda_simbolo or 'USD'
+
+    def tarifa(self, en_moneda_principal, en_moneda_secundaria):
+        """La tarifa de un producto, equipo o malla en la moneda de cobro del pozo."""
+        if self.cobrar_en_secundaria and self.moneda_secundaria:
+            return en_moneda_secundaria
+        return en_moneda_principal
+
     def clonar_configuracion_desde_plantilla(self):
         """
         Copia campos de configuración (NO datos operativos) desde
@@ -349,6 +360,8 @@ class Pozo(models.Model):
         # Las unidades personalizadas (relación inversa) se copian en
         # clonar_unidades_personalizadas(); asignarlas aquí lanzaba TypeError.
         self.moneda_simbolo = origen.moneda_simbolo
+        self.moneda_secundaria = origen.moneda_secundaria
+        self.cobrar_en_secundaria = origen.cobrar_en_secundaria
         self.moneda_decimales = origen.moneda_decimales
         self.tasa_impuesto = origen.tasa_impuesto
         self.ecuacion_solidos_base_agua = origen.ecuacion_solidos_base_agua
@@ -412,7 +425,7 @@ class Pozo(models.Model):
         origen = self.pozo_plantilla
         campos_producto = [
             'producto_id', 'abreviatura', 'unit_size', 'unidad', 'empaque', 'precio',
-            'gravedad_especifica', 'calcular_concentracion', 'es_producto_mi',
+            'precio_secundaria', 'cobro_por', 'gravedad_especifica', 'calcular_concentracion', 'es_producto_mi',
             'grupo_producto', 'codigo_costo_diario', 'calcular_wmgt_conc',
             'categoria_costo_wmgt', 'categoria_costo_cf',
         ]
@@ -425,12 +438,15 @@ class Pozo(models.Model):
         EquipoActivoPozo.objects.bulk_create([
             EquipoActivoPozo(pozo=self, equipo_id=e.equipo_id, numero_serie=e.numero_serie,
                              descripcion=e.descripcion, precio_renta=e.precio_renta,
-                             precio_standby=e.precio_standby)
+                             precio_standby=e.precio_standby,
+                             precio_renta_secundaria=e.precio_renta_secundaria,
+                             precio_standby_secundaria=e.precio_standby_secundaria)
             for e in origen.equipos_activos.all()
         ])
         self.mallas_activas.all().delete()
         MallaActivaPozo.objects.bulk_create([
             MallaActivaPozo(pozo=self, malla_id=m.malla_id, precio=m.precio,
+                            precio_secundaria=m.precio_secundaria,
                             descuento_porcentaje=m.descuento_porcentaje)
             for m in origen.mallas_activas.all()
         ])
@@ -1095,7 +1111,18 @@ class ProductoActivoPozo(models.Model):
     unit_size = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name="Tamaño de Unidad")
     unidad = models.CharField(max_length=30, blank=True, verbose_name="Unidad")
     empaque = models.CharField(max_length=30, blank=True, verbose_name="Empaque")
+    COBRO_UNIDAD = 'UNIDAD'
+    COBRO_BARRIL = volumetria.COBRO_BARRIL
+    COBRO_CHOICES = [(COBRO_UNIDAD, 'Por unidad'), (COBRO_BARRIL, 'Por barril')]
+
     precio = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True, verbose_name="Precio")
+    precio_secundaria = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True, verbose_name="Precio en la Segunda Moneda"
+    )
+    cobro_por = models.CharField(
+        max_length=6, choices=COBRO_CHOICES, default=COBRO_UNIDAD, verbose_name="Cobrar por",
+        help_text="Por unidad (lb, saco, tambor...) o por barril de volumen que aporta el producto.",
+    )
     gravedad_especifica = models.DecimalField(max_digits=8, decimal_places=4, null=True, blank=True, verbose_name="Gravedad Específica")
     calcular_concentracion = models.BooleanField(default=True, verbose_name="¿Calcular Concentración?")
     es_producto_mi = models.BooleanField(default=True, verbose_name="¿Producto propio?")
@@ -1124,6 +1151,8 @@ class ProductoActivoPozo(models.Model):
             "unidad": self.unidad,
             "empaque": self.empaque,
             "precio": float(self.precio) if self.precio is not None else None,
+            "precio_secundaria": float(self.precio_secundaria) if self.precio_secundaria is not None else None,
+            "cobro_por": self.cobro_por,
             "gravedad_especifica": float(self.gravedad_especifica) if self.gravedad_especifica is not None else None,
             "calcular_concentracion": self.calcular_concentracion,
             "es_producto_mi": self.es_producto_mi,
@@ -1150,6 +1179,10 @@ class EquipoActivoPozo(models.Model):
     )
     precio_renta = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Precio de Renta")
     precio_standby = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Precio Stand-By")
+    precio_renta_secundaria = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0, verbose_name="Precio de Renta en la Segunda Moneda")
+    precio_standby_secundaria = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0, verbose_name="Precio Stand-By en la Segunda Moneda")
 
     class Meta:
         verbose_name = "Equipo Activo del Pozo"
@@ -1170,6 +1203,8 @@ class EquipoActivoPozo(models.Model):
             "descripcion": self.descripcion,
             "precio_renta": float(self.precio_renta),
             "precio_standby": float(self.precio_standby),
+            "precio_renta_secundaria": float(self.precio_renta_secundaria),
+            "precio_standby_secundaria": float(self.precio_standby_secundaria),
         }
 
 
@@ -1182,6 +1217,8 @@ class MallaActivaPozo(models.Model):
         verbose_name="Malla (Catálogo Maestro)"
     )
     precio = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Precio")
+    precio_secundaria = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0, verbose_name="Precio en la Segunda Moneda")
     descuento_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name="Descuento (%)")
 
     class Meta:
@@ -1201,6 +1238,7 @@ class MallaActivaPozo(models.Model):
             "malla_descripcion": self.malla.descripcion,
             "mesh_size": self.malla.mesh_size,
             "precio": float(self.precio),
+            "precio_secundaria": float(self.precio_secundaria),
             "descuento_porcentaje": float(self.descuento_porcentaje),
         }
 

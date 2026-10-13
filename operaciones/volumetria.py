@@ -43,12 +43,30 @@ FACTOR_MASA = {'LB': 1.0, 'LBS': 1.0, 'KG': 2.20462, 'TN': 2000.0, 'TON': 2000.0
 FACTOR_VOLUMEN_BBL = {'BL': 1.0, 'BBL': 1.0, 'GA': 1 / 42.0, 'GAL': 1 / 42.0,
                       'LT': 1 / 158.987, 'L': 1 / 158.987}
 
+COBRO_BARRIL = 'BARRIL'   # ProductoActivoPozo.cobro_por: el precio es por barril de volumen
+
 CATEGORIAS_COSTO = {
     1: 'Químicos',
     2: 'Ingeniero de fluidos',
     3: 'Ingeniero de control de sólidos',
     4: 'Ingeniero IFE',
+    5: 'Trailer',
 }
+
+# Columna del resumen de costos (pestaña 1, Excel, recap) en la que suma cada categoría.
+QUIMICOS_PERSONAL_DF = 'df_chem'
+INGENIERIA_IFE_SOLIDOS = 'ife_sc'
+OTROS_COSTOS = 'other_cost'
+COLUMNA_RESUMEN = {1: QUIMICOS_PERSONAL_DF, 2: QUIMICOS_PERSONAL_DF,
+                   3: INGENIERIA_IFE_SOLIDOS, 4: INGENIERIA_IFE_SOLIDOS, 5: OTROS_COSTOS}
+NOMBRE_COLUMNA_RESUMEN = {QUIMICOS_PERSONAL_DF: 'Químicos / Personal DF',
+                          INGENIERIA_IFE_SOLIDOS: 'Ingeniero IFE / Control de sólidos',
+                          OTROS_COSTOS: 'Otros costos'}
+
+
+def columna_resumen(categoria):
+    """Columna del resumen de costos de una categoría (las desconocidas van a químicos)."""
+    return COLUMNA_RESUMEN.get(categoria, QUIMICOS_PERSONAL_DF)
 
 
 class ErrorVolumetria(Exception):
@@ -65,11 +83,16 @@ def _unidad(texto):
     return (texto or '').strip().upper().rstrip('.')
 
 
+def se_mide_en_peso(unidad):
+    """True si la unidad es de peso (lb, kg, t): esos productos aportan volumen con su gravedad específica."""
+    return _unidad(unidad) in FACTOR_MASA
+
+
 def masa_lb(cantidad, unidad, tamano):
     """Peso en lb de una cantidad de producto, o None si el producto no se mide en peso."""
-    f = FACTOR_MASA.get(_unidad(unidad))
-    if f is None:
+    if not se_mide_en_peso(unidad):
         return None
+    f = FACTOR_MASA[_unidad(unidad)]
     return float(cantidad or 0) * float(tamano or 0) * f
 
 
@@ -79,6 +102,34 @@ def volumen_quimico_bbl(cantidad, unidad, tamano, gravedad):
     if m is None or g <= 0:
         return 0.0
     return m / (g * LB_POR_BBL_AGUA)
+
+
+def barriles_por_unidad(unidad, tamano, gravedad):
+    """
+    Barriles que ocupa una unidad del producto: en peso, por su gravedad específica; en volumen,
+    por conversión directa. None si no se puede saber (unidad desconocida o faltan datos).
+    """
+    clave = _unidad(unidad)
+    t = float(tamano or 0)
+    if t <= 0:
+        return None
+    if clave in FACTOR_VOLUMEN_BBL:
+        return t * FACTOR_VOLUMEN_BBL[clave]
+    if se_mide_en_peso(unidad) and float(gravedad or 0) > 0:
+        return volumen_quimico_bbl(1, unidad, tamano, gravedad)
+    return None
+
+
+def precio_por_unidad(precio, cobro_por, unidad, tamano, gravedad):
+    """
+    Precio de UNA unidad del producto, que es lo que usan los costos del motor.
+    Si se cobra por barril: precio por barril × barriles que ocupa la unidad.
+    """
+    p = float(precio or 0)
+    if cobro_por != COBRO_BARRIL:
+        return p
+    bbl = barriles_por_unidad(unidad, tamano, gravedad)
+    return p * bbl if bbl else 0.0
 
 
 def consumo_lodo_entero(volumen_bbl, unidad, tamano):
@@ -94,8 +145,7 @@ def _flujos():
     return {g: defaultdict(float) for g in GRUPOS}
 
 
-def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, servicios=None,
-            validar_stock=True):
+def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, servicios=None):
     """
     dias: lista ordenada por fecha de dicts
       {
@@ -113,9 +163,7 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
       }
     servicios: ids de productos que son servicios (unidad vacía, como los días de ingeniero):
     solo generan costo, no llevan existencias.
-    validar_stock: si es False no se rechaza un inventario negativo del pozo. Con el inventario
-    unificado la existencia real es Producto.cantidad y se valida al descontarla
-    (views_inventario._mover_stock); aquí solo se calculan usos, costos y concentraciones.
+    Lanza ErrorVolumetria si el inventario de un producto del pozo queda negativo.
     Devuelve el estado del día objetivo (ver final de la función).
     """
     servicios = set(servicios or ())
@@ -331,7 +379,7 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 fin = ini
             else:
                 fin = ini + recibido[p] - devuelto[p] - usado_fluido[p] - otro + ajuste
-            if validar_stock and fin < -EPS:
+            if fin < -EPS:
                 raise ErrorVolumetria(
                     f"El {fecha}: el inventario de {np(p)} queda en {fin:g}. "
                     f"Hay {ini + recibido[p]:g} disponibles y se usan o devuelven "

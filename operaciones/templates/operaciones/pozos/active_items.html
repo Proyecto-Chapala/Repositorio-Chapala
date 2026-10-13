@@ -57,7 +57,9 @@
               <th style="width:90px;">Tam. Unidad</th>
               <th style="width:90px;">Unidad</th>
               <th style="width:90px;">Empaque</th>
-              <th style="width:90px;">Precio</th>
+              <th style="width:90px;">Precio ({{ pozo.moneda_simbolo }})</th>
+              {% if pozo.moneda_secundaria %}<th style="width:90px;">Precio ({{ pozo.moneda_secundaria }})</th>{% endif %}
+              <th style="width:110px;" title="Por barril: el costo se calcula con los barriles que aporta el producto (gravedad específica o unidad de volumen)">Cobrar por</th>
               <th style="width:80px;">S.G.</th>
               <th style="width:60px;">¿Conc?</th>
               <th style="width:60px;">¿Propio?</th>
@@ -102,8 +104,12 @@
               <th>Código</th>
               <th style="width:110px;">N° de Serie</th>
               <th>Descripción</th>
-              <th style="width:100px;">Precio Renta</th>
-              <th style="width:100px;">Precio Stand-By</th>
+              <th style="width:100px;">Precio Renta ({{ pozo.moneda_simbolo }})</th>
+              <th style="width:100px;">Precio Stand-By ({{ pozo.moneda_simbolo }})</th>
+              {% if pozo.moneda_secundaria %}
+              <th style="width:100px;">Precio Renta ({{ pozo.moneda_secundaria }})</th>
+              <th style="width:100px;">Precio Stand-By ({{ pozo.moneda_secundaria }})</th>
+              {% endif %}
               <th style="width:40px;"></th>
             </tr>
           </thead>
@@ -140,7 +146,8 @@
               <th>Código</th>
               <th>Descripción</th>
               <th style="width:70px;">Mesh</th>
-              <th style="width:100px;">Precio</th>
+              <th style="width:100px;">Precio ({{ pozo.moneda_simbolo }})</th>
+              {% if pozo.moneda_secundaria %}<th style="width:100px;">Precio ({{ pozo.moneda_secundaria }})</th>{% endif %}
               <th style="width:100px;">Descuento (%)</th>
               <th style="width:40px;"></th>
             </tr>
@@ -160,6 +167,7 @@
 {% block extra_js %}
 <script>
   window.POZO_ID = {{ pozo.id }};
+  window.HAY_MONEDA_SECUNDARIA = {{ pozo.moneda_secundaria|yesno:"true,false" }};
 </script>
 <script src="{% static 'operaciones/js/active_items.js' %}"></script>
 {% endblock %}

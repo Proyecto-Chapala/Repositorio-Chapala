@@ -124,7 +124,7 @@ Descargar el Excel del reporte: `GET /pozos/3/daily-report/41/excel/`
 |---|---|---|---|
 | GET (página HTML) | `/pozos/<int:pk>/general-setup/` | `views.general_setup_view` |  |
 | GET | `/api/pozos/<int:pk>/general-setup/` | `views.api_general_setup_detail` |  |
-| POST ⚠CSRF-exento | `/api/pozos/<int:pk>/general-setup/guardar/` | `views.api_general_setup_guardar` | (02-oct) Acepta además `moneda_simbolo`, `moneda_secundaria`, `tasa_cambio_secundaria`, `porcentaje_cobro_secundaria`. El GET devuelve `monedas` |
+| POST ⚠CSRF-exento | `/api/pozos/<int:pk>/general-setup/guardar/` | `views.api_general_setup_guardar` | Acepta además `moneda_simbolo`, `moneda_secundaria` y `cobrar_en_secundaria` (0031). El GET devuelve `monedas` y `moneda_cobro_bloqueada` |
 | GET | `/api/pozos/<int:pk>/almacenes/` | `views.api_almacenes_list` |  |
 | POST ⚠CSRF-exento | `/api/pozos/<int:pk>/almacenes/guardar/` | `views.api_almacenes_guardar` | Reemplaza el listado completo de códigos de almacén del pozo. |
 | GET | `/api/pozos/<int:pk>/tipos-distribucion/` | `views.api_tipos_distribucion_list` |  |
@@ -267,6 +267,8 @@ Descargar el Excel del reporte: `GET /pozos/3/daily-report/41/excel/`
 | POST ⚠CSRF-exento | `/api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/guardar/` | `views_inventario.api_volumetria_guardar` | Guarda lo que se mide o se escribe a mano: tipo y volumen real de fosas, hoyo e inventario. |
 | POST ⚠CSRF-exento | `/api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/` | `views_inventario.api_volumetria_transaccion` | Registra un movimiento: químicos, lodo entero, transferencia, devolución o pérdida. |
 | POST ⚠CSRF-exento | `/api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/deshacer/` | `views_inventario.api_volumetria_deshacer` |  |
+| POST ⚠CSRF-exento | `/api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/<int:secuencia>/editar/` | `views_inventario.api_volumetria_transaccion_editar` | (oct-2026) Solo transferencia, devolución y pérdida del reporte. Body: `fosa`, `volumen` y `destino`, `destino_texto` o `perdida_codigo` |
+| POST ⚠CSRF-exento | `/api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/transaccion/<int:secuencia>/eliminar/` | `views_inventario.api_volumetria_transaccion_eliminar` | (oct-2026) Cualquier movimiento del reporte |
 | POST ⚠CSRF-exento | `/api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/ticket/guardar/` | `views_inventario.api_ticket_producto_guardar` |  |
 | POST ⚠CSRF-exento | `/api/pozos/<int:pk>/daily-report/<int:reporte_pk>/volumetria/ticket/<int:ticket_pk>/eliminar/` | `views_inventario.api_ticket_producto_eliminar` |  |
 
@@ -292,5 +294,5 @@ Descargar el Excel del reporte: `GET /pozos/3/daily-report/41/excel/`
 ## Cambios del 02-oct-2026
 
 - `api_intervalo_crear` responde **400** si hay un intervalo abierto: *"El intervalo N sigue abierto. Ciérralo (cuando se baje el revestidor) antes de crear el siguiente."*
-- `api_cost_overview_detail` devuelve además `cobro` (o `null`): `{moneda_principal, moneda_secundaria, tasa, porcentaje_secundaria, dia: {...}, acumulado: {...}}`, con `principal`, `secundaria`, `secundaria_equivalente` y `total_en_secundaria` (función `cobro_dos_monedas` en `views_daily_reports.py`).
+- `api_cost_overview_detail` devuelve `moneda` = moneda de cobro del pozo (`Pozo.moneda_cobro`). El campo `cobro` (reparto por % y tasa) se eliminó en la 0031.
 - La API para borrar un reporte diario sigue existiendo, pero el hub ya no la usa (página bloqueada).

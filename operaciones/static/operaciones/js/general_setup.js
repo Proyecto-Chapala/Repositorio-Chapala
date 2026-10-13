@@ -61,9 +61,8 @@
     selSegunda.innerHTML = opcionesSegunda.map(([codigo, nombre]) =>
       `<option value="${codigo}" ${codigo === (s.moneda_secundaria || '') ? 'selected' : ''}>${codigo ? codigo + ' — ' + nombre : nombre}</option>`
     ).join('');
-    document.getElementById('inputTasaCambio').value = s.tasa_cambio_secundaria ?? '';
-    document.getElementById('inputPorcentajeSecundaria').value = s.porcentaje_cobro_secundaria ?? 0;
-    actualizarSegundaMoneda();
+    monedaCobroBloqueada = s.moneda_cobro_bloqueada;
+    actualizarSegundaMoneda(s.cobrar_en_secundaria);
     document.getElementById('chipMonedaDecimales').textContent = s.moneda_decimales;
     document.getElementById('inputTasaImpuesto').value = s.tasa_impuesto;
     document.getElementById('inputConTratamiento').checked = s.con_tratamiento_disposicion;
@@ -79,13 +78,17 @@
     });
   }
 
-  function actualizarSegundaMoneda() {
+  let monedaCobroBloqueada = false;
+
+  function actualizarSegundaMoneda(cobrarEnSecundaria) {
     const segunda = document.getElementById('selectMonedaSecundaria').value;
     const principal = document.getElementById('selectMoneda').value;
-    document.getElementById('inputTasaCambio').disabled = !segunda;
-    document.getElementById('inputPorcentajeSecundaria').disabled = !segunda;
-    document.getElementById('labelTasaCambio').textContent = segunda
-      ? `Tasa de cambio (${segunda} por 1 ${principal})` : 'Tasa de cambio';
+    const selCobro = document.getElementById('selectMonedaCobro');
+    const enSegunda = typeof cobrarEnSecundaria === 'boolean' ? cobrarEnSecundaria : selCobro.value === 'SECUNDARIA';
+    selCobro.innerHTML = `<option value="PRINCIPAL">${principal}</option>`
+      + (segunda ? `<option value="SECUNDARIA" ${enSegunda ? 'selected' : ''}>${segunda}</option>` : '');
+    selCobro.disabled = !segunda || monedaCobroBloqueada;
+    selCobro.title = monedaCobroBloqueada ? 'El pozo ya tiene reportes: la moneda de cobro no se puede cambiar.' : '';
   }
 
   async function guardarGeneralSetup() {
@@ -93,8 +96,7 @@
     const payload = {
       moneda_simbolo: document.getElementById('selectMoneda').value,
       moneda_secundaria: document.getElementById('selectMonedaSecundaria').value,
-      tasa_cambio_secundaria: document.getElementById('inputTasaCambio').value || null,
-      porcentaje_cobro_secundaria: document.getElementById('inputPorcentajeSecundaria').value || 0,
+      cobrar_en_secundaria: document.getElementById('selectMonedaCobro').value === 'SECUNDARIA',
       tasa_impuesto: parseFloat(document.getElementById('inputTasaImpuesto').value || '0'),
       con_tratamiento_disposicion: document.getElementById('inputConTratamiento').checked,
       usar_api_5ta_edicion_hidraulica: document.getElementById('inputUsarApi5ta').checked,

@@ -11,11 +11,10 @@ foránea a las listas del pozo: esas listas se guardan borrando y recreando sus 
 Los volúmenes calculados, el balance, el inventario y las concentraciones NO se guardan:
 se derivan repitiendo los movimientos del pozo (volumetria.py).
 
-Inventario UNIFICADO (25/09/2026): la existencia de cada producto es una sola,
-Producto.cantidad (pantalla Inventario). Cada consumo del reporte diario (químicos, lodo
-entero, usado en otro módulo, ajuste) la descuenta al guardarse y la devuelve al deshacerse o
-al borrar el reporte. Los campos `stock_aplicado` guardan exactamente cuánto se descontó, para
-poder devolverlo. Los tickets de productos son solo registro: no mueven la existencia.
+Inventario POR POZO (revisión de octubre 2026, revierte el inventario unificado del 25-sep):
+la matriz (Producto) es solo catálogo y no aporta cantidades ni precios al pozo. La existencia
+del pozo sale de los tickets de recepción: inicial = final del día anterior; final = inicial +
+recibido − devuelto − usado en fluidos − usado en otro módulo ± ajuste.
 """
 
 from django.db import models
@@ -133,11 +132,6 @@ class TransaccionVolumen(models.Model):
     lodo_cantidad = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Cantidad consumida")
     lodo_precio = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     lodo_categoria = models.PositiveSmallIntegerField(default=1)
-    lodo_stock_aplicado = models.DecimalField(
-        max_digits=12, decimal_places=3, default=0,
-        verbose_name="Descontado del inventario general",
-        help_text="Unidades del producto de lodo reciclado que este movimiento restó de Producto.cantidad.",
-    )
 
     origen_destino = models.CharField(max_length=120, blank=True, verbose_name="Recibido de / Devuelto a")
     perdida_codigo = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Tipo de pérdida (código)")
@@ -169,11 +163,6 @@ class TransaccionVolumenProducto(models.Model):
     precio = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     categoria_costo = models.PositiveSmallIntegerField(default=1)
     calcula_concentracion = models.BooleanField(default=True)
-    stock_aplicado = models.DecimalField(
-        max_digits=12, decimal_places=3, default=0,
-        verbose_name="Descontado del inventario general",
-        help_text="Cantidad que este movimiento restó de Producto.cantidad (0 en concentraciones y servicios).",
-    )
 
     class Meta:
         verbose_name = "Producto de Movimiento de Volumetría"
@@ -195,11 +184,6 @@ class InventarioProductoDia(models.Model):
     no_imprimir = models.BooleanField(default=False, verbose_name="No imprimir")
     precio = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Precio aplicado")
     categoria_costo = models.PositiveSmallIntegerField(default=1)
-    stock_aplicado = models.DecimalField(
-        max_digits=12, decimal_places=3, default=0,
-        verbose_name="Descontado del inventario general",
-        help_text="Neto (usado en otro módulo − ajuste) ya aplicado a Producto.cantidad.",
-    )
 
     class Meta:
         verbose_name = "Inventario Diario de Producto"

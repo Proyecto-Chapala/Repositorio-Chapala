@@ -11,6 +11,17 @@
     mallasActivas: [],
   };
 
+  /* Tarifas en la segunda moneda: la columna solo existe si el pozo tiene segunda moneda. */
+  function celdaTarifaSecundaria(clase, valor) {
+    if (!window.HAY_MONEDA_SECUNDARIA) return '';
+    return `<td><input type="number" step="0.01" class="${clase}" value="${valor ?? ''}"></td>`;
+  }
+
+  function leerTarifaSecundaria(tr, clase) {
+    const input = tr.querySelector(`.${clase}`);
+    return input && input.value !== '' ? input.value : null;
+  }
+
   function getCookie(name) {
     const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
     return match ? match.pop() : '';
@@ -87,7 +98,7 @@
     state.productosActivos.push({
       producto_id: p.id, producto_codigo: p.codigo, producto_nombre: p.descripcion,
       abreviatura: '', unit_size: p.libraje, unidad: p.unidad, empaque: p.empaque || '',
-      precio: p.costo, gravedad_especifica: p.gravedad,
+      precio: 0, cobro_por: 'UNIDAD', gravedad_especifica: p.gravedad,
       calcular_concentracion: true, es_producto_mi: true, grupo_producto: 1,
       codigo_costo_diario: 1, calcular_wmgt_conc: true,
       categoria_costo_wmgt: 1, categoria_costo_cf: 1,
@@ -108,6 +119,11 @@
         <td><input type="text" class="p-unidad" value="${item.unidad || ''}"></td>
         <td><input type="text" class="p-empaque" value="${item.empaque || ''}"></td>
         <td><input type="number" step="0.01" class="p-precio" value="${item.precio ?? ''}"></td>
+        ${celdaTarifaSecundaria('p-precio2', item.precio_secundaria)}
+        <td><select class="p-cobro">
+          <option value="UNIDAD" ${item.cobro_por !== 'BARRIL' ? 'selected' : ''}>Por unidad</option>
+          <option value="BARRIL" ${item.cobro_por === 'BARRIL' ? 'selected' : ''}>Por barril</option>
+        </select></td>
         <td><input type="number" step="0.0001" class="p-sg" value="${item.gravedad_especifica ?? ''}"></td>
         <td style="text-align:center;"><input type="checkbox" class="p-conc" ${item.calcular_concentracion ? 'checked' : ''}></td>
         <td style="text-align:center;"><input type="checkbox" class="p-mi" ${item.es_producto_mi ? 'checked' : ''}></td>
@@ -132,11 +148,14 @@
       const original = state.productosActivos[idx];
       filas.push({
         producto_id: original.producto_id,
+        producto_codigo: original.producto_codigo,
         abreviatura: tr.querySelector('.p-abrev').value,
         unit_size: tr.querySelector('.p-unitsize').value || null,
         unidad: tr.querySelector('.p-unidad').value,
         empaque: tr.querySelector('.p-empaque').value,
         precio: tr.querySelector('.p-precio').value || null,
+        precio_secundaria: leerTarifaSecundaria(tr, 'p-precio2'),
+        cobro_por: tr.querySelector('.p-cobro').value,
         gravedad_especifica: tr.querySelector('.p-sg').value || null,
         calcular_concentracion: tr.querySelector('.p-conc').checked,
         es_producto_mi: tr.querySelector('.p-mi').checked,
@@ -207,6 +226,8 @@
         <td><input type="text" class="e-desc" value="${item.descripcion || ''}"></td>
         <td><input type="number" step="0.01" class="e-renta" value="${item.precio_renta}"></td>
         <td><input type="number" step="0.01" class="e-standby" value="${item.precio_standby}"></td>
+        ${celdaTarifaSecundaria('e-renta2', item.precio_renta_secundaria)}
+        ${celdaTarifaSecundaria('e-standby2', item.precio_standby_secundaria)}
         <td><button type="button" class="btn-remove-row" data-idx="${idx}" title="Eliminar">&times;</button></td>
       `;
       tr.querySelector('.btn-remove-row').addEventListener('click', () => {
@@ -227,6 +248,8 @@
         descripcion: tr.querySelector('.e-desc').value,
         precio_renta: tr.querySelector('.e-renta').value || 0,
         precio_standby: tr.querySelector('.e-standby').value || 0,
+        precio_renta_secundaria: leerTarifaSecundaria(tr, 'e-renta2'),
+        precio_standby_secundaria: leerTarifaSecundaria(tr, 'e-standby2'),
       });
     });
     return filas;
@@ -292,6 +315,7 @@
         <td>${item.malla_descripcion}</td>
         <td>${item.mesh_size}</td>
         <td><input type="number" step="0.01" class="m-precio" value="${item.precio}"></td>
+        ${celdaTarifaSecundaria('m-precio2', item.precio_secundaria)}
         <td><input type="number" step="0.01" class="m-descuento" value="${item.descuento_porcentaje}"></td>
         <td><button type="button" class="btn-remove-row" data-idx="${idx}" title="Eliminar">&times;</button></td>
       `;
@@ -310,6 +334,7 @@
       filas.push({
         malla_id: original.malla_id,
         precio: tr.querySelector('.m-precio').value || 0,
+        precio_secundaria: leerTarifaSecundaria(tr, 'm-precio2'),
         descuento_porcentaje: tr.querySelector('.m-descuento').value || 0,
       });
     });

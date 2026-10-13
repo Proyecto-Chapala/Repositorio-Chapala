@@ -2,7 +2,7 @@
 
 Si eres un asistente o un desarrollador que empieza a trabajar en este proyecto (sistema Django de fluidos de perforación para **All Oil Services, C.A.**), **antes de responder o tocar código lee en este orden**:
 
-1. **`docs/00_TRASPASO.md`** — estado actual, reglas de trabajo, cadena de migraciones (la próxima depende de **`0027_intervalo_cerrado_moneda_secundaria`**) y prioridades.
+1. **`docs/00_TRASPASO.md`** — estado actual, reglas de trabajo, cadena de migraciones (la próxima depende de **`0031_tarifas_dos_monedas`**) y prioridades.
 2. **`docs/16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md`** — qué falta probar, decisiones abiertas, errores conocidos y lo ya resuelto.
 3. **El documento del tema** (índice completo en `docs/README.md`):
 
@@ -31,7 +31,7 @@ Si eres un asistente o un desarrollador que empieza a trabajar en este proyecto 
 - Ir por partes; ante la duda, revisar el manual ONE-TRAX (`documentation/`) o preguntar antes de inventar.
 - Imágenes, audios o notas del cliente: guardar el original en `docs/fuentes/` y **dejar el análisis documentado** en `docs/`.
 - **Toda la documentación vive en `docs/`.** No crear otras carpetas de documentación. Lo que queda viejo va a `docs/_archivo/`.
-- Al terminar un cambio: actualizar `docs/00_TRASPASO.md`, `docs/16_…` y el documento del tema.
+- Al terminar un cambio: actualizar `docs/00_TRASPASO.md`, `docs/16_…` y el documento del tema, y crear su archivo en **`docs/pruebas/`** ("Cómo funciona" + "Pasos para verificar" con casillas) agregándolo al índice `docs/pruebas/README.md`.
 
 ## Reglas esenciales de código (obligatorias)
 

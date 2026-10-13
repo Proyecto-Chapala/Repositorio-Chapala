@@ -1,7 +1,17 @@
 # Correcciones de la revisión con el cliente (octubre 2026)
 
 Fuente: transcripciones en `docs/fuentes/transcripciones_revision_oct/` (`1.txt`, `2.txt`, `3.txt`).
-Estado inicial: todos los puntos están **pendientes**.
+Estado: **hechos** los puntos 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 17 y 18. En el 1, el bloqueo era el rechazo por falta de existencia en la matriz (migración `0028_inventario_por_pozo`), y la parte de pérdidas y transferencias editables se resolvió con el 11. Hay que probarlos en pantalla. El resto sigue **pendiente**.
+
+> **Punto 7, causa encontrada:** la fórmula ya existía en el motor (`volumetria.volumen_quimico_bbl`). El volumen salía en 0 por dos motivos. Primero, el inventario unificado rechazaba el agregado de químicos por falta de existencia en la matriz, así que el movimiento nunca se guardaba. Segundo, un producto en peso se podía guardar sin GE o sin tamaño de unidad, y entonces aportaba 0 sin avisar. Ahora *Productos activos* exige los dos datos a los productos medidos en peso (lb, kg, t), y la pestaña 8 muestra la columna **GE**.
+
+> **Punto 8, decisión del usuario:** cada producto activo tiene un solo precio y un selector **Cobrar por: unidad | barril**. Si es por barril, el sistema calcula los barriles que ocupa cada unidad: con la GE si el producto se mide en peso, o por conversión directa si se mide en volumen. El motor sigue trabajando con precio por unidad (`volumetria.precio_por_unidad`). Para cobrar por barril, la unidad tiene que ser de peso o de volumen. Migración `0029_productoactivopozo_cobro_por`.
+
+> **Punto 11, decisión del usuario:** "modificable" significa **editar los movimientos**. Transferencias, devoluciones y pérdidas se editan (tanque, destino, volumen, tipo) y cualquier movimiento del reporte se puede eliminar, no solo el último. Se mantiene la fórmula: cada cambio repite la línea de tiempo y se rechaza si algo deja de ser posible. No se agregaron ajustes manuales sueltos por celda. Pruebas: [pruebas/08](pruebas/08_EDITAR_MOVIMIENTOS.md).
+
+> **Punto 10, causa encontrada:** el motor no tenía error. Se verificó que cada movimiento aparece en una fila del balance y que las filas suman el calculado (`tests/test_balance_volumetria.py`). La diferencia del cliente era el volumen de químicos en 0 (punto 7). Una diferencia que quede ahora es fluido realmente perdido y se registra como pérdida. Su ajuste manual es el punto 11.
+
+> **Punto 9, decisión del usuario:** las dos tarifas son **alternativas**. Cada producto, equipo y malla tiene su precio en cada moneda (el del contrato, sin tasa de cambio), y el pozo elige en cuál cobra. Reemplaza el reparto por % y tasa del 02-oct. Detalle en [13](13_COSTOS.md). Migración `0031_tarifas_dos_monedas`.
 
 > Prioridad sugerida: empezar por **Inventario (1–8)**, porque bloquea la volumetría.
 

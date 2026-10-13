@@ -17,7 +17,8 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 | Intervalos abierto/cerrado | Pozo → Intervalos | Crear el 1, intentar el 2 (debe impedirlo), cerrar el 1, crear el 2, reabrir el 2 |
 | Segunda moneda | Configuración General → reporte → Pantalla de costos | Elegir VES, tasa y %; revisar el recuadro "Cobro en dos monedas" |
 | Hub bloqueado | Fluidos de Perforación y Equipos | Solo *Nuevo Reporte* y *Abrir*; etiquetas con *Modificar etiquetas* |
-| Eliminar pozo | Pantalla del pozo | Escribir el nombre; revisar que la existencia vuelva al Inventario |
+| Eliminar pozo | Pantalla del pozo | Escribir el nombre; la matriz no debe cambiar |
+| **Correcciones de octubre** | Varias | Pasos detallados por cambio en [`pruebas/`](pruebas/README.md) (inventario por pozo, GE, precio por barril…) |
 | Tanques (antes fosas) | Pestaña 8 y Excel | Textos, mensajes de error y hoja *Contabilidad de Volumen* |
 | Excel diario | Botón Excel | Logo AOS arriba a la izquierda, una sola hoja de inventario, **sin páginas 2 y 3 vacías**, "Fecha Inicial" |
 | PDF | Reporte de propiedades y reporte final | Logo AOS arriba a la izquierda |
@@ -99,5 +100,5 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 - Reporte de **concentraciones** (pantalla y hoja Excel), contabilidad de volumen, **side track** e **hoyo piloto** (0022), **reporte de propiedades**, **reporte final** Excel/PDF (0023), redondeo en pantallas.
 
 ### 25-sep-2026
-- **Inventario unificado** (compañero, `0022_inventario_unificado`): el reporte diario descuenta `Producto.cantidad`; tickets solo registro.
+- **Inventario unificado** (compañero, `0022_inventario_unificado`): el reporte diario descuenta `Producto.cantidad`; tickets solo registro. **Revertido en oct-2026** por `0028_inventario_por_pozo` (ver [23](23_CORRECCIONES_REVISION_OCT.md)).
 - `.bat` con `.venv`; `api_producto_delete` captura `ProtectedError`; `seed_data.py` adaptado; plantilla de pozo copia listas activas; código de equipo de superficie corregido en hidráulica; validación al cambiar la fecha de un reporte; tarjetas del pozo con operador y Spud; hojas vacías del Excel; datalist de bombas; logo del Excel (02-oct); barra lateral sin enlaces muertos; `catalogos_maestros.html` sin `{% now %}`.

@@ -67,7 +67,11 @@ Pozo ─┬─ configuración (1 por pozo): WellHeaderInfo · CentrifugaUnidadCo
 | 0024_merge | Une las dos ramas (0022_inventario_unificado + 0023_recap_pozo) |
 | 0025_add_empaque_to_producto | (compañero) `Producto.empaque` y texto de ayuda de `Producto.unidad` |
 | 0026_textos_smart_mud | Quita "M-I": ecuaciones de sólidos solo `API` (datos viejos pasan a API), etiqueta "Estándar" en categorías de pérdida, "¿Producto propio?" |
-| 0027_intervalo_cerrado_moneda_secundaria | `IntervaloRevestimiento.cerrado`; `Pozo.moneda_secundaria`, `tasa_cambio_secundaria`, `porcentaje_cobro_secundaria`. Cierra los intervalos viejos menos el último de cada pozo. **La próxima migración depende de esta** |
+| 0027_intervalo_cerrado_moneda_secundaria | `IntervaloRevestimiento.cerrado`; `Pozo.moneda_secundaria`, `tasa_cambio_secundaria`, `porcentaje_cobro_secundaria`. Cierra los intervalos viejos menos el último de cada pozo |
+| 0028_inventario_por_pozo | Elimina los campos `stock_aplicado` (revierte el inventario unificado) |
+| 0029_productoactivopozo_cobro_por | `ProductoActivoPozo.cobro_por` (por unidad o por barril) |
+| 0030_alter_reportediario_mi_representante_1_and_more | Pone al día los `verbose_name` atrasados (generada con `makemigrations`) |
+| 0031_tarifas_dos_monedas | `Pozo.cobrar_en_secundaria`; precios `*_secundaria` en productos, equipos y mallas activos; elimina la tasa y el % de la 0027. **La próxima migración depende de esta** |
 
 # Detalle por modelo
 
@@ -106,9 +110,8 @@ Tabla: `operaciones_pozo` · Migración: `0002_pozo_categoriaperdidaitem_propied
 | `sistema_unidades` | CharField(20) | Sistema de Unidades; por defecto `'STANDARD_OILFIELD'`; opciones: `STANDARD_OILFIELD`, `STANDARD_1`, `STANDARD_2`, `STANDARD_3`, `SI_METRIC`, `METRIC_1`, `METRIC_2`, `METRIC_3`, `METRIC_4`, `METRIC_5`, `CUSTOM` |
 | `unidades_bloqueadas` | BooleanField | Unidades Bloqueadas; por defecto `False`; Se activa automáticamente al confirmar el paso 4 del wizard. |
 | `moneda_simbolo` | CharField(6) | Moneda (código: USD, VES, EUR…; lista en `Pozo.MONEDAS_COMUNES`); por defecto `'USD'`; editable en Configuración General |
-| `moneda_secundaria` | CharField(6) | (0027) Segunda moneda de cobro; vacío = no hay |
-| `tasa_cambio_secundaria` | Decimal(18,4) | (0027) Unidades de la segunda moneda por 1 de la del pozo |
-| `porcentaje_cobro_secundaria` | Decimal(5,2) | (0027) % del costo que se cobra en la segunda moneda; por defecto 0 |
+| `moneda_secundaria` | CharField(6) | (0027) Segunda moneda; vacío = no hay |
+| `cobrar_en_secundaria` | Boolean | (0031) Si se cobra con las tarifas de la segunda moneda. Bloqueado cuando el pozo tiene reportes. La 0031 eliminó `tasa_cambio_secundaria` y `porcentaje_cobro_secundaria` |
 | `moneda_decimales` | PositiveSmallIntegerField | Decimales de Moneda; por defecto `2` |
 | `tasa_impuesto` | DecimalField(5,2) | Tasa de Impuesto (%); por defecto `0` |
 | `ecuacion_solidos_base_agua` | CharField(5) | Ecuación de Sólidos — Base Agua; por defecto `'API'`; opciones: `API` (0026; antes `MI`) |

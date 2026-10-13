@@ -912,8 +912,7 @@ def api_intervalo_eliminar(request, pk, intervalo_pk):
 def api_pozo_eliminar(request, pk):
     """
     Elimina un pozo completo. Hay que escribir el nombre exacto del pozo para confirmar.
-    Antes de borrar, cada reporte diario devuelve al inventario general lo que consumió
-    (inventario unificado), igual que al borrar los reportes uno por uno.
+    El inventario del pozo es propio (sale de sus tickets), así que la matriz no se toca.
     """
     pozo = get_object_or_404(Pozo, pk=pk)
     try:
@@ -927,15 +926,9 @@ def api_pozo_eliminar(request, pk):
             "error": "Para eliminar, escribe el nombre del pozo exactamente como aparece.",
         }, status=400)
 
-    from .models_daily_reports import ReporteDiario
-    from .views_inventario import devolver_stock_reporte
     nombre = pozo.nombre
     try:
-        with transaction.atomic():
-            reportes = ReporteDiario.objects.filter(pozo=pozo).order_by('-fecha')
-            for reporte in reportes:
-                devolver_stock_reporte(reporte)
-            pozo.delete()
+        pozo.delete()
     except ProtectedError as exc:
         bloqueos = sorted({str(o._meta.verbose_name) for o in exc.protected_objects})
         return JsonResponse({
@@ -1126,23 +1119,27 @@ def general_setup_view(request, pk):
     return render(request, 'operaciones/pozos/general_setup.html', {'pozo': pozo})
 
 
+def _general_setup_dto(pozo):
+    return {
+        "moneda_simbolo": pozo.moneda_simbolo,
+        "moneda_decimales": pozo.moneda_decimales,
+        "moneda_secundaria": pozo.moneda_secundaria,
+        "cobrar_en_secundaria": pozo.cobrar_en_secundaria,
+        "moneda_cobro_bloqueada": pozo.reportes_diarios.exists(),
+        "tasa_impuesto": float(pozo.tasa_impuesto),
+        "con_tratamiento_disposicion": pozo.con_tratamiento_disposicion,
+        "usar_api_5ta_edicion_hidraulica": pozo.usar_api_5ta_edicion_hidraulica,
+        "ecuacion_solidos_base_agua": pozo.ecuacion_solidos_base_agua,
+        "ecuacion_solidos_base_aceite": pozo.ecuacion_solidos_base_aceite,
+    }
+
+
 @require_http_methods(["GET"])
 def api_general_setup_detail(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     return JsonResponse({
         "success": True,
-        "general_setup": {
-            "moneda_simbolo": pozo.moneda_simbolo,
-            "moneda_decimales": pozo.moneda_decimales,
-            "moneda_secundaria": pozo.moneda_secundaria,
-            "tasa_cambio_secundaria": float(pozo.tasa_cambio_secundaria) if pozo.tasa_cambio_secundaria is not None else None,
-            "porcentaje_cobro_secundaria": float(pozo.porcentaje_cobro_secundaria),
-            "tasa_impuesto": float(pozo.tasa_impuesto),
-            "con_tratamiento_disposicion": pozo.con_tratamiento_disposicion,
-            "usar_api_5ta_edicion_hidraulica": pozo.usar_api_5ta_edicion_hidraulica,
-            "ecuacion_solidos_base_agua": pozo.ecuacion_solidos_base_agua,
-            "ecuacion_solidos_base_aceite": pozo.ecuacion_solidos_base_aceite,
-        },
+        "general_setup": _general_setup_dto(pozo),
         "ecuacion_solidos_choices": Pozo.ECUACION_SOLIDOS_CHOICES,
         "monedas": Pozo.MONEDAS_COMUNES,
     })
@@ -1167,18 +1164,7 @@ def api_general_setup_guardar(request, pk):
     pozo = form.save()
     return JsonResponse({
         "success": True, "mensaje": "Configuración General guardada.",
-        "general_setup": {
-            "moneda_simbolo": pozo.moneda_simbolo,
-            "moneda_decimales": pozo.moneda_decimales,
-            "moneda_secundaria": pozo.moneda_secundaria,
-            "tasa_cambio_secundaria": float(pozo.tasa_cambio_secundaria) if pozo.tasa_cambio_secundaria is not None else None,
-            "porcentaje_cobro_secundaria": float(pozo.porcentaje_cobro_secundaria),
-            "tasa_impuesto": float(pozo.tasa_impuesto),
-            "con_tratamiento_disposicion": pozo.con_tratamiento_disposicion,
-            "usar_api_5ta_edicion_hidraulica": pozo.usar_api_5ta_edicion_hidraulica,
-            "ecuacion_solidos_base_agua": pozo.ecuacion_solidos_base_agua,
-            "ecuacion_solidos_base_aceite": pozo.ecuacion_solidos_base_aceite,
-        }
+        "general_setup": _general_setup_dto(pozo),
     })
 
 
@@ -1348,14 +1334,15 @@ def api_productos_activos_guardar(request, pk):
         fila['producto'] = fila.get('producto_id')
         p_form = ProductoActivoPozoForm(fila)
         if not p_form.is_valid():
-            errores.append({fila.get('producto_id'): p_form.errors})
+            mensajes = [m for lista in p_form.errors.values() for m in lista]
+            errores.append(f"{fila.get('producto_codigo') or fila.get('producto_id')}: {' '.join(mensajes)}")
             continue
         item = p_form.save(commit=False)
         item.pozo = pozo
         nuevas.append(item)
 
     if errores:
-        return JsonResponse({"success": False, "error": "Hay productos activos inválidos.", "errores_filas": errores}, status=400)
+        return JsonResponse({"success": False, "error": " | ".join(errores), "errores_filas": errores}, status=400)
 
     with transaction.atomic():
         pozo.productos_activos.all().delete()

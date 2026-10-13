@@ -52,7 +52,7 @@ real     = lo que el ingeniero MIDE al cierre (se escribe a mano)
 
 ## 2. Movimientos (`TransaccionVolumen`)
 
-Se registran al instante, cada uno con `secuencia` por pozo. **Solo se puede deshacer el último del pozo**, desde su reporte.
+Se registran al instante, cada uno con `secuencia` por pozo. Desde la ventana *Movimientos* del reporte, cualquier movimiento de ese reporte se puede **eliminar**, y las transferencias, devoluciones y pérdidas también se pueden **editar** (tanque, destino, volumen, tipo de pérdida; el tipo de movimiento no cambia). Cada cambio repite la línea de tiempo y se rechaza si algo deja de ser posible (`api_volumetria_transaccion_editar` / `_eliminar`; la lectura de datos es compartida con el registro en `_llenar_movimiento_de_volumen`). "Deshacer último" sigue disponible.
 
 | Tipo | Datos | Efecto |
 |---|---|---|
@@ -71,7 +71,7 @@ Solo los productos medidos en **peso** aportan volumen:
 masa (lb) = cantidad × tamaño de la unidad × factor   (LB=1 · KG=2,20462 · TN/TON/ST=2000 · MT/TM/T=2204,62)
 volumen (bbl) = masa / (gravedad específica × 350)
 ```
-Los productos en volumen (BBL, GAL, L) **no** se suman como volumen químico: su volumen se registra como fluido base/agua o como lodo reciclado. En el reporte de concentraciones este volumen aparece como **"Aumento de volumen por material"** (ONE-TRAX: *Incr Vol – Matl Den*).
+La GE y el tamaño de unidad se cargan en *Productos activos*. Para los productos medidos en peso son **obligatorios**: no se puede guardar sin ellos. La tabla de inventario muestra la columna **GE**. Los productos en volumen (BBL, GAL, L) **no** se suman como volumen químico: su volumen se registra como fluido base/agua o como lodo reciclado. En el reporte de concentraciones este volumen aparece como **"Aumento de volumen por material"** (ONE-TRAX: *Incr Vol – Matl Den*).
 
 ## 3. Inventario de productos del pozo
 
@@ -81,28 +81,27 @@ final = inicial + recibido − devuelto − usado en fluidos − usado en otro m
 
 | Columna | Origen |
 |---|---|
-| Inicial | Existencia del inventario general llevada a la fecha (ver recuadro) |
-| Recibido / devuelto | **Tickets de productos**: solo registro (cantidad *real* y *según ticket* para comparar) |
+| Inicial | Final del día anterior **del pozo** (0 el primer día) |
+| Recibido / devuelto | **Tickets de productos** del día: suma la cantidad *real*; la *según ticket* queda para comparar |
 | Usado en fluidos | Movimientos *Agregar químicos* y *Lodo entero* |
 | Usado en otro módulo | A mano (ej. días de ingeniero, personal de servicio). Genera costo |
 | Ajuste | A mano (+/−) |
 | En pedido · No imprimir | A mano, informativos |
 
-- **Si la existencia no alcanza, se rechaza** el movimiento (ver recuadro). El chequeo se hace contra el inventario general, que comparten todos los pozos.
+- **Si la existencia del pozo no alcanza, se rechaza** el movimiento: *"Registra primero el ticket de recepción."*
+- El **precio** lo carga el usuario en *Productos activos* según el contrato. Arranca en 0 y **nunca** se toma de la matriz.
+- **Cobrar por unidad o por barril** (selector por producto). Si es por barril: `precio por unidad = precio por barril × barriles de una unidad` (peso: `tamaño × factor / (350 × GE)`; volumen: conversión directa). La tabla muestra "X /bbl" y, al pasar el mouse, el equivalente por unidad.
 - **Servicios**: los productos activos con **unidad vacía** son servicios. Solo generan costo y no llevan existencias (inicial y final siempre 0).
 - Los productos usados en el pasado que ya no están activos siguen apareciendo, marcados como inactivos.
 
-> ### Inventario unificado (desde el 25-sep-2026)
-> La existencia de cada producto es **una sola**: `Producto.cantidad`, la de la pantalla *Inventario* (almacén). La pestaña 8 la muestra **llevada a la fecha del reporte**: final del día = existencia actual + lo consumido en días posteriores (en **todos** los pozos); inicial = final + lo consumido ese día.
-> - *Agregar químicos*, *lodo reciclado*, *usado en otro módulo* y *ajuste* **descuentan** la existencia al guardarse; deshacer el movimiento o borrar el reporte la **devuelve** (campos `stock_aplicado`).
-> - Si no alcanza, se rechaza: *"Inventario de BARITA (AOS-1010): hay 12 SACOS 100 LBS y se necesitan 40. Actualiza la existencia en la pantalla Inventario."*
-> - Los **tickets de productos** son **solo registro** (quién pidió, quién recibió, diferencias con el papel); no mueven la existencia.
-> - Las entradas de mercancía se cargan en la pantalla *Inventario*, editando la cantidad del producto.
-> - Código: `views_inventario._mover_stock`, `devolver_stock_reporte`, `_consumo_aplicado_por_fecha`; migración `0022_inventario_unificado` (del compañero *xtal*). Ver [15](15_INVENTARIO_ALMACEN.md).
+> ### Inventario por pozo (desde la revisión de octubre 2026)
+> Revierte el *inventario unificado* del 25-sep (migración `0022`), a pedido del cliente ([23](23_CORRECCIONES_REVISION_OCT.md), puntos 2 y 4). La **matriz** (pantalla *Inventario*, `Producto`) es **solo catálogo**: código, descripción, libraje y gravedad específica. No aporta cantidades ni precios al pozo, y el reporte diario no modifica `Producto.cantidad`.
+> - La existencia del pozo la calcula el motor (`volumetria.simular`) a partir de sus tickets: los de **entrada** suman y los de **salida** restan.
+> - Migración `0028_inventario_por_pozo`: elimina los campos `stock_aplicado`. Pruebas en `operaciones/tests/`.
 
 ### Tickets de productos (`TicketProducto`)
 
-Son **solo registro** (no mueven la existencia). Mismo esquema que los de mallas: tipo (catálogo compartido con mallas: se usa el **sentido** ENTRADA/SALIDA), número, pedido por, recibido por, almacén del pozo y, por producto, cantidad según ticket y cantidad real. La pantalla muestra el último número usado de cada tipo y resalta los tickets con diferencias entre ticket y real.
+Alimentan el inventario del pozo: suma la cantidad **real**. En la tabla de inventario, junto a *Recibido* y *Devuelto*, se muestran los números de los tickets del día (`views_inventario.numeros_ticket_por_producto`). Mismo esquema que los de mallas: tipo (catálogo compartido con mallas: se usa el **sentido** ENTRADA/SALIDA), número, pedido por, recibido por, almacén del pozo y, por producto, cantidad según ticket y cantidad real. La pantalla muestra el último número usado de cada tipo y resalta los tickets con diferencias entre ticket y real.
 
 ## 4. Lo que se guarda a mano (`api_volumetria_guardar`)
 
@@ -142,8 +141,9 @@ Cada producto tiene una **categoría de costo** (código de costo diario del pro
 | 2 | Ingeniero de fluidos | Químicos / Personal DF |
 | 3 | Ingeniero de control de sólidos | Ingeniero IFE / Control de sólidos |
 | 4 | Ingeniero IFE | Ingeniero IFE / Control de sólidos |
+| 5 | Trailer | Otros costos |
 
-*(Pendiente confirmar con AOS los códigos 1-4.)* Resumen completo de costos en [13](13_COSTOS.md).
+El reparto está en un solo lugar: `volumetria.COLUMNA_RESUMEN`. Lo usan el resumen de costos, el recap y el Excel. Los **servicios** (ingeniero, trailer) son productos activos con **unidad vacía**: los días se cargan en *Usado otro módulo* y generan costo sin existencias. Paso a paso: [pruebas/05](pruebas/05_TRAILER.md). *(Pendiente confirmar con AOS los códigos 1-4.)* Resumen completo de costos en [13](13_COSTOS.md).
 
 ## 8. Modelos
 

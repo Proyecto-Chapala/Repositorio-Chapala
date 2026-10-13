@@ -228,24 +228,24 @@
     <!-- Section 3: Resumen de Costos Diarios y Acumulados (ONE-TRAX Tab 1) -->
     <div class="report-section-title">
       <span>&#128176;</span>
-      <span>Resumen de Costos Diarios y Acumulados ({{ pozo.moneda_simbolo|default:"USD" }})</span>
+      <span>Resumen de Costos Diarios y Acumulados ({{ pozo.moneda_cobro }})</span>
     </div>
 
     <div class="cost-card-modern">
       <div class="cost-card-header">
         <h3 class="cost-card-title">&#128202; Balance Económico de Fluidos y Equipos</h3>
-        <span class="report-chip chip-accent">Moneda: {{ pozo.moneda_simbolo|default:"USD" }}</span>
+        <span class="report-chip chip-accent">Moneda: {{ pozo.moneda_cobro }}</span>
       </div>
       <div style="overflow-x:auto;">
         <table class="modern-cost-table">
           <thead>
             <tr>
               <th>Concepto</th>
-              <th>Químicos / Personal DF</th>
-              <th>Ingeniero de Fluidos</th>
+              <th title="Químicos + ingeniero de fluidos (códigos de costo 1 y 2)">Químicos / Personal DF</th>
+              <th title="Códigos de costo 3 y 4">Ingeniero IFE / Control de Sólidos</th>
               <th>Total Perforación</th>
               <th>Equipos / Mallas</th>
-              <th>Otros Costos (DWM/CF)</th>
+              <th title="Trailer (código de costo 5)">Otros Costos (Trailer)</th>
               <th class="cost-total-head">TOTAL</th>
             </tr>
           </thead>
@@ -2361,13 +2361,13 @@
             <table class="cs-tabla va-tabla-inv">
               <thead>
                 <tr class="cs-cabecera-grupo">
-                  <th colspan="4">Producto</th>
+                  <th colspan="5">Producto</th>
                   <th colspan="7" class="cs-grupo-nuevas">Existencias</th>
                   <th colspan="3" class="cs-grupo-costos">Costos</th>
                   <th colspan="3">Otros</th>
                 </tr>
                 <tr>
-                  <th>Código</th><th>Descripción</th><th>Unidad</th><th class="cs-num">Precio</th>
+                  <th>Código</th><th>Descripción</th><th>Unidad</th><th class="cs-num" title="Gravedad específica: volumen = lb / (350 × GE)">GE</th><th class="cs-num">Precio</th>
                   <th class="cs-num cs-grupo-nuevas">Inicial</th>
                   <th class="cs-num cs-grupo-nuevas">Recibido</th>
                   <th class="cs-num cs-grupo-nuevas">Devuelto</th>
@@ -2399,7 +2399,7 @@
                 <tfoot id="vaCostosPie"></tfoot>
               </table>
             </div>
-            <p class="cs-nota">La categoría sale del "Código de Costo Diario" de cada producto activo: 1 Químicos, 2 Ingeniero de fluidos, 3 Ingeniero de control de sólidos, 4 Ingeniero IFE.</p>
+            <p class="cs-nota">La categoría sale del "Código de Costo Diario" de cada producto activo: 1 Químicos, 2 Ingeniero de fluidos, 3 Ingeniero de control de sólidos, 4 Ingeniero IFE, 5 Trailer. Los servicios (ingeniero, trailer) son productos activos <strong>sin unidad</strong>: los días se cargan en "Usado otro módulo".</p>
           </div>
           <div class="report-card-modern">
             <div class="cs-card-titulo">Datos del inventario</div>
@@ -2731,7 +2731,7 @@
     <div class="modal-header-modern">
       <div class="modal-title-modern">
         <span>&#128176;</span>
-        <span>Pantalla Detallada de Costos &bull; Cost Overview ({{ pozo.moneda_simbolo|default:"USD" }})</span>
+        <span>Pantalla Detallada de Costos ({{ pozo.moneda_cobro }})</span>
       </div>
       <button type="button" class="modal-close-btn" onclick="cerrarCostOverviewModal()">&times;</button>
     </div>
@@ -2744,7 +2744,7 @@
           <div class="cost-kpi-cum" id="kpi-df-chem-cum">Acum: $345,735.50</div>
         </div>
         <div class="cost-kpi-card">
-          <div class="cost-kpi-title">IFE / SC Engineer</div>
+          <div class="cost-kpi-title">Ingeniero IFE / Control de Sólidos</div>
           <div class="cost-kpi-daily" id="kpi-ife-sc-daily">$1,450.00</div>
           <div class="cost-kpi-cum" id="kpi-ife-sc-cum">Acum: $5,825.00</div>
         </div>
@@ -2754,7 +2754,7 @@
           <div class="cost-kpi-cum" id="kpi-df-equip-cum">Acum: $6,622.00</div>
         </div>
         <div class="cost-kpi-card">
-          <div class="cost-kpi-title">Other Cost (DWM/CF)</div>
+          <div class="cost-kpi-title">Otros Costos (Trailer)</div>
           <div class="cost-kpi-daily" id="kpi-other-daily">$7,565.06</div>
           <div class="cost-kpi-cum" id="kpi-other-cum">Acum: $10,464.29</div>
         </div>
@@ -2767,12 +2767,9 @@
           <span>(Drilling Total + Equipos + Gestión Ambiental)</span>
         </div>
         <div class="ctb-right" id="kpi-grand-total">
-          $368,646.79 {{ pozo.moneda_simbolo|default:"USD" }}
+          0.00 {{ pozo.moneda_cobro }}
         </div>
       </div>
-
-      <!-- Cobro en dos monedas (si el pozo tiene segunda moneda) -->
-      <div class="cobro-dos-monedas" id="cobroDosMonedas" hidden></div>
 
       <!-- Itemized Cost Breakdown Table -->
       <div class="survey-table-wrapper">
@@ -4693,48 +4690,26 @@ function cerrarCostOverviewModal() {
   document.getElementById('modal-cost-overview').style.display = 'none';
 }
 
-function renderCobroDosMonedas(c) {
-  const caja = document.getElementById('cobroDosMonedas');
-  if (!caja) return;
-  if (!c) { caja.hidden = true; caja.innerHTML = ''; return; }
-  const f = (v) => Number(v).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-  const fila = (titulo, r) => `
-    <tr>
-      <td>${titulo}</td>
-      <td>${f(r.principal)} ${c.moneda_principal}</td>
-      <td>${f(r.secundaria)} ${c.moneda_secundaria} <span class="cdm-equiv">(= ${f(r.secundaria_equivalente)} ${c.moneda_principal})</span></td>
-      <td>${f(r.total_en_secundaria)} ${c.moneda_secundaria}</td>
-    </tr>`;
-  caja.innerHTML = `
-    <div class="cdm-titulo">Cobro en dos monedas &bull; ${f(100 - c.porcentaje_secundaria)} % en ${c.moneda_principal} y ${f(c.porcentaje_secundaria)} % en ${c.moneda_secundaria} &bull; Tasa: ${f(c.tasa)} ${c.moneda_secundaria} por 1 ${c.moneda_principal}</div>
-    <table class="cdm-tabla">
-      <thead><tr><th></th><th>A cobrar en ${c.moneda_principal}</th><th>A cobrar en ${c.moneda_secundaria}</th><th>Total expresado en ${c.moneda_secundaria}</th></tr></thead>
-      <tbody>${fila('Día', c.dia)}${fila('Acumulado', c.acumulado)}</tbody>
-    </table>`;
-  caja.hidden = false;
-}
-
 async function cargarCostOverview() {
   try {
     const res = await fetch(API_COST_OVERVIEW);
     const data = await res.json();
     if(data.ok) {
       const mon = data.moneda || 'USD';
-      document.getElementById('kpi-df-chem-daily').textContent = `$${data.daily.df_chem.toLocaleString('en-US', {minimumFractionDigits:2})}`;
-      document.getElementById('kpi-df-chem-cum').textContent = `Acum: $${data.cumulative.df_chem.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+      const dinero = (v) => `${Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} ${mon}`;
+      document.getElementById('kpi-df-chem-daily').textContent = dinero(data.daily.df_chem);
+      document.getElementById('kpi-df-chem-cum').textContent = `Acum: ${dinero(data.cumulative.df_chem)}`;
 
-      document.getElementById('kpi-ife-sc-daily').textContent = `$${data.daily.ife_sc.toLocaleString('en-US', {minimumFractionDigits:2})}`;
-      document.getElementById('kpi-ife-sc-cum').textContent = `Acum: $${data.cumulative.ife_sc.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+      document.getElementById('kpi-ife-sc-daily').textContent = dinero(data.daily.ife_sc);
+      document.getElementById('kpi-ife-sc-cum').textContent = `Acum: ${dinero(data.cumulative.ife_sc)}`;
 
-      document.getElementById('kpi-df-equip-daily').textContent = `$${data.daily.df_equip.toLocaleString('en-US', {minimumFractionDigits:2})}`;
-      document.getElementById('kpi-df-equip-cum').textContent = `Acum: $${data.cumulative.df_equip.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+      document.getElementById('kpi-df-equip-daily').textContent = dinero(data.daily.df_equip);
+      document.getElementById('kpi-df-equip-cum').textContent = `Acum: ${dinero(data.cumulative.df_equip)}`;
 
-      document.getElementById('kpi-other-daily').textContent = `$${data.daily.other_cost.toLocaleString('en-US', {minimumFractionDigits:2})}`;
-      document.getElementById('kpi-other-cum').textContent = `Acum: $${data.cumulative.other_cost.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+      document.getElementById('kpi-other-daily').textContent = dinero(data.daily.other_cost);
+      document.getElementById('kpi-other-cum').textContent = `Acum: ${dinero(data.cumulative.other_cost)}`;
 
-      document.getElementById('kpi-grand-total').textContent = `$${data.cumulative.total.toLocaleString('en-US', {minimumFractionDigits:2})} ${mon}`;
-
-      renderCobroDosMonedas(data.cobro);
+      document.getElementById('kpi-grand-total').textContent = dinero(data.cumulative.total);
 
       const tbody = document.getElementById('tbody-cost-items');
       tbody.innerHTML = '';
@@ -4745,8 +4720,8 @@ async function cargarCostOverview() {
           <td style="color:#0f172a;">${it.descripcion}</td>
           <td style="text-align:right; font-weight:700;">${it.cantidad}</td>
           <td style="text-align:center; color:#64748b;">${it.unidad}</td>
-          <td style="text-align:right;">$${it.costo_unitario.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
-          <td style="text-align:right; font-weight:800; color:#0f172a;">$${it.costo_total.toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+          <td style="text-align:right;">${dinero(it.costo_unitario)}</td>
+          <td style="text-align:right; font-weight:800; color:#0f172a;">${dinero(it.costo_total)}</td>
         `;
         tbody.appendChild(tr);
       });
