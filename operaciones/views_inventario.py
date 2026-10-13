@@ -399,6 +399,40 @@ def _texto_movimiento(t, fosas):
     return f"Perdidos y descartados {v} de {origen} ({t.perdida_descripcion or 'sin tipo'})", []
 
 
+ORIGEN_OTRO_POZO = 'Otro taladro / pozo'   # opción de "Recibido de" / "Devuelto a" (la usa también la pantalla)
+PREFIJO_ALMACEN = 'Almacén'
+
+
+def _externo_es(texto):
+    """'pozo', 'almacen' u 'otro' según el origen o destino escrito en un movimiento."""
+    texto = (texto or '').strip()
+    if texto == ORIGEN_OTRO_POZO:
+        return 'pozo'
+    if texto.startswith(PREFIJO_ALMACEN):
+        return 'almacen'
+    return 'otro'
+
+
+def fluido_externo_del_dia(transacciones):
+    """
+    Fluido que entró o salió del pozo en el día, en bbl (recuadro "Datos del inventario"):
+    lodo reciclado recibido desde almacén u otro pozo, y devoluciones a almacén u otro pozo.
+    """
+    totales = {'recibido_almacen': 0.0, 'recibido_otro_pozo': 0.0,
+               'enviado_almacen': 0.0, 'enviado_otro_pozo': 0.0}
+    for t in transacciones:
+        if t.tipo == TransaccionVolumen.LODO_ENTERO:
+            sentido = 'recibido'
+        elif t.tipo == TransaccionVolumen.DEVOLUCION:
+            sentido = 'enviado'
+        else:
+            continue
+        donde = _externo_es(t.origen_destino)
+        if donde != 'otro':
+            totales[f"{sentido}_{'otro_pozo' if donde == 'pozo' else 'almacen'}"] += float(t.volumen_bbl)
+    return {k: round(v, 2) for k, v in totales.items()}
+
+
 def numeros_ticket_por_producto(reporte):
     """
     Números de los tickets del reporte por sentido y producto:
@@ -621,6 +655,10 @@ def _estado_volumetria(pozo, reporte):
         'costos': costos,
         'peso_quimicos_lb': round(peso_total, 1),
         'volumen_quimicos_bbl': round(vol_quimicos, 2),
+        'fluido_externo': fluido_externo_del_dia(reporte.transacciones_volumen.all()),
+        'texto_otro_pozo': ORIGEN_OTRO_POZO,
+        'kickoff_sidetrack_ft': float(getattr(reporte, 'kickoff_sidetrack_ft', 0) or 0),
+        'categoria_perdida_en_hoyo': CATEGORIA_PERDIDA_EN_HOYO,
         'ultimos_tickets': ultimos_tickets,
         'concentraciones': concentraciones,
         'movimientos': movimientos,
@@ -884,6 +922,54 @@ def api_volumetria_transaccion_editar(request, pk, reporte_pk, secuencia):
     except _Rechazo as e:
         return _error(f"No se puede modificar: {e}")
     return _respuesta(pozo, reporte, f"Movimiento #{secuencia} modificado.")
+
+
+CATEGORIA_PERDIDA_EN_HOYO = 7   # estándar: "Detrás del Revestimiento / En el Hoyo" (ONE-TRAX Behind Csg/In Hole)
+PARTES_HOYO = ('anular', 'sarta', 'bajo_mecha')
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_volumetria_dejar_en_hoyo(request, pk, reporte_pk):
+    """
+    Fluido que queda en el hoyo y deja de ser del sistema activo (tapón de cemento / abandono antes de
+    un side track). Hace en una sola operación los dos pasos que el balance necesita juntos:
+    1) suma el volumen al "No ocupado por fluido" de la parte elegida del hoyo, y
+    2) registra la pérdida por ese volumen (por defecto, categoría "En el hoyo").
+    Si se hiciera uno solo, el sistema activo quedaría descuadrado.
+    """
+    pozo, reporte = _obtener(pk, reporte_pk)
+    try:
+        body = _leer(request)
+        parte = str(body.get('parte') or 'bajo_mecha')
+        if parte not in PARTES_HOYO:
+            raise _Rechazo('Parte del hoyo no válida.')
+        fosa = _fosa_valida(pozo, reporte, body.get('fosa'), 'el tanque activo')
+        if _grupo_del_tanque(pozo, reporte, fosa.numero) != ACTIVO:
+            raise _Rechazo('Elige un tanque del sistema activo: el hoyo es parte del sistema activo.')
+        t = TransaccionVolumen(reporte=reporte, tipo=TransaccionVolumen.PERDIDA, fosa_numero=fosa.numero,
+                               fosa_descripcion=fosa.descripcion[:100])
+        _llenar_movimiento_de_volumen(pozo, reporte, t, body)
+        with transaction.atomic():
+            hoyo, _ = VolumenHoyoDia.objects.get_or_create(reporte=reporte)
+            campo = f'no_fluido_{parte}'
+            setattr(hoyo, campo, getattr(hoyo, campo) + t.volumen_bbl)
+            hoyo.save()
+            ultima = TransaccionVolumen.objects.filter(reporte__pozo=pozo).aggregate(m=Max('secuencia'))['m'] or 0
+            t.secuencia = ultima + 1
+            t.save()
+            _validar(pozo, reporte)
+    except (TypeError, ValueError):
+        return _error('Datos inválidos.')
+    except _Rechazo as e:
+        return _error(f"No se pudo registrar: {e}")
+    return _respuesta(pozo, reporte, f"{float(t.volumen_bbl):g} bbl dejados en el hoyo: no fluido y pérdida registrados.")
+
+
+def _grupo_del_tanque(pozo, reporte, numero):
+    """Grupo del tanque ese día (con el tipo heredado de días anteriores si no se guardó hoy)."""
+    _, extra, _, _ = _linea_de_tiempo(pozo, reporte)
+    return next((f['grupo'] for f in extra.get('fosas', []) if f['numero'] == numero), None)
 
 
 @csrf_exempt

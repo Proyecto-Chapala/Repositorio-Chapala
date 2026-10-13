@@ -88,6 +88,7 @@ def _datos(pozo, reporte):
     from .views_inventario import _estado_volumetria, resumen_costos
     from .views_control_solidos import _resumen as resumen_mallas, _resumen_equipos
     from .views_hidraulica import calcular_hidraulica_reporte
+    from .models_daily_reports import PropiedadExtraFluido, propiedades_extra_del_reporte
 
     d = {'pozo': pozo, 'reporte': reporte}
     d['header'] = getattr(pozo, 'well_header_info', None)
@@ -120,20 +121,16 @@ def _datos(pozo, reporte):
         d['hid'] = calcular_hidraulica_reporte(pozo, reporte, edicion)
     except Exception:
         d['hid'] = {'faltan': ['error']}
-    extras = {}
-    for p in pozo.propiedades_extra.filter(orden_impresion__gt=0).order_by('orden_impresion', 'numero'):
-        extras.setdefault(p.tipo_fluido, []).append(p)
-    d['extras'] = extras
+    # Mismas propiedades extra que la pantalla y el reporte de propiedades (con orden o con valor ese día).
+    ids_reporte = {p['id'] for p in propiedades_extra_del_reporte(reporte, d['checks'])}
+    d['extras'] = list(PropiedadExtraFluido.objects.filter(id__in=ids_reporte))
+    d['extras'].sort(key=lambda p: (p.orden_impresion == 0, p.orden_impresion, p.numero))
     valores = {}
     for c in d['checks']:
         for v in c.extra_values.all():
             valores[(c.id, v.propiedad_extra_id)] = v.valor
     d['valores_extra'] = valores
     return d
-
-
-def _tipo_extra(reporte):
-    return 'WBM' if reporte.tipo_lodo in ('WBM', 'WBM_CACL2') else 'OBM'
 
 
 # ---------------------------------------------------------------- encabezado común
@@ -299,7 +296,7 @@ def _propiedades(ws, d, variante):
 
     # Propiedades extra 1-8 debajo de las fijas
     primera = 42 if base_agua else 43
-    extras = [p for p in d['extras'].get(_tipo_extra(d['reporte']), []) if p.numero <= 8][:8]
+    extras = [p for p in d['extras'] if p.numero <= 8][:8]
     for i, p in enumerate(extras):
         fila = primera + i
         ws[f'A{fila}'].value = p.etiqueta
@@ -518,7 +515,7 @@ def _hoja_extra(ws, d, variante):
     _encabezado_lodo(ws, d, titulo)
     for c, col in zip(d['checks'], ('C', 'D', 'E', 'F')):
         ws[f'{col}9'].value = f"{c.sample_from or ''} {c.time_taken or ''}".strip()
-    extras = [p for p in d['extras'].get(_tipo_extra(d['reporte']), []) if p.numero > 8][:52]
+    extras = [p for p in d['extras'] if p.numero > 8][:52]
     for i, p in enumerate(extras):
         fila = 10 + i
         ws[f'A{fila}'].value = p.etiqueta
@@ -886,6 +883,87 @@ def _hoja_mallas(ws, d):
 
 
 # ---------------------------------------------------------------- libro completo
+
+def generar_reporte_propiedades_excel(d):
+    """
+    Reporte de propiedades (reportito) en Excel: encabezado, propiedades por chequeo, especificación
+    y comentario. d = views_daily_reports.datos_reporte_propiedades. Devuelve (bytes, nombre).
+    """
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+
+    pozo, reporte, header, checks = d['pozo'], d['reporte'], d['header'], d['checks']
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Propiedades'
+    negrita = Font(bold=True)
+    borde = Border(*(Side(style='thin', color='BFBFBF'),) * 4)
+    cabecera = PatternFill('solid', fgColor='F97316')
+
+    fila = 1
+    if os.path.exists(LOGO) and _pillow_disponible():
+        from openpyxl.drawing.image import Image as ImagenXl
+        img = ImagenXl(LOGO)
+        escala = 45.0 / img.height if img.height else 1
+        img.height, img.width = img.height * escala, img.width * escala
+        ws.add_image(img, 'A1')
+        fila = 4
+    ws.cell(row=fila, column=1, value='REPORTE DE PROPIEDADES DEL LODO').font = Font(bold=True, size=14)
+    tipo = 'Base agua' if d['base_agua'] else 'Base aceite / sintético'
+    ws.cell(row=fila + 1, column=1, value=f"{tipo} · All Oil Services, C.A.").font = Font(italic=True, color='6B7280')
+
+    fila += 3
+    datos = [('Pozo', pozo.nombre), ('Operador', getattr(header, 'operador', '') or '—'),
+             ('Fecha', reporte.fecha.strftime('%d/%m/%Y')), ('Reporte N°', reporte.numero_reporte),
+             ('Profundidad (ft)', round(reporte.profundidad_actual or 0)), ('Actividad', reporte.actividad_actual or '—')]
+    for etiqueta, valor in datos:
+        ws.cell(row=fila, column=1, value=etiqueta).font = negrita
+        ws.cell(row=fila, column=2, value=valor)
+        fila += 1
+
+    fila += 1
+    titulos = ['Propiedad', 'Unidad'] + [f"Chequeo #{c.check_number}{' (principal)' if c.is_primary else ''}" for c in checks]
+    for j, t in enumerate(titulos, 1):
+        c = ws.cell(row=fila, column=j, value=t)
+        c.font, c.fill, c.border = Font(bold=True, color='FFFFFF'), cabecera, borde
+        c.alignment = Alignment(horizontal='center', wrap_text=True)
+    for f in d['filas']:
+        fila += 1
+        for j, v in enumerate([f['etiqueta'], f['unidad']] + list(f['valores']), 1):
+            c = ws.cell(row=fila, column=j, value=v)
+            c.border = borde
+            if j > 2:
+                c.alignment = Alignment(horizontal='center')
+
+    comentarios = d['comentarios']
+    if comentarios and (comentarios.spec_mud_weight or comentarios.spec_viscosidad or comentarios.spec_filtrado):
+        fila += 2
+        ws.cell(row=fila, column=1, value='Especificación del lodo').font = negrita
+        for etiqueta, valor in (('Densidad', comentarios.spec_mud_weight), ('Viscosidad', comentarios.spec_viscosidad),
+                                ('Filtrado', comentarios.spec_filtrado)):
+            fila += 1
+            ws.cell(row=fila, column=1, value=etiqueta)
+            ws.cell(row=fila, column=2, value=valor or '—')
+
+    fila += 2
+    ws.cell(row=fila, column=1, value='Comentario').font = negrita
+    fila += 1
+    ws.merge_cells(start_row=fila, start_column=1, end_row=fila + 5, end_column=len(titulos))
+    c = ws.cell(row=fila, column=1, value=d['comentario'] or '')
+    c.alignment = Alignment(wrap_text=True, vertical='top')
+
+    ingenieros = ' / '.join(x for x in (reporte.mi_representante_1, reporte.mi_representante_2) if x) or '—'
+    ws.cell(row=fila + 7, column=1, value=f"Ingeniero: {ingenieros}").font = Font(italic=True, color='6B7280')
+
+    ws.column_dimensions['A'].width = 32
+    ws.column_dimensions['B'].width = 12
+    for col in 'CDEF':
+        ws.column_dimensions[col].width = 18
+
+    salida = io.BytesIO()
+    wb.save(salida)
+    nombre = f"Propiedades_{reporte.numero_reporte}_{pozo.nombre}_{reporte.fecha.strftime('%Y%m%d')}.xlsx".replace(' ', '_')
+    return salida.getvalue(), nombre
+
 
 def _pillow_disponible():
     """openpyxl necesita Pillow para insertar imágenes; sin Pillow el Excel sale sin logo."""

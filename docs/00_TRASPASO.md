@@ -36,10 +36,11 @@
                                              └─ 0029_productoactivopozo_cobro_por
                                                   └─ 0030_alter_reportediario_mi_representante_1_and_more
                                                        └─ 0031_tarifas_dos_monedas
+                                                            └─ 0032_comentario_propiedades
 ```
 
 - `0022_sidetrack` **depende de 0021** (así quedó aplicada; cambiarla rompe con `InconsistentMigrationHistory`).
-- La próxima migración nueva debe depender de **`0031_tarifas_dos_monedas`**.
+- La próxima migración nueva debe depender de **`0032_comentario_propiedades`**.
 - La `0030` (generada con `makemigrations` el 12-oct) puso al día los `verbose_name` atrasados. Desde ahí, `makemigrations --check` no detecta cambios: modelos y migraciones están sincronizados.
 
 ## 2. Dónde está cada cosa (lo más reciente)

@@ -60,7 +60,7 @@ Normalmente el **hoyo perforado del día** = profundidad de hoy − profundidad 
 **Día anterior (abandono / tapón)** — ejemplo: se venía a 3498 m y el tope del tapón quedó en 2900 m.
 1. **Pestaña 1**: profundidad de la mecha = **tope del tapón** (2900). La **profundidad del pozo NO se cambia** (sigue 3498); si se cambia, se afecta la volumetría.
 2. **Pestaña 4**: el volumen **bajo la mecha** es el hoyo que quedó debajo del tapón (en el ejemplo, 24,1 m³).
-3. **Pestaña 8 → Volumetría**: en *Volumen no fluido → bajo la mecha* poner ese volumen. Luego **Pérdida** por el mismo volumen con la categoría **"Detrás del Revestimiento / En el Hoyo"** (código 7 del estándar; ONE-TRAX *Behind Csg/In Hole*; en el curso "Dejado en el hoyo").
+3. **Pestaña 8 → Balance → "Dejar volumen en el hoyo (tapón / side track)"** (oct-2026): registra en una sola operación el *No ocupado por fluido → bajo la mecha* y la **Pérdida** por el mismo volumen, con la categoría **"Detrás del Revestimiento / En el Hoyo"** (código 7 del estándar; ONE-TRAX *Behind Csg/In Hole*; en el curso "Dejado en el hoyo"). Antes eran dos pasos manuales separados. Ver [pruebas/11](pruebas/11_DEJAR_EN_HOYO.md).
 
 **Día del kick-off** — ejemplo: kick-off a 8515 ft, al cierre del día se llegó a 9200 ft.
 1. **Pestaña 1**: profundidad = la nueva del side track (9200).

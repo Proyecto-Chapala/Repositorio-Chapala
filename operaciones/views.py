@@ -834,22 +834,31 @@ def api_intervalo_crear(request, pk):
     }, status=201)
 
 
+def _formulario_intervalo(request, intervalo):
+    """
+    Valida los datos del formulario del intervalo. Devuelve (form, None) si son válidos o
+    (None, JsonResponse de error). Lo usan Guardar y Cerrar, con las mismas reglas.
+    """
+    try:
+        data = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        return None, JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+    form = IntervaloRevestimientoForm(data, instance=intervalo)
+    if not form.is_valid():
+        return None, JsonResponse({
+            "success": False, "errores": form.errors,
+            "error": next(iter(form.errors.values()))[0]
+        }, status=400)
+    return form, None
+
+
 @csrf_exempt
 @require_http_methods(["POST", "PUT"])
 def api_intervalo_actualizar(request, pk, intervalo_pk):
     intervalo = get_object_or_404(IntervaloRevestimiento, pk=intervalo_pk, pozo_id=pk)
-    try:
-        data = json.loads(request.body.decode('utf-8'))
-    except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
-
-    form = IntervaloRevestimientoForm(data, instance=intervalo)
-    if not form.is_valid():
-        return JsonResponse({
-            "success": False, "errores": form.errors,
-            "error": next(iter(form.errors.values()))[0]
-        }, status=400)
-
+    form, error = _formulario_intervalo(request, intervalo)
+    if error:
+        return error
     intervalo = form.save()
     return JsonResponse({
         "success": True, "mensaje": "Intervalo actualizado.",
@@ -860,24 +869,34 @@ def api_intervalo_actualizar(request, pk, intervalo_pk):
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_intervalo_cerrar(request, pk, intervalo_pk):
-    """Cierra el intervalo (se bajó el revestidor). Recién entonces se puede abrir el siguiente."""
+    """
+    Cierra el intervalo (se bajó el revestidor o se terminó el side track). Guarda en la misma
+    operación lo que hay en el formulario: antes se cerraba con los datos ya guardados y un cambio
+    sin guardar (por ejemplo, tipo = Side Track) se perdía y el intervalo quedaba como estaba.
+    """
     intervalo = get_object_or_404(IntervaloRevestimiento, pk=intervalo_pk, pozo_id=pk)
     if intervalo.cerrado:
         return JsonResponse({"success": False, "error": "El intervalo ya está cerrado."}, status=400)
+    form, error = _formulario_intervalo(request, intervalo)
+    if error:
+        return error
+    intervalo = form.save(commit=False)
     faltan = []
     if not intervalo.tipo:
-        faltan.append("tipo")
+        faltan.append("el tipo")
     if intervalo.profundidad_ft is None:
-        faltan.append("profundidad")
+        faltan.append("la profundidad")
     if faltan:
         return JsonResponse({
             "success": False,
-            "error": "Para cerrar el intervalo guarda primero: " + " y ".join(faltan) + ".",
+            "error": "Para cerrar el intervalo indica " + " y ".join(faltan) + ".",
         }, status=400)
     intervalo.cerrado = True
-    intervalo.save(update_fields=['cerrado', 'updated_at'])
+    intervalo.save()
     return JsonResponse({
-        "success": True, "mensaje": f"Intervalo {intervalo.numero_intervalo} cerrado. Ya puedes crear el siguiente.",
+        "success": True,
+        "mensaje": f"Intervalo {intervalo.numero_intervalo} ({intervalo.get_tipo_display()}) cerrado. "
+                   "Ya puedes crear el siguiente.",
         "intervalo": _intervalo_to_dict(intervalo),
     })
 

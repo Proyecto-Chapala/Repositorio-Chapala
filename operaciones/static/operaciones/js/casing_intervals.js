@@ -179,9 +179,8 @@
     return v === '' ? null : parseInt(v, 10);
   }
 
-  async function guardarIntervalo() {
-    document.getElementById('errorDetalle').textContent = '';
-    const payload = {
+  function leerFormularioIntervalo() {
+    return {
       numero_intervalo: intOrNull('dInterval'),
       tipo: document.getElementById('dTipo').value,
       casing_od_in: numOrNull('dCasingOd'),
@@ -204,7 +203,11 @@
       observaciones_recomendaciones: document.getElementById('dObservaciones').value,
       comentarios_recap: document.getElementById('dComentariosRecap').value,
     };
+  }
 
+  async function guardarIntervalo() {
+    document.getElementById('errorDetalle').textContent = '';
+    const payload = leerFormularioIntervalo();
     const url = state.editandoId
       ? `/api/pozos/${window.POZO_ID}/casing-intervals/${state.editandoId}/`
       : `/api/pozos/${window.POZO_ID}/casing-intervals/crear/`;
@@ -234,12 +237,18 @@
   async function cambiarEstadoIntervalo(accion) {
     const i = state.intervalos.find((x) => x.id === state.editandoId);
     if (!i) return;
+    // Cerrar guarda en la misma operación lo que está en el formulario (tipo, profundidad...).
+    const tipoSel = document.getElementById('dTipo');
+    const tipoTexto = tipoSel.value ? tipoSel.options[tipoSel.selectedIndex].text : 'sin tipo';
     const pregunta = accion === 'cerrar'
-      ? `¿Cerrar el intervalo ${i.numero_intervalo}? Hazlo solo cuando ya se bajó el revestidor. Guarda antes los cambios del formulario.`
+      ? `¿Guardar y cerrar el intervalo ${i.numero_intervalo} como "${tipoTexto}"? Hazlo cuando ya se bajó el revestidor o se terminó el side track.`
       : `¿Reabrir el intervalo ${i.numero_intervalo}?`;
     if (!window.confirm(pregunta)) return;
+    document.getElementById('errorDetalle').textContent = '';
     try {
-      const data = await apiFetch(`/api/pozos/${window.POZO_ID}/casing-intervals/${i.id}/${accion}/`, { method: 'POST' });
+      const opciones = { method: 'POST' };
+      if (accion === 'cerrar') opciones.body = JSON.stringify(leerFormularioIntervalo());
+      const data = await apiFetch(`/api/pozos/${window.POZO_ID}/casing-intervals/${i.id}/${accion}/`, opciones);
       showToast(data.mensaje, 'success');
       cerrarDetalle();
       await cargarIntervalos();

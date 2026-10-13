@@ -14,7 +14,7 @@ from django.test import TestCase
 from operaciones import licencia
 from operaciones.models import CategoriaPerdidaItem, Fosa, Pozo, TipoFosa
 from operaciones.models_daily_reports import ReporteDiario
-from operaciones.models_inventario import TransaccionVolumen, VolumenFosaDia
+from operaciones.models_inventario import TransaccionVolumen, VolumenFosaDia, VolumenHoyoDia
 
 ACTIVA, RESERVA, VACIA = 1, 2, 0
 
@@ -94,6 +94,35 @@ class EditarMovimientosTests(TestCase):
         estado, datos = self.post('4/editar/', {'fosa': 2, 'volumen': 10, 'destino_texto': ''})
         self.assertEqual(estado, 400)
         self.assertIn('a dónde se devuelve', datos['error'])
+
+    def dejar_en_hoyo(self, **datos):
+        cuerpo = {'parte': 'bajo_mecha', 'volumen': 40, 'fosa': 1, 'perdida_codigo': 7}
+        cuerpo.update(datos)
+        respuesta = self.client.post(self.base.replace('transaccion/', 'dejar-en-hoyo/'), json.dumps(cuerpo),
+                                     content_type='application/json')
+        return respuesta.status_code, respuesta.json()
+
+    def test_dejar_en_hoyo_registra_no_fluido_y_perdida_juntos(self):
+        estado, datos = self.dejar_en_hoyo()
+        self.assertEqual(estado, 200, datos)
+        self.assertEqual(datos['hoyo']['no_fluido']['bajo_mecha'], 40)
+        perdida = TransaccionVolumen.objects.filter(tipo='PERDIDA').order_by('-secuencia').first()
+        self.assertEqual((perdida.fosa_numero, perdida.volumen_bbl, perdida.perdida_codigo), (1, Decimal('40.00'), 7))
+        # Un segundo registro se suma al no fluido ya guardado.
+        estado, datos = self.dejar_en_hoyo(volumen=10)
+        self.assertEqual(datos['hoyo']['no_fluido']['bajo_mecha'], 50)
+
+    def test_dejar_en_hoyo_solo_desde_un_tanque_activo(self):
+        estado, datos = self.dejar_en_hoyo(fosa=2)
+        self.assertEqual(estado, 400)
+        self.assertIn('sistema activo', datos['error'])
+        self.assertFalse(VolumenHoyoDia.objects.filter(reporte=self.reporte, no_fluido_bajo_mecha__gt=0).exists())
+
+    def test_dejar_en_hoyo_sin_volumen_no_registra_nada(self):
+        antes = TransaccionVolumen.objects.count()
+        estado, datos = self.dejar_en_hoyo(volumen='')
+        self.assertEqual(estado, 400)
+        self.assertEqual(TransaccionVolumen.objects.count(), antes)
 
     def test_solo_movimientos_de_este_reporte(self):
         estado, datos = self.post('99/eliminar/')

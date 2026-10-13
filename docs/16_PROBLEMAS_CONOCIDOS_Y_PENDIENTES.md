@@ -32,7 +32,7 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 |---|---|
 | ¿El reparto en **dos monedas** debe salir también en el **Excel**? ¿Dónde? | Hoy solo en la pantalla de costos |
 | ¿Borrar **solo el último reporte** desde el hub, con confirmación? | El tío quería poder borrar un reporte "empezado mal"; el usuario pidió bloquear el hub. Hoy solo se puede eliminar el pozo completo |
-| Comentario del **reporte de propiedades**: ¿se guarda? | Hoy se escribe e imprime, no se guarda |
+| ~~Comentario del **reporte de propiedades**: ¿se guarda?~~ | **Resuelto (oct-2026):** se guarda (0032) y sale en el Excel del reportito. Ver [pruebas/13](pruebas/13_REPORTITO.md) |
 | Paquete de entrega: reporte principal, inventario, concentraciones, volumetría | Confirmar con el ingeniero |
 | Error en la hoja a lápiz del ingeniero (ejemplo 3 de concentraciones: 15,83, no 16,7) | **Avisarle** |
 | Códigos de costo diario 1-4 | Confirmar con AOS |
