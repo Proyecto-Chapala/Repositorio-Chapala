@@ -10,8 +10,8 @@ Función pura, sin Django. Repite, día por día y en orden, los movimientos de 
   el tanque activo y su volumen real NO tienen que coincidir (nota especial del manual, pág. 146).
 - "No contabilizado" = real − calculado, por grupo (activo, reserva, premezcla). Al cierre
   de cada día debe ser cero.
-- Inventario de productos: inicial + recibido − devuelto − usado en fluidos − usado en otro
-  módulo ± ajuste. Si algún día queda negativo se rechaza (misma regla que las mallas).
+- Inventario de productos: inicial + recibido − devuelto − usado en fluidos (a mano) − usado en otro
+  módulo (a mano) ± ajuste. Si algún día queda negativo se rechaza (misma regla que las mallas).
 - Costos por categoría y concentración de cada producto (lb/bbl) por compartimento: el sistema
   activo (tanques activos + hoyo, que se mezclan) y cada una de las demás fosas.
 
@@ -135,15 +135,6 @@ def precio_por_unidad(precio, cobro_por, unidad, tamano, gravedad):
     return p * bbl if bbl else 0.0
 
 
-def consumo_lodo_entero(volumen_bbl, unidad, tamano):
-    """Unidades del producto 'lodo reciclado' que se consumen al agregar un volumen de lodo."""
-    f = FACTOR_VOLUMEN_BBL.get(_unidad(unidad))
-    t = float(tamano or 0) or 1.0
-    if f is None:
-        return float(volumen_bbl or 0)
-    return float(volumen_bbl or 0) / (t * f)
-
-
 def _flujos():
     return {g: defaultdict(float) for g in GRUPOS}
 
@@ -156,13 +147,12 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
         'fosas': [{'numero', 'grupo' (ACTIVO/RESERVA/... o None), 'real' (float o None)}],
         'hoyo_fluido': float,                  # fluido del sistema activo dentro del hoyo hoy
         'transacciones': [{'secuencia', 'tipo', 'fosa', 'destino', 'volumen', 'aceite', 'agua',
-                           'perdida', 'lodo_producto', 'lodo_cantidad', 'lodo_precio',
-                           'lodo_categoria',
+                           'perdida',
                            'productos': [{'producto', 'cantidad', 'es_concentracion', 'unidad',
                                           'tamano', 'gravedad', 'precio', 'categoria',
                                           'concentracion'}]}],
         'tickets': [{'sentido', 'detalles': [{'producto', 'real', 'ticket'}]}],
-        'manual': {producto_id: {'otro', 'ajuste', 'precio', 'categoria'}},
+        'manual': {producto_id: {'inicial', 'fluido', 'otro', 'ajuste', 'precio', 'categoria'}},
       }
     servicios: ids de productos que son servicios (unidad vacía, como los días de ingeniero):
     solo generan costo, no llevan existencias.
@@ -185,6 +175,8 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
     costo_acum_cat = defaultdict(float)
     costo_acum_prod = defaultdict(float)
     acum_usado = defaultdict(float)      # acumulados del pozo por producto (reporte de inventario)
+    acum_usado_fluido = defaultdict(float)
+    acum_usado_otro = defaultdict(float)
     acum_recibido = defaultdict(float)
     acum_devuelto = defaultdict(float)
     masa = defaultdict(lambda: defaultdict(float))   # compartimento → producto → lb
@@ -231,7 +223,6 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
         delta = defaultdict(float)
         flujos = _flujos()
         perdidas = defaultdict(lambda: defaultdict(float))   # código → grupo → bbl
-        usado_fluido = defaultdict(float)
         costo_dia_prod = defaultdict(float)
         costo_dia_cat = defaultdict(float)
         recibido = defaultdict(float)
@@ -280,10 +271,6 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 vq = 0.0
                 for p in tr.get('productos', []):
                     cant = float(p.get('cantidad') or 0)
-                    usado_fluido[p['producto']] += cant
-                    costo = cant * float(p.get('precio') or 0)
-                    costo_dia_prod[p['producto']] += costo
-                    costo_dia_cat[p.get('categoria') or 1] += costo
                     vq += volumen_quimico_bbl(cant, p.get('unidad'), p.get('tamano'), p.get('gravedad'))
                     if p.get('concentracion', True):
                         m = masa_lb(cant, p.get('unidad'), p.get('tamano'))
@@ -297,13 +284,6 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 flujos[g]['quimicos'] += vq
 
             elif tipo == 'LODO_ENTERO':
-                lp = tr.get('lodo_producto')
-                if lp:
-                    cant = float(tr.get('lodo_cantidad') or 0)
-                    usado_fluido[lp] += cant
-                    costo = cant * float(tr.get('lodo_precio') or 0)
-                    costo_dia_prod[lp] += costo
-                    costo_dia_cat[tr.get('lodo_categoria') or 1] += costo
                 for p in tr.get('productos', []):
                     if p.get('concentracion', True):
                         masa[c][p['producto']] += float(p.get('cantidad') or 0) * vol
@@ -367,14 +347,16 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
 
         # ---- Inventario de productos ----
         manual = dia.get('manual', {})
-        ids = set(stock) | set(usado_fluido) | set(recibido) | set(devuelto) | set(manual)
+        ids = set(stock) | set(recibido) | set(devuelto) | set(manual)
         inventario = {}
         for p in ids:
             m = manual.get(p, {})
+            fluido = float(m.get('fluido') or 0)
             otro = float(m.get('otro') or 0)
             ajuste = float(m.get('ajuste') or 0)
-            if otro:
-                costo = otro * float(m.get('precio') or 0)
+            usado_dia = fluido + otro
+            if usado_dia:
+                costo = usado_dia * float(m.get('precio') or 0)
                 costo_dia_prod[p] += costo
                 costo_dia_cat[m.get('categoria') or 1] += costo
             ini_auto = stock[p]
@@ -383,25 +365,30 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
             if p in servicios:
                 fin = ini
             else:
-                fin = ini + recibido[p] - devuelto[p] - usado_fluido[p] - otro + ajuste
+                fin = ini + recibido[p] - devuelto[p] - fluido - otro + ajuste
             if fin < -EPS:
                 raise ErrorVolumetria(
                     f"El {fecha}: el inventario de {np(p)} queda en {fin:g}. "
                     f"Hay {ini + recibido[p]:g} disponibles y se usan o devuelven "
-                    f"{usado_fluido[p] + otro + devuelto[p] - ajuste:g}. Registra primero el ticket de recepción.")
+                    f"{fluido + otro + devuelto[p] - ajuste:g}. Registra primero el ticket de recepción.")
             stock[p] = fin
             costo_acum_prod[p] += costo_dia_prod[p]
-            acum_usado[p] += usado_fluido[p] + otro
+            acum_usado[p] += usado_dia
+            acum_usado_fluido[p] += fluido
+            acum_usado_otro[p] += otro
             acum_recibido[p] += recibido[p]
             acum_devuelto[p] += devuelto[p]
             inventario[p] = {
                 'inicial': ini, 'inicial_auto': ini_auto, 'recibido': recibido[p], 'devuelto': devuelto[p],
                 'recibido_ticket': recibido_ticket[p], 'devuelto_ticket': devuelto_ticket[p],
-                'usado_fluido': usado_fluido[p], 'usado_otro': otro, 'ajuste': ajuste,
-                'final': fin, 'usado_dia': usado_fluido[p] + otro,
+                'usado_fluido': fluido, 'usado_otro': otro, 'ajuste': ajuste,
+                'final': fin, 'usado_dia': usado_dia,
                 'costo_diario': round(costo_dia_prod[p], 2),
                 'costo_acumulado': round(costo_acum_prod[p], 2),
-                'usado_acum': acum_usado[p], 'recibido_acum': acum_recibido[p],
+                'usado_acum': acum_usado[p],
+                'usado_fluido_acum': acum_usado_fluido[p],
+                'usado_otro_acum': acum_usado_otro[p],
+                'recibido_acum': acum_recibido[p],
                 'devuelto_acum': acum_devuelto[p],
             }
         for cat, v in costo_dia_cat.items():

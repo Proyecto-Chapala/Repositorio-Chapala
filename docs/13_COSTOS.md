@@ -23,11 +23,13 @@ Cada columna se da **del día** y **acumulada** del pozo hasta la fecha del repo
 
 | Hecho | Costo |
 |---|---|
-| *Agregar químicos* | cantidad × precio del producto **en ese momento** (copiado en el movimiento) |
-| *Agregar lodo reciclado* | unidades consumidas del producto "lodo reciclado" × su precio |
+| *Usado en fluidos* (inventario manual) | cantidad consumida × precio del día |
 | *Usado en otro módulo* (inventario manual) | cantidad × precio del día (productos transferidos a otra línea, ej. cementación) |
+| *Agregar químicos* / *Lodo reciclado* | **0** (son movimientos de balance de volumen y concentraciones; no generan costo) |
 | **Servicios del pozo** (pestaña 8 › Servicios) | días cobrados × tarifa aplicada; suma según su categoría. Ver [25](25_SERVICIOS_DEL_POZO.md) |
 | Servicios anteriores (productos con unidad vacía) | Solo costo, sin existencias |
+
+El costo de químicos sale del inventario diario: `(usado en fluidos + usado en otro módulo) × precio`.
 
 La **categoría** de cada costo es el *código de costo diario* del producto activo, editable por día en el inventario. Se reparte así: 1 = Químicos, 2 = Ingeniero de fluidos, 3 = Ingeniero de control de sólidos, 4 = Ingeniero IFE. **Pendiente**: confirmar con AOS el significado de los códigos 1-4.
 

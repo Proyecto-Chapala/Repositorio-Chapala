@@ -89,6 +89,7 @@ def api_perdidas_reporte_guardar(request, pk):
 # Volumetría e inventario de productos (Volume Accounting and Product Inventory)
 # =====================================================================
 
+from collections import defaultdict
 from decimal import Decimal
 
 from django.db.models import Max
@@ -272,9 +273,7 @@ def _dto_transaccion(t):
     return {
         'secuencia': t.secuencia, 'tipo': t.tipo, 'fosa': t.fosa_numero, 'destino': t.destino_numero,
         'volumen': float(t.volumen_bbl), 'aceite': float(t.aceite_bbl), 'agua': float(t.agua_bbl),
-        'perdida': t.perdida_codigo, 'lodo_producto': t.lodo_producto_id,
-        'lodo_cantidad': float(t.lodo_cantidad), 'lodo_precio': float(t.lodo_precio),
-        'lodo_categoria': t.lodo_categoria,
+        'perdida': t.perdida_codigo,
         'productos': [
             {'producto': p.producto_id, 'cantidad': float(p.cantidad), 'es_concentracion': p.es_concentracion,
              'unidad': p.unidad, 'tamano': float(p.tamano), 'gravedad': float(p.gravedad),
@@ -312,14 +311,13 @@ def _linea_de_tiempo(pozo, objetivo):
         ]
         manual = {
             m.producto_id: {'inicial': None if m.inicial is None else float(m.inicial),
+                            'fluido': float(m.usado_fluido),
                             'otro': float(m.usado_otro), 'ajuste': float(m.ajuste),
                             'precio': float(m.precio), 'categoria': m.categoria_costo}
             for m in rep.inventario_productos.all()
         }
         for t in transacciones:
             ids_producto.update(p['producto'] for p in t['productos'])
-            if t['lodo_producto']:
-                ids_producto.add(t['lodo_producto'])
         for t in tickets:
             ids_producto.update(d['producto'] for d in t['detalles'])
         ids_producto.update(manual)
@@ -393,7 +391,7 @@ def _texto_movimiento(t, fosas):
         lineas = [f"{float(p.cantidad):g} lb/bbl {p.descripcion}" for p in t.productos.all()]
         desde = f" desde {t.origen_destino}" if t.origen_destino else ''
         peso = f" de {float(t.peso_lodo):g} lb/gal" if t.peso_lodo else ''
-        return f"{v} de lodo reciclado{peso} ({t.lodo_producto_texto}) agregados a {origen}{desde}", lineas
+        return f"{v} de lodo reciclado{peso} agregados a {origen}{desde}", lineas
     if t.tipo == TransaccionVolumen.TRANSFERENCIA:
         return f"Transferidos {v} de {origen} a {nombre(t.destino_numero, t.destino_descripcion)}", []
     if t.tipo == TransaccionVolumen.DEVOLUCION:
@@ -528,6 +526,13 @@ def _estado_volumetria(pozo, reporte):
         ultimo_manual[m.producto_id] = m
     inv_sim = (sim or {}).get('inventario', {})
     tickets_hoy = numeros_ticket_por_producto(reporte)
+    agregados_balance = defaultdict(float)
+    for p_mov in TransaccionVolumenProducto.objects.filter(
+        transaccion__reporte=reporte,
+        transaccion__tipo=TransaccionVolumen.QUIMICOS,
+        es_concentracion=False,
+    ):
+        agregados_balance[p_mov.producto_id] += float(p_mov.cantidad)
     inventario = []
     ids_inv = [i for i, p in productos.items() if p['activo']] + [i for i in inv_sim if not productos.get(i, {}).get('activo')]
     peso_total = 0.0
@@ -558,6 +563,9 @@ def _estado_volumetria(pozo, reporte):
             final=round(s.get('final', 0.0), 3), usado_dia=round(s.get('usado_dia', 0.0), 3),
             usado_acum=round(s.get('usado_acum', 0.0), 3), recibido_acum=round(s.get('recibido_acum', 0.0), 3),
             devuelto_acum=round(s.get('devuelto_acum', 0.0), 3),
+            usado_fluido_acum=round(s.get('usado_fluido_acum', 0.0), 3),
+            usado_otro_acum=round(s.get('usado_otro_acum', 0.0), 3),
+            agregado_balance=round(agregados_balance[pid], 3),
             costo_diario=s.get('costo_diario', 0.0), costo_acumulado=s.get('costo_acumulado', 0.0),
             peso_lb=round(peso, 1) if peso is not None else None,
         ))
@@ -749,15 +757,16 @@ def api_volumetria_guardar(request, pk, reporte_pk):
             if p is None:
                 continue
             etq = f"{p['descripcion']} ({p['codigo']})"
+            fluido = 0.0 if p['servicio'] else (_num(item.get('usado_fluido'), f"{etq} — usado en fluidos", 0) or 0.0)
             otro = _num(item.get('usado_otro'), f"{etq} — usado en otro módulo", 0) or 0.0
             ajuste = _num(item.get('ajuste'), f"{etq} — ajuste") or 0.0
             pedido = _num(item.get('en_pedido'), f"{etq} — en pedido", 0) or 0.0
             inicial = None if p['servicio'] else _num(item.get('inicial_manual'), f"{etq} — inicial", 0)
             no_imp = bool(item.get('no_imprimir'))
-            if not (otro or ajuste or pedido or no_imp or inicial is not None):
+            if not (fluido or otro or ajuste or pedido or no_imp or inicial is not None):
                 continue
             filas_inv.append(InventarioProductoDia(
-                reporte=reporte, producto_id=pid, usado_otro=_dec(otro), ajuste=_dec(ajuste),
+                reporte=reporte, producto_id=pid, usado_fluido=_dec(fluido), usado_otro=_dec(otro), ajuste=_dec(ajuste),
                 inicial=None if inicial is None else _dec(inicial),
                 en_pedido=_dec(pedido), no_imprimir=no_imp, precio=_dec(p['precio'], 2),
                 categoria_costo=p['categoria'],
@@ -958,14 +967,6 @@ def api_volumetria_transaccion(request, pk, reporte_pk):
             t.volumen_bbl = _dec(v, 2)
             peso = _num(body.get('peso'), 'Peso del lodo', 0, 30)
             t.peso_lodo = None if peso is None else _dec(peso, 2)
-            lp = productos.get(int(body.get('lodo_producto_id') or 0))
-            if lp is None:
-                raise _Rechazo('Elige el producto de lodo reciclado (de los productos activos del pozo).')
-            t.lodo_producto_id = lp['producto_id']
-            t.lodo_producto_texto = f"{lp['descripcion']}"[:255]
-            t.lodo_cantidad = _dec(vol.consumo_lodo_entero(v, lp['unidad'], lp['tamano']))
-            t.lodo_precio = _dec(lp['precio'], 2)
-            t.lodo_categoria = lp['categoria']
             t.origen_destino = str(body.get('origen') or '').strip()[:120]
             for item in body.get('concentraciones') or []:
                 pid = int(item.get('producto_id') or 0)

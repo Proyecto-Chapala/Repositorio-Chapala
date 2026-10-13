@@ -1039,6 +1039,7 @@ Tabla: `operaciones_inventarioproductodia` · Migración: `0020_volumetria` · �
 |---|---|---|
 | `reporte` | ForeignKey | → **ReporteDiario** (on_delete CASCADE) |
 | `producto` | ForeignKey | → **Producto** (on_delete PROTECT) |
+| `usado_fluido` | DecimalField(12,3) | (0036_inventario_usado_fluido_manual) Usado en fluidos escrito a mano; por defecto `0` |
 | `usado_otro` | DecimalField(12,3) | Usado en otro módulo; por defecto `0` |
 | `ajuste` | DecimalField(12,3) | Ajuste (+ suma / − resta); por defecto `0` |
 | `en_pedido` | DecimalField(12,3) | En pedido; por defecto `0` |

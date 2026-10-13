@@ -21,6 +21,9 @@ Las pruebas automáticas (`python manage.py test operaciones`) cubren los cálcu
 | 13 | [Reportito: comentario y Excel](13_REPORTITO.md) | 16 | 0032 | Sin probar |
 | 14 | [Papelera de pozos](14_PAPELERA_POZOS.md) | — (doc 24) | 0034 | Sin probar |
 | 15 | [Servicios del pozo](15_SERVICIOS_DEL_POZO.md) | — (doc 25) | 0035 | Sin probar |
+| 16 | [Lodo reciclado solo como volumen](16_LODO_RECICLADO_SOLO_VOLUMEN.md) | — (doc 26) | — | Sin probar |
+| 17 | [Acumulados por columna en el inventario](17_ACUMULADOS_INVENTARIO.md) | — (doc 26) | — | Sin probar |
+| 18 | [Inventario de consumo separado del balance](18_INVENTARIO_DE_CONSUMO.md) | — (doc 26) | 0036 | Sin probar |
 
 ## Antes de empezar
 

@@ -28,6 +28,7 @@
 | 22 | [Cambios del 02-oct: Smart Mud](22_CAMBIOS_02OCT_SMART_MUD.md) | Nombre, logos, tanques, monedas, intervalos, hub bloqueado, `.exe` sin consola |
 | 23 | [Correcciones de la revisión de octubre](23_CORRECCIONES_REVISION_OCT.md) | Inventario por pozo, GE, precios, monedas, trailer, sidetrack, reportito (pendiente) |
 | 24 | [Papelera y revisión de la base de datos](24_PAPELERA_Y_TIPOS_DE_DATOS.md) | Revisión previa al empaquetado, papelera de pozos, horas y costo con su tipo, limpieza |
+| 26 | [Rediseño del inventario y del lodo reciclado](26_REDISENO_INVENTARIO_Y_LODO_RECICLADO.md) | Orden de trabajo: lodo reciclado solo volumen, acumulados por columna; columnas manuales pendientes |
 | 25 | [Servicios del pozo](25_SERVICIOS_DEL_POZO.md) | Ingenieros y trailers cobrados por día con su categoría y tarifa; "usado en otro módulo" solo para transferencias a otra línea |
 | — | [Pruebas en pantalla](pruebas/README.md) | Un archivo por cambio: cómo funciona y pasos para verificar |
 

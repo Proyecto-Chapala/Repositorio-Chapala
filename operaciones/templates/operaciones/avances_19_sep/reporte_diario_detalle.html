@@ -2373,7 +2373,7 @@
           <div class="cs-card-cabecera">
             <div>
               <span class="cs-card-titulo">Inventario diario de productos</span>
-              <span class="cs-card-subtitulo">La existencia es la de este pozo: Inicial = final del día anterior (o el número que escribas a mano). Recibido y devuelto salen de los tickets (cantidad real); lo usado en fluidos, en otro módulo y el ajuste se descuentan. Solo las celdas blancas se escriben aquí.</span>
+              <span class="cs-card-subtitulo">La existencia es la de este pozo: Inicial = final del día anterior (o el número que escribas a mano). Recibido y devuelto salen de los tickets de recepción y devolución (cantidad real); usado en fluidos, usado otro módulo y ajuste se escriben a mano. Solo las celdas blancas se escriben aquí.</span>
             </div>
             <div class="cs-eq-acciones">
               <label class="cs-check"><input type="checkbox" id="vaSoloMovimiento"><span>Solo con existencia o movimiento</span></label>
@@ -2387,6 +2387,7 @@
                   <th colspan="5">Producto</th>
                   <th colspan="7" class="cs-grupo-nuevas">Existencias</th>
                   <th colspan="3" class="cs-grupo-costos">Costos</th>
+                  <th colspan="4" class="cs-grupo-acumulados">Acumulado del pozo</th>
                   <th colspan="3">Otros</th>
                 </tr>
                 <tr>
@@ -2401,6 +2402,10 @@
                   <th class="cs-num cs-grupo-costos">Usado hoy</th>
                   <th class="cs-num cs-grupo-costos">Diario</th>
                   <th class="cs-num cs-grupo-costos">Acumulado</th>
+                  <th class="cs-num cs-grupo-acumulados">Recibido</th>
+                  <th class="cs-num cs-grupo-acumulados">Devuelto</th>
+                  <th class="cs-num cs-grupo-acumulados">Usado en fluidos</th>
+                  <th class="cs-num cs-grupo-acumulados">Usado otro módulo</th>
                   <th class="cs-num">Peso (lb)</th>
                   <th class="cs-num">En pedido</th>
                   <th class="cs-centro">No imprimir</th>
@@ -2409,7 +2414,7 @@
               <tbody id="vaFilasInv"></tbody>
             </table>
           </div>
-          <p class="cs-nota">"Usado otro módulo" es lo que se transfiere a otra línea (por ejemplo, cementación): sale del inventario y se cobra, pero no cuenta en las concentraciones ni en el lodo. Los ingenieros y trailers se cobran en la pestaña <strong>Servicios</strong>. El ajuste suma si es positivo y resta si es negativo.</p>
+          <p class="cs-nota">"Usado en fluidos", "Usado otro módulo" y el ajuste se escriben a mano. "Usado otro módulo" es lo que se transfiere a otra línea (por ejemplo, cementación): sale del inventario y se cobra, pero no cuenta en las concentraciones ni en el lodo. Los ingenieros y trailers se cobran en la pestaña <strong>Servicios</strong>. El ajuste suma si es positivo y resta si es negativo.</p>
         </div>
 
         <div class="va-grid-2">

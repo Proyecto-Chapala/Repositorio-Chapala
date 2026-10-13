@@ -13,8 +13,9 @@ se derivan repitiendo los movimientos del pozo (volumetria.py).
 
 Inventario POR POZO (revisión de octubre 2026, revierte el inventario unificado del 25-sep):
 la matriz (Producto) es solo catálogo y no aporta cantidades ni precios al pozo. La existencia
-del pozo sale de los tickets de recepción: inicial = final del día anterior; final = inicial +
-recibido − devuelto − usado en fluidos − usado en otro módulo ± ajuste.
+del pozo sale de los tickets de recepción y devolución: inicial = final del día anterior; final = inicial +
+recibido − devuelto − usado en fluidos − usado en otro módulo ± ajuste. Usado en fluidos y en otro módulo
+se llenan a mano.
 """
 
 from django.db import models
@@ -172,8 +173,9 @@ class TransaccionVolumenProducto(models.Model):
 
 class InventarioProductoDia(models.Model):
     """
-    Columnas del inventario que el ingeniero llena a mano: uso en otro módulo (personal de
-    servicio, por ejemplo días de ingeniero), ajuste, cantidad pedida y "no imprimir".
+    Columnas del inventario que el ingeniero llena a mano: existencia inicial, uso en fluidos,
+    uso en otro módulo (transferencias a otra línea, ej. cementación), ajuste, cantidad pedida y
+    "no imprimir".
     """
 
     reporte = models.ForeignKey(ReporteDiario, on_delete=models.CASCADE, related_name='inventario_productos')
@@ -181,6 +183,7 @@ class InventarioProductoDia(models.Model):
     inicial = models.DecimalField(
         max_digits=12, decimal_places=3, null=True, blank=True, verbose_name="Existencia inicial (manual)",
         help_text="Si se llena, reemplaza el final del día anterior como existencia inicial de este día.")
+    usado_fluido = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Usado en fluidos")
     usado_otro = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Usado en otro módulo")
     ajuste = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Ajuste (+ suma / − resta)")
     en_pedido = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="En pedido")

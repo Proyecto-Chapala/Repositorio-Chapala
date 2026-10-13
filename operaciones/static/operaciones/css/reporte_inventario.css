@@ -565,3 +565,8 @@
 @media (max-width: 900px) {
   .va-srv-form { grid-template-columns: 1fr; }
 }
+
+/* Grupo de acumulados del pozo en la tabla de inventario */
+.cs-tabla .cs-grupo-acumulados      { background-color: #f8fafc; }
+.cs-tabla thead .cs-grupo-acumulados { background-color: #edf2f7; }
+
