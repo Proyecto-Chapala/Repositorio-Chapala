@@ -1,6 +1,6 @@
 # 00 — Traspaso: estado actual y cómo se trabaja
 
-> **Léelo primero** (después de `AGENT.md`). Actualizado el **02-oct-2026**. Con este archivo, [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y el documento del tema se retoma el proyecto sin la conversación anterior.
+> **Léelo primero** (después de `AGENT.md`). Actualizado el **12-oct-2026**. Con este archivo, [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y el documento del tema se retoma el proyecto sin la conversación anterior.
 
 ## 0. Cómo se trabaja (reglas del usuario)
 
@@ -15,12 +15,13 @@
 - Si el usuario comparte imágenes o audios, **analizarlos y dejar el análisis en `docs/`** (fuentes en `docs/fuentes/`).
 - Al terminar un cambio: actualizar este traspaso, el [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y el documento del tema, y crear su archivo de prueba en [`pruebas/`](pruebas/README.md).
 
-## 1. Estado (02-oct-2026)
+## 1. Estado (12-oct-2026)
 
-- Escrito en disco: todo lo del 02-oct (ver [22](22_CAMBIOS_02OCT_SMART_MUD.md)). **El usuario todavía no hizo commit** de estos cambios.
-- Migraciones aplicadas en la BD del usuario: hasta la **0026** (corrió `migrate` desde cero el 02-oct sin errores). **Falta la 0027.**
-- **Falta probar en pantalla** casi todo lo del 27-sep y del 02-oct (lista en [16 § A](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md#a-pendiente-de-probar-en-pantalla-el-usuario)).
-- Fecha límite que dio el usuario: listo para el curso a los ingenieros (semana del 28-sep), ya vencida; se está en la ronda de correcciones del cliente.
+- **Programadas todas las correcciones de la revisión de octubre** (20 puntos): ver [23](23_CORRECCIONES_REVISION_OCT.md). Fuentes: `docs/fuentes/transcripciones_revision_oct/` (usar las `*_mejorado.txt`).
+- **Pruebas automáticas:** 83, todas pasan (`python manage.py test operaciones`). **Nada probado aún en pantalla.**
+- **Migraciones:** el usuario aplicó hasta la **0030**. Faltan **0031** (tarifas en dos monedas) y **0032** (comentario del reportito): correr `migrate`.
+- **El usuario todavía no hizo commit** de los cambios de octubre.
+- Próximo hito con el cliente: prueba integral con los ingenieros (pozo nuevo: piloto 8½", ampliación 12¼", tres side tracks e impresión). Después de esa sesión se cierra la revisión.
 
 ### Cadena de migraciones
 
@@ -59,10 +60,12 @@
 
 ## 3. Lo que hay que atacar ahora (prioridad)
 
-1. Que el usuario corra la **0027**, instale **Pillow** y **pruebe en pantalla** ([16 § A](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md)). Si hay error, pedir el traceback completo.
-2. Que el usuario corra `limpiar_documentacion.ps1` (borra la documentación vieja ya copiada a `docs/`) y haga commit.
-3. Respuestas abiertas de AOS ([16 § B](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md)): dos monedas en el Excel, borrar el último reporte, comentario del reporte de propiedades.
-4. Construir `SmartMud.exe` con `Construir EXE.bat` y probarlo en un equipo limpio.
+1. Que el usuario corra `migrate` (0031 y 0032) y haga **commit** de los cambios de octubre.
+2. **Pruebas en pantalla** con las guías de [`pruebas/`](pruebas/README.md) (01 a 13), en orden y en un pozo nuevo. Marcar las casillas y anotar los fallos en cada guía; corregir lo que falle (si hay error, pedir el traceback completo). Atención especial a la prueba 12 (grilla de propiedades extra) y al formato de los Excel (pruebas 05 y 13).
+3. Verificar en pantalla los puntos **6** ("usado en otro módulo" no afecta las concentraciones) y **19** (tickets sin precio) del [23](23_CORRECCIONES_REVISION_OCT.md).
+4. Pendientes sin código: cargar el **catálogo de herramientas** (punto 20) y preguntar a **administración** la codificación de los números de guía/ticket (punto 19).
+5. Respuestas abiertas de AOS ([16 § B](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md)): borrar el último reporte; si más adelante quieren conversión automática de monedas con la tasa del día.
+6. Construir `SmartMud.exe` con `Construir EXE.bat` y probarlo en un equipo limpio.
 
 ## 4. Decisiones del usuario vigentes
 

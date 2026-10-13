@@ -18,7 +18,7 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 | Segunda moneda | Configuración General → reporte → Pantalla de costos | Elegir VES, tasa y %; revisar el recuadro "Cobro en dos monedas" |
 | Hub bloqueado | Fluidos de Perforación y Equipos | Solo *Nuevo Reporte* y *Abrir*; etiquetas con *Modificar etiquetas* |
 | Eliminar pozo | Pantalla del pozo | Escribir el nombre; la matriz no debe cambiar |
-| **Correcciones de octubre** | Varias | Pasos detallados por cambio en [`pruebas/`](pruebas/README.md) (inventario por pozo, GE, precio por barril…) |
+| **Correcciones de octubre (20 puntos)** | Varias | 13 guías con pasos y casillas en [`pruebas/`](pruebas/README.md) (01 a 13), más verificar los puntos 6 y 19 del [23](23_CORRECCIONES_REVISION_OCT.md) |
 | Tanques (antes fosas) | Pestaña 8 y Excel | Textos, mensajes de error y hoja *Contabilidad de Volumen* |
 | Excel diario | Botón Excel | Logo AOS arriba a la izquierda, una sola hoja de inventario, **sin páginas 2 y 3 vacías**, "Fecha Inicial" |
 | PDF | Reporte de propiedades y reporte final | Logo AOS arriba a la izquierda |
