@@ -101,6 +101,7 @@ from .models_inventario import (
     VolumenFosaDia, VolumenHoyoDia, TransaccionVolumen, TransaccionVolumenProducto,
     InventarioProductoDia, TicketProducto, TicketProductoDetalle,
 )
+from .models_servicios import ServicioPozo, ServicioDia, costos_servicios
 from . import volumetria as vol
 from .volumetria import ErrorVolumetria, ACTIVO, RESERVA, PREMEZCLA, OTRAS, GRUPOS
 
@@ -561,12 +562,14 @@ def _estado_volumetria(pozo, reporte):
             peso_lb=round(peso, 1) if peso is not None else None,
         ))
 
+    servicios, servicio_dia_cat, servicio_acum_cat = _servicios_del_dia(pozo, reporte)
+    costo_dia_cat = (sim or {}).get('costo_dia_cat', {})
+    costo_acum_cat = (sim or {}).get('costo_acum_cat', {})
     costos = []
-    if sim:
-        for cat, nombre in vol.CATEGORIAS_COSTO.items():
-            costos.append({'categoria': cat, 'nombre': nombre,
-                           'diario': round(sim['costo_dia_cat'].get(cat, 0.0), 2),
-                           'acumulado': round(sim['costo_acum_cat'].get(cat, 0.0), 2)})
+    for cat, nombre in vol.CATEGORIAS_COSTO.items():
+        costos.append({'categoria': cat, 'nombre': nombre,
+                       'diario': round(costo_dia_cat.get(cat, 0.0) + float(servicio_dia_cat[cat]), 2),
+                       'acumulado': round(costo_acum_cat.get(cat, 0.0) + float(servicio_acum_cat[cat]), 2)})
 
     # Concentraciones
     concentraciones = []
@@ -654,6 +657,8 @@ def _estado_volumetria(pozo, reporte):
         'categorias_perdida': [{'codigo': c['codigo'], 'descripcion': c['descripcion']} for c in estado_p['disponibles']],
         'descarga_equipos': {str(k): round(v, 2) for k, v in descarga.items()},
         'inventario': inventario,
+        'servicios': servicios,
+        'categorias_servicio': [{'codigo': c, 'nombre': n} for c, n in vol.CATEGORIAS_SERVICIO.items()],
         'costos': costos,
         'peso_quimicos_lb': round(peso_total, 1),
         'volumen_quimicos_bbl': round(vol_quimicos, 2),
@@ -758,6 +763,8 @@ def api_volumetria_guardar(request, pk, reporte_pk):
                 categoria_costo=p['categoria'],
             ))
 
+        filas_servicio = _leer_servicios_del_dia(pozo, reporte, body.get('servicios') or [])
+
         with transaction.atomic():
             enviados = [f.fosa_numero for f in filas_fosa]
             reporte.volumenes_fosa.filter(fosa_numero__in=enviados).delete()
@@ -769,10 +776,102 @@ def api_volumetria_guardar(request, pk, reporte_pk):
             })
             reporte.inventario_productos.all().delete()
             InventarioProductoDia.objects.bulk_create(filas_inv)
+            reporte.servicios_dia.all().delete()
+            ServicioDia.objects.bulk_create(filas_servicio)
             _validar(pozo, reporte)
     except _Rechazo as e:
         return _error(str(e))
     return _respuesta(pozo, reporte, 'Volumetría guardada.')
+
+
+# ---------- Servicios del pozo (ingenieros, trailers...) ----------
+
+def _servicios_del_dia(pozo, reporte):
+    """
+    Filas de la pestaña "Servicios": los servicios activos del pozo y los inactivos que tienen
+    días en este reporte. Devuelve también el costo del día y el acumulado por categoría.
+    """
+    diario_cat, acumulado_cat, filas_dia, acumulado_servicio = costos_servicios(pozo, reporte)
+    hoy = {f.servicio_id: f for f in filas_dia}
+    filas = []
+    for s in pozo.servicios.all():
+        dia = hoy.get(s.id)
+        if not s.activo and dia is None:
+            continue
+        filas.append({
+            'servicio_id': s.id, 'descripcion': s.descripcion, 'categoria': s.categoria_costo,
+            'categoria_nombre': s.get_categoria_costo_display(), 'activo': s.activo,
+            'tarifa_contrato': float(s.tarifa_diaria),
+            'dias': float(dia.dias) if dia else 0.0,
+            'tarifa': float(dia.tarifa) if dia else float(s.tarifa_diaria),
+            'costo_diario': float(dia.costo) if dia else 0.0,
+            'costo_acumulado': float(acumulado_servicio[s.id]),
+        })
+    return filas, diario_cat, acumulado_cat
+
+
+def _leer_servicios_del_dia(pozo, reporte, items):
+    """Días cobrados y tarifa de cada servicio en el reporte. La categoría se copia del servicio."""
+    servicios = {s.id: s for s in pozo.servicios.all()}
+    filas = []
+    for item in items:
+        try:
+            s = servicios[int(item.get('servicio_id'))]
+        except (TypeError, ValueError, KeyError):
+            raise _Rechazo('Servicio inválido.')
+        dias = _num(item.get('dias'), f"{s.descripcion} — días cobrados", 0, 31) or 0.0
+        if not dias:
+            continue
+        tarifa = _num(item.get('tarifa'), f"{s.descripcion} — tarifa", 0)
+        filas.append(ServicioDia(
+            reporte=reporte, servicio=s, dias=_dec(dias, 2), categoria_costo=s.categoria_costo,
+            tarifa=s.tarifa_diaria if tarifa is None else _dec(tarifa, 2),
+        ))
+    return filas
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_servicio_guardar(request, pk, reporte_pk):
+    """Crea o modifica un servicio del pozo: descripción, categoría, tarifa diaria y si está activo."""
+    pozo, reporte = _obtener(pk, reporte_pk)
+    try:
+        body = _leer(request)
+        servicio = ServicioPozo(pozo=pozo)
+        if body.get('id'):
+            servicio = get_object_or_404(ServicioPozo, pk=body.get('id'), pozo=pozo)
+        descripcion = (body.get('descripcion') or '').strip()
+        if not descripcion:
+            raise _Rechazo('Escribe la descripción del servicio.')
+        try:
+            categoria = int(body.get('categoria_costo'))
+        except (TypeError, ValueError):
+            categoria = None
+        if categoria not in vol.CATEGORIAS_SERVICIO:
+            raise _Rechazo('Elige la categoría del servicio.')
+        tarifa = _num(body.get('tarifa_diaria'), 'Tarifa diaria', 0, permitir_vacio=False)
+        servicio.descripcion = descripcion[:150]
+        servicio.categoria_costo = categoria
+        servicio.tarifa_diaria = _dec(tarifa, 2)
+        servicio.activo = bool(body.get('activo', True))
+        servicio.save()
+    except _Rechazo as e:
+        return _error(str(e))
+    return _respuesta(pozo, reporte, 'Servicio guardado.')
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_servicio_eliminar(request, pk, reporte_pk, servicio_pk):
+    """Quita un servicio del pozo. Si ya tiene días cobrados solo se desactiva, para conservar su costo."""
+    pozo, reporte = _obtener(pk, reporte_pk)
+    servicio = get_object_or_404(ServicioPozo, pk=servicio_pk, pozo=pozo)
+    if servicio.dias.exists():
+        servicio.activo = False
+        servicio.save(update_fields=['activo'])
+        return _respuesta(pozo, reporte, 'El servicio ya tiene días cobrados: se desactivó y su costo se conserva.')
+    servicio.delete()
+    return _respuesta(pozo, reporte, 'Servicio eliminado.')
 
 
 def _fosa_valida(pozo, reporte, numero, etiqueta):
@@ -1126,8 +1225,19 @@ def resumen_costos(pozo, reporte):
                     'costo_total': round(s['costo_diario'], 2),
                 })
 
+    servicio_dia_cat, servicio_acum_cat, filas_servicio, _ = costos_servicios(pozo, reporte)
+    for cat, v in servicio_dia_cat.items():
+        diario[vol.columna_resumen(cat)] += float(v)
+    for cat, v in servicio_acum_cat.items():
+        acumulado[vol.columna_resumen(cat)] += float(v)
+    for f in filas_servicio:
+        items.append({'categoria': vol.NOMBRE_COLUMNA_RESUMEN[vol.columna_resumen(f.categoria_costo)],
+                      'descripcion': f.servicio.descripcion, 'cantidad': float(f.dias), 'unidad': 'días',
+                      'costo_unitario': float(f.tarifa), 'costo_total': round(float(f.costo), 2)})
+
     for uso in reporte.usos_equipo.all():
         c = uso.costo_diario
+
         diario['df_equip'] += c
         if c:
             items.append({'categoria': 'Equipos / Mallas', 'descripcion': f"Renta {uso.equipo_descripcion} ({uso.equipo_serie})",

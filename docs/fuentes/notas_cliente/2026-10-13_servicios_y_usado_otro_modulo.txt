@@ -1,0 +1,28 @@
+Notas del usuario en el chat (13-oct-2026), copiadas tal cual. Análisis en docs/25_SERVICIOS_DEL_POZO.md.
+
+1) Usado en otro módulo se refiere a otra línea.
+Lo de ingeniero tiene que venir de una partida como si se tuviera un producto, eso puede ser como ingeniero control de solido o ingeniero de fluido.
+
+2) Si estamos hablando de productos químicos, nosotros tenemos la línea de fluidos
+Usando productos dentro del fluido, pero vino la gente de cementacion que es otra línea me dice "Necesito ciertos productos" y yo tengo mi lista de precios y se lo transfiero a ellos,
+Tengo usarlo en otro módulo para que no me lo consideren en las concentraciones, esa es la función que tiene el usado en otro módulo
+
+Sobre los ingenieros y trailers
+Debe haber un aparato de ingenieros y trailers que cobra el día con una valor diario de la tasa, y si se uso un día de debe reflejar, el costo
+Usar otro módulo para que entienda que está fuera del lodo si se transfirieron cuántos productos para otras personas
+
+3) Cómo hay tarifas diferentes, el servicio de fluidos tiene tarifas diferentes a lo que es el control de solido, uno va colocando su categoría
+
+Ya con ingeniero de fluido es lo que va a aparecer, el nombre de ingeniero ya va en lo que se haya introducido en los datos generales
+
+Tiene que aparecer como una parte contable
+
+Eso va dando el cobro del ingeniero de acuerdo a la tasa que le estés dando
+
+Respondiendo a tus preguntas:
+Lo último no va ya que estamos cobrando como un servicio
+
+Dónde se quieren ver en la pestaña 8, como una pestaña al lado de la de inventario de productos
+
+Otra cosa:
+Las contrataciones, el alcance dice que el servicio de ingeniería implica un coordinador más dos químicos con una tarifa de tal, si se pone una tarifa de ingeniería ya se tiene el costo de lo que se tiene en el día O sea el diario, Ya lo que se tiene en el día es lo que se refleja listo, cuando se cierre el pozo ya eso debería quedar cerrado así con los servicios y así. Pueden ser servicios de filtración, de control de sólido, así.

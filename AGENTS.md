@@ -2,12 +2,13 @@
 
 Si eres un asistente o un desarrollador que empieza a trabajar en este proyecto (sistema Django de fluidos de perforación para **All Oil Services, C.A.**), **antes de responder o tocar código lee en este orden**:
 
-1. **`docs/00_TRASPASO.md`** — estado actual, reglas de trabajo, cadena de migraciones (la próxima depende de **`0034_papelera_pozos_y_tipos_opcionales`**) y prioridades.
+1. **`docs/00_TRASPASO.md`** — estado actual, reglas de trabajo, cadena de migraciones (la próxima depende de **`0035_servicios_del_pozo`**) y prioridades.
 2. **`docs/16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md`** — qué falta probar, decisiones abiertas, errores conocidos y lo ya resuelto.
 3. **El documento del tema** (índice completo en `docs/README.md`):
 
 | Tema | Documento |
 |---|---|
+| Servicios del pozo: ingenieros y trailers por día (13-oct) | `docs/25_SERVICIOS_DEL_POZO.md` |
 | Papelera de pozos y revisión de la base de datos (12-oct) | `docs/24_PAPELERA_Y_TIPOS_DE_DATOS.md` |
 | Correcciones de la revisión de octubre (inventario, GE, precios, trailer, sidetrack, reportito) | `docs/23_CORRECCIONES_REVISION_OCT.md` |
 | Cambios del 02-oct (Smart Mud, logos, tanques, monedas, intervalos, hub, `.exe`) | `docs/22_CAMBIOS_02OCT_SMART_MUD.md` |

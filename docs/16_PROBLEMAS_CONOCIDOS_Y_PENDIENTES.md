@@ -18,6 +18,7 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 | Segunda moneda | Configuración General → reporte → Pantalla de costos | Elegir VES, tasa y %; revisar el recuadro "Cobro en dos monedas" |
 | Hub bloqueado | Fluidos de Perforación y Equipos | Solo *Nuevo Reporte* y *Abrir*; etiquetas con *Modificar etiquetas* |
 | Eliminar pozo | Pantalla del pozo | Escribir el nombre; la matriz no debe cambiar |
+| **Servicios del pozo** (migración 0035) | Pestaña 8 › Servicios | Guía [pruebas/15](pruebas/15_SERVICIOS_DEL_POZO.md) |
 | **Correcciones de octubre (20 puntos)** | Varias | 13 guías con pasos y casillas en [`pruebas/`](pruebas/README.md) (01 a 13), más verificar los puntos 6 y 19 del [23](23_CORRECCIONES_REVISION_OCT.md) |
 | Tanques (antes fosas) | Pestaña 8 y Excel | Textos, mensajes de error y hoja *Contabilidad de Volumen* |
 | Excel diario | Botón Excel | Logo AOS arriba a la izquierda, una sola hoja de inventario, **sin páginas 2 y 3 vacías**, "Fecha Inicial" |
@@ -36,6 +37,7 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 | Paquete de entrega: reporte principal, inventario, concentraciones, volumetría | Confirmar con el ingeniero |
 | Error en la hoja a lápiz del ingeniero (ejemplo 3 de concentraciones: 15,83, no 16,7) | **Avisarle** |
 | Códigos de costo diario 1-4 | Confirmar con AOS |
+| ¿En qué columna del resumen va un servicio de **filtración**? | Hoy se le elige una categoría existente. Ver [25 § 4](25_SERVICIOS_DEL_POZO.md) |
 | Campo **"Unidades"** en la renta de equipos y bloqueo por cantidad del almacén | Pendiente (hoy deja poner 7 con 5 en almacén porque el campo no existe) |
 | Indicadores **API RP 13C** de la pestaña 6 | Standby hasta que el usuario consiga las fórmulas |
 | **SUS** y **DWM**, **Screen Usage** y **Reset** de ONE-TRAX | Sin información; no implementados |
@@ -82,6 +84,10 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 - **Nombres internos heredados**: `Fosa`, `LODO_ENTERO`, `es_producto_mi`, `ingeniero_miswaco_*`, `mi_representante_*`, plantilla `reporte_diario_onetrax.xlsx`. En pantalla ya no se ven; renombrarlos exige migraciones.
 
 ## F. Historial de lo resuelto
+
+### 13-oct-2026 (servicios del pozo; ver [25](25_SERVICIOS_DEL_POZO.md))
+- Ingenieros, trailers y demás servicios se cobran en la pestaña 8 › **Servicios**, con categoría y tarifa diaria propias (0035). "Usado en otro módulo" queda para productos transferidos a otra línea. Falta probar en pantalla: [pruebas/15](pruebas/15_SERVICIOS_DEL_POZO.md).
+
 
 ### 12-oct-2026 (revisión de la base de datos; ver [24](24_PAPELERA_Y_TIPOS_DE_DATOS.md))
 - Base revisada antes de empaquetar: esquema sincronizado, migra desde cero en SQLite, integridad ok. **SQLite queda como base definitiva.**

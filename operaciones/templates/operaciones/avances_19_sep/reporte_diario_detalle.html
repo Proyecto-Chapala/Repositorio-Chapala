@@ -2265,6 +2265,7 @@
         <button type="button" class="cs-eq-tab is-active" data-va-tab="fosas">Volúmenes de tanques</button>
         <button type="button" class="cs-eq-tab" data-va-tab="balance">Balance de volumen</button>
         <button type="button" class="cs-eq-tab" data-va-tab="inventario">Inventario de productos</button>
+        <button type="button" class="cs-eq-tab" data-va-tab="servicios">Servicios</button>
       </div>
 
       <div class="cs-avisos" id="vaAvisos"></div>
@@ -2408,7 +2409,7 @@
               <tbody id="vaFilasInv"></tbody>
             </table>
           </div>
-          <p class="cs-nota">"Usado otro módulo" sirve para el personal (días de ingeniero de fluidos, de control de sólidos, IFE). Los productos sin unidad se tratan como servicios: generan costo pero no llevan existencias. El ajuste suma si es positivo y resta si es negativo.</p>
+          <p class="cs-nota">"Usado otro módulo" es lo que se transfiere a otra línea (por ejemplo, cementación): sale del inventario y se cobra, pero no cuenta en las concentraciones ni en el lodo. Los ingenieros y trailers se cobran en la pestaña <strong>Servicios</strong>. El ajuste suma si es positivo y resta si es negativo.</p>
         </div>
 
         <div class="va-grid-2">
@@ -2421,7 +2422,7 @@
                 <tfoot id="vaCostosPie"></tfoot>
               </table>
             </div>
-            <p class="cs-nota">La categoría sale del "Código de Costo Diario" de cada producto activo: 1 Químicos, 2 Ingeniero de fluidos, 3 Ingeniero de control de sólidos, 4 Ingeniero IFE, 5 Trailer. Los servicios (ingeniero, trailer) son productos activos <strong>sin unidad</strong>: los días se cargan en "Usado otro módulo".</p>
+            <p class="cs-nota">Los químicos suman en la categoría del "Código de Costo Diario" de cada producto activo. Los ingenieros y trailers suman según la categoría que tengan en la pestaña <strong>Servicios</strong>.</p>
           </div>
           <div class="report-card-modern">
             <div class="cs-card-titulo">Datos del inventario</div>
@@ -2431,9 +2432,51 @@
           </div>
         </div>
       </div>
+
+      <!-- Servicios (ingenieros, trailers...) -->
+      <div class="va-panel" id="vaPanelServicios" hidden>
+        <div class="report-card-modern">
+          <div class="cs-card-cabecera">
+            <div>
+              <span class="cs-card-titulo">Servicios del día</span>
+              <span class="cs-card-subtitulo">Ingenieros, trailers y demás servicios del contrato que se cobran por día. Escribe los días cobrados (normalmente 1, o 0 si no se usó). La tarifa aplicada viene de la tarifa del contrato y se puede corregir para este día. Los nombres de los ingenieros salen de los datos generales del pozo.</span>
+            </div>
+          </div>
+          <div class="cs-tabla-wrapper">
+            <table class="cs-tabla">
+              <thead>
+                <tr>
+                  <th>Servicio</th><th>Categoría</th><th class="cs-num">Tarifa del contrato</th>
+                  <th class="cs-num">Días cobrados</th><th class="cs-num">Tarifa aplicada</th>
+                  <th class="cs-num">Diario</th><th class="cs-num">Acumulado</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="vaFilasServicios"></tbody>
+              <tfoot id="vaServiciosPie"></tfoot>
+            </table>
+          </div>
+          <p class="cs-nota">Cada día guarda su tarifa: si cambia la tarifa del contrato, los días ya cargados conservan su costo. Se guarda con el botón "Guardar volumetría".</p>
+        </div>
+
+        <div class="report-card-modern">
+          <div class="cs-card-titulo" id="vaSrvTitulo">Agregar servicio</div>
+          <div class="va-srv-form">
+            <label>Descripción<input type="text" class="report-input" id="vaSrvDescripcion" maxlength="150" placeholder="Ej.: Ingeniería de fluidos (coordinador + 2 ingenieros)"></label>
+            <label>Categoría<select class="report-input" id="vaSrvCategoria"></select></label>
+            <label>Tarifa diaria<input type="number" class="report-input" id="vaSrvTarifa" min="0" step="any" placeholder="0"></label>
+            <label class="cs-check"><input type="checkbox" id="vaSrvActivo" checked><span>Activo</span></label>
+            <div class="cs-eq-acciones">
+              <button type="button" class="btn-modern-secondary btn-sm" id="vaSrvCancelar" hidden>Cancelar</button>
+              <button type="button" class="btn-modern-primary btn-sm" id="vaSrvGuardar">Guardar servicio</button>
+            </div>
+          </div>
+          <p class="cs-nota">La categoría decide en qué columna del resumen de costos suma: ingeniero de fluidos en "Químicos / Personal DF", control de sólidos e IFE en "Ingeniero IFE / Control de sólidos" y trailer en "Otros costos".</p>
+        </div>
+      </div>
     </section>
 
     <!-- ============ 3. HIDRÁULICA (API RP 13D) ============ -->
+
     <section id="ivVistaHidraulica" hidden>
       <div class="report-card-modern">
         <div class="cs-card-cabecera">
