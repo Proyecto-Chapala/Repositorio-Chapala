@@ -141,15 +141,16 @@
       </div>
       <div class="modal-body">
         <p class="eliminar-pozo-aviso">
-          Se borrará <strong>{{ pozo.nombre }}</strong> con toda su información: configuración, intervalos,
-          tanques y todos sus reportes diarios. <strong>No se puede deshacer.</strong>
+          <strong>{{ pozo.nombre }}</strong> tiene <strong>{{ pozo.reportes_diarios.count }} reporte{{ pozo.reportes_diarios.count|pluralize }} diario{{ pozo.reportes_diarios.count|pluralize }}</strong>.
+          El pozo se enviará a la papelera con toda su información y dejará de aparecer en el sistema.
+          Se puede restaurar desde <strong>Pozos › Papelera</strong>.
         </p>
         <label for="inputConfirmarPozo" class="eliminar-pozo-label">Para confirmar, escribe el nombre del pozo:</label>
         <input type="text" id="inputConfirmarPozo" class="form-input" autocomplete="off" placeholder="{{ pozo.nombre }}">
       </div>
       <div class="modal-footer">
         <span class="field-error" id="errorEliminarPozo"></span>
-        <button type="button" class="btn btn-eliminar" id="btnConfirmarEliminarPozo" disabled>Eliminar definitivamente</button>
+        <button type="button" class="btn btn-eliminar" id="btnConfirmarEliminarPozo" disabled>Enviar a la papelera</button>
       </div>
     </div>
   </div>

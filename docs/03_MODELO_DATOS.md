@@ -32,7 +32,7 @@ Pozo ─┬─ configuración (1 por pozo): WellHeaderInfo · CentrifugaUnidadCo
 ## Reglas de integridad que no están en el esquema
 
 1. **Un reporte por fecha y pozo.** Lo valida `api_reporte_diario_crear`. El número de reporte (`ReporteDiario.numero_reporte`) **no se guarda**: se calcula como la posición del reporte por fecha dentro del pozo. Si se borra un reporte intermedio, los números siguientes se corren.
-2. **Borrado en cascada.** Borrar un `Pozo` borra todo lo suyo. Borrar un `ReporteDiario` borra todos sus datos de pestañas, tickets y transacciones, y la línea de tiempo del pozo **se recalcula sin ellos**. Ojo: eso puede dejar sin stock a días posteriores, y ese borrado **no se valida**.
+2. **Borrado en cascada.** Desde pantalla un `Pozo` no se borra: va a la papelera ([24](24_PAPELERA_Y_TIPOS_DE_DATOS.md)). Si se borra por código, se lleva todo lo suyo. Borrar un `ReporteDiario` borra todos sus datos de pestañas, tickets y transacciones, y la línea de tiempo del pozo **se recalcula sin ellos**. Ojo: eso puede dejar sin stock a días posteriores, y ese borrado **no se valida**.
 3. **Datos diarios sin FK a listas del pozo.** Guardan el catálogo maestro o el número/código, más una copia del texto (ver [02 § C](02_ARQUITECTURA.md#c-listas-del-pozo-borrar-y-recrear)).
 4. **Saldos derivados.** No existen columnas de "stock actual" para mallas ni para productos del pozo. `Producto.cantidad` es el stock **del almacén** (módulo Inventario). Desde la migración `0022_inventario_unificado` (compañero xtal) el reporte diario **descuenta y devuelve** `Producto.cantidad` usando los campos `stock_aplicado` (ver "Cambios del 27-sep").
 5. **Inmutables tras el Spud Date:** `Pozo.fecha_primera_captura` y `Pozo.tipo_fluido_inicial`. Tras confirmar el wizard, las unidades del pozo quedan bloqueadas (`unidades_bloqueadas`).
@@ -71,7 +71,8 @@ Pozo ─┬─ configuración (1 por pozo): WellHeaderInfo · CentrifugaUnidadCo
 | 0028_inventario_por_pozo | Elimina los campos `stock_aplicado` (revierte el inventario unificado) |
 | 0029_productoactivopozo_cobro_por | `ProductoActivoPozo.cobro_por` (por unidad o por barril) |
 | 0030_alter_reportediario_mi_representante_1_and_more | Pone al día los `verbose_name` atrasados (generada con `makemigrations`) |
-| 0031_tarifas_dos_monedas | `Pozo.cobrar_en_secundaria`; precios `*_secundaria` en productos, equipos y mallas activos; elimina la tasa y el % de la 0027. **La próxima migración depende de esta** |
+| 0031_tarifas_dos_monedas | `Pozo.cobrar_en_secundaria`; precios `*_secundaria` en productos, equipos y mallas activos; elimina la tasa y el % de la 0027 |
+| 0034_papelera_pozos_y_tipos_opcionales | `Pozo.eliminado_en`, `Pozo.eliminado_por` (papelera); horas de las muestras a `TimeField`; `EventoNoProgramado.costo` a `DecimalField(14,2)`. **La próxima migración depende de esta** |
 
 # Detalle por modelo
 
@@ -128,6 +129,10 @@ Tabla: `operaciones_pozo` · Migración: `0002_pozo_categoriaperdidaitem_propied
 | `creado_por` | ForeignKey | Creado por; → **User** (on_delete SET_NULL); opcional (null) |
 | `created_at` | DateTimeField |  |
 | `updated_at` | DateTimeField |  |
+| `eliminado_en` | DateTimeField | Papelera: fecha en que se eliminó; nulo si está vigente |
+| `eliminado_por` | ForeignKey | Papelera: → **User** (on_delete SET_NULL); opcional (null) |
+
+> `Pozo.objects` solo devuelve los pozos vigentes; `Pozo.todos` incluye los de la papelera.
 
 ### PropiedadUnidadPozo — Unidad Personalizada del Pozo
 

@@ -67,21 +67,29 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 |---|---|---|---|
 | S1 | 🔴 **Sin autenticación** | Ninguna vista exige inicio de sesión | `LoginRequiredMiddleware` o `@login_required`, y usuarios por rol |
 | S2 | 🔴 **CSRF desactivado** | ~77 vistas de escritura con `@csrf_exempt`, aunque el frontend ya envía el token | Quitar `@csrf_exempt` gradualmente |
-| S3 | 🔴 **`SECRET_KEY` en el código**, `DEBUG = True`, `ALLOWED_HOSTS = ['*']` | `chapala/settings.py` | Leerlos del `.env`; en producción `DEBUG=False` |
-| S4 | 🟠 **`.env` con la contraseña real** | Está en `.gitignore`, pero viaja en los zips (ej. `Proyecto CHAPALA.zip` en la raíz) | No compartir zips con el `.env`; si salió del equipo, cambiar la contraseña de PostgreSQL |
+| S3 | 🟢 Resuelto en el `.exe` (12-oct) | `SECRET_KEY` propia por instalación, `DEBUG=False`, `ALLOWED_HOSTS` solo local. En desarrollo siguen los valores de prueba | — |
+| S4 | 🟠 **`.env` con la contraseña real** | Está en `.gitignore`, pero viaja en los zips (ej. `Proyecto CHAPALA.zip` en la raíz) | No compartir zips con el `.env` (ya no hace falta: se usa SQLite) |
 | S5 | 🟢 Mensajes de error internos | Algunas vistas devuelven `str(e)` | Registrar y devolver un mensaje genérico |
 
 ## E. Deuda técnica y limpieza
 
-- **Archivos sobrantes** (ningún código los importa): `operaciones/models-1.py`, `views-1.py`, `admin-1.py`, `componentes/sidebar-1.html`, la carpeta `proyecto chapala - claude/`, `Claude outputs/` y `Proyecto CHAPALA.zip` (36 MB). El script `limpiar_documentacion.ps1` (raíz) borra la documentación vieja y los temporales; estos otros se dejan para que el usuario decida.
+- **Archivos sobrantes** (ningún código los importa): `Claude outputs/` y `Proyecto CHAPALA.zip` (36 MB). Los `*-1.py`, `sidebar-1.html` y `proyecto chapala - claude/` ya se quitaron (12-oct, ver [24](24_PAPELERA_Y_TIPOS_DE_DATOS.md)). El script `limpiar_documentacion.ps1` (raíz) borra la documentación vieja y los temporales; estos otros se dejan para que el usuario decida.
 - **Carpeta de plantillas `avances_19_sep/`**: nombre temporal. Renombrar (ej. `reporte_diario/`) junto con los `render()`.
 - **`reporte_diario_detalle.html` tiene ~5.300 líneas** con el JS de las pestañas 1 a 5 en línea. Extraer a un JS por pestaña.
 - **Sin pruebas automáticas.** Los motores son funciones puras. Fijar como pruebas los ejemplos verificados del manual (Gusher #2, mecha 1435 psi, centrífuga 9,2, retención 169,38 g/kg, concentraciones 13,64 / 15,20 / 15,83, side track 62 y 113 bbl, piloto 438 m y 109 bbl). Ver [19](19_GUIA_MANTENIMIENTO.md).
 - **Reporte final**: recalcula la volumetría día por día en memoria; con cientos de reportes puede tardar.
-- **Datos de prueba en PostgreSQL** ("Diegui 2", "PIPE PARAO"…): limpiar antes de entregar a AOS.
+- **Datos de prueba en la base** ("Diegui 2", "PIPE PARAO"…): limpiar antes de entregar a AOS.
 - **Nombres internos heredados**: `Fosa`, `LODO_ENTERO`, `es_producto_mi`, `ingeniero_miswaco_*`, `mi_representante_*`, plantilla `reporte_diario_onetrax.xlsx`. En pantalla ya no se ven; renombrarlos exige migraciones.
 
 ## F. Historial de lo resuelto
+
+### 12-oct-2026 (revisión de la base de datos; ver [24](24_PAPELERA_Y_TIPOS_DE_DATOS.md))
+- Base revisada antes de empaquetar: esquema sincronizado, migra desde cero en SQLite, integridad ok. **SQLite queda como base definitiva.**
+- **Papelera de pozos**: eliminar solo oculta; se restaura desde Pozos › Papelera (0034).
+- Horas de las muestras como `TimeField` y costo del evento como `DecimalField` (0034). Limpieza de archivos sobrantes.
+- **Licencia eliminada por completo** (sin activación). Configuración solo con SQLite.
+- `SmartMud.exe` listo para producción de prueba: sin consola, crea y migra la base solo, `DEBUG=False`, y **arranca vacío** (sin productos ni pozos). Catálogo opcional con `cargar_catalogo_productos`.
+- Inventario: el formulario del producto ya no se corta en pantallas de 1366 px (ver [24 § 5](24_PAPELERA_Y_TIPOS_DE_DATOS.md)).
 
 ### 02-oct-2026 (observaciones y audios del tío; ver [22](22_CAMBIOS_02OCT_SMART_MUD.md))
 - Nombre **Smart Mud**, logo de la gota en la barra lateral, favicon, activación y `.exe`; **logo de AOS** en Excel y PDF.

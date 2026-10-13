@@ -1,13 +1,14 @@
-# AGENT.md — Leer primero (Smart Mud, antes "Proyecto CHAPALA")
+# AGENTS.md — Leer primero (Smart Mud, antes "Proyecto CHAPALA")
 
 Si eres un asistente o un desarrollador que empieza a trabajar en este proyecto (sistema Django de fluidos de perforación para **All Oil Services, C.A.**), **antes de responder o tocar código lee en este orden**:
 
-1. **`docs/00_TRASPASO.md`** — estado actual, reglas de trabajo, cadena de migraciones (la próxima depende de **`0032_comentario_propiedades`**) y prioridades.
+1. **`docs/00_TRASPASO.md`** — estado actual, reglas de trabajo, cadena de migraciones (la próxima depende de **`0034_papelera_pozos_y_tipos_opcionales`**) y prioridades.
 2. **`docs/16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md`** — qué falta probar, decisiones abiertas, errores conocidos y lo ya resuelto.
 3. **El documento del tema** (índice completo en `docs/README.md`):
 
 | Tema | Documento |
 |---|---|
+| Papelera de pozos y revisión de la base de datos (12-oct) | `docs/24_PAPELERA_Y_TIPOS_DE_DATOS.md` |
 | Correcciones de la revisión de octubre (inventario, GE, precios, trailer, sidetrack, reportito) | `docs/23_CORRECCIONES_REVISION_OCT.md` |
 | Cambios del 02-oct (Smart Mud, logos, tanques, monedas, intervalos, hub, `.exe`) | `docs/22_CAMBIOS_02OCT_SMART_MUD.md` |
 | Concentraciones, side track, hoyo piloto | `docs/20_CONCENTRACIONES_Y_CASOS_ESPECIALES.md` |
@@ -24,14 +25,29 @@ Si eres un asistente o un desarrollador que empieza a trabajar en este proyecto 
 
 ## Reglas que no se negocian
 
-- Ruta del proyecto: **`C:\Users\SECRETARIA\Documents\Programacion\Personal\Proyecto CHAPALA`**. **Traer siempre el archivo actual del disco antes de editarlo**: un compañero también sube cambios por git. Archivos con CRLF.
-- Desde la nube no hay Django: se valida con `ast.parse`, `node --check` y pruebas de funciones puras. **El usuario corre `migrate` y git** (rama `Refactorizacion`).
+- Varios compañeros trabajan por git (rama `Refactorizacion`): **traer siempre la versión actual del archivo antes de editarlo**. Archivos con **CRLF**.
+- **git y `migrate` los corre la persona**, no la IA: la IA prepara el cambio y avisa qué comando correr.
+- Antes de dar un cambio por terminado: `python manage.py test operaciones` (todo debe pasar) y `python manage.py makemigrations --check` (sin cambios pendientes sin migración).
 - Todo el texto visible en **español**; CSS y JS en archivos aparte, nunca en línea.
 - **Nada de "M-I", "M-I SWACO" ni "ONE-TRAX" en pantalla ni en reportes.** Se dice **tanque** (no fosa) y **lodo reciclado** (no lodo entero). Logo de **AOS** en los reportes; **Smart Mud** es el ícono del programa.
 - Ir por partes; ante la duda, revisar el manual ONE-TRAX (`documentation/`) o preguntar antes de inventar.
 - Imágenes, audios o notas del cliente: guardar el original en `docs/fuentes/` y **dejar el análisis documentado** en `docs/`.
 - **Toda la documentación vive en `docs/`.** No crear otras carpetas de documentación. Lo que queda viejo va a `docs/_archivo/`.
 - Al terminar un cambio: actualizar `docs/00_TRASPASO.md`, `docs/16_…` y el documento del tema, y crear su archivo en **`docs/pruebas/`** ("Cómo funciona" + "Pasos para verificar" con casillas) agregándolo al índice `docs/pruebas/README.md`.
+
+## Lo que NO se toca (el sistema ya está en producción de prueba)
+
+Si un arreglo parece exigir alguno de estos cambios, **detenerse y preguntar** a la persona antes de hacerlo.
+
+- **Migraciones ya aplicadas** (`operaciones/migrations/0001` a la última): no se editan, renombran ni borran, ni se cambian sus dependencias. Todo cambio de modelo va en una **migración nueva** que depende de la última (ver `docs/00_TRASPASO.md`). En los equipos de los ingenieros el `.exe` las aplica solo al abrir; una migración rota deja el sistema sin arrancar.
+- **No borrar datos de los ingenieros.** Nada de migraciones que eliminen tablas o columnas con información, ni `RunPython` que borre filas, sin acuerdo explícito.
+- **Papelera de pozos:** eliminar un pozo solo lo oculta (`Pozo.enviar_a_papelera()`). No usar `pozo.delete()` en vistas. `Pozo.objects` ya excluye los de la papelera; `Pozo.todos` los incluye. Ver `docs/24_PAPELERA_Y_TIPOS_DE_DATOS.md`.
+- **Base de datos: SQLite**, decisión final. No volver a agregar PostgreSQL ni otro motor.
+- **Sin licencia ni activación**: se quitó a pedido del usuario. No volver a agregarla.
+- **El `.exe` arranca vacío** (sin productos ni pozos) y sin consola. No agregar cargas automáticas de datos en `empaquetado/chapala_app.py`.
+- **Empaquetado** (`empaquetado/chapala_app.py`, `chapala.spec`, `Construir EXE.bat`): solo se cambia si el arreglo es del propio empaquetado. Después de cambiarlo, construir con `Construir EXE.bat`, que verifica el ejecutable antes de generar el `.zip`.
+- **Nunca subir a git** `db.sqlite3`, la carpeta `datos/`, el `.env` ni `empaquetado/dist/` (están en `.gitignore`). Ahí están los datos reales.
+- **Dinero e inventario en `DecimalField`**, nunca `FloatField`.
 
 ## Reglas esenciales de código (obligatorias)
 

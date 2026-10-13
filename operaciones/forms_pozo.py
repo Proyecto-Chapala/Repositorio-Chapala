@@ -15,10 +15,14 @@ class PozoPaso1Form(forms.ModelForm):
         nombre = self.cleaned_data['nombre'].strip()
         if not nombre:
             raise forms.ValidationError("El nombre del pozo es obligatorio.")
-        qs = Pozo.objects.filter(nombre__iexact=nombre)
+        qs = Pozo.todos.filter(nombre__iexact=nombre)
         if self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
-        if qs.exists():
+        existente = qs.first()
+        if existente and existente.en_papelera:
+            raise forms.ValidationError(
+                f"Ya existe un pozo '{nombre}' en la papelera. Restáuralo desde Pozos › Papelera o usa otro nombre.")
+        if existente:
             raise forms.ValidationError(f"Ya existe un pozo con el nombre '{nombre}'.")
         return nombre
 

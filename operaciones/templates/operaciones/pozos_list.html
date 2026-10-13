@@ -15,6 +15,9 @@
       <h1 class="subpage-title">Vista General del Proyecto</h1>
       <div class="subpage-breadcrumb">Selecciona un pozo para acceder a su configuracion y modulos operativos.</div>
     </div>
+    {% if total_papelera %}
+    <a class="enlace-papelera" href="{% url 'operaciones:pozos_papelera' %}">Papelera ({{ total_papelera }})</a>
+    {% endif %}
   </div>
 
   <div class="project-grid">

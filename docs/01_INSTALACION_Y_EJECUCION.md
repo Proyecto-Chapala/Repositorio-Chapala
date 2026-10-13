@@ -5,7 +5,6 @@
 | Componente | Versión | Nota |
 |---|---|---|
 | Python | **3.12 o superior** | Django 6.1 no funciona con 3.11 o anteriores. El `.venv` actual está construido para 3.12 (`cp312`) y las notas del proyecto mencionan 3.14. |
-| PostgreSQL | 13+ recomendado | Opcional: con `USE_POSTGRES=False` se usa SQLite. |
 | Navegador | Chrome o Edge actualizados | La interfaz usa JavaScript moderno (`fetch`, `async/await`). |
 
 Dependencias (`requirements.txt`):
@@ -16,7 +15,7 @@ Django==6.1.1
 et_xmlfile==2.0.0
 openpyxl==3.1.5
 pillow
-psycopg2-binary==2.9.12
+pystray
 pypdf==6.18.1
 sqlparse==0.6.0
 tzdata==2026.3
@@ -33,37 +32,17 @@ py -3.12 -m venv .venv
 pip install -r requirements.txt
 ```
 
-## 2. Configurar la base de datos (`.env`)
+## 2. Base de datos y `.env`
 
-`chapala/settings.py` lee el archivo `.env` de la raíz, sin librerías externas. Las líneas `CLAVE=valor` se cargan como variables de entorno. Variables:
+La base de datos es **SQLite** (un solo archivo, sin servidor). En desarrollo es `db.sqlite3` en la raíz; `SmartMud.exe` usa la suya en `datos\chapala_pruebas.sqlite3`. PostgreSQL se descartó el 12-oct-2026 (ver [24](24_PAPELERA_Y_TIPOS_DE_DATOS.md)).
+
+`chapala/settings.py` lee el archivo `.env` de la raíz si existe (opcional). Variables:
 
 | Variable | Por defecto | Uso |
 |---|---|---|
-| `USE_POSTGRES` | `True` | `True/1/yes` → PostgreSQL; cualquier otro valor → SQLite (`db.sqlite3`) |
-| `DB_NAME` | `chapala_db` | Nombre de la base PostgreSQL |
-| `DB_USER` | `postgres` | Usuario |
-| `DB_PASSWORD` | `postgres` | Contraseña |
-| `DB_HOST` | `localhost` | Servidor |
-| `DB_PORT` | `5432` | Puerto |
-
-Ejemplo:
-
-```ini
-USE_POSTGRES=True
-DB_NAME=chapala_db
-DB_USER=postgres
-DB_PASSWORD=********
-DB_HOST=localhost
-DB_PORT=5432
-```
-
-Crear la base en PostgreSQL (una sola vez):
-
-```sql
-CREATE DATABASE chapala_db ENCODING 'UTF8';
-```
-
-> El `.env` contiene la contraseña real de la base de datos y está correctamente excluido en `.gitignore`. No lo compartas ni lo incluyas en copias o zips que salgan del equipo.
+| `CHAPALA_DB_PATH` | `db.sqlite3` de la raíz | Ruta del archivo SQLite |
+| `DJANGO_DEBUG` | `True` | `False` en el `.exe` (sin páginas técnicas de error) |
+| `DJANGO_SECRET_KEY` | clave de desarrollo | El `.exe` crea una propia en `datos\clave_secreta.txt` |
 
 ## 3. Migraciones
 
@@ -82,8 +61,8 @@ Deben aparecer marcadas de `0001_initial` a **`0027_intervalo_cerrado_moneda_sec
 - **Catálogos maestros globales** (equipos, mallas, componentes de sarta, propiedades, parámetros de benchmark): se cargan desde la pantalla **Catálogos Maestros** o desde `/admin/`.
 - **Productos químicos**: desde la pantalla **Inventario**.
 
-- **Catálogo AOS de productos**: `python seed_data.py` (solo crea los que no existen; no pisa existencias). `seed_propiedades.py` pertenece a la app vieja y **no funciona**.
-- **Pozo de prueba**: `python manage.py seed_pozo_prueba` crea el pozo `PRUEBA-001` (lo usa también el `.exe` la primera vez).
+- **Catálogo AOS de productos**: `python manage.py cargar_catalogo_productos` (53 productos; solo crea los que no existen, con precio y existencia en 0). Es opcional: el `.exe` **no** lo corre (arranca con el inventario vacío).
+- **Pozo de prueba**: `python manage.py seed_pozo_prueba` crea el pozo `PRUEBA-001` (solo para desarrollo; el `.exe` arranca sin pozos).
 
 ## 5. Superusuario (para `/admin/`)
 
@@ -123,9 +102,8 @@ Con el acceso directo **`Iniciar Sistema.bat`** (usa `.venv`): abre el navegador
 |---|---|---|
 | `ModuleNotFoundError: No module named 'openpyxl'` | Faltan dependencias en el entorno | `pip install -r requirements.txt` |
 | `Couldn't import Django` | No se activó el entorno virtual | `.venv\Scripts\activate` |
-| `connection refused` o `password authentication failed` | PostgreSQL apagado o credenciales del `.env` erradas | Revisar el servicio y el `.env`, o usar `USE_POSTGRES=False` para probar |
 | La pantalla no refleja cambios de JS/CSS | Caché del navegador | `Ctrl + F5`. Las pestañas del reporte diario ya se versionan solas (ver [19](19_GUIA_MANTENIMIENTO.md)) |
-| `relation "operaciones_..." does not exist` | Falta migrar | `python manage.py migrate` |
+| `no such table: operaciones_...` | Falta migrar | `python manage.py migrate` |
 | `InconsistentMigrationHistory` / `Conflicting migrations` | Dos ramas de migraciones | Ver la cadena de migraciones en el traspaso; no cambiar dependencias de migraciones ya aplicadas, usar una migración de unión (`merge`) |
 
 ## 9. Ejecutable para los ingenieros (`SmartMud.exe`)
@@ -143,12 +121,13 @@ Cómo funciona el `.exe` (`empaquetado/chapala_app.py`, actualizado el 02-oct-20
 | Tema | Comportamiento |
 |---|---|
 | Ventana | **Sin consola negra** (`console=False`). El sistema vive en un **ícono de gota** en la bandeja de Windows: *Abrir Smart Mud* / *Salir* |
-| Base de datos | SQLite propia en `datos\chapala_pruebas.sqlite3`, junto al `.exe`. Migra en cada arranque; la primera vez carga productos y `PRUEBA-001` |
+| Base de datos | SQLite propia en `datos\chapala_pruebas.sqlite3`, junto al `.exe`. Se crea y migra sola en cada arranque (no hace falta `migrate`); **arranca vacía: sin productos ni pozos** |
 | Segunda vez | Si ya está abierto (`datos\servidor_en_uso.txt` + puerto que responde), solo abre el navegador |
 | Servidor | `django.core.servers.basehttp.run` en un hilo, con `StaticFilesHandler`; puerto libre entre 8000 y 8019 |
 | Errores | Todo lo que antes salía en consola va a `datos\smartmud.log` (se reinicia al pasar 5 MB). Si no arranca, cuadro de mensaje de Windows con el error |
 | Ícono | `empaquetado\smartmud.ico` / `smartmud.png` (la gota del logo Smart Mud) |
 | Verificación | `SmartMud.exe --verificar --log <archivo>` (sale con código 1 si algo falla) |
-| Licencia | Prueba de 7 días con clave de activación (`operaciones/licencia.py`, `scripts/generar_clave_licencia.py`) |
+| Modo | `DEBUG=False`, solo escucha en `127.0.0.1`, clave secreta propia en `datos\clave_secreta.txt`. **Sin licencia ni activación** (se quitó el 12-oct-2026) |
+| Respaldo | Salir del sistema y copiar la carpeta `datos` |
 
 Para cambiar el ícono basta con reemplazar `smartmud.ico` y `smartmud.png` y volver a construir.

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -19,13 +20,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-mp*^mhp1(q)bix0^fk(8%auu+7ewydvr_h$ok0_h!)kd2tw-w@'
+# Variables del archivo .env (si existe). setdefault: una variable ya definida
+# (p. ej. por SmartMud.exe) manda sobre el .env.
+_env_path = BASE_DIR / '.env'
+if _env_path.exists():
+    with open(_env_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                k, v = line.split('=', 1)
+                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# SmartMud.exe define una clave propia de cada instalación y apaga DEBUG.
+# La clave de respaldo solo sirve para desarrollo.
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY', 'django-insecure-mp*^mhp1(q)bix0^fk(8%auu+7ewydvr_h$ok0_h!)kd2tw-w@')
 
-ALLOWED_HOSTS = ['*']
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
+
+# El sistema solo escucha en el propio equipo.
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver'] if not DEBUG else ['*']
 
 
 # Application definition
@@ -50,7 +64,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Licencia de prueba (bloquea el sistema si no está activa)
-    'operaciones.middleware_licencia.LicenciaMiddleware',
 ]
 
 ROOT_URLCONF = 'chapala.urls'
@@ -74,41 +87,14 @@ WSGI_APPLICATION = 'chapala.wsgi.application'
 
 
 # ==============================================================================
-# CONFIGURACIÓN DE BASE DE DATOS (POSTGRESQL / SQLITE)
+# BASE DE DATOS: SQLite (archivo único). SmartMud.exe la guarda en su carpeta "datos".
 # ==============================================================================
-import os
-
-env_path = BASE_DIR / '.env'
-if env_path.exists():
-    with open(env_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith('#') and '=' in line:
-                k, v = line.split('=', 1)
-                # setdefault: una variable ya definida (p. ej. por el .exe de pruebas) manda sobre el .env
-                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
-
-USE_POSTGRES = os.environ.get('USE_POSTGRES', 'True').lower() in ('true', '1', 'yes')
-
-if USE_POSTGRES:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'chapala_db'),
-            'USER': os.environ.get('DB_USER', 'postgres'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.environ.get('CHAPALA_DB_PATH') or (BASE_DIR / 'db.sqlite3'),
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            # CHAPALA_DB_PATH lo define el ejecutable de pruebas (base junto al .exe)
-            'NAME': os.environ.get('CHAPALA_DB_PATH') or (BASE_DIR / 'db.sqlite3'),
-        }
-    }
+}
 
 
 # Password validation
@@ -156,4 +142,14 @@ MAILERS = {
     'default': {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
+}
+
+
+# Errores del servidor a la salida estándar. En SmartMud.exe esa salida va a datos\smartmud.log,
+# así que con DEBUG apagado los errores siguen quedando registrados.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'consola': {'class': 'logging.StreamHandler'}},
+    'loggers': {'django': {'handlers': ['consola'], 'level': 'WARNING'}},
 }

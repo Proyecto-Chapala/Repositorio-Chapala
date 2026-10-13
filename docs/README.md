@@ -11,7 +11,7 @@
 | Si eres… | Lee |
 |---|---|
 | **Ingeniero de AOS** (usuario) | [MANUAL_USUARIO](MANUAL_USUARIO.md) → [18 Preguntas frecuentes](18_PREGUNTAS_FRECUENTES.md) → [17 Glosario](17_GLOSARIO.md) |
-| **Desarrollador o asistente que retoma el proyecto** | `../AGENT.md` → [00 Traspaso](00_TRASPASO.md) → [16 Pendientes](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) → el documento del tema |
+| **Desarrollador o asistente que retoma el proyecto** | `../AGENTS.md` → [00 Traspaso](00_TRASPASO.md) → [16 Pendientes](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) → el documento del tema |
 | **Quien instala o empaqueta** | [01 Instalación y ejecución](01_INSTALACION_Y_EJECUCION.md) (incluye `SmartMud.exe`) |
 
 ---
@@ -27,6 +27,7 @@
 | 21 | [Análisis de la revisión del 27-sep](21_ANALISIS_MATERIAL_REVISION_27SEP.md) | De dónde salió cada decisión del 27-sep (imágenes y audios) |
 | 22 | [Cambios del 02-oct: Smart Mud](22_CAMBIOS_02OCT_SMART_MUD.md) | Nombre, logos, tanques, monedas, intervalos, hub bloqueado, `.exe` sin consola |
 | 23 | [Correcciones de la revisión de octubre](23_CORRECCIONES_REVISION_OCT.md) | Inventario por pozo, GE, precios, monedas, trailer, sidetrack, reportito (pendiente) |
+| 24 | [Papelera y revisión de la base de datos](24_PAPELERA_Y_TIPOS_DE_DATOS.md) | Revisión previa al empaquetado, papelera de pozos, horas y costo con su tipo, limpieza |
 | — | [Pruebas en pantalla](pruebas/README.md) | Un archivo por cambio: cómo funciona y pasos para verificar |
 
 ### Usuario
@@ -75,7 +76,7 @@
 | Capa | Tecnología |
 |---|---|
 | Backend | Python 3.12+ · Django 6.1.1 |
-| Base de datos | PostgreSQL (`psycopg2-binary`) o SQLite (según `.env`); el `.exe` usa SQLite |
+| Base de datos | SQLite |
 | Frontend | Plantillas Django + JavaScript sin frameworks + CSS |
 | Excel | `openpyxl` (+ `pillow` para el logo) sobre `operaciones/plantillas/reporte_diario_onetrax.xlsx` |
 | Ejecutable | PyInstaller + `pystray` (ícono en la bandeja) |

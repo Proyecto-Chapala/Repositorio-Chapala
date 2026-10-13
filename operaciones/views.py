@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction, models
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.db.models.deletion import ProtectedError
 from .models import (
     Producto, Pozo, PropiedadUnidadPozo, CategoriaPerdidaItem,
@@ -655,7 +655,8 @@ def pozos_list_view(request):
     """Vista temporal/placeholder para la lista de pozos en el sidebar."""
     from .models import Pozo
     pozos = Pozo.objects.all()
-    return render(request, 'operaciones/pozos_list.html', {'pozos': pozos})
+    total_papelera = Pozo.todos.filter(eliminado_en__isnull=False).count()
+    return render(request, 'operaciones/pozos_list.html', {'pozos': pozos, 'total_papelera': total_papelera})
 
 
 # ============================================================
@@ -930,8 +931,8 @@ def api_intervalo_eliminar(request, pk, intervalo_pk):
 @require_http_methods(["POST"])
 def api_pozo_eliminar(request, pk):
     """
-    Elimina un pozo completo. Hay que escribir el nombre exacto del pozo para confirmar.
-    El inventario del pozo es propio (sale de sus tickets), así que la matriz no se toca.
+    Envía el pozo a la papelera. Hay que escribir el nombre exacto del pozo para confirmar.
+    No se borra nada: el pozo deja de verse y sus reportes quedan intactos hasta restaurarlo.
     """
     pozo = get_object_or_404(Pozo, pk=pk)
     try:
@@ -945,16 +946,25 @@ def api_pozo_eliminar(request, pk):
             "error": "Para eliminar, escribe el nombre del pozo exactamente como aparece.",
         }, status=400)
 
-    nombre = pozo.nombre
-    try:
-        pozo.delete()
-    except ProtectedError as exc:
-        bloqueos = sorted({str(o._meta.verbose_name) for o in exc.protected_objects})
-        return JsonResponse({
-            "success": False,
-            "error": "No se pudo eliminar el pozo porque tiene registros relacionados: " + ", ".join(bloqueos) + ".",
-        }, status=400)
-    return JsonResponse({"success": True, "mensaje": f"Pozo {nombre} eliminado."})
+    pozo.enviar_a_papelera(request.user)
+    return JsonResponse({"success": True, "mensaje": f"Pozo {pozo.nombre} enviado a la papelera."})
+
+
+def pozos_papelera_view(request):
+    """Pozos eliminados: se muestran con cuándo y quién los eliminó, y se pueden restaurar."""
+    pozos = (Pozo.todos.filter(eliminado_en__isnull=False)
+             .select_related('eliminado_por')
+             .annotate(total_reportes=Count('reportes_diarios'))
+             .order_by('-eliminado_en'))
+    return render(request, 'operaciones/pozos/papelera.html', {'pozos': pozos})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_pozo_restaurar(request, pk):
+    pozo = get_object_or_404(Pozo.todos, pk=pk, eliminado_en__isnull=False)
+    pozo.restaurar()
+    return JsonResponse({"success": True, "mensaje": f"Pozo {pozo.nombre} restaurado."})
 
 
 # ============================================================

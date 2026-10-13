@@ -19,6 +19,7 @@ Las pruebas automáticas (`python manage.py test operaciones`) cubren los cálcu
 | 11 | [Dejar volumen en el hoyo](11_DEJAR_EN_HOYO.md) | 13 | — | Sin probar |
 | 12 | [Propiedades extra que aparecen](12_PROPIEDADES_EXTRA.md) | 15 | — | Sin probar |
 | 13 | [Reportito: comentario y Excel](13_REPORTITO.md) | 16 | 0032 | Sin probar |
+| 14 | [Papelera de pozos](14_PAPELERA_POZOS.md) | — (doc 24) | 0034 | Sin probar |
 
 ## Antes de empezar
 

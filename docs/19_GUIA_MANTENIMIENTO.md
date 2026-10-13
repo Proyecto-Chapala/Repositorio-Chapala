@@ -84,18 +84,14 @@ El script crea `docs/herramientas/salida/modelos.md` y `api.md`. Copia su conten
 
 ## Respaldo de la base de datos
 
-PostgreSQL:
-```bat
-pg_dump -U postgres -F c -f chapala_AAAAMMDD.backup chapala_db
-pg_restore -U postgres -d chapala_db --clean chapala_AAAAMMDD.backup
-```
-O, independiente del motor: `python manage.py dumpdata operaciones --indent 2 > respaldo.json`.
+SQLite: con el sistema cerrado, copiar el archivo de la base (`db.sqlite3` en desarrollo; la carpeta `datos` completa en el `.exe`).
+También: `python manage.py dumpdata operaciones --indent 2 > respaldo.json`.
 
 ## Pasar a producción (lista mínima)
 
-1. `SECRET_KEY`, `DEBUG=False` y `ALLOWED_HOSTS` desde el `.env`.
+1. `SECRET_KEY`, `DEBUG=False` y `ALLOWED_HOSTS`: el `.exe` ya los define (ver [01 § 9](01_INSTALACION_Y_EJECUCION.md)).
 2. Autenticación en todas las vistas y quitar `@csrf_exempt` (ver [16 § C](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md#d-seguridad)).
 3. `python manage.py collectstatic` y servir `staticfiles/` con el servidor web.
 4. Servidor WSGI (por ejemplo `waitress` en Windows) en lugar de `runserver`.
-5. Respaldos automáticos de PostgreSQL.
+5. Respaldos periódicos de la carpeta `datos`.
 6. Limpiar los datos de prueba.

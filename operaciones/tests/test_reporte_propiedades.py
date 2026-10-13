@@ -7,12 +7,10 @@ comentario, y las propiedades se editan en la pestaña 3 (no hay una segunda pan
 import io
 import json
 from datetime import date
-from unittest import mock
 
 import openpyxl
 from django.test import TestCase
 
-from operaciones import licencia
 from operaciones.models import Pozo
 from operaciones.models_daily_reports import ReporteDiario, ReporteDiarioComentarios, ReporteDiarioMudCheck
 
@@ -20,10 +18,6 @@ from operaciones.models_daily_reports import ReporteDiario, ReporteDiarioComenta
 class ReportePropiedadesTests(TestCase):
 
     def setUp(self):
-        parche = mock.patch.object(licencia, 'estado_licencia',
-                                   return_value={'estado': licencia.ACTIVA, 'aviso': False, 'dias_restantes': None})
-        parche.start()
-        self.addCleanup(parche.stop)
         self.pozo = Pozo.objects.create(nombre='POZO PRUEBA')
         self.reporte = ReporteDiario.objects.create(pozo=self.pozo, fecha=date(2026, 10, 13), tipo_lodo='WBM')
         ReporteDiarioMudCheck.objects.create(reporte=self.reporte, check_number=1, is_primary=True,

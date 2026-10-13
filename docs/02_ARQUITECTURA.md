@@ -12,7 +12,7 @@ Navegador (HTML + JS vanilla + CSS por pantalla)
       ▼
 Django — operaciones/urls.py  →  vistas (views*.py)
       │                               │
-      │                               ├─ Modelos (models*.py)  ──►  PostgreSQL / SQLite
+      │                               ├─ Modelos (models*.py)  ──►  SQLite
       │                               │
       │                               └─ Motores de cálculo PUROS (sin Django):
       │                                     geometria_pozo.py · hidraulica.py
@@ -28,8 +28,8 @@ recap_pozo.py     →  reporte final del pozo (Excel por código / página impri
 Proyecto CHAPALA/
 ├── manage.py
 ├── requirements.txt
-├── AGENT.md                      # orden de lectura para retomar el proyecto
-├── AGENT.md                      # leer primero (asistentes y desarrolladores)
+├── AGENTS.md                      # leer primero (asistentes y desarrolladores)
+├── CLAUDE.md                      # remite a AGENTS.md (Claude Code)
 ├── docs/                         # esta documentación (índice en docs/README.md)
 ├── empaquetado/                  # SmartMud.exe: chapala_app.py, chapala.spec, Construir EXE.bat, íconos
 ├── .env                          # credenciales de BD (NO versionar)
@@ -41,7 +41,6 @@ Proyecto CHAPALA/
 │   ├── models_control_solidos.py # pestaña 6
 │   ├── models_inventario.py      # pestaña 8 (volumetría, inventario, pérdidas)
 │   ├── models_opcionales.py      # IFE, muestras, eventos no programados
-│   ├── licencia.py, middleware_licencia.py, views_licencia.py  # licencia de prueba del .exe
 │   ├── models_recap.py           # RecapPozo (textos del reporte final)
 │   ├── views.py                  # inventario de almacén, wizard, setups del pozo, catálogos
 │   ├── views_daily_reports.py    # hub, reporte diario, pestañas 1-5 y 7, Excel, reporte de propiedades
@@ -71,8 +70,7 @@ Proyecto CHAPALA/
 │       ├── css/                  # un CSS por pantalla/pestaña
 │       ├── img/                  # logo_reporte.png (AOS, reportes), smartmud_icono.png, smartmud_logo.png, favicon.png
 │       └── js/                   # un JS por pantalla/pestaña
-├── seed_data.py                  # carga el catálogo AOS de productos (seed_propiedades.py es obsoleto)
-├── scripts/                      # generar_clave_licencia.py, seed_pozo_prueba.py
+├── scripts/                      # seed_pozo_prueba.py (catálogo: manage.py cargar_catalogo_productos)
 └── proyecto chapala - claude/          # copias de trabajo antiguas (no se usan)
 ```
 
@@ -174,7 +172,7 @@ En el paso 1 del wizard se puede elegir un pozo ACTIVO como plantilla. Se copian
 |---|---|---|
 | `INSTALLED_APPS` | contrib de Django + `operaciones.apps.OperacionesConfig` | |
 | `LANGUAGE_CODE` / `TIME_ZONE` | `es-ve` / `America/Caracas` | `USE_TZ = True` |
-| `DATABASES` | según `.env` (`USE_POSTGRES`) | |
+| `DATABASES` | SQLite (`CHAPALA_DB_PATH` o `db.sqlite3`) | |
 | `STATIC_ROOT` | `staticfiles/` | para `collectstatic` en producción |
 | `DEBUG` | `True` | ⚠ solo desarrollo |
 | `ALLOWED_HOSTS` | `['*']` | ⚠ solo desarrollo |
