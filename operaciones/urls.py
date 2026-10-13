@@ -20,6 +20,7 @@ urlpatterns = [
 
     # --- Lista de Pozos (Temporal) ---
     path('pozos/', views.pozos_list_view, name='pozos_list'),
+    path('pozos/papelera/', views.pozos_papelera_view, name='pozos_papelera'),
 
     # --- Wizard de Nuevo Pozo (shell SPA) ---
     path('pozos/nuevo/', views.pozo_wizard_view, name='pozo_wizard_nuevo'),
@@ -29,6 +30,7 @@ urlpatterns = [
     path('api/pozos/plantillas/', views.api_pozos_plantillas, name='api_pozos_plantillas'),
     path('api/pozos/<int:pk>/', views.api_pozo_detail, name='api_pozo_detail'),
     path('api/pozos/<int:pk>/eliminar/', views.api_pozo_eliminar, name='api_pozo_eliminar'),
+    path('api/pozos/<int:pk>/restaurar/', views.api_pozo_restaurar, name='api_pozo_restaurar'),
     path('api/pozos/paso1/', views.api_pozo_paso1, name='api_pozo_paso1_crear'),
     path('api/pozos/<int:pk>/paso1/', views.api_pozo_paso1, name='api_pozo_paso1_actualizar'),
     path('api/pozos/<int:pk>/paso2/', views.api_pozo_paso2, name='api_pozo_paso2'),

@@ -37,12 +37,12 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        if options['reset'] and Pozo.objects.filter(nombre=NOMBRE_POZO).exists():
-            Pozo.objects.filter(nombre=NOMBRE_POZO).delete()
+        if options['reset'] and Pozo.todos.filter(nombre=NOMBRE_POZO).exists():
+            Pozo.todos.filter(nombre=NOMBRE_POZO).delete()
             self.stdout.write(self.style.WARNING(f"[seed] Pozo '{NOMBRE_POZO}' eliminado."))
 
         # ── 1. POZO ────────────────────────────────────────────────────────
-        p, created = Pozo.objects.get_or_create(
+        p, created = Pozo.todos.get_or_create(
             nombre=NOMBRE_POZO,
             defaults=dict(
                 sistema_unidades='STANDARD_OILFIELD',

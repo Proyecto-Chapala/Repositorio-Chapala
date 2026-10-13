@@ -37,8 +37,8 @@ class _MuestraEquipo(models.Model):
 
     equipo_serie = models.CharField(max_length=30, verbose_name="N° de Serie")
     equipo_descripcion = models.CharField(max_length=150, blank=True, verbose_name="Equipo")
-    hora_inicio = models.CharField(max_length=5, blank=True, verbose_name="Hora de inicio")
-    hora_fin = models.CharField(max_length=5, blank=True, verbose_name="Hora de fin")
+    hora_inicio = models.TimeField(null=True, blank=True, verbose_name="Hora de inicio")
+    hora_fin = models.TimeField(null=True, blank=True, verbose_name="Hora de fin")
     orden = models.PositiveSmallIntegerField(default=1, verbose_name="Orden de impresión")
     profundidad_ft = models.FloatField(null=True, blank=True, verbose_name="Profundidad medida (ft)")
     profundidad_perforada_ft = models.FloatField(null=True, blank=True, verbose_name="Profundidad perforada representada (ft)")
@@ -93,7 +93,7 @@ class EventoNoProgramado(models.Model):
     descripcion_perdida = models.TextField(blank=True, verbose_name="Descripción de la pérdida")
     horas_perdidas = models.FloatField(null=True, blank=True, verbose_name="Tiempo perdido (h)")
     volumen_perdido_bbl = models.FloatField(null=True, blank=True, verbose_name="Volumen perdido (bbl)")
-    costo = models.FloatField(null=True, blank=True, verbose_name="Costo estimado")
+    costo = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True, verbose_name="Costo estimado")
 
     class Meta:
         verbose_name = "Evento No Programado"

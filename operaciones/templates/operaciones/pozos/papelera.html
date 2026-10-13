@@ -1,0 +1,46 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Papelera de Pozos | Smart Mud{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="subpage">
+
+  <div class="subpage-header">
+    <a class="subpage-back" href="{% url 'operaciones:pozos_list' %}" title="Volver a Pozos">&larr;</a>
+    <div>
+      <h1 class="subpage-title">Papelera de Pozos</h1>
+      <div class="subpage-breadcrumb">Pozos eliminados con toda su información. Al restaurar, el pozo vuelve tal como estaba.</div>
+    </div>
+  </div>
+
+  <span class="field-error" id="errorPapelera"></span>
+  <table class="custom-table tabla-papelera">
+    <thead>
+      <tr><th>Pozo</th><th>Reportes diarios</th><th>Eliminado el</th><th>Eliminado por</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for pozo in pozos %}
+      <tr>
+        <td>{{ pozo.nombre }}</td>
+        <td>{{ pozo.total_reportes }}</td>
+        <td>{{ pozo.eliminado_en|date:"d/m/Y H:i" }}</td>
+        <td>{{ pozo.eliminado_por.username|default:"—" }}</td>
+        <td><button type="button" class="btn-add-row btn-restaurar-pozo" data-pozo-id="{{ pozo.id }}">Restaurar</button></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="papelera-vacia">La papelera está vacía.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'operaciones/js/pozos_papelera.js' %}"></script>
+{% endblock %}

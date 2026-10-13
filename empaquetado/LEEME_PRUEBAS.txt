@@ -8,8 +8,6 @@ CÓMO INICIAR
 3. Se abre el navegador con el sistema. No aparece ninguna ventana negra:
    el sistema queda funcionando con un ícono de gota junto al reloj de Windows
    (si no lo ve, pulse la flechita ^ al lado del reloj).
-4. La primera vez el sistema pide la clave de activación
-   (la entrega el programador). La prueba dura 7 días.
 
 SI CERRÓ EL NAVEGADOR
 Haga doble clic en SmartMud.exe otra vez, o doble clic en el ícono de la gota.
@@ -19,7 +17,11 @@ Clic derecho en el ícono de la gota > "Salir".
 
 DATOS
 - Todo lo que cargue se guarda en la carpeta "datos" junto a SmartMud.exe.
-- La primera vez se cargan el catálogo de productos y el pozo PRUEBA-001.
+- La primera vez se crea la base de datos vacía. No hay que instalar ni
+  configurar nada más: se cargan los productos en Inventario, se crea el
+  primer pozo y se empieza a cargar la información.
+- Un pozo eliminado no se pierde: queda en Pozos > Papelera y se puede restaurar.
+- Para respaldar la información: salga del sistema y copie la carpeta "datos".
 - Para empezar de cero: salga del sistema y borre la carpeta "datos".
 
 SI WINDOWS MUESTRA "Windows protegió su PC"

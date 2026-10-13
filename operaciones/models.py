@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from . import volumetria
 
@@ -145,6 +146,13 @@ class Producto(models.Model):
             "observacion": self.observacion or "",
             "puede_eliminar": self.cantidad == 0,
         }
+
+
+class PozoVigenteManager(models.Manager):
+    """Pozos que no están en la papelera. Es el manager por defecto: ninguna pantalla ve los eliminados."""
+
+    def get_queryset(self):
+        return super().get_queryset().filter(eliminado_en__isnull=True)
 
 
 class Pozo(models.Model):
@@ -326,6 +334,19 @@ class Pozo(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # --- Papelera: eliminar un pozo solo lo oculta; sus reportes quedan intactos y se puede restaurar ---
+    eliminado_en = models.DateTimeField(null=True, blank=True, db_index=True, verbose_name="Eliminado el")
+    eliminado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='pozos_eliminados',
+        verbose_name="Eliminado por"
+    )
+
+    objects = PozoVigenteManager()
+    todos = models.Manager()
+
     class Meta:
         verbose_name = "Pozo"
         verbose_name_plural = "Pozos"
@@ -333,6 +354,20 @@ class Pozo(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def en_papelera(self):
+        return self.eliminado_en is not None
+
+    def enviar_a_papelera(self, usuario=None):
+        self.eliminado_en = timezone.now()
+        self.eliminado_por = usuario if usuario is not None and usuario.is_authenticated else None
+        self.save(update_fields=['eliminado_en', 'eliminado_por'])
+
+    def restaurar(self):
+        self.eliminado_en = None
+        self.eliminado_por = None
+        self.save(update_fields=['eliminado_en', 'eliminado_por'])
 
     @property
     def moneda_cobro(self):

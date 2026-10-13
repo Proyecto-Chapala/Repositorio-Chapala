@@ -7,6 +7,8 @@ no cambian nada del reporte.
 
 import json
 import re
+from datetime import datetime
+from decimal import Decimal
 
 from django.db import transaction
 from django.http import JsonResponse
@@ -54,10 +56,22 @@ def _texto(valor, largo):
 
 
 def _hora(valor, etiqueta):
-    v = _texto(valor, 5)
-    if v and (len(v) != 5 or v[2] != ':' or not v.replace(':', '').isdigit()):
-        raise _Rechazo(f"{etiqueta}: usa el formato HH:MM.")
-    return v
+    texto = _texto(valor, 5)
+    if not texto:
+        return None
+    try:
+        return datetime.strptime(texto, '%H:%M').time()
+    except ValueError:
+        raise _Rechazo(f"{etiqueta}: usa el formato HH:MM (00:00 a 23:59).")
+
+
+def _hora_texto(hora):
+    return hora.strftime('%H:%M') if hora else ''
+
+
+def _dinero(valor, etiqueta):
+    numero = _num(valor, etiqueta, 0)
+    return None if numero is None else Decimal(str(numero)).quantize(Decimal('0.01'))
 
 
 def _error(e):
@@ -94,7 +108,7 @@ def _muestra_comun(pozo, body, obj):
 def _base_muestra(m):
     return {
         'id': m.id, 'equipo_serie': m.equipo_serie, 'equipo_descripcion': m.equipo_descripcion,
-        'hora_inicio': m.hora_inicio, 'hora_fin': m.hora_fin, 'orden': m.orden,
+        'hora_inicio': _hora_texto(m.hora_inicio), 'hora_fin': _hora_texto(m.hora_fin), 'orden': m.orden,
         'profundidad_ft': m.profundidad_ft, 'profundidad_perforada_ft': m.profundidad_perforada_ft,
         'comentarios': m.comentarios,
     }
@@ -307,7 +321,8 @@ def _dto_evento(e):
     return {'id': e.id, 'categoria': e.categoria, 'categoria_display': e.get_categoria_display(),
             'tipo_problema': e.tipo_problema, 'tipo_fluido': e.tipo_fluido, 'descripcion': e.descripcion,
             'causa': e.causa, 'descripcion_perdida': e.descripcion_perdida, 'horas_perdidas': e.horas_perdidas,
-            'volumen_perdido_bbl': e.volumen_perdido_bbl, 'costo': e.costo,
+            'volumen_perdido_bbl': e.volumen_perdido_bbl,
+            'costo': None if e.costo is None else float(e.costo),
             'fecha': e.reporte.fecha.strftime('%d/%m/%Y'), 'es_de_este_reporte': None}
 
 
@@ -351,7 +366,7 @@ def api_eventos_guardar(request, pk, reporte_pk):
         obj.descripcion_perdida = str(body.get('descripcion_perdida') or '').strip()
         obj.horas_perdidas = _num(body.get('horas_perdidas'), 'Tiempo perdido', 0, 10000)
         obj.volumen_perdido_bbl = _num(body.get('volumen_perdido_bbl'), 'Volumen perdido', 0)
-        obj.costo = _num(body.get('costo'), 'Costo', 0)
+        obj.costo = _dinero(body.get('costo'), 'Costo')
         obj.save()
     except _Rechazo as e:
         return _error(e)

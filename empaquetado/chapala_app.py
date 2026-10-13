@@ -5,7 +5,7 @@ LANZADOR DEL EJECUTABLE - SMART MUD
 Punto de entrada de SmartMud.exe (PyInstaller, SIN ventana de consola). Al abrirse:
   1. Usa una base SQLite propia en la carpeta "datos" junto al .exe.
   2. Aplica las migraciones pendientes (siempre, en cada arranque).
-  3. La primera vez carga el catálogo de productos y el pozo PRUEBA-001.
+  3. La base arranca vacía: sin productos ni pozos (el usuario carga todo).
   4. Levanta el servidor local, abre el navegador y deja un ícono (gota)
      en la bandeja de Windows, junto al reloj: "Abrir Smart Mud" y "Salir".
   5. Si el sistema ya estaba abierto, solo abre el navegador (no arranca otro).
@@ -15,11 +15,12 @@ Los errores de arranque se muestran en un cuadro de mensaje de Windows.
 Modo verificación (lo usa "Construir EXE.bat"):
     SmartMud.exe --verificar      o   python chapala_app.py --verificar
 Crea una base temporal, migra, carga datos y abre las pantallas principales.
-No toca la carpeta "datos" ni la licencia real. Sale con código 1 si algo falla.
+No toca la carpeta "datos". Sale con código 1 si algo falla.
 El resultado se escribe en el archivo indicado con --log (o en la consola si hay).
 """
 
 import os
+import secrets
 import socket
 import sys
 import tempfile
@@ -48,10 +49,27 @@ else:
 BASE_DATOS = CARPETA_DATOS / 'chapala_pruebas.sqlite3'
 ARCHIVO_PUERTO = CARPETA_DATOS / 'servidor_en_uso.txt'
 ARCHIVO_LOG = CARPETA_DATOS / 'smartmud.log'
+ARCHIVO_CLAVE = CARPETA_DATOS / 'clave_secreta.txt'
 LOG_MAXIMO = 5 * 1024 * 1024
 
-os.environ['USE_POSTGRES'] = 'False'
+
+def _clave_secreta():
+    """Clave de Django propia de esta instalación; se crea la primera vez."""
+    CARPETA_DATOS.mkdir(parents=True, exist_ok=True)
+    try:
+        clave = ARCHIVO_CLAVE.read_text(encoding='utf-8').strip()
+        if clave:
+            return clave
+    except OSError:
+        pass
+    clave = secrets.token_urlsafe(50)
+    ARCHIVO_CLAVE.write_text(clave, encoding='utf-8')
+    return clave
+
+
 os.environ['CHAPALA_DB_PATH'] = str(BASE_DATOS)
+os.environ['DJANGO_SECRET_KEY'] = _clave_secreta()
+os.environ['DJANGO_DEBUG'] = 'False'
 os.environ['DJANGO_SETTINGS_MODULE'] = 'chapala.settings'
 
 
@@ -71,6 +89,15 @@ def _redirigir_salida(ruta):
 
 def _hay_consola():
     return sys.stdout is not None and sys.stderr is not None
+
+
+def _consola_utf8():
+    """La consola de Windows usa cp1252 y fallaría con caracteres como ✓ o ñ."""
+    for flujo in (sys.stdout, sys.stderr):
+        try:
+            flujo.reconfigure(encoding='utf-8', errors='replace')
+        except (AttributeError, ValueError):
+            pass
 
 
 def _mensaje(texto, error=False):
@@ -111,28 +138,8 @@ def _instancia_abierta():
     return int(puerto) if _responde(puerto) else None
 
 
-def _cargar_datos_iniciales(estricto=False):
-    from django.core.management import call_command
-    try:
-        import seed_data
-        seed_data.seed_database()
-    except Exception:
-        if estricto:
-            raise
-        print('[AVISO] No se pudo cargar el catálogo de productos:')
-        traceback.print_exc()
-    try:
-        call_command('seed_pozo_prueba')
-    except Exception:
-        if estricto:
-            raise
-        print('[AVISO] No se pudo crear el pozo de prueba PRUEBA-001:')
-        traceback.print_exc()
-
-
 def _preparar_base():
     CARPETA_DATOS.mkdir(parents=True, exist_ok=True)
-    base_nueva = not BASE_DATOS.exists()
 
     import django
     django.setup()
@@ -140,7 +147,6 @@ def _preparar_base():
 
     print('Preparando base de datos...')
     call_command('migrate', interactive=False, verbosity=0)
-    return base_nueva
 
 
 def _servir(puerto, listo):
@@ -222,13 +228,15 @@ def verificar():
     print(f'  Base temporal: {BASE_DATOS}')
     print('=' * 70)
 
-    paso('Migraciones sobre SQLite nueva', lambda: _preparar_base() and None)
+    paso('Migraciones sobre SQLite nueva', _preparar_base)
     if fallos:
         return 1
 
     from django.core.management import call_command
     paso('Chequeo del sistema (manage.py check)', lambda: call_command('check') or None)
-    paso('Carga de productos y pozo PRUEBA-001', lambda: _cargar_datos_iniciales(estricto=True))
+    # Solo en la base temporal: catálogo y pozo de prueba para abrir sus pantallas.
+    paso('Catálogo de productos (solo en la base temporal)', lambda: call_command('cargar_catalogo_productos') or None)
+    paso('Pozo de prueba (solo en la base temporal)', lambda: call_command('seed_pozo_prueba') or None)
 
     def _conteos():
         from operaciones.models import Pozo, Producto
@@ -250,13 +258,13 @@ def verificar():
         # El cliente de pruebas no sirve /static/; se usa el mismo buscador que el servidor.
         from django.contrib.staticfiles import finders
         from django.template.loader import get_template
-        estaticos = ['operaciones/css/licencia.css', 'operaciones/css/styles.css',
-                     'operaciones/js/app.js']
+        estaticos = ['operaciones/css/styles.css', 'operaciones/css/pozos.css',
+                     'operaciones/js/app.js', 'operaciones/js/pozos_papelera.js']
         faltan = [e for e in estaticos if not finders.find(e)]
         if faltan:
             raise FileNotFoundError('estáticos: ' + ', '.join(faltan))
-        get_template('operaciones/licencia/activar.html')
         get_template('operaciones/base.html')
+        get_template('operaciones/pozos/papelera.html')
         return f'{len(estaticos)} estáticos y 2 plantillas'
     paso('Archivos estáticos y plantillas', _estaticos_y_plantillas)
 
@@ -266,15 +274,10 @@ def verificar():
         return 'pystray e ícono presentes'
     paso('Ícono de la bandeja', _bandeja_disponible)
 
-    # Pantallas: se simula licencia activa solo dentro de este proceso.
-    from operaciones import licencia
-    licencia.estado_licencia = lambda *a, **k: {
-        'estado': licencia.ACTIVA, 'dias_restantes': 7, 'vence': None, 'aviso': True}
-
     from django.test import Client
     from operaciones.models import Pozo
     cliente = Client()
-    rutas = ['/', '/pozos/', '/api/productos/']
+    rutas = ['/', '/pozos/', '/pozos/papelera/', '/api/productos/']
     pozo = Pozo.objects.first()
     if pozo:
         rutas.append(f'/pozos/{pozo.pk}/')
@@ -314,10 +317,7 @@ def main():
     print(f'  {NOMBRE} - inicio {datetime.datetime.now():%d/%m/%Y %H:%M:%S}')
     print('=' * 70)
 
-    base_nueva = _preparar_base()
-    if base_nueva:
-        print('Primera ejecución: cargando datos iniciales...')
-        _cargar_datos_iniciales()
+    _preparar_base()
 
     puerto = _puerto_libre()
     url = f'http://127.0.0.1:{puerto}/'
@@ -358,6 +358,8 @@ def _opcion(nombre):
 
 
 if __name__ == '__main__':
+    if _hay_consola():
+        _consola_utf8()
     if VERIFICAR:
         ruta_log = _opcion('--log')
         if ruta_log or not _hay_consola():

@@ -1289,3 +1289,22 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* Papelera de pozos */
+.enlace-papelera {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #5a6472);
+  text-decoration: none;
+}
+.enlace-papelera:hover {
+  text-decoration: underline;
+}
+.tabla-papelera {
+  width: 100%;
+}
+.papelera-vacia {
+  text-align: center;
+  color: var(--color-text-secondary, #5a6472);
+}

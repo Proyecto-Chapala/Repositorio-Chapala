@@ -8,21 +8,15 @@ Ahora Cerrar guarda lo que está en el formulario y cierra en la misma operació
 
 import json
 from decimal import Decimal
-from unittest import mock
 
 from django.test import TestCase
 
-from operaciones import licencia
 from operaciones.models import IntervaloRevestimiento, Pozo
 
 
 class CerrarIntervaloTests(TestCase):
 
     def setUp(self):
-        parche = mock.patch.object(licencia, 'estado_licencia',
-                                   return_value={'estado': licencia.ACTIVA, 'aviso': False, 'dias_restantes': None})
-        parche.start()
-        self.addCleanup(parche.stop)
         self.pozo = Pozo.objects.create(nombre='POZO PRUEBA')
         self.intervalo = IntervaloRevestimiento.objects.create(
             pozo=self.pozo, numero_intervalo=1, tipo='PRODUCCION', profundidad_ft=Decimal('5000'))

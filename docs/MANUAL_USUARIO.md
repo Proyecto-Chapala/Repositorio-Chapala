@@ -27,7 +27,7 @@ Este manual explica, paso a paso, cómo usar el sistema: desde crear un pozo has
 1. Doble clic en **`SmartMud.exe`**. Se abre el navegador con el sistema. **No aparece ninguna ventana negra.**
 2. El sistema queda funcionando con un **ícono de gota** junto al reloj de Windows (si no se ve, pulsa la flechita ^ al lado del reloj). Doble clic en la gota vuelve a abrir el navegador.
 3. Para **salir**: clic derecho en la gota → **Salir**.
-4. La primera vez pide la **clave de activación** (la entrega el programador).
+4. No hay que instalar ni activar nada: la primera vez se crea la base vacía; se cargan los productos en **Inventario** y se crea el primer pozo.
 
 > Si algo falla aparece un cuadro con el error. Envía al programador el archivo `datos\smartmud.log`, junto a `SmartMud.exe`.
 

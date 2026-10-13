@@ -7,11 +7,9 @@ Cada cambio repite toda la línea de tiempo del pozo; si algo deja de ser posibl
 import json
 from datetime import date
 from decimal import Decimal
-from unittest import mock
 
 from django.test import TestCase
 
-from operaciones import licencia
 from operaciones.models import CategoriaPerdidaItem, Fosa, Pozo, TipoFosa
 from operaciones.models_daily_reports import ReporteDiario
 from operaciones.models_inventario import TransaccionVolumen, VolumenFosaDia, VolumenHoyoDia
@@ -22,11 +20,6 @@ ACTIVA, RESERVA, VACIA = 1, 2, 0
 class EditarMovimientosTests(TestCase):
 
     def setUp(self):
-        # La licencia no es lo que se prueba aquí: se simula activa para llegar a la API.
-        parche = mock.patch.object(licencia, 'estado_licencia',
-                                   return_value={'estado': licencia.ACTIVA, 'aviso': False, 'dias_restantes': None})
-        parche.start()
-        self.addCleanup(parche.stop)
 
         self.pozo = Pozo.objects.create(nombre='POZO PRUEBA')
         TipoFosa.sembrar_estandar(self.pozo)

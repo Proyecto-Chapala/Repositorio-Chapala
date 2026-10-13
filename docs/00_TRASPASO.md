@@ -1,6 +1,6 @@
 # 00 — Traspaso: estado actual y cómo se trabaja
 
-> **Léelo primero** (después de `AGENT.md`). Actualizado el **12-oct-2026**. Con este archivo, [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y el documento del tema se retoma el proyecto sin la conversación anterior.
+> **Léelo primero** (después de `AGENTS.md`). Actualizado el **12-oct-2026**. Con este archivo, [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y el documento del tema se retoma el proyecto sin la conversación anterior.
 
 ## 0. Cómo se trabaja (reglas del usuario)
 
@@ -18,8 +18,9 @@
 ## 1. Estado (12-oct-2026)
 
 - **Programadas todas las correcciones de la revisión de octubre** (20 puntos): ver [23](23_CORRECCIONES_REVISION_OCT.md). Fuentes: `docs/fuentes/transcripciones_revision_oct/` (usar las `*_mejorado.txt`).
-- **Pruebas automáticas:** 83, todas pasan (`python manage.py test operaciones`). **Nada probado aún en pantalla.**
-- **Migraciones:** el usuario aplicó hasta la **0030**. Faltan **0031** (tarifas en dos monedas) y **0032** (comentario del reportito): correr `migrate`.
+- **Base de datos revisada** antes de empaquetar y **papelera de pozos** (eliminar ya no borra): ver [24](24_PAPELERA_Y_TIPOS_DE_DATOS.md). **La base definitiva es SQLite.** **Licencia eliminada** y `SmartMud.exe` listo para la prueba en producción (`empaquetado\dist\SmartMud_Pruebas.zip`).
+- **Pruebas automáticas:** 98, todas pasan (`python manage.py test operaciones`). **Nada probado aún en pantalla.**
+- **Migraciones:** el usuario aplicó hasta la **0034**.
 - **El usuario todavía no hizo commit** de los cambios de octubre.
 - Próximo hito con el cliente: prueba integral con los ingenieros (pozo nuevo: piloto 8½", ampliación 12¼", tres side tracks e impresión). Después de esa sesión se cierra la revisión.
 
@@ -38,10 +39,12 @@
                                                   └─ 0030_alter_reportediario_mi_representante_1_and_more
                                                        └─ 0031_tarifas_dos_monedas
                                                             └─ 0032_comentario_propiedades
+                                                                 └─ 0033_inventario_inicial_manual
+                                                                      └─ 0034_papelera_pozos_y_tipos_opcionales
 ```
 
 - `0022_sidetrack` **depende de 0021** (así quedó aplicada; cambiarla rompe con `InconsistentMigrationHistory`).
-- La próxima migración nueva debe depender de **`0032_comentario_propiedades`**.
+- La próxima migración nueva debe depender de **`0034_papelera_pozos_y_tipos_opcionales`**.
 - La `0030` (generada con `makemigrations` el 12-oct) puso al día los `verbose_name` atrasados. Desde ahí, `makemigrations --check` no detecta cambios: modelos y migraciones están sincronizados.
 
 ## 2. Dónde está cada cosa (lo más reciente)
@@ -52,7 +55,7 @@
 | Logos | `operaciones/static/operaciones/img/` (`logo_reporte.png` = AOS para reportes; `smartmud_icono.png`, `smartmud_logo.png`, `favicon.png`) |
 | Monedas y segunda moneda | `Pozo.MONEDAS_COMUNES`, `moneda_secundaria`, `cobrar_en_secundaria`, `Pozo.moneda_cobro`/`Pozo.tarifa()`, campos `*_secundaria` de productos, equipos y mallas activos, `GeneralSetupForm`, `general_setup.html/js` (ver [13](13_COSTOS.md)) |
 | Intervalos abierto/cerrado | `IntervaloRevestimiento.cerrado`, `views.api_intervalo_cerrar/reabrir`, `casing_intervals.html/js` |
-| Eliminar pozo | `views.api_pozo_eliminar`, `pozo_main.js`, `pozos/main.html` |
+| Eliminar pozo y papelera | `Pozo.objects` excluye la papelera (`Pozo.todos` la incluye); `views.api_pozo_eliminar/api_pozo_restaurar/pozos_papelera_view`, `pozo_main.js`, `pozos_papelera.js`, `pozos/main.html`, `pozos/papelera.html` |
 | Hub bloqueado | `avances_19_sep/daily_reports_hub.html` |
 | Tanques (textos) | `pits.*`, `reporte_inventario.js`, `reporte_diario_detalle.html`, `views_inventario.py`, `volumetria.py`, `reporte_excel._textos_tanques` |
 | Excel: logo y páginas | `reporte_excel.py` (`_pillow_disponible`, `_quitar_paginas_vacias`, `_textos_tanques`), `recap_pozo.py` |
@@ -60,12 +63,12 @@
 
 ## 3. Lo que hay que atacar ahora (prioridad)
 
-1. Que el usuario corra `migrate` (0031 y 0032) y haga **commit** de los cambios de octubre.
-2. **Pruebas en pantalla** con las guías de [`pruebas/`](pruebas/README.md) (01 a 13), en orden y en un pozo nuevo. Marcar las casillas y anotar los fallos en cada guía; corregir lo que falle (si hay error, pedir el traceback completo). Atención especial a la prueba 12 (grilla de propiedades extra) y al formato de los Excel (pruebas 05 y 13).
+1. Que el usuario haga **commit** de los cambios de octubre.
+2. **Pruebas en pantalla** con las guías de [`pruebas/`](pruebas/README.md) (01 a 14), en orden y en un pozo nuevo. Marcar las casillas y anotar los fallos en cada guía; corregir lo que falle (si hay error, pedir el traceback completo). Atención especial a la prueba 12 (grilla de propiedades extra) y al formato de los Excel (pruebas 05 y 13).
 3. Verificar en pantalla los puntos **6** ("usado en otro módulo" no afecta las concentraciones) y **19** (tickets sin precio) del [23](23_CORRECCIONES_REVISION_OCT.md).
 4. Pendientes sin código: cargar el **catálogo de herramientas** (punto 20) y preguntar a **administración** la codificación de los números de guía/ticket (punto 19).
 5. Respuestas abiertas de AOS ([16 § B](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md)): borrar el último reporte; si más adelante quieren conversión automática de monedas con la tasa del día.
-6. Construir `SmartMud.exe` con `Construir EXE.bat` y probarlo en un equipo limpio.
+6. `SmartMud.exe` ya construido y verificado: probarlo en un equipo limpio (otra PC, sin Python).
 
 ## 4. Decisiones del usuario vigentes
 

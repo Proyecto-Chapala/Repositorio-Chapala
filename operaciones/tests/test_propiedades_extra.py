@@ -8,11 +8,9 @@ del reporte, con etiqueta, que tienen orden de impresión o un valor cargado ese
 """
 
 from datetime import date
-from unittest import mock
 
 from django.test import TestCase
 
-from operaciones import licencia
 from operaciones.models import Pozo
 from operaciones.models_daily_reports import (PropiedadExtraFluido, ReporteDiario, ReporteDiarioMudCheck,
                                               ReporteDiarioMudExtraValue, propiedades_extra_del_reporte)
@@ -21,10 +19,6 @@ from operaciones.models_daily_reports import (PropiedadExtraFluido, ReporteDiari
 class PropiedadesExtraTests(TestCase):
 
     def setUp(self):
-        parche = mock.patch.object(licencia, 'estado_licencia',
-                                   return_value={'estado': licencia.ACTIVA, 'aviso': False, 'dias_restantes': None})
-        parche.start()
-        self.addCleanup(parche.stop)
         self.pozo = Pozo.objects.create(nombre='POZO PRUEBA')
         self.reporte = ReporteDiario.objects.create(pozo=self.pozo, fecha=date(2026, 10, 13), tipo_lodo='WBM')
         self.checks = [ReporteDiarioMudCheck.objects.create(reporte=self.reporte, check_number=n) for n in (1, 2, 3, 4)]
