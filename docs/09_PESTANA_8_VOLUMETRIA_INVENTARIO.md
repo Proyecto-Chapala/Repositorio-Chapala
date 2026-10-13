@@ -102,7 +102,7 @@ final = inicial + recibido − devuelto − usado en fluidos (a mano) − usado 
 
 ### Tickets de productos (`TicketProducto`)
 
-Alimentan el inventario del pozo: suma la cantidad **real**. En la tabla de inventario, junto a *Recibido* y *Devuelto*, se muestran los números de los tickets del día (`views_inventario.numeros_ticket_por_producto`). Mismo esquema que los de mallas: tipo (catálogo compartido con mallas: se usa el **sentido** ENTRADA/SALIDA), número, pedido por, recibido por, almacén del pozo y, por producto, cantidad según ticket y cantidad real. La pantalla muestra el último número usado de cada tipo y resalta los tickets con diferencias entre ticket y real.
+Alimentan el inventario del pozo: suma la cantidad **según ticket** (la de la guía). La cantidad **real** es opcional: si se escribe y es distinta, se marca la diferencia ("≠ real") pero no cambia el inventario. El ticket no muestra precios. En la tabla de inventario, junto a *Recibido* y *Devuelto*, se muestran los números de los tickets del día (`views_inventario.numeros_ticket_por_producto`). Mismo esquema que los de mallas: tipo (catálogo compartido con mallas: se usa el **sentido** ENTRADA/SALIDA), número, pedido por, recibido por, almacén del pozo y, por producto, cantidad según ticket y cantidad real. La pantalla muestra el último número usado de cada tipo y resalta los tickets con diferencias entre ticket y real.
 
 ## 4. Lo que se guarda a mano (`api_volumetria_guardar`)
 

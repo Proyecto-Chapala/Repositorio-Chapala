@@ -87,12 +87,27 @@ class InventarioPorPozoTests(SimpleTestCase):
         # 0 + 100 − 10 − 20 − 5 + 2
         self.assertEqual(inventario['final'], 67)
 
-    def test_la_cantidad_real_manda_sobre_la_del_ticket(self):
+    def test_la_cantidad_segun_ticket_manda_sobre_la_real(self):
         dias = [dia(1, tickets=[ticket_recepcion(BARITA, cantidad_real=25, cantidad_ticket=30)])]
         inventario = inventario_del_dia(dias, 1)
-        self.assertEqual(inventario['recibido'], 25)
-        self.assertEqual(inventario['recibido_ticket'], 30)
-        self.assertEqual(inventario['final'], 25)
+        self.assertEqual(inventario['recibido'], 30)
+        self.assertEqual(inventario['recibido_real'], 25)
+        self.assertEqual(inventario['final'], 30)
+
+    def test_sin_cantidad_real_cuenta_la_del_ticket(self):
+        dias = [dia(1, tickets=[ticket_recepcion(BARITA, cantidad_real=0, cantidad_ticket=200)],
+                    manual={BARITA: {'fluido': 100}})]
+        inventario = inventario_del_dia(dias, 1)
+        self.assertEqual(inventario['inicial'], 0)
+        self.assertEqual(inventario['recibido'], 200)
+        self.assertEqual(inventario['final'], 100)
+        dia2 = inventario_del_dia(dias + [dia(2)], 2)
+        self.assertEqual(dia2['inicial'], 100)
+
+    def test_la_devolucion_tambien_usa_la_cantidad_segun_ticket(self):
+        devolucion = {'sentido': 'SALIDA', 'detalles': [{'producto': BARITA, 'real': 0, 'ticket': 15}]}
+        dias = [dia(1, tickets=[ticket_recepcion(BARITA, 50), devolucion])]
+        self.assertEqual(inventario_del_dia(dias, 1)['final'], 35)
 
     def test_usar_sin_haber_recibido_se_rechaza(self):
         manual = {BARITA: {'fluido': 10}}

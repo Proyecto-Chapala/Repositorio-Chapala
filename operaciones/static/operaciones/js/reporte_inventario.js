@@ -598,6 +598,11 @@ function vaCostoVivo(r){
   return r.costo_diario + (vaUsadoVivo(r) - (r._fluido_guardado || 0) - (r._otro_guardado || 0)) * r.precio;
 }
 
+/* La cantidad "real" del ticket es opcional: solo marca diferencia si se escribió. */
+function vaDifReal(segunTicket, real){
+  return real > 0 && Math.abs(segunTicket - real) > 1e-6;
+}
+
 function vaChipsTicket(numeros){
   return (numeros || []).map(n => ` <span class="va-chip-ticket" title="Ticket N° ${csEsc(n)}">N° ${csEsc(n)}</span>`).join('');
 }
@@ -612,7 +617,6 @@ function vaRenderInventario(){
   }
   tbody.innerHTML = filas.map(r => {
     const id = r.producto_id;
-    const dif = (a, b) => Math.abs(a - b) > 1e-6;
     return `<tr class="${r.activo ? '' : 'cs-fila-inactiva'} ${r.no_imprimir ? 'va-no-imprimir' : ''}">
       <td class="cs-codigo">${csEsc(r.codigo)}</td>
       <td>${csEsc(r.descripcion)}${r.servicio ? ' <span class="va-chip-servicio">Servicio</span>' : ''}</td>
@@ -620,8 +624,8 @@ function vaRenderInventario(){
       <td class="cs-num">${r.gravedad ? csFmt(r.gravedad, 2) : '—'}</td>
       <td class="cs-num" ${r.cobro_por === 'BARRIL' ? `title="Equivale a ${csDinero(r.precio)} por unidad"` : ''}>${r.cobro_por === 'BARRIL' ? `${csDinero(r.precio_cargado)} /bbl` : csDinero(r.precio)}</td>
       <td class="cs-num cs-grupo-nuevas"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="inicial_manual" value="${r.inicial_manual ?? ''}" placeholder="${csFmt(r.inicial_auto)}" title="Vacío = final del día anterior (${csFmt(r.inicial_auto)}). Escribe un número para fijar la existencia inicial a mano." ${r.servicio ? 'disabled' : ''}></td>
-      <td class="cs-num cs-grupo-nuevas cs-mas" ${dif(r.recibido, r.recibido_ticket) ? `title="Según ticket: ${csFmt(r.recibido_ticket)}"` : ''}>${vaCant(r.recibido)}${dif(r.recibido, r.recibido_ticket) ? ' <span class="cs-dif-chip">≠ ticket</span>' : ''}${vaChipsTicket(r.tickets_recibido)}</td>
-      <td class="cs-num cs-grupo-nuevas cs-menos">${vaCant(r.devuelto)}${vaChipsTicket(r.tickets_devuelto)}</td>
+      <td class="cs-num cs-grupo-nuevas cs-mas" ${vaDifReal(r.recibido, r.recibido_real) ? `title="Real recibido: ${csFmt(r.recibido_real)}"` : ''}>${vaCant(r.recibido)}${vaDifReal(r.recibido, r.recibido_real) ? ' <span class="cs-dif-chip">≠ real</span>' : ''}${vaChipsTicket(r.tickets_recibido)}</td>
+      <td class="cs-num cs-grupo-nuevas cs-menos" ${vaDifReal(r.devuelto, r.devuelto_real) ? `title="Real devuelto: ${csFmt(r.devuelto_real)}"` : ''}>${vaCant(r.devuelto)}${vaDifReal(r.devuelto, r.devuelto_real) ? ' <span class="cs-dif-chip">≠ real</span>' : ''}${vaChipsTicket(r.tickets_devuelto)}</td>
       <td class="cs-num cs-grupo-nuevas cs-menos">
         <input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="usado_fluido" value="${r.usado_fluido || ''}" placeholder="0" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}>
         ${r.agregado_balance > 0 ? `<div class="cs-tenue">Balance: ${csFmt(r.agregado_balance)}</div>` : ''}
@@ -1122,19 +1126,19 @@ function vaRenderTickets(){
         </div>
         <div class="cs-tabla-wrapper va-tabla-scroll">
           <table class="cs-tabla">
-            <thead><tr><th>Producto</th><th>Unidad</th><th class="cs-num">Precio</th><th class="cs-num">Según ticket</th><th class="cs-num">Real</th></tr></thead>
+            <thead><tr><th>Producto</th><th>Unidad</th><th class="cs-num">Según ticket</th><th class="cs-num">Real <em>(opcional)</em></th></tr></thead>
             <tbody id="vaTkFilas">${prods.map(r => {
               const d = porProd[r.producto_id] || {};
               return `<tr data-prod="${r.producto_id}" data-buscar="${csEsc((r.codigo + ' ' + r.descripcion).toLowerCase())}">
                 <td>${csEsc(r.descripcion)} <span class="cs-tenue">${csEsc(r.codigo)}</span></td>
-                <td>${csEsc(r.unidad || '—')}</td><td class="cs-num">${csDinero(r.precio)}</td>
+                <td>${csEsc(r.unidad || '—')}</td>
                 <td class="cs-num"><input type="number" class="cs-input-cant va-tk-cant" min="0" step="any" data-campo="cantidad_ticket" value="${d.cantidad_ticket || ''}" placeholder="0"></td>
                 <td class="cs-num"><input type="number" class="cs-input-cant va-tk-cant" min="0" step="any" data-campo="cantidad_real" value="${d.cantidad_real || ''}" placeholder="0"></td>
               </tr>`;
-            }).join('') || '<tr class="cs-fila-vacia"><td colspan="5">El pozo no tiene productos activos.</td></tr>'}</tbody>
+            }).join('') || '<tr class="cs-fila-vacia"><td colspan="4">El pozo no tiene productos activos.</td></tr>'}</tbody>
           </table>
         </div>
-        <p class="cs-nota">"Según ticket" es lo que dice el papel; "Real" es lo que llegó o salió de verdad. El inventario usa la cantidad real; las diferencias se marcan en ámbar.</p>
+        <p class="cs-nota">"Según ticket" es lo que dice la guía y es lo que entra al inventario. "Real" es opcional: si lo que llegó o salió de verdad es distinto, escríbelo y la diferencia se marca en ámbar.</p>
       </section>
     </div>`;
   pie.innerHTML = `${t ? '<button type="button" class="btn-modern-secondary btn-sm cs-btn-peligro" id="vaTkEliminar"><span>&#128465;</span><span>Eliminar ticket</span></button>' : ''}
@@ -1146,7 +1150,8 @@ function vaRenderTickets(){
 function vaTkMarcarDiferencias(){
   document.querySelectorAll('#vaTkFilas tr[data-prod]').forEach(tr => {
     const v = c => csNum(tr.querySelector(`[data-campo="${c}"]`).value) || 0;
-    tr.querySelector('[data-campo="cantidad_real"]').classList.toggle('cs-dif', Math.abs(v('cantidad_ticket') - v('cantidad_real')) > 1e-6);
+    tr.querySelector('[data-campo="cantidad_real"]').classList.toggle('cs-dif', vaDifReal(v('cantidad_ticket'), v('cantidad_real')));
+
   });
 }
 

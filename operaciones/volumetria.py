@@ -227,8 +227,8 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
         costo_dia_cat = defaultdict(float)
         recibido = defaultdict(float)
         devuelto = defaultdict(float)
-        recibido_ticket = defaultdict(float)
-        devuelto_ticket = defaultdict(float)
+        recibido_real = defaultdict(float)
+        devuelto_real = defaultdict(float)
         avisos = []
 
         def g_de(n, etiqueta):
@@ -247,15 +247,16 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
             for p in list(masa[c]):
                 masa[c][p] -= masa[c][p] * fr
 
-        # ---- Tickets de productos ----
+        # ---- Tickets de productos: el inventario usa la cantidad "según ticket" (la de la guía);
+        # la "real" queda solo para marcar diferencias. ----
         for t in dia.get('tickets', []):
             for d in t.get('detalles', []):
                 if t['sentido'] == 'ENTRADA':
-                    recibido[d['producto']] += float(d.get('real') or 0)
-                    recibido_ticket[d['producto']] += float(d.get('ticket') or 0)
+                    recibido[d['producto']] += float(d.get('ticket') or 0)
+                    recibido_real[d['producto']] += float(d.get('real') or 0)
                 else:
-                    devuelto[d['producto']] += float(d.get('real') or 0)
-                    devuelto_ticket[d['producto']] += float(d.get('ticket') or 0)
+                    devuelto[d['producto']] += float(d.get('ticket') or 0)
+                    devuelto_real[d['producto']] += float(d.get('real') or 0)
 
         # ---- Movimientos ----
         for tr in sorted(dia.get('transacciones', []), key=lambda x: x['secuencia']):
@@ -380,7 +381,8 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
             acum_devuelto[p] += devuelto[p]
             inventario[p] = {
                 'inicial': ini, 'inicial_auto': ini_auto, 'recibido': recibido[p], 'devuelto': devuelto[p],
-                'recibido_ticket': recibido_ticket[p], 'devuelto_ticket': devuelto_ticket[p],
+                'recibido_real': recibido_real[p], 'devuelto_real': devuelto_real[p],
+
                 'usado_fluido': fluido, 'usado_otro': otro, 'ajuste': ajuste,
                 'final': fin, 'usado_dia': usado_dia,
                 'costo_diario': round(costo_dia_prod[p], 2),
