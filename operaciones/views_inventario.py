@@ -551,8 +551,8 @@ def _estado_volumetria(pozo, reporte):
             inicial=round(s.get('inicial', 0.0), 3), inicial_auto=round(s.get('inicial_auto', 0.0), 3),
             inicial_manual=float(m.inicial) if m and m.inicial is not None else None, recibido=round(s.get('recibido', 0.0), 3),
             devuelto=round(s.get('devuelto', 0.0), 3),
-            recibido_ticket=round(s.get('recibido_ticket', 0.0), 3),
-            devuelto_ticket=round(s.get('devuelto_ticket', 0.0), 3),
+            recibido_real=round(s.get('recibido_real', 0.0), 3),
+            devuelto_real=round(s.get('devuelto_real', 0.0), 3),
             tickets_recibido=tickets_hoy['ENTRADA'].get(pid, []),
             tickets_devuelto=tickets_hoy['SALIDA'].get(pid, []),
             usado_fluido=round(s.get('usado_fluido', 0.0), 3),
@@ -642,7 +642,8 @@ def _estado_volumetria(pozo, reporte):
             'id': t.id, 'tipo_id': t.tipo_id, 'tipo_nombre': t.tipo.nombre, 'sentido': t.tipo.sentido,
             'numero': t.numero, 'pedido_por': t.pedido_por, 'recibido_por': t.recibido_por,
             'almacen_codigo': t.almacen_codigo, 'almacen_nombre': t.almacen_nombre, 'detalles': det,
-            'tiene_diferencias': any(abs(d['cantidad_ticket'] - d['cantidad_real']) > 1e-6 for d in det),
+            'tiene_diferencias': any(d['cantidad_real'] and abs(d['cantidad_ticket'] - d['cantidad_real']) > 1e-6
+                                     for d in det),
         })
 
     vol_quimicos = sum(g['flujos'].get('quimicos', 0.0) or 0.0 for g in grupos)
@@ -1143,6 +1144,8 @@ def api_ticket_producto_guardar(request, pk, reporte_pk):
                 continue
             if p is None:
                 raise _Rechazo('Solo se pueden usar productos activos del pozo.')
+            if not ct:
+                raise _Rechazo(f"{etq}: escribe la cantidad según ticket; es la que entra al inventario.")
             lineas.append((pid, ct, cr))
         if not lineas:
             raise _Rechazo('El ticket no tiene cantidades. Escribe al menos una.')

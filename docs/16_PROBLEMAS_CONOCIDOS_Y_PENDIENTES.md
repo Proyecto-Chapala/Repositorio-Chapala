@@ -87,6 +87,9 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 
 ## F. Historial de lo resuelto
 
+### 13-oct-2026 (tickets de productos)
+- El inventario usa la cantidad **"según ticket"** (antes la "real": un ticket con solo la cantidad de la guía entraba en 0). La "real" es opcional y marca "≠ real". Sin precio en la ventana de tickets. Falta probar en pantalla: [pruebas/19](pruebas/19_TICKET_SEGUN_GUIA.md).
+
 ### 13-oct-2026 (servicios del pozo; ver [25](25_SERVICIOS_DEL_POZO.md))
 - Ingenieros, trailers y demás servicios se cobran en la pestaña 8 › **Servicios**, con categoría y tarifa diaria propias (0035). "Usado en otro módulo" queda para productos transferidos a otra línea. Falta probar en pantalla: [pruebas/15](pruebas/15_SERVICIOS_DEL_POZO.md).
 

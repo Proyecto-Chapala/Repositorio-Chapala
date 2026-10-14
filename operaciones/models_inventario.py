@@ -220,6 +220,7 @@ class TicketProductoDetalle(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.PROTECT, related_name='+')
     cantidad_ticket = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Según ticket")
     cantidad_real = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Real")
+    # El inventario usa cantidad_ticket (la de la guía); cantidad_real es opcional y solo marca diferencias.
 
     class Meta:
         verbose_name = "Detalle de Ticket de Productos"
