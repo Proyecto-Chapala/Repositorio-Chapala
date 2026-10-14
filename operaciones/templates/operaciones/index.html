@@ -52,5 +52,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'operaciones/js/inventario.js' %}"></script>
+<script src="{% static 'operaciones/js/inventario.js' %}?v={% now 'U' %}"></script>
 {% endblock %}

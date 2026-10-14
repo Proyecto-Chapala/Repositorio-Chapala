@@ -629,7 +629,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="text" class="mud-cell-input text-left" id="chk_{{ chk.check_number }}_sample_from" value="{{ chk.sample_from|default:'' }}">
+                <input type="text" class="mud-cell-input text-left" id="chk_{{ chk.check_number }}_sample_from" value="{{ chk.sample_from|default:'' }}" placeholder="Ej: In">
               </td>
             {% endfor %}
           </tr>
@@ -638,7 +638,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="text" class="mud-cell-input text-left" id="chk_{{ chk.check_number }}_time_taken" value="{{ chk.time_taken|default:'' }}">
+                <input type="text" class="mud-cell-input text-left" id="chk_{{ chk.check_number }}_time_taken" value="{{ chk.time_taken|default:'' }}" placeholder="Ej: 09:00">
               </td>
             {% endfor %}
           </tr>
@@ -647,7 +647,7 @@
             <td class="cell-unit">&deg;F</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_flowline_temp" value="{{ chk.flowline_temp|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_flowline_temp" value="{{ chk.flowline_temp|default_if_none:''|unlocalize }}" placeholder="Ej: 90.0">
               </td>
             {% endfor %}
           </tr>
@@ -656,7 +656,7 @@
             <td class="cell-unit">ft</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_depth" value="{{ chk.depth|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_depth" value="{{ chk.depth|default_if_none:''|unlocalize }}" placeholder="Ej: 5000.0">
               </td>
             {% endfor %}
           </tr>
@@ -665,7 +665,7 @@
             <td class="cell-unit">ft</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_tvd" value="{{ chk.tvd|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_tvd" value="{{ chk.tvd|default_if_none:''|unlocalize }}" placeholder="Ej: 4750.0">
               </td>
             {% endfor %}
           </tr>
@@ -679,7 +679,7 @@
             <td class="cell-unit">lb/gal</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mud_weight" value="{{ chk.mud_weight|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mud_weight" value="{{ chk.mud_weight|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)" placeholder="Ej: 10.5">
               </td>
             {% endfor %}
           </tr>
@@ -688,7 +688,7 @@
             <td class="cell-unit">&deg;F</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mw_temp" value="{{ chk.mw_temp|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mw_temp" value="{{ chk.mw_temp|default_if_none:''|unlocalize }}" placeholder="Ej: 86.0">
               </td>
             {% endfor %}
           </tr>
@@ -697,7 +697,7 @@
             <td class="cell-unit">s/qt</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_funnel_viscosity" value="{{ chk.funnel_viscosity|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_funnel_viscosity" value="{{ chk.funnel_viscosity|default_if_none:''|unlocalize }}" placeholder="Ej: 45.0">
               </td>
             {% endfor %}
           </tr>
@@ -711,7 +711,7 @@
             <td class="cell-unit">&deg;F</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_rheology_temp" value="{{ chk.rheology_temp|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_rheology_temp" value="{{ chk.rheology_temp|default_if_none:''|unlocalize }}" placeholder="Ej: 120.0">
               </td>
             {% endfor %}
           </tr>
@@ -720,7 +720,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r600" value="{{ chk.r600|default_if_none:''|unlocalize }}" oninput="recalcularReologia(this)">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r600" value="{{ chk.r600|default_if_none:''|unlocalize }}" oninput="recalcularReologia(this)" placeholder="Ej: 50">
               </td>
             {% endfor %}
           </tr>
@@ -729,7 +729,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r300" value="{{ chk.r300|default_if_none:''|unlocalize }}" oninput="recalcularReologia(this)">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r300" value="{{ chk.r300|default_if_none:''|unlocalize }}" oninput="recalcularReologia(this)" placeholder="Ej: 38">
               </td>
             {% endfor %}
           </tr>
@@ -738,7 +738,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r200" value="{{ chk.r200|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r200" value="{{ chk.r200|default_if_none:''|unlocalize }}" placeholder="Ej: 26">
               </td>
             {% endfor %}
           </tr>
@@ -747,7 +747,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r100" value="{{ chk.r100|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r100" value="{{ chk.r100|default_if_none:''|unlocalize }}" placeholder="Ej: 22">
               </td>
             {% endfor %}
           </tr>
@@ -756,7 +756,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r6" value="{{ chk.r6|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r6" value="{{ chk.r6|default_if_none:''|unlocalize }}" placeholder="Ej: 17">
               </td>
             {% endfor %}
           </tr>
@@ -765,7 +765,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r3" value="{{ chk.r3|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_r3" value="{{ chk.r3|default_if_none:''|unlocalize }}" placeholder="Ej: 14">
               </td>
             {% endfor %}
           </tr>
@@ -774,7 +774,7 @@
             <td class="cell-unit">cP</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input input-calc" id="chk_{{ chk.check_number }}_pv" value="{{ chk.pv|default_if_none:''|unlocalize }}" title="Autocalculado: R600 - R300">
+                <input type="number" step="any" class="mud-cell-input input-calc" id="chk_{{ chk.check_number }}_pv" value="{{ chk.pv|default_if_none:''|unlocalize }}" title="Autocalculado: R600 - R300" placeholder="Ej: 12">
               </td>
             {% endfor %}
           </tr>
@@ -783,7 +783,7 @@
             <td class="cell-unit">lb/100ft&sup2;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input input-calc" id="chk_{{ chk.check_number }}_yp" value="{{ chk.yp|default_if_none:''|unlocalize }}" title="Autocalculado: R300 - PV">
+                <input type="number" step="any" class="mud-cell-input input-calc" id="chk_{{ chk.check_number }}_yp" value="{{ chk.yp|default_if_none:''|unlocalize }}" title="Autocalculado: R300 - PV" placeholder="Ej: 26">
               </td>
             {% endfor %}
           </tr>
@@ -792,7 +792,7 @@
             <td class="cell-unit">lb/100ft&sup2;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_gel_10s" value="{{ chk.gel_10s|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_gel_10s" value="{{ chk.gel_10s|default_if_none:''|unlocalize }}" placeholder="Ej: 14">
               </td>
             {% endfor %}
           </tr>
@@ -801,7 +801,7 @@
             <td class="cell-unit">lb/100ft&sup2;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_gel_10m" value="{{ chk.gel_10m|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_gel_10m" value="{{ chk.gel_10m|default_if_none:''|unlocalize }}" placeholder="Ej: 16">
               </td>
             {% endfor %}
           </tr>
@@ -810,7 +810,7 @@
             <td class="cell-unit">lb/100ft&sup2;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_gel_30m" value="{{ chk.gel_30m|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_gel_30m" value="{{ chk.gel_30m|default_if_none:''|unlocalize }}" placeholder="Ej: 18">
               </td>
             {% endfor %}
           </tr>
@@ -824,7 +824,7 @@
             <td class="cell-unit">cc/30min</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_api_fluid_loss" value="{{ chk.api_fluid_loss|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_api_fluid_loss" value="{{ chk.api_fluid_loss|default_if_none:''|unlocalize }}" placeholder="Ej: 6.0">
               </td>
             {% endfor %}
           </tr>
@@ -833,7 +833,7 @@
             <td class="cell-unit">cc/30min</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_hthp_fluid_loss" value="{{ chk.hthp_fluid_loss|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_hthp_fluid_loss" value="{{ chk.hthp_fluid_loss|default_if_none:''|unlocalize }}" placeholder="Ej: 14.0">
               </td>
             {% endfor %}
           </tr>
@@ -842,7 +842,7 @@
             <td class="cell-unit">1/32&quot;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_cake_api" value="{{ chk.cake_api|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_cake_api" value="{{ chk.cake_api|default_if_none:''|unlocalize }}" placeholder="Ej: 1.0">
               </td>
             {% endfor %}
           </tr>
@@ -851,7 +851,7 @@
             <td class="cell-unit">1/32&quot;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_cake_hthp" value="{{ chk.cake_hthp|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_cake_hthp" value="{{ chk.cake_hthp|default_if_none:''|unlocalize }}" placeholder="Ej: 2.0">
               </td>
             {% endfor %}
           </tr>
@@ -937,7 +937,7 @@
             <td class="cell-unit">%Vol</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_solids_pct" value="{{ chk.solids_pct|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_solids_pct" value="{{ chk.solids_pct|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)" placeholder="Ej: 12.0">
               </td>
             {% endfor %}
           </tr>
@@ -946,7 +946,7 @@
             <td class="cell-unit">%Vol</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_oil_pct" value="{{ chk.oil_pct|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_oil_pct" value="{{ chk.oil_pct|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)" placeholder="Ej: 0.0">
               </td>
             {% endfor %}
           </tr>
@@ -955,7 +955,7 @@
             <td class="cell-unit">%Vol</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_water_pct" value="{{ chk.water_pct|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_water_pct" value="{{ chk.water_pct|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)" placeholder="Ej: 88.0">
               </td>
             {% endfor %}
           </tr>
@@ -964,7 +964,7 @@
             <td class="cell-unit">%Vol</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_sand_pct" value="{{ chk.sand_pct|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_sand_pct" value="{{ chk.sand_pct|default_if_none:''|unlocalize }}" placeholder="Ej: 0.25">
               </td>
             {% endfor %}
           </tr>
@@ -1167,7 +1167,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_ph" value="{{ chk.ph|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_ph" value="{{ chk.ph|default_if_none:''|unlocalize }}" placeholder="Ej: 9.5">
               </td>
             {% endfor %}
           </tr>
@@ -1176,7 +1176,7 @@
             <td class="cell-unit">&deg;F</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_ph_temp" value="{{ chk.ph_temp|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_ph_temp" value="{{ chk.ph_temp|default_if_none:''|unlocalize }}" placeholder="Ej: 80.0">
               </td>
             {% endfor %}
           </tr>
@@ -1185,7 +1185,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_pm" value="{{ chk.pm|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_pm" value="{{ chk.pm|default_if_none:''|unlocalize }}" placeholder="Ej: 1.2">
               </td>
             {% endfor %}
           </tr>
@@ -1194,7 +1194,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_pf" value="{{ chk.pf|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_pf" value="{{ chk.pf|default_if_none:''|unlocalize }}" placeholder="Ej: 0.4">
               </td>
             {% endfor %}
           </tr>
@@ -1203,7 +1203,7 @@
             <td class="cell-unit">&mdash;</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mf" value="{{ chk.mf|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mf" value="{{ chk.mf|default_if_none:''|unlocalize }}" placeholder="Ej: 1.8">
               </td>
             {% endfor %}
           </tr>
@@ -1212,7 +1212,7 @@
             <td class="cell-unit">mg/L</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_chlorides" value="{{ chk.chlorides|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_chlorides" value="{{ chk.chlorides|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)" placeholder="Ej: 12000">
               </td>
             {% endfor %}
           </tr>
@@ -1221,7 +1221,7 @@
             <td class="cell-unit">mg/L</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_calcium_hardness" value="{{ chk.calcium_hardness|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_calcium_hardness" value="{{ chk.calcium_hardness|default_if_none:''|unlocalize }}" placeholder="Ej: 240">
               </td>
             {% endfor %}
           </tr>
@@ -1230,7 +1230,7 @@
             <td class="cell-unit">lb/bbl</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mbt" value="{{ chk.mbt|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_mbt" value="{{ chk.mbt|default_if_none:''|unlocalize }}" oninput="recalcularSolidsAnalysis(this)" placeholder="Ej: 15.0">
               </td>
             {% endfor %}
           </tr>
@@ -1239,7 +1239,7 @@
             <td class="cell-unit">Volts</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_electrical_stability" value="{{ chk.electrical_stability|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_electrical_stability" value="{{ chk.electrical_stability|default_if_none:''|unlocalize }}" placeholder="Ej: 450">
               </td>
             {% endfor %}
           </tr>
@@ -1248,7 +1248,7 @@
             <td class="cell-unit">lb/bbl</td>
             {% for chk in mud_checks %}
               <td class="{% if chk.is_primary %}cell-primary{% endif %}">
-                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_excess_lime" value="{{ chk.excess_lime|default_if_none:''|unlocalize }}">
+                <input type="number" step="any" class="mud-cell-input" id="chk_{{ chk.check_number }}_excess_lime" value="{{ chk.excess_lime|default_if_none:''|unlocalize }}" placeholder="Ej: 1.5">
               </td>
             {% endfor %}
           </tr>

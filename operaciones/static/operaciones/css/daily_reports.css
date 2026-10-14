@@ -2213,6 +2213,12 @@
   background: #ffffff;
 }
 
+.mud-cell-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
 .mud-cell-input.text-left {
   text-align: left;
 }

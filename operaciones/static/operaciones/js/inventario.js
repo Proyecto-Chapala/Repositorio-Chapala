@@ -264,10 +264,10 @@ const Inventario = {
     this.elements.inputDescripcion.value = '';
     this.elements.inputEmpaque.value = '';
     this.elements.inputUnidad.value = '';
-    this.elements.inputLibraje.value = '0.00';
-    this.elements.inputGravedad.value = '1.0000';
-    this.elements.inputCosto.value = '0.00';
-    this.elements.inputCantidad.value = '0.00';
+    this.elements.inputLibraje.value = '';
+    this.elements.inputGravedad.value = '';
+    this.elements.inputCosto.value = '';
+    this.elements.inputCantidad.value = '';
     this.elements.selectCategoria.value = this.currentCategoria || 'SOLIDO';
     this.elements.inputObservacion.value = '';
 

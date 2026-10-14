@@ -81,10 +81,10 @@ def obtener_o_crear_pumps_bits(reporte):
                 bombas.append(b)
         else:
             default_pumps = [
-                (1, "EMSCO F-1000", 6.5, 12.0, 0.0, 97.0, 80.0, True, False),
-                (2, "EMSCO F-1000", 6.5, 12.0, 0.0, 97.0, 80.0, True, False),
-                (3, "EMSCO F-1000", 6.0, 12.0, 0.0, 97.0, 0.0, False, False),
-                (4, "", 6.0, 12.0, 0.0, 97.0, 0.0, False, False),
+                (1, "", 0.0, 0.0, 0.0, 100.0, 0.0, True, False),
+                (2, "", 0.0, 0.0, 0.0, 100.0, 0.0, True, False),
+                (3, "", 0.0, 0.0, 0.0, 100.0, 0.0, False, False),
+                (4, "", 0.0, 0.0, 0.0, 100.0, 0.0, False, False),
             ]
             for num, model, liner, stroke, rod, eff, spm, on_rep, riser in default_pumps:
                 b = ReporteDiarioBomba.objects.create(
@@ -132,20 +132,19 @@ def obtener_o_crear_pumps_bits(reporte):
                 on_off_bottom_pressure=pb.on_off_bottom_pressure,
             )
         else:
-            total_gpm = sum(b.caudal_gpm for b in bombas)
             bit_data = ReporteDiarioBitData.objects.create(
                 reporte=reporte,
-                bit_description="Hycalog X-175",
-                bit_number="3",
-                washout_pct=5.0,
-                bit_size=12.25,
-                washout_hole_size=12.553,
-                rotary_rpm=150.0,
+                bit_description="",
+                bit_number="1",
+                washout_pct=0.0,
+                bit_size=0.0,
+                washout_hole_size=0.0,
+                rotary_rpm=0.0,
                 rotating_hours=0.0,
-                weight_on_bit=24000.0,
-                rop=30.0,
-                pump_flow_rate=round(total_gpm, 1) if total_gpm else 803.0,
-                pump_pressure=3000.0,
+                weight_on_bit=0.0,
+                rop=0.0,
+                pump_flow_rate=0.0,
+                pump_pressure=0.0,
                 surface_code="1"
             )
 
@@ -161,9 +160,7 @@ def obtener_o_crear_pumps_bits(reporte):
                 )
                 boquillas.append(noz)
         else:
-            n1 = ReporteDiarioBoquilla.objects.create(reporte=reporte, size_32nds=14, cantidad=2)
-            n2 = ReporteDiarioBoquilla.objects.create(reporte=reporte, size_32nds=13, cantidad=3)
-            boquillas = [n1, n2]
+            boquillas = []
 
     return bombas, bit_data, boquillas
 
@@ -171,7 +168,8 @@ def obtener_o_crear_pumps_bits(reporte):
 def obtener_o_crear_mud_checks(reporte):
     """
     Obtiene la configuración de lodo y los 4 chequeos diarios (Tab #3).
-    Si no existen, los clona del reporte anterior o los inicializa con defaults de ONE-TRAX.
+    Si no existen, los clona del reporte anterior.
+    Si es un pozo nuevo (sin reporte previo), se inicializan con campos limpios y vacíos.
     """
     mud_config, _ = ReporteDiarioMudConfig.objects.get_or_create(reporte=reporte)
     checks = list(reporte.mud_checks.all().order_by('check_number'))
@@ -179,84 +177,9 @@ def obtener_o_crear_mud_checks(reporte):
     if len(checks) < 4:
         existing_numbers = {c.check_number for c in checks}
         prev = ReporteDiario.objects.filter(pozo=reporte.pozo, fecha__lt=reporte.fecha).order_by('-fecha').first()
-        
-        defaults_by_num = {
-            1: {
-                'is_primary': True,
-                'sample_from': 'In',
-                'time_taken': '09:00',
-                'flowline_temp': 90.0,
-                'depth': reporte.profundidad_actual if reporte.profundidad_actual > 0 else 5002.0,
-                'tvd': reporte.profundidad_tvd if reporte.profundidad_tvd > 0 else 4750.0,
-                'mud_weight': 10.5,
-                'mw_temp': 86.0,
-                'funnel_viscosity': 45.0,
-                'rheology_temp': 120.0,
-                'r600': 50.0,
-                'r300': 38.0,
-                'r200': 26.0,
-                'r100': 22.0,
-                'r6': 17.0,
-                'r3': 14.0,
-                'pv': 12.0,
-                'yp': 26.0,
-                'gel_10s': 14.0,
-                'gel_10m': 16.0,
-                'gel_30m': 18.0,
-                'api_fluid_loss': 6.0,
-                'hthp_fluid_loss': 14.0,
-                'cake_api': 1.0,
-                'cake_hthp': 2.0,
-                'solids_pct': 12.0,
-                'oil_pct': 0.0,
-                'water_pct': 88.0,
-                'sand_pct': 0.25,
-                'ph': 9.5,
-                'ph_temp': 80.0,
-                'pm': 1.2,
-                'pf': 0.4,
-                'mf': 1.8,
-                'chlorides': 12000.0,
-                'calcium_hardness': 240.0,
-                'mbt': 15.0,
-            },
-            2: {
-                'is_primary': False,
-                'sample_from': 'Flowline',
-                'time_taken': '15:00',
-                'flowline_temp': 95.0,
-                'depth': reporte.profundidad_actual if reporte.profundidad_actual > 0 else 5002.0,
-                'tvd': reporte.profundidad_tvd if reporte.profundidad_tvd > 0 else 4750.0,
-                'mud_weight': 10.5,
-                'funnel_viscosity': 45.0,
-                'rheology_temp': 120.0,
-            },
-            3: {
-                'is_primary': False,
-                'sample_from': 'Suction',
-                'time_taken': '21:00',
-                'flowline_temp': 88.0,
-                'depth': reporte.profundidad_actual if reporte.profundidad_actual > 0 else 5002.0,
-                'tvd': reporte.profundidad_tvd if reporte.profundidad_tvd > 0 else 4750.0,
-                'mud_weight': 10.5,
-                'funnel_viscosity': 45.0,
-                'rheology_temp': 120.0,
-            },
-            4: {
-                'is_primary': False,
-                'sample_from': '',
-                'time_taken': '03:00',
-                'depth': reporte.profundidad_actual if reporte.profundidad_actual > 0 else 5002.0,
-                'tvd': reporte.profundidad_tvd if reporte.profundidad_tvd > 0 else 4750.0,
-                'mud_weight': 10.5,
-                'funnel_viscosity': 45.0,
-                'rheology_temp': 120.0,
-            }
-        }
 
         for num in range(1, 5):
             if num not in existing_numbers:
-                vals = defaults_by_num[num]
                 if prev and prev.mud_checks.filter(check_number=num).exists():
                     p_chk = prev.mud_checks.get(check_number=num)
                     vals = {
@@ -299,6 +222,49 @@ def obtener_o_crear_mud_checks(reporte):
                         'mbt': p_chk.mbt,
                         'electrical_stability': p_chk.electrical_stability,
                         'excess_lime': p_chk.excess_lime,
+                    }
+                else:
+                    # Pozo nuevo / sin reporte previo: campos limpios
+                    vals = {
+                        'is_primary': (num == 1),
+                        'sample_from': '',
+                        'time_taken': '',
+                        'flowline_temp': None,
+                        'depth': (reporte.profundidad_actual if reporte.profundidad_actual and reporte.profundidad_actual > 0 else None),
+                        'tvd': (reporte.profundidad_tvd if reporte.profundidad_tvd and reporte.profundidad_tvd > 0 else None),
+                        'mud_weight': None,
+                        'mw_temp': None,
+                        'funnel_viscosity': None,
+                        'rheology_temp': None,
+                        'r600': None,
+                        'r300': None,
+                        'r200': None,
+                        'r100': None,
+                        'r6': None,
+                        'r3': None,
+                        'pv': None,
+                        'yp': None,
+                        'gel_10s': None,
+                        'gel_10m': None,
+                        'gel_30m': None,
+                        'api_fluid_loss': None,
+                        'hthp_fluid_loss': None,
+                        'cake_api': None,
+                        'cake_hthp': None,
+                        'solids_pct': None,
+                        'oil_pct': None,
+                        'water_pct': None,
+                        'sand_pct': None,
+                        'ph': None,
+                        'ph_temp': None,
+                        'pm': None,
+                        'pf': None,
+                        'mf': None,
+                        'chlorides': None,
+                        'calcium_hardness': None,
+                        'mbt': None,
+                        'electrical_stability': None,
+                        'excess_lime': None,
                     }
 
                 chk = ReporteDiarioMudCheck.objects.create(
@@ -1383,96 +1349,112 @@ def api_mud_properties_guardar(request, pk, reporte_pk):
         raw_checks = body.get('checks', [])
         primary_check_num = int(body.get('primary_check_number', 1) or 1)
 
+        def get_item_flt(item_dict, field_name, current_val):
+            if field_name not in item_dict:
+                return current_val
+            val = item_dict.get(field_name)
+            if val in ('', None):
+                return None
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return None
+
+        def get_item_str(item_dict, field_name, current_val):
+            if field_name not in item_dict:
+                return current_val or ''
+            return str(item_dict.get(field_name) or '').strip()
+
         saved_checks_map = {}
         for item in raw_checks:
             num = int(item.get('check_number', 1))
             c_obj, _ = ReporteDiarioMudCheck.objects.get_or_create(reporte=reporte, check_number=num)
             c_obj.is_primary = (num == primary_check_num)
 
-            c_obj.sample_from = str(item.get('sample_from', c_obj.sample_from or '')).strip()
-            c_obj.time_taken = str(item.get('time_taken', c_obj.time_taken or '')).strip()
-            c_obj.flowline_temp = parse_flt(item.get('flowline_temp'), c_obj.flowline_temp)
-            c_obj.depth = parse_flt(item.get('depth'), c_obj.depth)
-            c_obj.tvd = parse_flt(item.get('tvd'), c_obj.tvd)
+            c_obj.sample_from = get_item_str(item, 'sample_from', c_obj.sample_from)
+            c_obj.time_taken = get_item_str(item, 'time_taken', c_obj.time_taken)
+            c_obj.flowline_temp = get_item_flt(item, 'flowline_temp', c_obj.flowline_temp)
+            c_obj.depth = get_item_flt(item, 'depth', c_obj.depth)
+            c_obj.tvd = get_item_flt(item, 'tvd', c_obj.tvd)
 
-            c_obj.mud_weight = parse_flt(item.get('mud_weight'), c_obj.mud_weight)
-            c_obj.mw_temp = parse_flt(item.get('mw_temp'), c_obj.mw_temp)
-            c_obj.funnel_viscosity = parse_flt(item.get('funnel_viscosity'), c_obj.funnel_viscosity)
+            c_obj.mud_weight = get_item_flt(item, 'mud_weight', c_obj.mud_weight)
+            c_obj.mw_temp = get_item_flt(item, 'mw_temp', c_obj.mw_temp)
+            c_obj.funnel_viscosity = get_item_flt(item, 'funnel_viscosity', c_obj.funnel_viscosity)
 
-            c_obj.rheology_temp = parse_flt(item.get('rheology_temp'), c_obj.rheology_temp)
-            c_obj.r600 = parse_flt(item.get('r600'), c_obj.r600)
-            c_obj.r300 = parse_flt(item.get('r300'), c_obj.r300)
-            c_obj.r200 = parse_flt(item.get('r200'), c_obj.r200)
-            c_obj.r100 = parse_flt(item.get('r100'), c_obj.r100)
-            c_obj.r6 = parse_flt(item.get('r6'), c_obj.r6)
-            c_obj.r3 = parse_flt(item.get('r3'), c_obj.r3)
+            c_obj.rheology_temp = get_item_flt(item, 'rheology_temp', c_obj.rheology_temp)
+            c_obj.r600 = get_item_flt(item, 'r600', c_obj.r600)
+            c_obj.r300 = get_item_flt(item, 'r300', c_obj.r300)
+            c_obj.r200 = get_item_flt(item, 'r200', c_obj.r200)
+            c_obj.r100 = get_item_flt(item, 'r100', c_obj.r100)
+            c_obj.r6 = get_item_flt(item, 'r6', c_obj.r6)
+            c_obj.r3 = get_item_flt(item, 'r3', c_obj.r3)
 
             # Autocalcular PV y YP (o aceptar valor explícito)
             if c_obj.r600 is not None and c_obj.r300 is not None:
                 c_obj.pv = max(0.0, round(c_obj.r600 - c_obj.r300, 2))
                 c_obj.yp = max(0.0, round(c_obj.r300 - c_obj.pv, 2))
             else:
-                c_obj.pv = parse_flt(item.get('pv'), c_obj.pv)
-                c_obj.yp = parse_flt(item.get('yp'), c_obj.yp)
+                c_obj.pv = get_item_flt(item, 'pv', c_obj.pv)
+                c_obj.yp = get_item_flt(item, 'yp', c_obj.yp)
 
-            c_obj.gel_10s = parse_flt(item.get('gel_10s'), c_obj.gel_10s)
-            c_obj.gel_10m = parse_flt(item.get('gel_10m'), c_obj.gel_10m)
-            c_obj.gel_30m = parse_flt(item.get('gel_30m'), c_obj.gel_30m)
+            c_obj.gel_10s = get_item_flt(item, 'gel_10s', c_obj.gel_10s)
+            c_obj.gel_10m = get_item_flt(item, 'gel_10m', c_obj.gel_10m)
+            c_obj.gel_30m = get_item_flt(item, 'gel_30m', c_obj.gel_30m)
 
-            c_obj.api_fluid_loss = parse_flt(item.get('api_fluid_loss'), c_obj.api_fluid_loss)
-            c_obj.hthp_fluid_loss = parse_flt(item.get('hthp_fluid_loss'), c_obj.hthp_fluid_loss)
-            c_obj.cake_api = parse_flt(item.get('cake_api'), c_obj.cake_api)
-            c_obj.cake_hthp = parse_flt(item.get('cake_hthp'), c_obj.cake_hthp)
+            c_obj.api_fluid_loss = get_item_flt(item, 'api_fluid_loss', c_obj.api_fluid_loss)
+            c_obj.hthp_fluid_loss = get_item_flt(item, 'hthp_fluid_loss', c_obj.hthp_fluid_loss)
+            c_obj.cake_api = get_item_flt(item, 'cake_api', c_obj.cake_api)
+            c_obj.cake_hthp = get_item_flt(item, 'cake_hthp', c_obj.cake_hthp)
 
-            c_obj.solids_pct = parse_flt(item.get('solids_pct'), c_obj.solids_pct)
-            c_obj.oil_pct = parse_flt(item.get('oil_pct'), c_obj.oil_pct)
-            c_obj.water_pct = parse_flt(item.get('water_pct'), c_obj.water_pct)
-            c_obj.sand_pct = parse_flt(item.get('sand_pct'), c_obj.sand_pct)
+            c_obj.solids_pct = get_item_flt(item, 'solids_pct', c_obj.solids_pct)
+            c_obj.oil_pct = get_item_flt(item, 'oil_pct', c_obj.oil_pct)
+            c_obj.water_pct = get_item_flt(item, 'water_pct', c_obj.water_pct)
+            c_obj.sand_pct = get_item_flt(item, 'sand_pct', c_obj.sand_pct)
 
             # Entradas de Retorta y Balance de Sólidos (WBM & OBM)
-            c_obj.retort_mud_weight = parse_flt(item.get('retort_mud_weight'), c_obj.retort_mud_weight or c_obj.mud_weight)
-            c_obj.retort_mud_temp = parse_flt(item.get('retort_mud_temp'), c_obj.retort_mud_temp or 75.0)
-            c_obj.k_from_kcl = parse_flt(item.get('k_from_kcl'), c_obj.k_from_kcl or 0.0)
-            c_obj.wt_additive_sg = parse_flt(item.get('wt_additive_sg'), c_obj.wt_additive_sg or mud_config.sg_weight_material or 4.20)
-            c_obj.oil_sg = parse_flt(item.get('oil_sg'), c_obj.oil_sg or mud_config.sg_base_oil or 0.70)
-            c_obj.frac_bent = parse_flt(item.get('frac_bent'), c_obj.frac_bent or 0.1111)
-            c_obj.chem_conc = parse_flt(item.get('chem_conc'), c_obj.chem_conc or 0.0)
-            c_obj.drill_solids_sg = parse_flt(item.get('drill_solids_sg'), c_obj.drill_solids_sg or mud_config.sg_drill_solids or 2.60)
+            c_obj.retort_mud_weight = get_item_flt(item, 'retort_mud_weight', c_obj.retort_mud_weight or c_obj.mud_weight)
+            c_obj.retort_mud_temp = get_item_flt(item, 'retort_mud_temp', c_obj.retort_mud_temp or 75.0)
+            c_obj.k_from_kcl = get_item_flt(item, 'k_from_kcl', c_obj.k_from_kcl or 0.0)
+            c_obj.wt_additive_sg = get_item_flt(item, 'wt_additive_sg', c_obj.wt_additive_sg or mud_config.sg_weight_material or 4.20)
+            c_obj.oil_sg = get_item_flt(item, 'oil_sg', c_obj.oil_sg or mud_config.sg_base_oil or 0.70)
+            c_obj.frac_bent = get_item_flt(item, 'frac_bent', c_obj.frac_bent or 0.1111)
+            c_obj.chem_conc = get_item_flt(item, 'chem_conc', c_obj.chem_conc or 0.0)
+            c_obj.drill_solids_sg = get_item_flt(item, 'drill_solids_sg', c_obj.drill_solids_sg or mud_config.sg_drill_solids or 2.60)
 
-            c_obj.ph = parse_flt(item.get('ph'), c_obj.ph)
-            c_obj.ph_temp = parse_flt(item.get('ph_temp'), c_obj.ph_temp)
-            c_obj.pm = parse_flt(item.get('pm'), c_obj.pm)
-            c_obj.pf = parse_flt(item.get('pf'), c_obj.pf)
-            c_obj.mf = parse_flt(item.get('mf'), c_obj.mf)
-            c_obj.chlorides = parse_flt(item.get('chlorides'), c_obj.chlorides)
-            c_obj.calcium_hardness = parse_flt(item.get('calcium_hardness'), c_obj.calcium_hardness)
-            c_obj.mbt = parse_flt(item.get('mbt'), c_obj.mbt)
-            c_obj.electrical_stability = parse_flt(item.get('electrical_stability'), c_obj.electrical_stability)
-            c_obj.excess_lime = parse_flt(item.get('excess_lime'), c_obj.excess_lime)
+            c_obj.ph = get_item_flt(item, 'ph', c_obj.ph)
+            c_obj.ph_temp = get_item_flt(item, 'ph_temp', c_obj.ph_temp)
+            c_obj.pm = get_item_flt(item, 'pm', c_obj.pm)
+            c_obj.pf = get_item_flt(item, 'pf', c_obj.pf)
+            c_obj.mf = get_item_flt(item, 'mf', c_obj.mf)
+            c_obj.chlorides = get_item_flt(item, 'chlorides', c_obj.chlorides)
+            c_obj.calcium_hardness = get_item_flt(item, 'calcium_hardness', c_obj.calcium_hardness)
+            c_obj.mbt = get_item_flt(item, 'mbt', c_obj.mbt)
+            c_obj.electrical_stability = get_item_flt(item, 'electrical_stability', c_obj.electrical_stability)
+            c_obj.excess_lime = get_item_flt(item, 'excess_lime', c_obj.excess_lime)
 
             # Entradas directas OBM si se especifican
-            if item.get('salt_pct_wt') is not None: c_obj.salt_pct_wt = parse_flt(item.get('salt_pct_wt'), c_obj.salt_pct_wt)
-            if item.get('salt_ppb') is not None: c_obj.salt_ppb = parse_flt(item.get('salt_ppb'), c_obj.salt_ppb)
+            if 'salt_pct_wt' in item: c_obj.salt_pct_wt = get_item_flt(item, 'salt_pct_wt', c_obj.salt_pct_wt)
+            if 'salt_ppb' in item: c_obj.salt_ppb = get_item_flt(item, 'salt_ppb', c_obj.salt_ppb)
 
             # Ejecutar cálculo de balance de sólidos (WBM u OBM según corresponda)
             c_obj.calcular_solids_analysis_automatica()
 
             # Aceptar sobrescrituras explícitas si vinieron en el payload
-            if item.get('nacl_pct') is not None: c_obj.nacl_pct = parse_flt(item.get('nacl_pct'), c_obj.nacl_pct)
-            if item.get('nacl_ppb') is not None: c_obj.nacl_ppb = parse_flt(item.get('nacl_ppb'), c_obj.nacl_ppb)
-            if item.get('kcl_pct') is not None: c_obj.kcl_pct = parse_flt(item.get('kcl_pct'), c_obj.kcl_pct)
-            if item.get('kcl_ppb') is not None: c_obj.kcl_ppb = parse_flt(item.get('kcl_ppb'), c_obj.kcl_ppb)
-            if item.get('lgs_pct') is not None: c_obj.lgs_pct = parse_flt(item.get('lgs_pct'), c_obj.lgs_pct)
-            if item.get('lgs_ppb') is not None: c_obj.lgs_ppb = parse_flt(item.get('lgs_ppb'), c_obj.lgs_ppb)
-            if item.get('bentonite_pct') is not None: c_obj.bentonite_pct = parse_flt(item.get('bentonite_pct'), c_obj.bentonite_pct)
-            if item.get('bentonite_ppb') is not None: c_obj.bentonite_ppb = parse_flt(item.get('bentonite_ppb'), c_obj.bentonite_ppb)
-            if item.get('drill_solids_pct') is not None: c_obj.drill_solids_pct = parse_flt(item.get('drill_solids_pct'), c_obj.drill_solids_pct)
-            if item.get('drill_solids_ppb') is not None: c_obj.drill_solids_ppb = parse_flt(item.get('drill_solids_ppb'), c_obj.drill_solids_ppb)
-            if item.get('hgs_pct') is not None: c_obj.hgs_pct = parse_flt(item.get('hgs_pct'), c_obj.hgs_pct)
-            if item.get('hgs_ppb') is not None: c_obj.hgs_ppb = parse_flt(item.get('hgs_ppb'), c_obj.hgs_ppb)
-            if item.get('adjusted_solids_pct') is not None: c_obj.adjusted_solids_pct = parse_flt(item.get('adjusted_solids_pct'), c_obj.adjusted_solids_pct)
-            if item.get('oil_water_ratio') is not None: c_obj.oil_water_ratio = str(item.get('oil_water_ratio')).strip()
-            if item.get('avg_sg_solids') is not None: c_obj.avg_sg_solids = parse_flt(item.get('avg_sg_solids'), c_obj.avg_sg_solids)
+            if 'nacl_pct' in item: c_obj.nacl_pct = get_item_flt(item, 'nacl_pct', c_obj.nacl_pct)
+            if 'nacl_ppb' in item: c_obj.nacl_ppb = get_item_flt(item, 'nacl_ppb', c_obj.nacl_ppb)
+            if 'kcl_pct' in item: c_obj.kcl_pct = get_item_flt(item, 'kcl_pct', c_obj.kcl_pct)
+            if 'kcl_ppb' in item: c_obj.kcl_ppb = get_item_flt(item, 'kcl_ppb', c_obj.kcl_ppb)
+            if 'lgs_pct' in item: c_obj.lgs_pct = get_item_flt(item, 'lgs_pct', c_obj.lgs_pct)
+            if 'lgs_ppb' in item: c_obj.lgs_ppb = get_item_flt(item, 'lgs_ppb', c_obj.lgs_ppb)
+            if 'bentonite_pct' in item: c_obj.bentonite_pct = get_item_flt(item, 'bentonite_pct', c_obj.bentonite_pct)
+            if 'bentonite_ppb' in item: c_obj.bentonite_ppb = get_item_flt(item, 'bentonite_ppb', c_obj.bentonite_ppb)
+            if 'drill_solids_pct' in item: c_obj.drill_solids_pct = get_item_flt(item, 'drill_solids_pct', c_obj.drill_solids_pct)
+            if 'drill_solids_ppb' in item: c_obj.drill_solids_ppb = get_item_flt(item, 'drill_solids_ppb', c_obj.drill_solids_ppb)
+            if 'hgs_pct' in item: c_obj.hgs_pct = get_item_flt(item, 'hgs_pct', c_obj.hgs_pct)
+            if 'hgs_ppb' in item: c_obj.hgs_ppb = get_item_flt(item, 'hgs_ppb', c_obj.hgs_ppb)
+            if 'adjusted_solids_pct' in item: c_obj.adjusted_solids_pct = get_item_flt(item, 'adjusted_solids_pct', c_obj.adjusted_solids_pct)
+            if 'oil_water_ratio' in item: c_obj.oil_water_ratio = get_item_str(item, 'oil_water_ratio', c_obj.oil_water_ratio)
+            if 'avg_sg_solids' in item: c_obj.avg_sg_solids = get_item_flt(item, 'avg_sg_solids', c_obj.avg_sg_solids)
 
             c_obj.save()
             saved_checks_map[num] = c_obj

@@ -291,8 +291,7 @@ def _propiedades(ws, d, variante):
                 42: _num(c.electrical_stability, 0),
             })
         for fila, valor in comun.items():
-            if valor not in (None, ''):
-                ws[f'{col}{fila}'].value = valor
+            ws[f'{col}{fila}'].value = valor if valor not in (None, '') else None
 
     # Propiedades extra 1-8 debajo de las fijas
     primera = 42 if base_agua else 43
@@ -516,7 +515,7 @@ def _hoja_extra(ws, d, variante):
     titulo = 'PROPIEDADES EXTRA BASE AGUA N° ' if variante in ('WBM', 'WBM_CACL2') else 'PROPIEDADES EXTRA ACEITE/SINTÉTICO N° '
     _encabezado_lodo(ws, d, titulo)
     for c, col in zip(d['checks'], ('C', 'D', 'E', 'F')):
-        ws[f'{col}9'].value = f"{c.sample_from or ''} {c.time_taken or ''}".strip()
+        ws[f'{col}9'].value = f"{c.sample_from or ''} {c.time_taken or ''}".strip() or None
     extras = [p for p in d['extras'] if p.numero > 8][:52]
     for i, p in enumerate(extras):
         fila = 10 + i
