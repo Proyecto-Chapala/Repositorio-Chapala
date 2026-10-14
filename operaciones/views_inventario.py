@@ -311,6 +311,8 @@ def _linea_de_tiempo(pozo, objetivo):
         ]
         manual = {
             m.producto_id: {'inicial': None if m.inicial is None else float(m.inicial),
+                            'recibido': float(m.recibido or 0),
+                            'devuelto': float(m.devuelto or 0),
                             'fluido': float(m.usado_fluido),
                             'otro': float(m.usado_otro), 'ajuste': float(m.ajuste),
                             'precio': float(m.precio), 'categoria': m.categoria_costo}
@@ -549,10 +551,11 @@ def _estado_volumetria(pozo, reporte):
         inventario.append(dict(
             p,
             inicial=round(s.get('inicial', 0.0), 3), inicial_auto=round(s.get('inicial_auto', 0.0), 3),
-            inicial_manual=float(m.inicial) if m and m.inicial is not None else None, recibido=round(s.get('recibido', 0.0), 3),
-            devuelto=round(s.get('devuelto', 0.0), 3),
-            recibido_real=round(s.get('recibido_real', 0.0), 3),
-            devuelto_real=round(s.get('devuelto_real', 0.0), 3),
+            inicial_manual=float(m.inicial) if m and m.inicial is not None else None,
+            recibido=float(m.recibido) if m and m.recibido is not None else round(s.get('recibido', 0.0), 3),
+            devuelto=float(m.devuelto) if m and m.devuelto is not None else round(s.get('devuelto', 0.0), 3),
+            recibido_ticket=round(s.get('recibido_ticket', 0.0), 3),
+            devuelto_ticket=round(s.get('devuelto_ticket', 0.0), 3),
             tickets_recibido=tickets_hoy['ENTRADA'].get(pid, []),
             tickets_devuelto=tickets_hoy['SALIDA'].get(pid, []),
             usado_fluido=round(s.get('usado_fluido', 0.0), 3),
@@ -759,15 +762,19 @@ def api_volumetria_guardar(request, pk, reporte_pk):
                 continue
             etq = f"{p['descripcion']} ({p['codigo']})"
             fluido = 0.0 if p['servicio'] else (_num(item.get('usado_fluido'), f"{etq} — usado en fluidos", 0) or 0.0)
+            recibido = 0.0 if p['servicio'] else (_num(item.get('recibido'), f"{etq} — recibido", 0) or 0.0)
+            devuelto = 0.0 if p['servicio'] else (_num(item.get('devuelto'), f"{etq} — devuelto", 0) or 0.0)
             otro = _num(item.get('usado_otro'), f"{etq} — usado en otro módulo", 0) or 0.0
             ajuste = _num(item.get('ajuste'), f"{etq} — ajuste") or 0.0
             pedido = _num(item.get('en_pedido'), f"{etq} — en pedido", 0) or 0.0
             inicial = None if p['servicio'] else _num(item.get('inicial_manual'), f"{etq} — inicial", 0)
             no_imp = bool(item.get('no_imprimir'))
-            if not (fluido or otro or ajuste or pedido or no_imp or inicial is not None):
+            if not (fluido or recibido or devuelto or otro or ajuste or pedido or no_imp or inicial is not None):
                 continue
             filas_inv.append(InventarioProductoDia(
-                reporte=reporte, producto_id=pid, usado_fluido=_dec(fluido), usado_otro=_dec(otro), ajuste=_dec(ajuste),
+                reporte=reporte, producto_id=pid,
+                recibido=_dec(recibido), devuelto=_dec(devuelto),
+                usado_fluido=_dec(fluido), usado_otro=_dec(otro), ajuste=_dec(ajuste),
                 inicial=None if inicial is None else _dec(inicial),
                 en_pedido=_dec(pedido), no_imprimir=no_imp, precio=_dec(p['precio'], 2),
                 categoria_costo=p['categoria'],
@@ -1144,8 +1151,6 @@ def api_ticket_producto_guardar(request, pk, reporte_pk):
                 continue
             if p is None:
                 raise _Rechazo('Solo se pueden usar productos activos del pozo.')
-            if not ct:
-                raise _Rechazo(f"{etq}: escribe la cantidad según ticket; es la que entra al inventario.")
             lineas.append((pid, ct, cr))
         if not lineas:
             raise _Rechazo('El ticket no tiene cantidades. Escribe al menos una.')

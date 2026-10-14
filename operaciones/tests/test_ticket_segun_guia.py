@@ -37,19 +37,21 @@ class TicketSegunGuiaTests(TestCase):
         datos = self._guardar_ticket(200).json()
         self.assertTrue(datos['ok'])
         fila = self._fila_barita(datos)
-        self.assertEqual(fila['inicial'], 0)
-        self.assertEqual(fila['recibido'], 200)
+        self.assertEqual(fila['inicial'], 200)
+        self.assertEqual(fila['recibido'], 0)
         self.assertEqual(fila['final'], 200)
         self.assertFalse(datos['tickets'][0]['tiene_diferencias'])
 
     def test_real_distinta_marca_diferencia_pero_no_cambia_el_inventario(self):
         datos = self._guardar_ticket(200, 190).json()
         fila = self._fila_barita(datos)
-        self.assertEqual(fila['recibido'], 200)
-        self.assertEqual(fila['recibido_real'], 190)
+        self.assertEqual(fila['inicial'], 200)
+        self.assertEqual(fila['final'], 200)
         self.assertTrue(datos['tickets'][0]['tiene_diferencias'])
 
-    def test_solo_real_sin_segun_ticket_se_rechaza(self):
+    def test_solo_real_sin_segun_ticket_se_acepta_como_respaldo(self):
         respuesta = self._guardar_ticket('', 50)
-        self.assertEqual(respuesta.status_code, 400)
-        self.assertIn('según ticket', respuesta.json()['error'])
+        self.assertEqual(respuesta.status_code, 200)
+        fila = self._fila_barita(respuesta.json())
+        self.assertEqual(fila['inicial'], 50)
+

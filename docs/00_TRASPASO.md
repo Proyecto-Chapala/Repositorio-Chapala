@@ -21,8 +21,9 @@
 - **Servicios del pozo (13-oct):** ingenieros, trailers y demás servicios se cobran por día en la pestaña 8 › **Servicios**, con categoría y tarifa propias (migración **0035**). "Usado en otro módulo" queda solo para productos transferidos a otra línea (por ejemplo, cementación). Ver [25](25_SERVICIOS_DEL_POZO.md) y [pruebas/15](pruebas/15_SERVICIOS_DEL_POZO.md).
 - **Programadas todas las correcciones de la revisión de octubre** (20 puntos): ver [23](23_CORRECCIONES_REVISION_OCT.md). Fuentes: `docs/fuentes/transcripciones_revision_oct/` (usar las `*_mejorado.txt`).
 - **Base de datos revisada** antes de empaquetar y **papelera de pozos** (eliminar ya no borra): ver [24](24_PAPELERA_Y_TIPOS_DE_DATOS.md). **La base definitiva es SQLite.** **Licencia eliminada** y `SmartMud.exe` listo para la prueba en producción (`empaquetado\dist\SmartMud_Pruebas.zip`).
-- **Tickets (13-oct):** el inventario de la pestaña 8 suma la cantidad **"según ticket"** de las guías de recepción y devolución; la "real" es opcional y solo marca diferencias. La ventana de tickets ya no muestra precios. Ver [pruebas/19](pruebas/19_TICKET_SEGUN_GUIA.md).
-- **Pruebas automáticas:** 126, todas pasan (`python manage.py test operaciones`). **Nada probado aún en pantalla.**
+- **Inventario y tickets (14-oct):** los tickets de entrada alimentan la dotación en la columna **Inicial** del pozo; **Recibido** y **Devuelto** se escriben a mano en la tabla diaria (migración **0037**). Al guardar, el Final pasa al Inicial del día siguiente. Ver [pruebas/19](pruebas/19_INVENTARIO_TICKETS_Y_MANUAL.md).
+- **Eliminar reporte en Hub (14-oct):** se reincorporó el botón **`🗑️ Eliminar Reporte`** en el encabezado del historial junto a *+ Nuevo Reporte* con confirmación segura, sin botones invasivos en la tabla.
+- **Pruebas automáticas:** 127, todas pasan (`python manage.py test operaciones`). **Nada probado aún en pantalla.**
 - **Migraciones:** el usuario aplicó hasta la **0034**. Falta aplicar la **0035_servicios_del_pozo** y la **0036_inventario_usado_fluido_manual** (`python manage.py migrate`).
 - **El usuario todavía no hizo commit** de los cambios de octubre.
 - Próximo hito con el cliente: prueba integral con los ingenieros (pozo nuevo: piloto 8½", ampliación 12¼", tres side tracks e impresión). Después de esa sesión se cierra la revisión.
@@ -49,7 +50,7 @@
 ```
 
 - `0022_sidetrack` **depende de 0021** (así quedó aplicada; cambiarla rompe con `InconsistentMigrationHistory`).
-- La próxima migración nueva debe depender de **`0036_inventario_usado_fluido_manual`**.
+- La próxima migración nueva debe depender de **`0037_inventarioproductodia_devuelto_and_more`**.
 - La `0030` (generada con `makemigrations` el 12-oct) puso al día los `verbose_name` atrasados. Desde ahí, `makemigrations --check` no detecta cambios: modelos y migraciones están sincronizados.
 
 ## 2. Dónde está cada cosa (lo más reciente)

@@ -172,6 +172,7 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
     fin_fosa = {}                     # volumen final (real o calculado) por fosa
     hoyo_prev = 0.0
     stock = defaultdict(float)
+    iniciados = set()
     costo_acum_cat = defaultdict(float)
     costo_acum_prod = defaultdict(float)
     acum_usado = defaultdict(float)      # acumulados del pozo por producto (reporte de inventario)
@@ -225,10 +226,9 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
         perdidas = defaultdict(lambda: defaultdict(float))   # código → grupo → bbl
         costo_dia_prod = defaultdict(float)
         costo_dia_cat = defaultdict(float)
-        recibido = defaultdict(float)
-        devuelto = defaultdict(float)
-        recibido_real = defaultdict(float)
-        devuelto_real = defaultdict(float)
+        recibido_ticket = defaultdict(float)
+        devuelto_ticket = defaultdict(float)
+        ticket_dotacion = defaultdict(float)
         avisos = []
 
         def g_de(n, etiqueta):
@@ -247,16 +247,18 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
             for p in list(masa[c]):
                 masa[c][p] -= masa[c][p] * fr
 
-        # ---- Tickets de productos: el inventario usa la cantidad "según ticket" (la de la guía);
-        # la "real" queda solo para marcar diferencias. ----
+        # ---- Tickets de productos ----
         for t in dia.get('tickets', []):
             for d in t.get('detalles', []):
+                cant_tk = float(d.get('ticket') or 0)
+                cant_rl = float(d.get('real') or 0)
+                cant_oficial = cant_tk if cant_tk else cant_rl
                 if t['sentido'] == 'ENTRADA':
-                    recibido[d['producto']] += float(d.get('ticket') or 0)
-                    recibido_real[d['producto']] += float(d.get('real') or 0)
+                    ticket_dotacion[d['producto']] += cant_oficial
+                    recibido_ticket[d['producto']] += cant_tk
                 else:
-                    devuelto[d['producto']] += float(d.get('ticket') or 0)
-                    devuelto_real[d['producto']] += float(d.get('real') or 0)
+                    ticket_dotacion[d['producto']] -= cant_oficial
+                    devuelto_ticket[d['producto']] += cant_tk
 
         # ---- Movimientos ----
         for tr in sorted(dia.get('transacciones', []), key=lambda x: x['secuencia']):
@@ -348,10 +350,12 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
 
         # ---- Inventario de productos ----
         manual = dia.get('manual', {})
-        ids = set(stock) | set(recibido) | set(devuelto) | set(manual)
+        ids = set(stock) | set(ticket_dotacion) | set(manual)
         inventario = {}
         for p in ids:
             m = manual.get(p, {})
+            rec_manual = float(m.get('recibido') or 0)
+            dev_manual = float(m.get('devuelto') or 0)
             fluido = float(m.get('fluido') or 0)
             otro = float(m.get('otro') or 0)
             ajuste = float(m.get('ajuste') or 0)
@@ -360,29 +364,41 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 costo = usado_dia * float(m.get('precio') or 0)
                 costo_dia_prod[p] += costo
                 costo_dia_cat[m.get('categoria') or 1] += costo
-            ini_auto = stock[p]
-            # Existencia inicial escrita a mano: manda sobre el final del día anterior.
+            # Dotación de tickets alimenta la existencia inicial del producto al ingresar al pozo.
+            # Una vez iniciado, el inicial del día siguiente es el final del día anterior (stock).
+            if p not in iniciados:
+                dotacion = ticket_dotacion[p]
+                ini_auto = stock[p] + dotacion
+                if dotacion != 0 or m.get('inicial') is not None or stock[p] != 0:
+                    iniciados.add(p)
+            else:
+                dotacion = 0.0
+                ini_auto = stock[p]
+
             ini = ini_auto if m.get('inicial') is None or p in servicios else float(m['inicial'])
+            if m.get('inicial') is not None:
+                iniciados.add(p)
+            recibido_dia = rec_manual
+            devuelto_dia = dev_manual
             if p in servicios:
                 fin = ini
             else:
-                fin = ini + recibido[p] - devuelto[p] - fluido - otro + ajuste
+                fin = ini + recibido_dia - devuelto_dia - fluido - otro + ajuste
             if fin < -EPS:
                 raise ErrorVolumetria(
                     f"El {fecha}: el inventario de {np(p)} queda en {fin:g}. "
-                    f"Hay {ini + recibido[p]:g} disponibles y se usan o devuelven "
-                    f"{fluido + otro + devuelto[p] - ajuste:g}. Registra primero el ticket de recepción.")
+                    f"Hay {ini + recibido_dia:g} disponibles y se usan o devuelven "
+                    f"{fluido + otro + devuelto_dia - ajuste:g}. Registra primero el ticket de recepción.")
             stock[p] = fin
             costo_acum_prod[p] += costo_dia_prod[p]
             acum_usado[p] += usado_dia
             acum_usado_fluido[p] += fluido
             acum_usado_otro[p] += otro
-            acum_recibido[p] += recibido[p]
-            acum_devuelto[p] += devuelto[p]
+            acum_recibido[p] += recibido_dia
+            acum_devuelto[p] += devuelto_dia
             inventario[p] = {
-                'inicial': ini, 'inicial_auto': ini_auto, 'recibido': recibido[p], 'devuelto': devuelto[p],
-                'recibido_real': recibido_real[p], 'devuelto_real': devuelto_real[p],
-
+                'inicial': ini, 'inicial_auto': ini_auto, 'recibido': recibido_dia, 'devuelto': devuelto_dia,
+                'recibido_ticket': recibido_ticket[p], 'devuelto_ticket': devuelto_ticket[p],
                 'usado_fluido': fluido, 'usado_otro': otro, 'ajuste': ajuste,
                 'final': fin, 'usado_dia': usado_dia,
                 'costo_diario': round(costo_dia_prod[p], 2),

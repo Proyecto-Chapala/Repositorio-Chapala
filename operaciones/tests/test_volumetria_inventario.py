@@ -56,15 +56,15 @@ class InventarioPorPozoTests(SimpleTestCase):
 
     def test_la_primera_recepcion_es_la_existencia_inicial_del_pozo(self):
         inventario = inventario_del_dia([dia(1, tickets=[ticket_recepcion(BARITA, 35)])], 1)
-        self.assertEqual(inventario['inicial'], 0)
-        self.assertEqual(inventario['recibido'], 35)
+        self.assertEqual(inventario['inicial'], 35)
+        self.assertEqual(inventario['recibido'], 0)
         self.assertEqual(inventario['final'], 35)
 
     def test_recepciones_posteriores_se_suman_y_el_uso_descuenta(self):
-        manual = {BARITA: {'fluido': 35}}
+        manual = {BARITA: {'recibido': 100, 'fluido': 35}}
         dias = [
             dia(1, tickets=[ticket_recepcion(BARITA, 35)]),
-            dia(2, tickets=[ticket_recepcion(BARITA, 100)], manual=manual),
+            dia(2, manual=manual),
         ]
         inventario = inventario_del_dia(dias, 2)
         self.assertEqual(inventario['inicial'], 35)
@@ -79,35 +79,67 @@ class InventarioPorPozoTests(SimpleTestCase):
         self.assertEqual(inventario['inicial'], 40)
         self.assertEqual(inventario['final'], 40)
 
+    def test_cadena_multidia_inicial_ticket_y_final_pasa_al_siguiente(self):
+        dias = [
+            dia(1, tickets=[ticket_recepcion(BARITA, 23)]),
+            dia(2, manual={BARITA: {'recibido': 5, 'fluido': 3}}),
+            dia(3, manual={BARITA: {'devuelto': 2, 'fluido': 5}}),
+            dia(4),
+        ]
+        # Día 1: inicial del ticket 23, sin uso -> final 23
+        inv1 = inventario_del_dia(dias, 1)
+        self.assertEqual(inv1['inicial'], 23)
+        self.assertEqual(inv1['final'], 23)
+
+        # Día 2: inicial = final día 1 (23), + 5 recibido - 3 usado -> final 25
+        inv2 = inventario_del_dia(dias, 2)
+        self.assertEqual(inv2['inicial'], 23)
+        self.assertEqual(inv2['recibido'], 5)
+        self.assertEqual(inv2['usado_fluido'], 3)
+        self.assertEqual(inv2['final'], 25)
+
+        # Día 3: inicial = final día 2 (25), - 2 devuelto - 5 usado -> final 18
+        inv3 = inventario_del_dia(dias, 3)
+        self.assertEqual(inv3['inicial'], 25)
+        self.assertEqual(inv3['devuelto'], 2)
+        self.assertEqual(inv3['usado_fluido'], 5)
+        self.assertEqual(inv3['final'], 18)
+
+        # Día 4: inicial = final día 3 (18), sin movimientos -> final 18
+        inv4 = inventario_del_dia(dias, 4)
+        self.assertEqual(inv4['inicial'], 18)
+        self.assertEqual(inv4['final'], 18)
+
+    def test_ticket_posterior_no_altera_inicial_de_producto_iniciado(self):
+        dias = [
+            dia(1, tickets=[ticket_recepcion(BARITA, 10)]),
+            dia(2, tickets=[ticket_recepcion(BARITA, 6)]),
+        ]
+        inv1 = inventario_del_dia(dias, 1)
+        self.assertEqual(inv1['inicial'], 10)
+        self.assertEqual(inv1['final'], 10)
+
+        # En el día 2, el inicial debe ser el final del día 1 (10), no sumar el ticket de nuevo al inicial
+        inv2 = inventario_del_dia(dias, 2)
+        self.assertEqual(inv2['inicial'], 10)
+        self.assertEqual(inv2['final'], 10)
+
     def test_formula_completa_del_final(self):
-        manual = {BARITA: {'fluido': 20, 'otro': 5, 'ajuste': 2, 'precio': 0, 'categoria': 1}}
-        dias = [dia(1, tickets=[ticket_recepcion(BARITA, 100), ticket_devolucion(BARITA, 10)],
-                    manual=manual)]
+        manual = {BARITA: {'recibido': 50, 'devuelto': 10, 'fluido': 20, 'otro': 5, 'ajuste': 2, 'precio': 0, 'categoria': 1}}
+        dias = [dia(1, tickets=[ticket_recepcion(BARITA, 50)], manual=manual)]
         inventario = inventario_del_dia(dias, 1)
-        # 0 + 100 − 10 − 20 − 5 + 2
+        # 50 (ticket ini) + 50 (rec manual) − 10 (dev manual) − 20 − 5 + 2 = 67
+        self.assertEqual(inventario['inicial'], 50)
+        self.assertEqual(inventario['recibido'], 50)
+        self.assertEqual(inventario['devuelto'], 10)
         self.assertEqual(inventario['final'], 67)
 
-    def test_la_cantidad_segun_ticket_manda_sobre_la_real(self):
+    def test_la_cantidad_real_manda_sobre_la_del_ticket(self):
         dias = [dia(1, tickets=[ticket_recepcion(BARITA, cantidad_real=25, cantidad_ticket=30)])]
         inventario = inventario_del_dia(dias, 1)
-        self.assertEqual(inventario['recibido'], 30)
-        self.assertEqual(inventario['recibido_real'], 25)
+        self.assertEqual(inventario['inicial'], 30)
+        self.assertEqual(inventario['recibido_ticket'], 30)
         self.assertEqual(inventario['final'], 30)
-
-    def test_sin_cantidad_real_cuenta_la_del_ticket(self):
-        dias = [dia(1, tickets=[ticket_recepcion(BARITA, cantidad_real=0, cantidad_ticket=200)],
-                    manual={BARITA: {'fluido': 100}})]
-        inventario = inventario_del_dia(dias, 1)
-        self.assertEqual(inventario['inicial'], 0)
-        self.assertEqual(inventario['recibido'], 200)
-        self.assertEqual(inventario['final'], 100)
-        dia2 = inventario_del_dia(dias + [dia(2)], 2)
-        self.assertEqual(dia2['inicial'], 100)
-
-    def test_la_devolucion_tambien_usa_la_cantidad_segun_ticket(self):
-        devolucion = {'sentido': 'SALIDA', 'detalles': [{'producto': BARITA, 'real': 0, 'ticket': 15}]}
-        dias = [dia(1, tickets=[ticket_recepcion(BARITA, 50), devolucion])]
-        self.assertEqual(inventario_del_dia(dias, 1)['final'], 35)
 
     def test_usar_sin_haber_recibido_se_rechaza(self):
         manual = {BARITA: {'fluido': 10}}
@@ -130,11 +162,11 @@ class InventarioPorPozoTests(SimpleTestCase):
         self.assertEqual(inventario['costo_diario'], 500)
 
     def test_acumulados_por_columna_se_suman_en_cada_dia(self):
-        m1 = {BARITA: {'fluido': 10, 'otro': 3, 'ajuste': 0, 'precio': 10, 'categoria': 1}}
-        m2 = {BARITA: {'fluido': 5, 'otro': 2, 'ajuste': 0, 'precio': 10, 'categoria': 1}}
+        m1 = {BARITA: {'recibido': 50, 'fluido': 10, 'otro': 3, 'ajuste': 0, 'precio': 10, 'categoria': 1}}
+        m2 = {BARITA: {'recibido': 20, 'devuelto': 4, 'fluido': 5, 'otro': 2, 'ajuste': 0, 'precio': 10, 'categoria': 1}}
         dias = [
-            dia(1, tickets=[ticket_recepcion(BARITA, 50)], manual=m1),
-            dia(2, tickets=[ticket_recepcion(BARITA, 20), ticket_devolucion(BARITA, 4)], manual=m2),
+            dia(1, manual=m1),
+            dia(2, manual=m2),
         ]
         inv_dia1 = inventario_del_dia(dias, 1)
         self.assertEqual(inv_dia1['usado_fluido_acum'], 10)
@@ -158,8 +190,8 @@ class InicialManualTests(SimpleTestCase):
         dias = [dia(1, tickets=[ticket_recepcion(BARITA, 5)], manual=manual)]
         inventario = inventario_del_dia(dias, 1)
         self.assertEqual(inventario['inicial'], 50)
-        self.assertEqual(inventario['inicial_auto'], 0)
-        self.assertEqual(inventario['final'], 35)   # 50 + 5 − 20
+        self.assertEqual(inventario['inicial_auto'], 5)
+        self.assertEqual(inventario['final'], 30)   # 50 − 20
 
     def test_el_inicial_manual_permite_usar_sin_ticket(self):
         manual = {BARITA: {'inicial': 30, 'fluido': 10, 'otro': 0, 'ajuste': 0, 'precio': 0, 'categoria': 1}}
@@ -184,7 +216,8 @@ class QuimicosSeparadosDeInventarioTests(SimpleTestCase):
         sim = vol.simular(dias, 1)
         self.assertAlmostEqual(sim['flujos'][vol.ACTIVO]['quimicos'], vol_esperado)
         inv = sim['inventario'][BARITA]
-        self.assertEqual(inv['recibido'], 20)
+        self.assertEqual(inv['inicial'], 20)
+        self.assertEqual(inv['recibido'], 0)
         self.assertEqual(inv['usado_dia'], 0)
         self.assertEqual(inv['costo_diario'], 0)
         self.assertEqual(inv['final'], 20)
@@ -234,6 +267,23 @@ class GuardarUsadoFluidoApiTests(TestCase):
 
         inv_serv = InventarioProductoDia.objects.get(reporte=self.reporte, producto_id=self.servicio.id)
         self.assertEqual(inv_serv.usado_fluido, Decimal('0.000'))
+
+    def test_guardar_persiste_recibido_y_devuelto_manual(self):
+        cuerpo = {
+            'inventario': [
+                {'producto_id': self.producto.id, 'recibido': 50, 'devuelto': 5, 'usado_fluido': 10},
+                {'producto_id': self.servicio.id, 'recibido': 10, 'devuelto': 2},
+            ]
+        }
+        resp = self.client.post(self.url, json.dumps(cuerpo), content_type='application/json')
+        self.assertEqual(resp.status_code, 200, resp.json())
+        inv_prod = InventarioProductoDia.objects.get(reporte=self.reporte, producto_id=self.producto.id)
+        self.assertEqual(inv_prod.recibido, Decimal('50.000'))
+        self.assertEqual(inv_prod.devuelto, Decimal('5.000'))
+        self.assertEqual(inv_prod.usado_fluido, Decimal('10.000'))
+        # En servicios no se guarda recibido ni devuelto
+        inv_serv = InventarioProductoDia.objects.filter(reporte=self.reporte, producto_id=self.servicio.id).first()
+        self.assertIsNone(inv_serv)
 
 
 class InventarioExcelYRecapTests(TestCase):

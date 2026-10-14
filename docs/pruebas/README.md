@@ -24,7 +24,7 @@ Las pruebas automáticas (`python manage.py test operaciones`) cubren los cálcu
 | 16 | [Lodo reciclado solo como volumen](16_LODO_RECICLADO_SOLO_VOLUMEN.md) | — (doc 26) | — | Sin probar |
 | 17 | [Acumulados por columna en el inventario](17_ACUMULADOS_INVENTARIO.md) | — (doc 26) | — | Sin probar |
 | 18 | [Inventario de consumo separado del balance](18_INVENTARIO_DE_CONSUMO.md) | — (doc 26) | 0036 | Sin probar |
-| 19 | [El inventario usa la cantidad "según ticket"](19_TICKET_SEGUN_GUIA.md) | — (doc 09) | — | Sin probar |
+| 19 | [Dotación por tickets y recibido/devuelto manual](19_INVENTARIO_TICKETS_Y_MANUAL.md) | — (doc 09, 23) | 0037 | Sin probar |
 
 ## Antes de empezar
 

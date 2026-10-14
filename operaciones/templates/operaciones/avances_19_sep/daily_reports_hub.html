@@ -160,6 +160,9 @@
             </div>
           </div>
           <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-action" id="btnToggleEliminar" onclick="toggleModoEliminar()" style="font-size: 12px; padding: 6px 14px; border-radius: 16px; background: #fef2f2; border-color: #fca5a5; color: #b91c1c; font-weight: 700;">
+              &#128465; Eliminar Reporte
+            </button>
             <button type="button" class="btn-action" onclick="openNewReportModal()" style="font-size: 12px; padding: 6px 14px; border-radius: 16px; background: #fff7ed; border-color: #fdba74; color: #c2410c; font-weight: 700;">
               + Nuevo Reporte
             </button>
@@ -365,7 +368,7 @@ function activarModoEliminar(){
   const banner = document.getElementById('bannerModoEliminar');
   if(banner) banner.style.display = 'flex';
   const btn = document.getElementById('btnToggleEliminar');
-  if(btn) btn.textContent = '❌ Salir de Eliminación';
+  if(btn) btn.innerHTML = '&#10060; Salir de Eliminación';
   desplazarAHistorial();
   cargarReportes();
 }
@@ -375,7 +378,7 @@ function desactivarModoEliminar(){
   const banner = document.getElementById('bannerModoEliminar');
   if(banner) banner.style.display = 'none';
   const btn = document.getElementById('btnToggleEliminar');
-  if(btn) btn.textContent = '🗑️ Modo Eliminación';
+  if(btn) btn.innerHTML = '&#128465; Eliminar Reporte';
   cargarReportes();
 }
 

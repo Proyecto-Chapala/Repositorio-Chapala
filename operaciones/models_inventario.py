@@ -183,6 +183,8 @@ class InventarioProductoDia(models.Model):
     inicial = models.DecimalField(
         max_digits=12, decimal_places=3, null=True, blank=True, verbose_name="Existencia inicial (manual)",
         help_text="Si se llena, reemplaza el final del día anterior como existencia inicial de este día.")
+    recibido = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Recibido")
+    devuelto = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Devuelto")
     usado_fluido = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Usado en fluidos")
     usado_otro = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Usado en otro módulo")
     ajuste = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Ajuste (+ suma / − resta)")
@@ -220,7 +222,6 @@ class TicketProductoDetalle(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.PROTECT, related_name='+')
     cantidad_ticket = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Según ticket")
     cantidad_real = models.DecimalField(max_digits=12, decimal_places=3, default=0, verbose_name="Real")
-    # El inventario usa cantidad_ticket (la de la guía); cantidad_real es opcional y solo marca diferencias.
 
     class Meta:
         verbose_name = "Detalle de Ticket de Productos"
