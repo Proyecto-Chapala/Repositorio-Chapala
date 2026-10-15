@@ -44,11 +44,11 @@ Por eso **el calculado de una fosa activa y su real no tienen por qué coincidir
 
 Para cada fosa:
 ```
-inicial  = real medido el día anterior  (o, si no se midió, el calculado del día anterior)
-calculado = inicial + químicos + fluido base + agua + lodo entero ± transferencias − devoluciones − pérdidas
-real     = lo que el ingeniero MIDE al cierre (se escribe a mano)
+inicial   = calculado final del día anterior (el volumen final de un reporte pasa como inicial del próximo)
+calculado = inicial + químicos + fluido base + agua + lodo reciclado ± transferencias − devoluciones − pérdidas
+real      = lo que el ingeniero MIDE al cierre (se escribe a mano en aforo/sondeo)
 ```
-**No contabilizado = real − calculado**, por grupo (activo, reserva, premezcla). Al cierre del día debe ser **cero**. El manual insiste en que el volumen real **no se ajusta** para cuadrar: la diferencia se explica con pérdidas o movimientos.
+**No contabilizado = real − calculado**, por grupo (activo, reserva, premezcla). Al cierre del día debe ser **cero**. El volumen real **no se ajusta** para cuadrar: la diferencia se explica con pérdidas o movimientos. Las pérdidas operacionales se descuentan del volumen circulante (sistema activo).
 
 ## 2. Movimientos (`TransaccionVolumen`)
 

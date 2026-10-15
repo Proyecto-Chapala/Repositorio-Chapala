@@ -103,8 +103,8 @@
             <input type="text" class="report-input" value="{{ spud_date|date:'d/m/Y'|default:'-' }}" disabled title="Heredado de Well Header Information">
           </div>
           <div class="report-field-row">
-            <label class="report-field-label" title="Número consecutivo de reporte">Reporte N°</label>
-            <input type="text" class="report-input" value="{{ reporte.numero_reporte }}" disabled style="font-weight:800; color:#0f172a;">
+            <label class="report-field-label" title="Número consecutivo fijo de reporte">Reporte N°</label>
+            <input type="number" id="f_numero_reporte" class="report-input" value="{{ reporte.numero_reporte }}" style="font-weight:800; color:#0f172a;" title="Número fijo del reporte para este pozo">
           </div>
           <div class="report-field-row">
             <label class="report-field-label" title="Actividad actual de perforación">Actividad</label>
@@ -126,6 +126,7 @@
             <label class="report-field-label" title="Profundidad de la mecha (Disparador de cálculos)">Prof. Barrena (ft)</label>
             <input type="number" step="any" id="f_bit_depth" class="report-input" value="{{ reporte.bit_depth|unlocalize }}">
           </div>
+          <div id="warn-bit-depth" class="field-hint-warning" style="display:none; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:3px 6px; font-size:10px; font-weight:600; margin:-2px 0 6px 0;">&#9888;&#65039; La profundidad de la barrena supera la del hoyo.</div>
         </div>
 
         <!-- Columna 3: Fluido, Litología y Botones Setup -->
@@ -212,7 +213,7 @@
               <span style="font-size:14px; color:#f26419;">&#9874;</span>
               <div>
                 <div style="font-size:11px; font-weight:800; color:#fff; line-height:1.2;">{{ pozo.nombre }}</div>
-                <div style="font-size:9.5px; color:#94a3b8;">Taladro &bull; {{ pozo.operador|default:"—" }}</div>
+                <div style="font-size:9.5px; color:#94a3b8;">Taladro &bull; {{ pozo.taladro|default:pozo.operador|default:"—" }}</div>
               </div>
             </div>
             <div style="display:flex; align-items:center; gap:5px;">
@@ -236,6 +237,7 @@
         <h3 class="cost-card-title">&#128202; Balance Económico de Fluidos y Equipos</h3>
         <span class="report-chip chip-accent">Moneda: {{ pozo.moneda_cobro }}</span>
       </div>
+      <div id="cost-alerta-inventario" class="report-alerta-inventario" style="display:none;"></div>
       <div style="overflow-x:auto;">
         <table class="modern-cost-table">
           <thead>
@@ -330,7 +332,7 @@
                 <input type="checkbox" class="pump-chk" id="b_onrep_{{ b.numero_bomba }}" {% if b.pump_on_report %}checked{% endif %} onchange="calcularHidraulicaBomba(this)">
               </td>
               <td style="text-align:center;">
-                <input type="checkbox" class="pump-chk" id="b_riser_{{ b.numero_bomba }}" {% if b.riser_pump %}checked{% endif %}>
+                <input type="checkbox" class="pump-chk" id="b_riser_{{ b.numero_bomba }}" {% if b.riser_pump %}checked{% endif %} onchange="calcularHidraulicaBomba(this)">
               </td>
               <td class="pump-calc-cell" id="b_out_{{ b.numero_bomba }}">
                 {{ b.desplazamiento_bbl_stk|floatformat:5 }}
@@ -2490,8 +2492,8 @@
             <span class="cs-card-subtitulo">Solo consulta: usa el caudal y las boquillas de la pestaña 2, el peso y la reología del chequeo principal de la pestaña 3 y la geometría de la pestaña 4.</span>
           </div>
           <div class="cs-condicion hd-edicion" role="radiogroup" aria-label="Edición de la norma">
-            <button type="button" class="cs-condicion-btn" data-hd-edicion="4">API 4ª edición</button>
-            <button type="button" class="cs-condicion-btn is-active" data-hd-edicion="5">API 5ª edición</button>
+            <button type="button" class="cs-condicion-btn{% if not pozo.usar_api_5ta_edicion_hidraulica %} is-active{% endif %}" data-hd-edicion="4">API 4ª edición</button>
+            <button type="button" class="cs-condicion-btn{% if pozo.usar_api_5ta_edicion_hidraulica %} is-active{% endif %}" data-hd-edicion="5">API 5ª edición</button>
           </div>
         </div>
         <div id="hdEntrada"></div>
@@ -2697,7 +2699,11 @@
         <div style="font-size:12.5px; color:#475569;">
           <strong>Pozo:</strong> {{ pozo.nombre }} &bull; Las estaciones calculan automáticamente el <strong>TVD</strong> y <strong>DLS</strong> según el algoritmo API.
         </div>
-        <div style="display:flex; gap:8px; align-items:center;">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:5px; font-size:12px; color:#475569;">
+            <label for="survey-vs-azimuth" title="Azimut del plano de proyección para la Sección Vertical (°)">Azimut SV (&deg;):</label>
+            <input type="number" step="any" id="survey-vs-azimuth" style="width:75px; padding:3px 6px; border:1px solid #cbd5e1; border-radius:4px; font-size:12px;" placeholder="Cierre">
+          </div>
           <button type="button" class="btn-modern-secondary" onclick="toggleSurveyFileInput()" title="Importar estaciones desde archivo CSV o texto delimitado por comas">
             <span>&#128196;</span>
             <span>File Input (CSV)</span>
@@ -2806,6 +2812,7 @@
       <button type="button" class="modal-close-btn" onclick="cerrarCostOverviewModal()">&times;</button>
     </div>
     <div class="modal-body-modern">
+      <div id="modal-cost-alerta-inventario" class="report-alerta-inventario" style="display:none; margin: 0 0 12px 0;"></div>
       <!-- 4 KPI Cards -->
       <div class="cost-overview-kpis">
         <div class="cost-kpi-card">
@@ -3174,9 +3181,10 @@
 
       <div class="report-field-row">
         <label class="report-label">Ecuaciones de An&aacute;lisis de S&oacute;lidos:</label>
-        <select id="modal_sg_eq_select" class="modern-input" style="height:25px; font-size:11.5px;">
-          <option value="API" selected>Ecuaciones API</option>
-        </select>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="badge" style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11.5px;">API RP 13B</span>
+          <span style="font-size:11px; color:#64748b;">(Est&aacute;ndar oficial de la industria)</span>
+        </div>
       </div>
 
       <div class="report-field-row">
@@ -3240,9 +3248,28 @@ function getCookie(n){
 function showToast(msg, ok=true){
   const t=document.getElementById('toast');
   t.textContent=msg;
-  t.className=`toast-msg ${ok?'ok':'err'} show`;
-  setTimeout(()=>t.classList.remove('show'),3200);
+  const cls = (ok === 'warn' || ok === 'warning') ? 'warn' : (ok ? 'ok' : 'err');
+  t.className=`toast-msg ${cls} show`;
+  setTimeout(()=>t.classList.remove('show'), (ok === 'warn' || ok === 'warning') ? 4500 : 3200);
 }
+
+function validarProfundidadMechaHoyo() {
+  const prof = parseFloat(document.getElementById('f_profundidad_actual')?.value) || 0;
+  const bit = parseFloat(document.getElementById('f_bit_depth')?.value) || 0;
+  const warn = document.getElementById('warn-bit-depth');
+  const inputBit = document.getElementById('f_bit_depth');
+  if (warn && inputBit) {
+    if (prof > 0 && bit > prof) {
+      warn.style.display = 'block';
+      warn.innerHTML = `&#9888;&#65039; La barrena (${bit.toLocaleString()} ft) supera la profundidad del hoyo (${prof.toLocaleString()} ft).`;
+      inputBit.style.borderColor = '#f59e0b';
+    } else {
+      warn.style.display = 'none';
+      inputBit.style.borderColor = '';
+    }
+  }
+}
+
 
 let currentTabNum = 1;
 
@@ -3250,6 +3277,14 @@ let currentTabNum = 1;
 document.addEventListener('DOMContentLoaded', function () {
   const pestana = parseInt(new URLSearchParams(window.location.search).get('pestana'), 10);
   if (pestana >= 1 && pestana <= 8 && pestana !== currentTabNum) switchTab(pestana);
+  validarProfundidadMechaHoyo();
+  ['f_profundidad_actual', 'f_bit_depth'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){
+      el.addEventListener('input', validarProfundidadMechaHoyo);
+      el.addEventListener('change', validarProfundidadMechaHoyo);
+    }
+  });
 });
 
 // Marca y modelo de bombas: el <datalist> solo sugiere lo que coincide con el texto ya
@@ -3632,6 +3667,9 @@ function wgCalcular(){
     }
   }
   if(wgBitDepth <= 0) avisos.push('La profundidad de la mecha es 0. Captúrala en la pestaña 1 (General).');
+  if(wgProfundidad > 0 && wgBitDepth > wgProfundidad + 0.5){
+    avisos.push(`La mecha (${wgFmt(wgBitDepth, 0)} ft) está más profunda que el fondo del hoyo registrado (${wgFmt(wgProfundidad, 0)} ft).`);
+  }
   if(wgHoleSize <= 0) avisos.push('No hay diámetro de hoyo abierto. Captura el Bit Size en la pestaña 2 (Bombas/Barrenas).');
   if(!wgIntervalos.length) avisos.push('El pozo no tiene intervalos de revestimiento cargados; todo el pozo se está calculando como hoyo abierto.');
 
@@ -4238,6 +4276,7 @@ document.addEventListener('DOMContentLoaded', function(){
 async function guardarGeneral(silent = false) {
   const data = {
     fecha: document.getElementById('f_fecha').value,
+    numero_reporte: document.getElementById('f_numero_reporte') ? document.getElementById('f_numero_reporte').value : '',
     profundidad_actual: document.getElementById('f_profundidad_actual').value || 0,
     profundidad_tvd: document.getElementById('f_profundidad_tvd').value || 0,
     bit_depth: document.getElementById('f_bit_depth').value || 0,
@@ -4265,7 +4304,11 @@ async function guardarGeneral(silent = false) {
     });
     const result = await res.json();
     if(result.ok) {
-      if(!silent) showToast('Datos generales guardados correctamente');
+      if(result.advertencia) {
+        showToast(result.advertencia, 'warn');
+      } else if(!silent) {
+        showToast('Datos generales guardados correctamente');
+      }
     } else {
       showToast(result.error || 'Error al guardar los datos generales', false);
     }
@@ -4302,22 +4345,37 @@ function calcularHidraulicaBomba(target) {
 
 function sincronizarCaudalBombas() {
   let totalGpm = 0;
+  let totalRiserGpm = 0;
   for(let i = 1; i <= 4; i++) {
     const liner = parseFloat(document.getElementById('b_liner_' + i)?.value) || 0;
     const stroke = parseFloat(document.getElementById('b_stroke_' + i)?.value) || 0;
     const eff = (parseFloat(document.getElementById('b_eff_' + i)?.value) || 0) / 100.0;
     const spm = parseFloat(document.getElementById('b_spm_' + i)?.value) || 0;
     const onRep = document.getElementById('b_onrep_' + i)?.checked;
+    const isRiser = document.getElementById('b_riser_' + i)?.checked;
     if(onRep) {
       const bblStk = 0.000243 * (liner * liner) * stroke * eff;
-      totalGpm += (bblStk * 42.0 * spm);
+      const gpm = bblStk * 42.0 * spm;
+      if (isRiser) {
+        totalRiserGpm += gpm;
+      } else {
+        totalGpm += gpm;
+      }
     }
   }
   const flowInput = document.getElementById('f_pump_flow_rate');
   if(flowInput) {
     flowInput.value = totalGpm.toFixed(1);
-    showToast(`Caudal sincronizado desde bombas: ${totalGpm.toFixed(1)} gpm`);
   }
+  const riserFlowInput = document.getElementById('f_riser_pump_flow_rate');
+  if(riserFlowInput && totalRiserGpm > 0) {
+    riserFlowInput.value = totalRiserGpm.toFixed(1);
+  }
+  let msg = `Caudal de perforación sincronizado: ${totalGpm.toFixed(1)} gpm`;
+  if(totalRiserGpm > 0) {
+    msg += ` (Riser Booster: ${totalRiserGpm.toFixed(1)} gpm)`;
+  }
+  showToast(msg);
 }
 
 function calcularTFA() {
@@ -4610,13 +4668,19 @@ function eliminarFilaSurvey(idx) {
 async function recalcularSurvey() {
   document.getElementById('survey-status-bar').textContent = 'Calculando curvatura mínima...';
   try {
+    const vsAzInput = document.getElementById('survey-vs-azimuth');
+    const vsAzVal = vsAzInput ? vsAzInput.value.trim() : '';
+    const payload = { estaciones: surveyEstaciones };
+    if(vsAzVal !== '' && !isNaN(parseFloat(vsAzVal))) {
+      payload.vs_azimuth = parseFloat(vsAzVal);
+    }
     const res = await fetch(API_SURVEY_GUARDAR, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken')
       },
-      body: JSON.stringify({ estaciones: surveyEstaciones })
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
     if(data.ok && data.estaciones) {
@@ -4771,6 +4835,15 @@ async function cargarCostOverview() {
     const res = await fetch(API_COST_OVERVIEW);
     const data = await res.json();
     if(data.ok) {
+      const alerta = document.getElementById('modal-cost-alerta-inventario');
+      if (alerta) {
+        if (data.error_inventario) {
+          alerta.innerHTML = `<strong>&#9888;&#65039; Atención: Inconsistencia en inventario previo</strong><br>${data.error_inventario}. Los costos de químicos se muestran en 0.00 hasta corregir el movimiento.`;
+          alerta.style.display = 'block';
+        } else {
+          alerta.style.display = 'none';
+        }
+      }
       const mon = data.moneda || 'USD';
       const dinero = (v) => `${Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} ${mon}`;
       document.getElementById('kpi-df-chem-daily').textContent = dinero(data.daily.df_chem);
@@ -5348,14 +5421,6 @@ function cerrarSolidsSGModal(){
 }
 
 function aplicarSolidsSGModal(){
-  const eqSelect = document.getElementById('modal_sg_eq_select');
-  if(eqSelect){
-    const labelEq = document.getElementById('label_solids_eq');
-    if(labelEq){
-      labelEq.dataset.valor = eqSelect.value;
-      labelEq.textContent = eqSelect.value;
-    }
-  }
   cerrarSolidsSGModal();
   guardarMudProperties();
 }

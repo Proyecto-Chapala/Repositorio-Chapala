@@ -441,21 +441,9 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
             }
 
         # ---- Pasar al día siguiente ----
+        # El volumen final de los reportes es el inicial del próximo reporte.
         for n in fosas:
-            r = fosas[n].get('real')
-            fin_fosa[n] = float(r) if r is not None else calc[n]
-        # La masa se ajusta al volumen real medido: una pérdida no contabilizada se lleva producto.
-        for cc in list(masa):
-            if cc == ACTIVO:
-                real = real_grupo[ACTIVO]
-            else:
-                r = fosas.get(cc[1], {}).get('real')
-                real = float(r) if r is not None else None
-            v = vol_comp.get(cc, 0.0)
-            if real is not None and v > EPS:
-                f = max(real, 0.0) / v
-                for p in list(masa[cc]):
-                    masa[cc][p] *= f
+            fin_fosa[n] = calc[n]
         comp_prev = {n: comp_de(n) for n in fosas}
         vol_comp_prev = defaultdict(float)
         for n in fosas:

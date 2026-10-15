@@ -184,14 +184,18 @@ def velocidad_critica(d_ext, d_int, rho, par, edicion):
 # Cálculo completo
 # ---------------------------------------------------------------------------
 
-def calcular(secciones, q, rho, reo, tfa, bit_size, tvd_de, superficie=None, temp_de=None):
+def calcular(secciones, q, rho, reo, tfa, bit_size, tvd_de, superficie=None, temp_de=None, herramientas=None, q_riser=0.0):
     """
     secciones: [{'desde_ft','hasta_ft','longitud_ft','diametro_hoyo_in','od_in','id_in',
                  'descripcion','es_bajo_mecha'}] de la pestaña 4 (de superficie hacia abajo).
     tvd_de(md) → TVD; temp_de(tvd) → °F o None.
     superficie: {'codigo', 'presion_ref', 'caudal_ref'}.
+    herramientas: {'dp_mwd', 'dp_motor', 'caudal_ref'}.
+    q_riser: caudal de bomba booster de riser (se suma únicamente al anular del tramo de riser).
     """
     edicion = reo['edicion']
+    q = float(q or 0.0)
+    q_riser = float(q_riser or 0.0)
     filas = []
     ann_acum = 0.0
     total_ds = total_ann = 0.0
@@ -202,7 +206,8 @@ def calcular(secciones, q, rho, reo, tfa, bit_size, tvd_de, superficie=None, tem
         if s.get('es_bajo_mecha') or not od:
             continue
         p = _flujo(q, id_, 0.0, rho, reo['tuberia'], edicion, False) if id_ > 0 else None
-        a = _flujo(q, dh, od, rho, reo['anular'], edicion, True)
+        q_anular = (q + q_riser) if ('riser' in str(s.get('descripcion', '')).lower()) else q
+        a = _flujo(q_anular, dh, od, rho, reo['anular'], edicion, True)
         dp_ds = p['grad'] * largo if p else 0.0
         dp_ann = a['grad'] * largo
         total_ds += dp_ds
@@ -241,6 +246,17 @@ def calcular(secciones, q, rho, reo, tfa, bit_size, tvd_de, superficie=None, tem
     else:
         nota_sup = 'Sin datos de equipo de superficie (código 2-5, o código 1 con la presión en la pestaña 2).'
 
+    # Herramientas de fondo (MWD y Motor de fondo PDM)
+    herr = herramientas or {}
+    dp_mwd_ref = float(herr.get('dp_mwd') or 0.0)
+    dp_motor_ref = float(herr.get('dp_motor') or 0.0)
+    caudal_ref_herr = float(herr.get('caudal_ref') or 0.0)
+    factor_herr = (q / caudal_ref_herr) ** 1.86 if (caudal_ref_herr > 0 and q > 0) else 1.0
+
+    dp_mwd = dp_mwd_ref * factor_herr if dp_mwd_ref > 0 else 0.0
+    dp_motor = dp_motor_ref * factor_herr if dp_motor_ref > 0 else 0.0
+    dp_herramientas = dp_mwd + dp_motor
+
     # Mecha
     mecha = {'perdida': 0.0, 'hhp': 0.0, 'hsi': 0.0, 'vel_chorro': 0.0, 'fuerza_impacto': 0.0}
     if tfa > 0 and q > 0:
@@ -251,11 +267,14 @@ def calcular(secciones, q, rho, reo, tfa, bit_size, tvd_de, superficie=None, tem
         mecha = {'perdida': dpb, 'hhp': hhp, 'hsi': hhp / area_mecha if area_mecha else 0.0,
                  'vel_chorro': vj, 'fuerza_impacto': rho * q * vj / 1932.0}
 
-    total_sarta = total_ds + dp_sup
+    total_sarta = total_ds + dp_sup + dp_herramientas
     total = total_sarta + total_ann + mecha['perdida']
     return {
         'edicion': edicion, 'secciones': filas,
         'perdida_superficie': dp_sup, 'nota_superficie': nota_sup,
+        'perdida_herramientas': dp_herramientas,
+        'perdida_mwd': dp_mwd,
+        'perdida_motor': dp_motor,
         'perdida_sarta_secciones': total_ds, 'perdida_sarta': total_sarta,
         'perdida_anular': total_ann, 'mecha': mecha, 'perdida_total': total,
         'pct': {

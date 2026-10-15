@@ -28,7 +28,7 @@ from .geometria_pozo import construir_perfil_confinamiento, calcular_geometria
 @ensure_csrf_cookie
 def daily_reports_hub_view(request, pk):
     """Gateway principal para Drilling Fluids and Equipment (Historial y Setup)."""
-    pozo = get_object_or_404(Pozo, pk=pk)
+    pozo = get_object_or_404(Pozo.objects.select_related('well_header_info'), pk=pk)
     reportes = pozo.reportes_diarios.all().order_by('-fecha')
 
     ultimo = reportes.first()
@@ -300,7 +300,7 @@ def reporte_diario_detalle_view(request, pk, reporte_pk):
     # Datos para Tab 2: Pumps / Bits
     bombas, bit_data, boquillas = obtener_o_crear_pumps_bits(reporte)
     tfa_calculado = sum(b.area_sq_in for b in boquillas)
-    total_flow_rate_calculado = sum(b.caudal_gpm for b in bombas)
+    total_flow_rate_calculado = sum(b.caudal_gpm for b in bombas if not b.riser_pump)
 
     # Datos para Tab 3: Mud Properties
     mud_config, mud_checks = obtener_o_crear_mud_checks(reporte)
@@ -488,6 +488,12 @@ def api_reporte_diario_crear(request, pk):
         reporte_anterior = ReporteDiario.objects.filter(pozo=pozo, fecha__lt=fecha).first()
 
     reporte = ReporteDiario(pozo=pozo, fecha=fecha, tipo_lodo=tipo_lodo)
+    num_rep = body.get('numero_reporte')
+    if num_rep:
+        try:
+            reporte.numero_reporte = int(num_rep)
+        except (ValueError, TypeError):
+            pass
 
     if reporte_anterior:
         reporte.profundidad_actual = reporte_anterior.profundidad_actual
@@ -572,9 +578,28 @@ def api_reporte_diario_general_guardar(request, pk, reporte_pk):
         reporte.telefonos = body.get('telefonos', reporte.telefonos)
         reporte.fax_numbers = body.get('fax_numbers', reporte.fax_numbers)
 
+        num_rep = body.get('numero_reporte')
+        if num_rep not in (None, ''):
+            try:
+                num_val = int(num_rep)
+                if num_val > 0:
+                    reporte.numero_reporte = num_val
+            except (ValueError, TypeError):
+                pass
+
+        advertencia = None
+        if reporte.profundidad_actual > 0 and reporte.bit_depth > reporte.profundidad_actual:
+            advertencia = (
+                f"Advertencia física: La profundidad de la barrena ({reporte.bit_depth:g} ft) "
+                f"supera la profundidad actual del hoyo ({reporte.profundidad_actual:g} ft)."
+            )
+
         if reporte.fecha == fecha_anterior:
             reporte.save()
-            return JsonResponse({'ok': True})
+            resp = {'ok': True}
+            if advertencia:
+                resp['advertencia'] = advertencia
+            return JsonResponse(resp)
 
         # Cambió la fecha: el reporte se mueve en la línea de tiempo del pozo. Se guarda y
         # se revalidan mallas (pestaña 6) y volumetría (pestaña 8); si algún día deja de
@@ -592,7 +617,10 @@ def api_reporte_diario_general_guardar(request, pk, reporte_pk):
                 'ok': False,
                 'error': f"No se puede cambiar la fecha: {e}"
             }, status=400)
-        return JsonResponse({'ok': True, 'fecha_cambiada': True})
+        resp = {'ok': True, 'fecha_cambiada': True}
+        if advertencia:
+            resp['advertencia'] = advertencia
+        return JsonResponse(resp)
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=400)
 
@@ -601,23 +629,37 @@ def api_reporte_diario_general_guardar(request, pk, reporte_pk):
 # Well Survey: Trayectoria Direccional y Cálculo de TVD
 # =====================================================================
 
-def calcular_survey_curvatura_minima(estaciones_raw):
+def calcular_survey_curvatura_minima(estaciones_raw, vs_azimuth=None):
     """
     Calcula TVD, DLS (°/100ft) y Sección Vertical usando el método estándar
     de Curvatura Mínima de la industria petrolera (API).
+
+    - Si la primera estación tiene MD > 0, se asume un punto de amarre en superficie
+      (MD=0, Inc=0, Az=Az1) para que el desplazamiento inicial N/E no se pierda.
+    - La Sección Vertical (VS) se proyecta sobre el azimut indicado (vs_azimuth).
+      Si vs_azimuth es None, se calcula como la distancia de cierre (Closure Distance).
     """
     estaciones_calculadas = []
+    if not estaciones_raw:
+        return estaciones_calculadas
+
     # Ordenar por MD
     sorted_data = sorted(estaciones_raw, key=lambda s: float(s.get('md_ft', 0) or 0))
 
     tvd_acum = 0.0
-    vs_acum = 0.0
     n_s_acum = 0.0
     e_w_acum = 0.0
 
     prev_md = 0.0
     prev_inc_rad = 0.0
     prev_az_rad = 0.0
+
+    vs_az_rad = None
+    if vs_azimuth is not None:
+        try:
+            vs_az_rad = math.radians(float(vs_azimuth))
+        except (ValueError, TypeError):
+            vs_az_rad = None
 
     for idx, st in enumerate(sorted_data):
         md = float(st.get('md_ft', 0) or 0)
@@ -628,25 +670,24 @@ def calcular_survey_curvatura_minima(estaciones_raw):
         inc_rad = math.radians(inc_deg)
         az_rad = math.radians(az_deg)
 
-        if idx == 0:
-            if md == 0:
-                tvd = 0.0
-                dls = 0.0
-                vs = 0.0
-            else:
-                tvd = md * math.cos(inc_rad)
-                vs = md * math.sin(inc_rad)
-                dls = 0.0
-            tvd_acum = tvd
-            vs_acum = vs
+        if idx == 0 and md == 0:
+            tvd = 0.0
+            dls = 0.0
+            vs = 0.0
+            prev_md = 0.0
+            prev_inc_rad = inc_rad
+            prev_az_rad = az_rad
         else:
             delta_md = md - prev_md
             if delta_md <= 0:
                 tvd = tvd_acum
                 dls = 0.0
-                vs = vs_acum
             else:
-                # Curvatura mínima
+                # Si venimos de superficie y la inclinación previa era 0, alineamos el azimut previo
+                if prev_md == 0 and prev_inc_rad == 0:
+                    prev_az_rad = az_rad
+
+                # Curvatura mínima API
                 cos_beta = math.cos(inc_rad - prev_inc_rad) - math.sin(prev_inc_rad) * math.sin(inc_rad) * (1.0 - math.cos(az_rad - prev_az_rad))
                 cos_beta = max(-1.0, min(1.0, cos_beta))
                 beta = math.acos(cos_beta)
@@ -666,11 +707,16 @@ def calcular_survey_curvatura_minima(estaciones_raw):
                 n_s_acum += delta_ns
                 e_w_acum += delta_ew
                 tvd = tvd_acum
+
+            # Cálculo de Sección Vertical
+            if vs_az_rad is not None:
+                vs = n_s_acum * math.cos(vs_az_rad) + e_w_acum * math.sin(vs_az_rad)
+            else:
                 vs = math.sqrt(n_s_acum**2 + e_w_acum**2)
 
-        prev_md = md
-        prev_inc_rad = inc_rad
-        prev_az_rad = az_rad
+            prev_md = md
+            prev_inc_rad = inc_rad
+            prev_az_rad = az_rad
 
         estaciones_calculadas.append({
             'estacion': idx + 1,
@@ -680,6 +726,8 @@ def calcular_survey_curvatura_minima(estaciones_raw):
             'tvd_ft': round(tvd, 2),
             'dls_deg_100ft': round(dls, 2),
             'seccion_vertical_ft': round(vs, 2),
+            'norte_ft': round(n_s_acum, 2),
+            'este_ft': round(e_w_acum, 2),
             'comentarios': comentarios
         })
 
@@ -731,12 +779,13 @@ def api_well_survey_guardar(request, pk):
     try:
         body = json.loads(request.body)
         raw_stations = body.get('estaciones', [])
+        vs_azimuth = body.get('vs_azimuth', None)
 
         if not raw_stations:
             return JsonResponse({'ok': False, 'error': 'No se enviaron estaciones.'}, status=400)
 
         # Recalcular matemáticamente con curvatura mínima
-        calculadas = calcular_survey_curvatura_minima(raw_stations)
+        calculadas = calcular_survey_curvatura_minima(raw_stations, vs_azimuth=vs_azimuth)
 
         # Persistir en la base de datos
         pozo.survey_stations.all().delete()
@@ -782,7 +831,7 @@ def api_cost_overview_detail(request, pk, reporte_pk):
 
     # Costos reales: químicos y personal (pestaña 8), equipos y mallas (pestaña 6).
     from .views_inventario import resumen_costos
-    daily_data, cumulative_data, desglose_items = resumen_costos(pozo, reporte)
+    daily_data, cumulative_data, desglose_items, error_inventario = resumen_costos(pozo, reporte, con_error=True)
 
     return JsonResponse({
         'ok': True,
@@ -793,6 +842,7 @@ def api_cost_overview_detail(request, pk, reporte_pk):
         'daily': daily_data,
         'cumulative': cumulative_data,
         'items': desglose_items,
+        'error_inventario': error_inventario,
     })
 
 
@@ -1082,7 +1132,8 @@ def api_pumps_bits_detail(request, pk, reporte_pk):
         'on_off_bottom_pressure': bit_data.on_off_bottom_pressure,
     }
 
-    total_flow_rate = sum(b['caudal_gpm'] for b in bombas_data)
+    total_flow_rate = sum(b['caudal_gpm'] for b in bombas_data if not b['riser_pump'])
+    riser_flow_rate = sum(b['caudal_gpm'] for b in bombas_data if b['riser_pump'])
 
     return JsonResponse({
         'ok': True,
@@ -1090,6 +1141,7 @@ def api_pumps_bits_detail(request, pk, reporte_pk):
         'boquillas': boquillas_data,
         'tfa': round(tfa_total, 2),
         'total_flow_rate_calculado': round(total_flow_rate, 1),
+        'riser_flow_rate_calculado': round(riser_flow_rate, 1),
         'bit_data': bit_dict,
     })
 
@@ -1176,13 +1228,15 @@ def api_pumps_bits_guardar(request, pk, reporte_pk):
 
         # Recalcular valores
         bombas_actuales = reporte.bombas.all().order_by('numero_bomba')
-        total_gpm = sum(b.caudal_gpm for b in bombas_actuales)
+        total_gpm = sum(b.caudal_gpm for b in bombas_actuales if not b.riser_pump)
+        riser_gpm = sum(b.caudal_gpm for b in bombas_actuales if b.riser_pump)
         tfa_actual = sum(b.area_sq_in for b in reporte.boquillas.all())
 
         return JsonResponse({
             'ok': True,
             'mensaje': 'Datos de Bombas e Hidráulica guardados correctamente.',
             'total_flow_rate_calculado': round(total_gpm, 1),
+            'riser_flow_rate_calculado': round(riser_gpm, 1),
             'washout_hole_size': bit_obj.washout_hole_size,
             'tfa': round(tfa_actual, 2),
         })
@@ -1331,8 +1385,7 @@ def api_mud_properties_guardar(request, pk, reporte_pk):
         # 1. Guardar Configuración de Lodo y Sólidos
         raw_config = body.get('config', {})
         mud_config, _ = ReporteDiarioMudConfig.objects.get_or_create(reporte=reporte)
-        if 'solids_equation' in raw_config:
-            mud_config.solids_equation = str(raw_config['solids_equation']).strip()
+        mud_config.solids_equation = 'API'
         if 'is_weighted' in raw_config:
             mud_config.is_weighted = bool(raw_config['is_weighted'])
         if 'sg_base_oil' in raw_config:
@@ -1546,12 +1599,13 @@ def obtener_hidraulica_bombas(reporte):
     """
     Salida de bomba para los cálculos de 'Fondo Arriba' (Bottom Up).
 
-    Las emboladas se cuentan contra UNA bomba (la primera activa del reporte), que es
-    como el perforador las cuenta en el taladro; los minutos usan el caudal total de
-    todas las bombas activas. Esta combinación reproduce los valores del manual.
+    Las emboladas se cuentan contra UNA bomba (la primera activa de perforación del reporte),
+    que es como el perforador las cuenta en el taladro; los minutos usan el caudal total de
+    todas las bombas activas de perforación (excluyendo bombas booster de riser).
+    Esta combinación reproduce los valores del manual.
     """
     bombas = list(reporte.bombas.all().order_by('numero_bomba'))
-    activas = [b for b in bombas if b.pump_on_report]
+    activas = [b for b in bombas if b.pump_on_report and not b.riser_pump]
     bbl_stk = activas[0].desplazamiento_bbl_stk if activas else 0.0
     caudal_gpm = sum(b.caudal_gpm for b in activas)
     return bbl_stk, caudal_gpm
@@ -1607,6 +1661,8 @@ def calcular_geometria_reporte(pozo, reporte):
         bbl_por_embolada=bbl_stk,
         caudal_gpm=caudal_gpm,
     )
+    if profundidad > 0 and bit_depth > profundidad + 0.5:
+        resultado['avisos'].insert(0, f"La mecha ({bit_depth:,.1f} ft) está más profunda que el fondo del hoyo registrado ({profundidad:,.1f} ft).")
     resultado['perfil_pozo'] = [
         {
             'desde_ft': round(s['desde_ft'], 2),

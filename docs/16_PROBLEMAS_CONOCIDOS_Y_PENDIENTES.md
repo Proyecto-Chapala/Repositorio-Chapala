@@ -51,17 +51,19 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 
 | # | Prioridad | Problema | Dónde | Qué hacer |
 |---|---|---|---|---|
-| C1 | 🟠 | **Edición de hidráulica inconsistente**: la pantalla abre en la 5ª y el Excel usa el ajuste del pozo (por defecto 4ª) | `reporte_hidraulica.js` (`hdEdicion='5'`) · `Pozo.usar_api_5ta_edicion_hidraulica` (default `False`) | Que la pantalla arranque con el ajuste del pozo, o cambiar el default a `True` (decisión del usuario: "5ª por defecto") |
-| C2 | 🟠 | Los **costos se ponen en 0 en silencio** si la volumetría o las mallas tienen error (el reporte final sí lo avisa) | `resumen_costos` | Mostrar un aviso en la tarjeta de costos |
+| C1 | ~~🟠~~ | ~~**Edición de hidráulica inconsistente**~~ | `reporte_hidraulica.js` · `views_hidraulica.py` | **Resuelto (15-oct-2026):** sincronización bidireccional y persistencia de edición 4ª / 5ª en pantalla y base de datos. |
+| C2 | ~~🟠~~ | ~~Los **costos se ponen en 0 en silencio** ante error de inventario~~ | `resumen_costos` · `reporte_inventario.js` | **Resuelto (15-oct-2026):** banner explicativo en Pestaña 1 y modal de costos que alerta la inconsistencia de inventario previo. |
 | C3 | 🟠 | El primer reporte crea **4 chequeos de lodo con datos de ejemplo** (10,5 lb/gal…) que se heredan | `views_daily_reports.py` (~líneas 190-250) | Crearlos vacíos o marcarlos como "ejemplo" |
-| C4 | 🟢 | La **ecuación de sólidos** (hoy solo API) se guarda pero no cambia el cálculo | `ReporteDiarioMudConfig.solids_equation` | Implementar la variante API o quitar la opción |
-| C5 | 🟢 | **Survey**: si la primera estación no está en MD = 0, su desplazamiento no entra en los acumulados; la "sección vertical" no se proyecta sobre un azimut | `calcular_survey_curvatura_minima` | Estación virtual en (0, 0, 0) y azimut de sección vertical |
-| C6 | 🟢 | La hidráulica **no descuenta ΔP de MWD ni del motor** y suma el caudal de las **bombas del riser** | `views_hidraulica.py` | Sumar `dp_mwd`/`dp_motor` y excluir `riser_pump` |
+| C4 | ~~🟢~~ | ~~La **ecuación de sólidos** se guarda pero no cambia el cálculo~~ | `ReporteDiarioMudConfig` | **Resuelto (15-oct-2026):** selector interactivo reemplazado por indicador fijo oficial de la Norma API RP 13B. |
+| C5 | ~~🟢~~ | ~~**Survey**: estación sin MD=0 pierde acumulación; SV no se proyecta~~ | `calcular_survey_curvatura_minima` | **Resuelto (15-oct-2026):** amarre virtual en (0, 0, 0) y proyección de Sección Vertical ($VS$) sobre azimut ingresado o cierre. |
+| C6 | ~~🟢~~ | ~~La hidráulica **no descuenta ΔP de herramientas** y suma **bombas de riser**~~ | `views_hidraulica.py` · `hidraulica.py` | **Resuelto (15-oct-2026):** ΔP de MWD y Motor PDM sumados a sarta/total; bomba de riser excluida de circulación de perforación. |
 | C7 | 🟢 | El **sistema de unidades** no convierte nada: todo en unidades de campo (salvo concentraciones en kg/m³) | global | Implementar conversión o limitar a *Standard Oilfield* |
 | C8 | 🟢 | Dos convenciones de respuesta JSON (`success` en `views.py`, `ok` en el resto) | vistas | Unificar al refactorizar |
-| C9 | 🟢 | El **número de reporte** se recalcula: insertar un reporte intermedio cambia los números de los siguientes | `ReporteDiario.numero_reporte` | Decidir si debe ser fijo |
+| C9 | ~~🟢~~ | ~~El **número de reporte** se recalcula al insertar fechas intermedias~~ | `ReporteDiario.numero_reporte` | **Resuelto (15-oct-2026):** campo fijo en BD (migración 0038) editable y no dinámico; no se altera al insertar fechas intermedias. |
 | C10 | 🟢 | La API de borrar reporte no revalida la línea de tiempo de mallas | `api_reporte_diario_eliminar` | Hoy sin botón en pantalla; validar si se vuelve a exponer |
 | C11 | 🟢 | Marca/modelo de bombas (pestaña 2) es texto libre con `<datalist>` | `reporte_diario_detalle.html` | Ya se vacía al entrar para mostrar los 15 modelos; un catálogo en BD sería opcional |
+| C12 | ~~🟢~~ | ~~**Operador no se muestra en el hub de fluidos ni encabezado**~~ | `Pozo` · `daily_reports_hub.html` | **Resuelto (15-oct-2026):** agregadas propiedades directas `operador` y `taladro` en `Pozo` conectadas de forma segura a `WellHeaderInfo` con `select_related`. |
+| C13 | ~~🔴~~ | ~~**El volumen inicial del día siguiente sobrescribía el calculado con el aforo físico (`real`) y las pérdidas operacionales no descontaban del activo por selección de tanque**~~ | `volumetria.py` · `reporte_inventario.js` | **Resuelto (15-oct-2026):** `fin_fosa` hereda `calc` preservando la continuidad del balance volumétrico diario, y el modal de pérdidas preselecciona tanques activos del sistema circulante. |
 
 ## D. Seguridad
 

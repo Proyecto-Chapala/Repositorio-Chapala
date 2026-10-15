@@ -9,11 +9,13 @@ Solo consulta: toma los datos que ya existen en el reporte y no guarda nada.
 - Temperatura anular (5ª edición): temperatura de superficie y gradiente del encabezado del pozo.
 """
 
+import json
 import math
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import Pozo
 from .models_daily_reports import ReporteDiario
@@ -89,13 +91,24 @@ def _r(v, n=2):
     return None if v is None else round(v, n)
 
 
-@require_http_methods(["GET"])
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
 def api_hidraulica_detail(request, pk, reporte_pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
-    edicion = request.GET.get('edicion')
-    if edicion not in ('4', '5'):
-        edicion = '5' if pozo.usar_api_5ta_edicion_hidraulica else '4'
+    if request.method == 'POST':
+        try:
+            body = json.loads(request.body.decode('utf-8'))
+            edicion = str(body.get('edicion', '')).strip()
+        except Exception:
+            edicion = str(request.POST.get('edicion', '')).strip()
+        if edicion in ('4', '5'):
+            pozo.usar_api_5ta_edicion_hidraulica = (edicion == '5')
+            pozo.save(update_fields=['usar_api_5ta_edicion_hidraulica'])
+    else:
+        edicion = request.GET.get('edicion')
+        if edicion not in ('4', '5'):
+            edicion = '5' if pozo.usar_api_5ta_edicion_hidraulica else '4'
     return JsonResponse(calcular_hidraulica_reporte(pozo, reporte, edicion))
 
 
@@ -104,11 +117,19 @@ def calcular_hidraulica_reporte(pozo, reporte, edicion='5'):
     edicion = '4' if str(edicion) == '4' else '5'
     faltan = []
     bit = getattr(reporte, 'bit_data', None)
-    q = sum(b.caudal_gpm for b in reporte.bombas.all())
+    # Bombas de circulación para perforación (excluyendo riser booster pump)
+    bombas_circulacion = [b for b in reporte.bombas.all() if b.pump_on_report and not b.riser_pump]
+    q = sum(b.caudal_gpm for b in bombas_circulacion)
     if q <= 0 and bit:
         q = _f(bit.pump_flow_rate) or 0.0
     if q <= 0:
         faltan.append('el caudal de las bombas (pestaña 2)')
+
+    bombas_riser = [b for b in reporte.bombas.all() if b.pump_on_report and b.riser_pump]
+    q_riser = sum(b.caudal_gpm for b in bombas_riser)
+    if q_riser <= 0 and bit:
+        q_riser = _f(bit.riser_pump_flow_rate) or 0.0
+
     tfa = sum(b.area_sq_in for b in reporte.boquillas.all())
     if tfa <= 0:
         faltan.append('las boquillas de la mecha (pestaña 2)')
@@ -131,10 +152,16 @@ def calcular_hidraulica_reporte(pozo, reporte, edicion='5'):
         faltan.append('la sarta de perforación (pestaña 4)')
 
     base = {
-        'ok': True, 'edicion': edicion, 'faltan': faltan,
+        'ok': True, 'edicion': edicion,
+        'edicion_pozo': '5' if pozo.usar_api_5ta_edicion_hidraulica else '4',
+        'faltan': faltan,
         'entrada': {
-            'caudal_gpm': _r(q, 1), 'tfa_in2': _r(tfa, 4), 'bit_size_in': bit_size,
+            'caudal_gpm': _r(q, 1),
+            'caudal_riser_gpm': _r(q_riser, 1) if q_riser > 0 else 0.0,
+            'tfa_in2': _r(tfa, 4), 'bit_size_in': bit_size,
             'peso_lodo': rho, 'presion_bomba_real': _f(bit.pump_pressure) if bit else None,
+            'dp_mwd': _f(bit.dp_mwd) if bit else None,
+            'dp_motor': _f(bit.dp_motor) if bit else None,
             'chequeo': check.check_number if check else None,
             'temp_reologia': _f(check.rheology_temp) if check else None,
         },
@@ -156,7 +183,15 @@ def calcular_hidraulica_reporte(pozo, reporte, edicion='5'):
         'presion_ref': _f(bit.surface_pressure) if bit else None,
         'caudal_ref': _f(bit.ref_flow_rate) if bit else None,
     }
-    res = hid.calcular(secciones, q, rho, reo, tfa, bit_size, tvd_de, superficie, temp_de)
+    herramientas = {
+        'dp_mwd': _f(bit.dp_mwd) if bit else 0.0,
+        'dp_motor': _f(bit.dp_motor) if bit else 0.0,
+        'caudal_ref': _f(bit.ref_flow_rate) if bit else None,
+    }
+    res = hid.calcular(
+        secciones, q, rho, reo, tfa, bit_size, tvd_de, superficie, temp_de,
+        herramientas=herramientas, q_riser=q_riser
+    )
 
     real = base['entrada']['presion_bomba_real']
     base.update({
@@ -191,6 +226,9 @@ def calcular_hidraulica_reporte(pozo, reporte, edicion='5'):
         'totales': {
             'sarta': _r(res['perdida_sarta'], 0), 'sarta_secciones': _r(res['perdida_sarta_secciones'], 0),
             'superficie': _r(res['perdida_superficie'], 0), 'nota_superficie': res['nota_superficie'],
+            'herramientas': _r(res.get('perdida_herramientas', 0.0), 0),
+            'mwd': _r(res.get('perdida_mwd', 0.0), 0),
+            'motor': _r(res.get('perdida_motor', 0.0), 0),
             'anular': _r(res['perdida_anular'], 0), 'mecha': _r(res['mecha']['perdida'], 0),
             'total': _r(res['perdida_total'], 0),
             'diferencia_real': _r(real - res['perdida_total'], 0) if real else None,

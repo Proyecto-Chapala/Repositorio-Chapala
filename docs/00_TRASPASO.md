@@ -23,10 +23,21 @@
 - **Base de datos revisada** antes de empaquetar y **papelera de pozos** (eliminar ya no borra): ver [24](24_PAPELERA_Y_TIPOS_DE_DATOS.md). **La base definitiva es SQLite.** **Licencia eliminada** y `SmartMud.exe` listo para la prueba en producción (`empaquetado\dist\SmartMud_Pruebas.zip`).
 - **Inventario y tickets (14-oct):** los tickets de entrada alimentan la dotación en la columna **Inicial** del pozo; **Recibido** y **Devuelto** se escriben a mano en la tabla diaria (migración **0037**). Al guardar, el Final pasa al Inicial del día siguiente. Ver [pruebas/19](pruebas/19_INVENTARIO_TICKETS_Y_MANUAL.md).
 - **Eliminar reporte en Hub (14-oct):** se reincorporó el botón **`🗑️ Eliminar Reporte`** en el encabezado del historial junto a *+ Nuevo Reporte* con confirmación segura, sin botones invasivos en la tabla.
-- **Pruebas automáticas:** 127, todas pasan (`python manage.py test operaciones`). **Nada probado aún en pantalla.**
-- **Migraciones:** el usuario aplicó hasta la **0034**. Falta aplicar la **0035_servicios_del_pozo** y la **0036_inventario_usado_fluido_manual** (`python manage.py migrate`).
-- **El usuario todavía no hizo commit** de los cambios de octubre.
-- Próximo hito con el cliente: prueba integral con los ingenieros (pozo nuevo: piloto 8½", ampliación 12¼", tres side tracks e impresión). Después de esa sesión se cierra la revisión.
+- **Optimizaciones de lógica y cálculos de reportes (15-oct-2026):** completado el plan de 8 puntos críticos:
+  1. Hidráulica: sincronización bidireccional y persistencia de edición de norma API 4ª / 5ª.
+  2. Costos: banner explicativo en Pestaña 1 y modal de costos ante inconsistencias en inventario previo en lugar de $0 silencioso.
+  3. Validación física: advertencia en vivo y en API cuando `bit_depth > profundidad_actual`.
+  4. Pérdida de presión en herramientas de fondo: MWD y Motor PDM escalados por caudal en sarta y pérdida total.
+  5. Bombas de riser: excluidas del circuito de circulación de perforación hacia la sarta y mecha (Bottoms Up e hidráulica).
+  6. Well Survey: amarre virtual en superficie en (0, 0, 0) y proyección de Sección Vertical ($VS$) sobre azimut.
+  7. Ecuación de sólidos: anclada fijamente a la Norma API RP 13B como estándar oficial.
+  8. Número de reporte fijo: almacenado en base de datos (`numero_reporte`, migración **0038**), inmune a reenumeraciones por inserción de fechas intermedias.
+- **Visualización de Operador y Taladro (15-oct-2026):** propiedades directas en el modelo `Pozo` (`pozo.operador`, `pozo.taladro`) conectadas de forma segura a `WellHeaderInfo`. Resuelve la ausencia del operador (`—`) en el Hub "Fluidos de Perforación y Equipos" y en el encabezado del reporte diario.
+- **Continuidad del balance volumétrico y pérdidas del sistema circulante (15-oct-2026):**
+  - El volumen final calculado del reporte $N$ (`calc_fosa`) pasa directamente como volumen inicial (`inicio_fosa`) del reporte $N+1$, garantizando que las pérdidas operacionales y adiciones queden descontadas en la línea de tiempo en vez de reiniciarse al aforo (`real`).
+  - En el modal de registro de pérdidas, se preselecciona automáticamente el tanque activo del sistema circulante (`vaFosasActivas()`) y se actualiza la etiqueta a *"Tanque de la pérdida (volumen circulante)"*, evitando descuentos accidentales en tanques de reserva.
+- **Pruebas automáticas:** 143, todas pasan (`python manage.py test operaciones`).
+- **Migraciones:** el usuario aplicó hasta la **0034**. Faltan por aplicar: `0035_servicios_del_pozo`, `0036_inventario_usado_fluido_manual`, `0037_inventarioproductodia_devuelto_and_more` y `0038_reportediario_numero_reporte` (`python manage.py migrate`).
 
 ### Cadena de migraciones
 
@@ -47,11 +58,13 @@
                                                                       └─ 0034_papelera_pozos_y_tipos_opcionales
                                                                            └─ 0035_servicios_del_pozo
                                                                                 └─ 0036_inventario_usado_fluido_manual
+                                                                                     └─ 0037_inventarioproductodia_devuelto_and_more
+                                                                                          └─ 0038_reportediario_numero_reporte
 ```
 
 - `0022_sidetrack` **depende de 0021** (así quedó aplicada; cambiarla rompe con `InconsistentMigrationHistory`).
-- La próxima migración nueva debe depender de **`0037_inventarioproductodia_devuelto_and_more`**.
-- La `0030` (generada con `makemigrations` el 12-oct) puso al día los `verbose_name` atrasados. Desde ahí, `makemigrations --check` no detecta cambios: modelos y migraciones están sincronizados.
+- La `0038` agrega `numero_reporte` fijo a `ReporteDiario` y puebla registros históricos.
+- `makemigrations --check` no detecta cambios: modelos y migraciones están sincronizados.
 
 ## 2. Dónde está cada cosa (lo más reciente)
 

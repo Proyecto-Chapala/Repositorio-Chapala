@@ -11,15 +11,39 @@
    ===================================================================== */
 
 const HD_API = `/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/hidraulica/`;
-let hdEdicion = '5';
+let hdEdicion = null;
 let hdDatos = null;
 
-async function cargarHidraulica(){
+async function cargarHidraulica(nuevaEdicion){
   document.getElementById('hdResultado').innerHTML = '<div class="report-card-modern"><div class="cs-vacio cs-vacio-centrado">Calculando…</div></div>';
   try {
-    const res = await fetch(`${HD_API}?edicion=${hdEdicion}`);
+    let res;
+    if (nuevaEdicion) {
+      hdEdicion = nuevaEdicion;
+      res = await fetch(HD_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || ''
+        },
+        body: JSON.stringify({ edicion: nuevaEdicion })
+      });
+    } else {
+      if (!hdEdicion) {
+        const activeBtn = document.querySelector('[data-hd-edicion].is-active');
+        hdEdicion = activeBtn ? activeBtn.dataset.hdEdicion : '';
+      }
+      const url = hdEdicion ? `${HD_API}?edicion=${hdEdicion}` : HD_API;
+      res = await fetch(url);
+    }
     hdDatos = await res.json();
     if(!hdDatos.ok) throw new Error();
+    if(hdDatos.edicion){
+      hdEdicion = hdDatos.edicion;
+      document.querySelectorAll('[data-hd-edicion]').forEach(x => {
+        x.classList.toggle('is-active', x.dataset.hdEdicion === hdEdicion);
+      });
+    }
     hdRender();
   } catch(e){
     document.getElementById('hdResultado').innerHTML = '<div class="report-card-modern"><div class="cs-vacio">No se pudo calcular la hidráulica.</div></div>';
@@ -33,10 +57,12 @@ function hdRender(){
   document.getElementById('hdEntrada').innerHTML = `
     <div class="hd-entrada">
       <div class="cs-eq-dato"><span>Caudal</span><strong>${e.caudal_gpm ? csFmt(e.caudal_gpm, 1) + ' gpm' : '—'}</strong><small>pestaña 2</small></div>
+      ${e.caudal_riser_gpm > 0 ? `<div class="cs-eq-dato"><span>Caudal Riser</span><strong>${csFmt(e.caudal_riser_gpm, 1)} gpm</strong><small>booster</small></div>` : ''}
       <div class="cs-eq-dato"><span>Peso del lodo</span><strong>${e.peso_lodo ? csFmt(e.peso_lodo, 2) + ' lb/gal' : '—'}</strong><small>${e.chequeo ? 'chequeo #' + e.chequeo : 'pestaña 3'}</small></div>
       <div class="cs-eq-dato"><span>TFA</span><strong>${e.tfa_in2 ? csFmt(e.tfa_in2, 4) + ' in²' : '—'}</strong><small>boquillas</small></div>
       <div class="cs-eq-dato"><span>Mecha</span><strong>${e.bit_size_in ? csFmt(e.bit_size_in, 3) + ' in' : '—'}</strong><small>pestaña 2</small></div>
       <div class="cs-eq-dato"><span>Presión de bomba real</span><strong>${e.presion_bomba_real ? csFmt(e.presion_bomba_real, 0) + ' psi' : '—'}</strong><small>pestaña 2</small></div>
+      ${(e.dp_mwd || e.dp_motor) ? `<div class="cs-eq-dato"><span>dP Herramientas</span><strong>${csFmt((e.dp_mwd || 0) + (e.dp_motor || 0), 0)} psi</strong><small>${[e.dp_mwd ? 'MWD ' + csFmt(e.dp_mwd, 0) : '', e.dp_motor ? 'Motor ' + csFmt(e.dp_motor, 0) : ''].filter(Boolean).join(' + ')}</small></div>` : ''}
       ${d.reologia ? `<div class="cs-eq-dato"><span>PV / YP</span><strong>${csFmt(d.reologia.pv, 0)} cP / ${csFmt(d.reologia.yp, 0)}</strong><small>lb/100 ft²${e.temp_reologia ? ` a ${csFmt(e.temp_reologia, 0)} °F` : ''}</small></div>` : ''}
     </div>`;
 
@@ -60,7 +86,7 @@ function hdRender(){
     ${avisos.length ? `<div class="cs-avisos">${avisos.map(a => `<div class="cs-aviso-item">${csEsc(a)}</div>`).join('')}</div>` : ''}
 
     <div class="report-card-modern hd-kpis">
-      <div class="va-kpi va-kpi-neutro"><span>Pérdida en la sarta</span><strong>${csFmt(t.sarta, 0)} psi</strong><small>${csFmt(t.pct.sarta, 1)} % · incluye ${csFmt(t.superficie, 0)} psi de superficie</small></div>
+      <div class="va-kpi va-kpi-neutro"><span>Pérdida en la sarta</span><strong>${csFmt(t.sarta, 0)} psi</strong><small>${csFmt(t.pct.sarta, 1)} % · incluye ${csFmt(t.superficie, 0)} psi sup.${t.herramientas ? ` + ${csFmt(t.herramientas, 0)} psi herram.` : ''}</small></div>
       <div class="va-kpi va-kpi-neutro"><span>Pérdida en el anular</span><strong>${csFmt(t.anular, 0)} psi</strong><small>${csFmt(t.pct.anular, 1)} %</small></div>
       <div class="va-kpi va-kpi-neutro"><span>Pérdida en la mecha</span><strong>${csFmt(t.mecha, 0)} psi</strong><small>${csFmt(t.pct.mecha, 1)} %</small></div>
       <div class="va-kpi ${dif === null ? 'va-kpi-neutro' : (Math.abs(dif) <= 0.1 * t.total ? 'va-kpi-ok' : 'va-kpi-pendiente')}"><span>Presión de bomba calculada</span><strong>${csFmt(t.total, 0)} psi</strong>
@@ -100,7 +126,7 @@ function hdRender(){
           </tr></tfoot>
         </table>
       </div>
-      <p class="cs-nota">${csEsc(t.nota_superficie)} La velocidad anular en verde supera la crítica (flujo fuera de laminar).</p>
+      <p class="cs-nota">${csEsc(t.nota_superficie)}${t.herramientas ? ` Pérdida en herramientas de fondo (MWD/Motor): ${csFmt(t.herramientas, 0)} psi.` : ''} La velocidad anular en verde supera la crítica (flujo fuera de laminar).</p>
     </div>
 
     <div class="va-grid-2">
@@ -162,8 +188,8 @@ function hdReograma(r){
 
 document.addEventListener('DOMContentLoaded', function(){
   document.querySelectorAll('[data-hd-edicion]').forEach(b => b.addEventListener('click', function(){
-    hdEdicion = b.dataset.hdEdicion;
+    const nueva = b.dataset.hdEdicion;
     document.querySelectorAll('[data-hd-edicion]').forEach(x => x.classList.toggle('is-active', x === b));
-    cargarHidraulica();
+    cargarHidraulica(nueva);
   }));
 });

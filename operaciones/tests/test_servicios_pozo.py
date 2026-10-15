@@ -125,3 +125,22 @@ class ServiciosDelPozoTests(TestCase):
         otro = Pozo.objects.create(nombre='OTRO')
         ajeno = ServicioPozo.objects.create(pozo=otro, descripcion='Ajeno', categoria_costo=FLUIDOS, tarifa_diaria=1)
         self.assertEqual(self._cobrar(self.dia1, (ajeno, 1, None)).status_code, 400)
+
+    def test_resumen_costos_con_error_volumetria_retorna_advertencia(self):
+        from unittest.mock import patch
+        from operaciones.volumetria import ErrorVolumetria
+
+        with patch('operaciones.views_inventario._simular_pozo', side_effect=ErrorVolumetria("El 12/10/2026: el inventario de BARI-A queda en -5.")):
+            diario, acum, items = resumen_costos(self.pozo, self.dia1)
+            self.assertEqual(diario['df_chem'], 0.0)
+
+            diario, acum, items, error = resumen_costos(self.pozo, self.dia1, con_error=True)
+            self.assertIn("queda en -5", error)
+
+            url = reverse('operaciones:api_cost_overview_detail', kwargs={'pk': self.pozo.pk, 'reporte_pk': self.dia1.pk})
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 200)
+            data = resp.json()
+            self.assertTrue(data['ok'])
+            self.assertIn("queda en -5", data['error_inventario'])
+

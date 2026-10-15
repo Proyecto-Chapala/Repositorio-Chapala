@@ -104,9 +104,31 @@ class CasoDelClienteTests(SimpleTestCase):
     def test_el_hoyo_forma_parte_del_sistema_activo(self):
         # Al perforar, el fluido pasa de los tanques al hoyo: el total no cambia y cuadra.
         dias = [
-            dia(1, [tanque(1, ACTIVO, 1000)], [quimicos(1, 1, agua=1100)], hoyo=100),
+            dia(1, [tanque(1, ACTIVO, 1000)], [quimicos(1, 1, agua=1000)], hoyo=100),
             dia(2, [tanque(1, ACTIVO, 970)], hoyo=130),
         ]
         sim = vol.simular(dias, 2)
         self.assertAlmostEqual(sim['inicio_grupo'][ACTIVO], 1100)
         self.assertAlmostEqual(sim['no_contabilizado'][ACTIVO], 0.0)
+
+    def test_volumen_final_calculado_es_el_inicial_del_dia_siguiente(self):
+        """
+        El volumen final calculado del reporte N pasa como volumen inicial del reporte N+1,
+        incluso si se ingresó aforo/real ese día. Las pérdidas descuentan del sistema activo.
+        """
+        dias = [
+            dia(1, [tanque(1, ACTIVO, 400)], [
+                quimicos(1, 1, agua=400),
+                quimicos(2, 1, sacos=50, gravedad=4.2),
+                movimiento(3, 'PERDIDA', 1, 18, perdida=5),
+                movimiento(4, 'PERDIDA', 1, 50, perdida=8),
+            ]),
+            dia(2, [tanque(1, ACTIVO, 344)]),
+        ]
+        sim1 = vol.simular(dias, 1)
+        calc_dia_1 = sim1['calc_fosa'][1]
+        self.assertAlmostEqual(sim1['flujos'][ACTIVO]['perdida'], 68.0)
+        sim2 = vol.simular(dias, 2)
+        self.assertAlmostEqual(sim2['inicio_fosa'][1], calc_dia_1)
+        self.assertAlmostEqual(sim2['inicio_grupo'][ACTIVO], calc_dia_1)
+

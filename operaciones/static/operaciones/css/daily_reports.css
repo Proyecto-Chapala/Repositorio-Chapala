@@ -804,6 +804,22 @@
   background: #10b981;
 }
 
+/* Alerta de inconsistencias en inventario / costos */
+.report-alerta-inventario {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 6px 10px;
+}
+.report-alerta-inventario strong {
+  color: #78350f;
+  font-weight: 700;
+}
+
 /* Compact Cost Summary Card */
 .cost-card-modern {
   background: #ffffff;
@@ -1362,8 +1378,9 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .toast-msg.show { transform: translateY(0); opacity: 1; }
-.toast-msg.ok  { background: #16a34a; }
-.toast-msg.err { background: #dc2626; }
+.toast-msg.ok   { background: #16a34a; }
+.toast-msg.err  { background: #dc2626; }
+.toast-msg.warn { background: #d97706; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-4px); }

@@ -52,6 +52,11 @@ class ReporteDiario(models.Model):
                   "cuenta desde aquí y no desde la profundidad del día anterior."
     )
 
+    numero_reporte = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Número de Reporte",
+        help_text="Número correlativo fijo del reporte para el pozo."
+    )
+
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
 
@@ -64,10 +69,21 @@ class ReporteDiario(models.Model):
     def __str__(self):
         return f"Reporte {self.fecha} - {self.pozo.nombre}"
 
-    @property
-    def numero_reporte(self):
-        """Calcula el número correlativo de reporte para este pozo."""
-        return ReporteDiario.objects.filter(pozo=self.pozo, fecha__lte=self.fecha).count()
+    def save(self, *args, **kwargs):
+        if not self.numero_reporte and getattr(self, 'pozo_id', None):
+            ultimo = (
+                ReporteDiario.objects.filter(pozo_id=self.pozo_id)
+                .exclude(pk=self.pk)
+                .order_by('-numero_reporte')
+                .first()
+            )
+            if ultimo and ultimo.numero_reporte:
+                self.numero_reporte = ultimo.numero_reporte + 1
+            else:
+                self.numero_reporte = (
+                    ReporteDiario.objects.filter(pozo_id=self.pozo_id, fecha__lt=self.fecha).count() + 1
+                )
+        super().save(*args, **kwargs)
 
 
 class PropiedadExtraFluido(models.Model):

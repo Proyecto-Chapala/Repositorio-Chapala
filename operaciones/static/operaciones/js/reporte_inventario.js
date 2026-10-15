@@ -977,7 +977,7 @@ function vaRenderModal(inicial = false){
         <button type="button" class="cs-condicion-btn" data-va-op="PERDIDA">Pérdida y descarte</button>
       </div>
       <div class="va-form-col">
-        <label class="cs-campo"><span class="cs-campo-label">Tanque de origen</span><select id="vaTFosa" class="report-input">${vaOpcionesFosa()}</select></label>
+        <label class="cs-campo" id="vaTCampoFosa"><span class="cs-campo-label" id="vaTLabelFosa">Tanque de origen</span><select id="vaTFosa" class="report-input">${vaOpcionesFosa()}</select></label>
         <label class="cs-campo" id="vaTCampoDestino"><span class="cs-campo-label">Tanque destino</span><select id="vaTDestino" class="report-input">${vaOpcionesFosa()}</select></label>
         <label class="cs-campo" id="vaTCampoDevuelto" hidden><span class="cs-campo-label">Devuelto a</span><select id="vaTDevuelto" class="report-input">${vaOpcionesDestinoExterno()}</select></label>
         <label class="cs-campo" id="vaTCampoPerdida" hidden><span class="cs-campo-label">Tipo de pérdida</span><select id="vaTPerdida" class="report-input">
@@ -1086,6 +1086,20 @@ function vaCambiarOperacion(op){
   document.getElementById('vaTCampoDestino').hidden = op !== 'TRANSFERENCIA';
   document.getElementById('vaTCampoDevuelto').hidden = op !== 'DEVOLUCION';
   document.getElementById('vaTCampoPerdida').hidden = op !== 'PERDIDA';
+  const labelFosa = document.getElementById('vaTLabelFosa');
+  if(labelFosa){
+    labelFosa.textContent = op === 'PERDIDA' ? 'Tanque de la pérdida (volumen circulante)' : 'Tanque de origen';
+  }
+  if(op === 'PERDIDA'){
+    const selFosa = document.getElementById('vaTFosa');
+    const activas = vaFosasActivas();
+    if(selFosa && activas.length){
+      const actualEsActivo = activas.some(f => String(f.numero) === String(selFosa.value));
+      if(!actualEsActivo){
+        selFosa.value = String(activas[0].numero);
+      }
+    }
+  }
 }
 
 function vaLlenarEdicion(m){
@@ -1374,6 +1388,17 @@ async function cargarCostosGenerales(){
     const res = await fetch(`/api/pozos/${POZO_ID}/daily-report/${REPORTE_ID}/cost-overview/`);
     const data = await res.json();
     if(!data.ok) return;
+
+    const alerta = document.getElementById('cost-alerta-inventario');
+    if (alerta) {
+      if (data.error_inventario) {
+        alerta.innerHTML = `<strong>&#9888;&#65039; Atención: Inconsistencia en inventario previo</strong><br>${data.error_inventario}. Los costos de químicos se muestran en 0.00 hasta corregir el movimiento.`;
+        alerta.style.display = 'block';
+      } else {
+        alerta.style.display = 'none';
+      }
+    }
+
     const f = n => Number(n || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const mapa = { df_chem: 'df_chem', ife_sc: 'ife_sc', drilling_total: 'drilling_total', df_equip: 'df_equip', other: 'other_cost', daily_total: 'total' };
     Object.keys(mapa).forEach(k => {

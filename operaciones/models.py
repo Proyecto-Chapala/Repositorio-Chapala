@@ -376,6 +376,22 @@ class Pozo(models.Model):
             return self.moneda_secundaria
         return self.moneda_simbolo or 'USD'
 
+    @property
+    def operador(self):
+        """Devuelve el nombre del operador configurado en WellHeaderInfo."""
+        try:
+            return self.well_header_info.operador or ''
+        except Exception:
+            return ''
+
+    @property
+    def taladro(self):
+        """Devuelve el nombre del taladro configurado en WellHeaderInfo."""
+        try:
+            return self.well_header_info.nombre_taladro or ''
+        except Exception:
+            return ''
+
     def tarifa(self, en_moneda_principal, en_moneda_secundaria):
         """La tarifa de un producto, equipo o malla en la moneda de cobro del pozo."""
         if self.cobrar_en_secundaria and self.moneda_secundaria:

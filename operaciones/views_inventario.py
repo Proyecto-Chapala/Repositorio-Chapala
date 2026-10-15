@@ -1201,7 +1201,7 @@ def api_ticket_producto_eliminar(request, pk, reporte_pk, ticket_pk):
 # Resumen de costos del reporte (pestaña 1 y "Resumen de Costos")
 # =====================================================================
 
-def resumen_costos(pozo, reporte):
+def resumen_costos(pozo, reporte, con_error=False):
     """
     Costos reales del día y acumulados, en las columnas del reporte de ONE-TRAX:
     Químicos/Personal DF (químicos + ingeniero de fluidos), Ingeniero IFE/Control de sólidos,
@@ -1213,11 +1213,13 @@ def resumen_costos(pozo, reporte):
     diario = {'df_chem': 0.0, 'ife_sc': 0.0, 'df_equip': 0.0, 'other_cost': 0.0}
     acumulado = dict(diario)
     items = []
+    error_inventario = None
 
     try:
         sim, _, _, productos = _simular_pozo(pozo, reporte)
-    except ErrorVolumetria:
+    except ErrorVolumetria as e:
         sim, productos = None, {}
+        error_inventario = str(e)
     if sim:
         for cat in vol.CATEGORIAS_COSTO:
             clave = vol.columna_resumen(cat)
@@ -1274,4 +1276,8 @@ def resumen_costos(pozo, reporte):
         d['total'] = d['drilling_total'] + d['df_equip'] + d['other_cost']
         for k in d:
             d[k] = round(d[k], 2)
+
+    if con_error:
+        return diario, acumulado, items, error_inventario
     return diario, acumulado, items
+
