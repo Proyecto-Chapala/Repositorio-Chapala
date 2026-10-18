@@ -1,0 +1,44 @@
+{% comment %}
+Buscador global (Ctrl+K o botón "Buscar" / "Reportes"): pozos, sus reportes y las
+pantallas de configuración del pozo abierto. Se filtra en el navegador (app.js).
+{% endcomment %}
+<div class="buscador-velo" id="buscadorGlobal" hidden>
+  <div class="buscador" role="dialog" aria-modal="true" aria-labelledby="buscadorTitulo">
+    <h2 class="sr-only" id="buscadorTitulo">Buscar</h2>
+    <div class="buscador-entrada">
+      <svg class="icono" aria-hidden="true"><use href="#i-buscar"></use></svg>
+      <input type="search" id="buscadorTexto" placeholder="Escribe un pozo, «reportes» + pozo o una pantalla" autocomplete="off" aria-controls="buscadorResultados">
+    </div>
+    <ul class="buscador-resultados" id="buscadorResultados" role="listbox">
+      {% for pozo_lateral in pozos_barra_lateral %}
+        <li data-grupo="reportes" data-texto="reportes {{ pozo_lateral.nombre|lower }}">
+          <a class="buscador-item" href="{% url 'operaciones:daily_reports_hub' pozo_lateral.pk %}" title="Reportes pozo {{ pozo_lateral.nombre }}">
+            <svg class="icono" aria-hidden="true"><use href="#i-reporte"></use></svg>
+            <span>Reportes pozo <strong>{{ pozo_lateral.nombre }}</strong></span>
+            <span class="buscador-detalle">{% if pozo_lateral.ultimo_reporte %}{{ pozo_lateral.cantidad_reportes }} · último {{ pozo_lateral.ultimo_reporte|date:"d/m/Y" }}{% else %}sin reportes{% endif %}</span>
+          </a>
+        </li>
+      {% endfor %}
+      {% for pozo_lateral in pozos_barra_lateral %}
+        <li data-grupo="pozos" data-texto="pozo {{ pozo_lateral.nombre|lower }}">
+          <a class="buscador-item" href="{% url 'operaciones:pozo_main' pozo_lateral.pk %}">
+            <svg class="icono" aria-hidden="true"><use href="#i-pozo"></use></svg>
+            <span>Pozo <strong>{{ pozo_lateral.nombre }}</strong></span>
+            <span class="buscador-detalle">tablero</span>
+          </a>
+        </li>
+      {% endfor %}
+      {% for pantalla in pantallas_info_pozo %}
+        <li data-grupo="pantallas" data-texto="{{ pantalla.etiqueta|lower }}">
+          <a class="buscador-item" href="{{ pantalla.url }}">
+            <svg class="icono" aria-hidden="true"><use href="#{{ pantalla.icono }}"></use></svg>
+            <span>{{ pantalla.etiqueta }}</span>
+            <span class="buscador-detalle">configuración del pozo</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    <p class="buscador-vacio" id="buscadorVacio" hidden>Nada coincide con la búsqueda. Prueba con parte del nombre del pozo.</p>
+    <div class="buscador-pie"><span>↑ ↓ moverse</span><span>Enter abrir</span><span>Esc cerrar</span></div>
+  </div>
+</div>

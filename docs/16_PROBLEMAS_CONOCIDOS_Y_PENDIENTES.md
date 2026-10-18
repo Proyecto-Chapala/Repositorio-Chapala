@@ -90,6 +90,7 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 
 ## F. Historial de lo resuelto
 
+- **18-oct-2026 (rama `refactorizacion_ui`):** rediseño técnico: íconos SVG, fuentes IBM Plex Sans y JetBrains Mono, barra superior con buscador Ctrl+K (reemplaza al panel "Reportes"), lista de pozos en tabla, tablero del pozo y menú inferior en celular. Pendiente: pestañas del reporte, Inventario y Catálogos al estilo nuevo; fuentes dentro del `.exe` ([28](28_REDISENO_UI_TECNICO.md), [pruebas/24](pruebas/24_REDISENO_UI_TECNICO.md)).
 - **18-oct-2026:** botón **Reportes** en la barra lateral que abre un panel con buscador: un acceso "Reportes pozo X" por pozo, ordenados por el reporte más reciente, con cantidad y fecha del último (sin los de la papelera). Pensado para 100+ pozos sin llenar la barra ([pruebas/23](pruebas/23_MENU_REPORTES_BARRA_LATERAL.md)).
 - **18-oct-2026:** barra de navegación fija en las 8 pantallas de Información del Pozo para saltar entre ellas o volver a la principal sin pasar por el menú ([pruebas/22](pruebas/22_BARRA_INFORMACION_POZO.md)).
 - **18-oct-2026:** Excel diario con volumen calculado en tanques activos y circulación; tickets → recibido/devuelto; pérdidas solo en el sistema activo; existencia en *Agregar químicos* ([27](27_VOLUMEN_CALCULADO_TICKETS_Y_PERDIDAS.md)).

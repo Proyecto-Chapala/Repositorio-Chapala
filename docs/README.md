@@ -30,6 +30,7 @@
 | 24 | [Papelera y revisión de la base de datos](24_PAPELERA_Y_TIPOS_DE_DATOS.md) | Revisión previa al empaquetado, papelera de pozos, horas y costo con su tipo, limpieza |
 | 27 | [Volumen calculado, tickets y pérdidas](27_VOLUMEN_CALCULADO_TICKETS_Y_PERDIDAS.md) | Revisión del 15-oct: Excel con lo calculado, ticket = recibido, pérdidas solo del sistema activo, existencia en *Agregar químicos* |
 | 26 | [Rediseño del inventario y del lodo reciclado](26_REDISENO_INVENTARIO_Y_LODO_RECICLADO.md) | Orden de trabajo: lodo reciclado solo volumen, acumulados por columna; columnas manuales pendientes |
+| 28 | [Rediseño técnico de la interfaz](28_REDISENO_UI_TECNICO.md) | Rama `refactorizacion_ui`: estilo técnico, buscador Ctrl+K, lista de pozos en tabla, tablero del pozo, menú inferior en celular |
 | 25 | [Servicios del pozo](25_SERVICIOS_DEL_POZO.md) | Ingenieros y trailers cobrados por día con su categoría y tarifa; "usado en otro módulo" solo para transferencias a otra línea |
 | — | [Pruebas en pantalla](pruebas/README.md) | Un archivo por cambio: cómo funciona y pasos para verificar |
 

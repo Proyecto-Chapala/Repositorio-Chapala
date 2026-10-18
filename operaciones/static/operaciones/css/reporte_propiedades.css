@@ -15,7 +15,7 @@ body {
   margin: 0;
   background: var(--rp-fondo);
   color: var(--rp-texto);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-family);
   font-size: 13px;
 }
 

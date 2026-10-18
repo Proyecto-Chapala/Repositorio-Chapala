@@ -78,7 +78,7 @@
 | Servicios del pozo (ingenieros, trailers) | `models_servicios.py`, `views_inventario._servicios_del_dia/api_servicio_guardar/api_servicio_eliminar`, `resumen_costos`, `recap_pozo.py`, pestaña `vaPanelServicios` en `reporte_diario_detalle.html`, `reporte_inventario.js/css` (ver [25](25_SERVICIOS_DEL_POZO.md)) |
 | Eliminar pozo y papelera | `Pozo.objects` excluye la papelera (`Pozo.todos` la incluye); `views.api_pozo_eliminar/api_pozo_restaurar/pozos_papelera_view`, `pozo_main.js`, `pozos_papelera.js`, `pozos/main.html`, `pozos/papelera.html` |
 | Barra de Información del Pozo | `pozos/_nav_info_pozo.html` (incluida en las 8 pantallas con `seccion_activa`), `.info-pozo-nav` en `pozos.css` (ver [05](05_CONFIGURACION_POZO.md)) |
-| Panel "Reportes" de la barra lateral | `operaciones/context_processors.py` (`pozos_barra_lateral`, registrado en `settings.py`), `componentes/sidebar.html` (botón y panel), `App.initPanelReportes` en `app.js`, estilos `.panel-reportes*` en `layout.css` (ver [06](06_REPORTE_DIARIO_PESTANAS_1_A_5.md)) |
+| Rediseño técnico (rama `refactorizacion_ui`) | `base.html` (barra superior), `componentes/sidebar.html`, `componentes/iconos.html`, `componentes/buscador.html` (Ctrl+K), `navegacion.py` (pantallas del pozo), `context_processors.py`, `pozos_list.html`, `pozos/main.html` (tablero), `variables.css`, `layout.css`, `pozos.css` (ver [28](28_REDISENO_UI_TECNICO.md)) |
 | Hub bloqueado | `avances_19_sep/daily_reports_hub.html` |
 | Tanques (textos) | `pits.*`, `reporte_inventario.js`, `reporte_diario_detalle.html`, `views_inventario.py`, `volumetria.py`, `reporte_excel._textos_tanques` |
 | Excel: logo y páginas | `reporte_excel.py` (`_pillow_disponible`, `_quitar_paginas_vacias`, `_textos_tanques`), `recap_pozo.py` |

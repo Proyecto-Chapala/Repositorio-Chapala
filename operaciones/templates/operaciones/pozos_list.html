@@ -1,48 +1,89 @@
 {% extends 'operaciones/base.html' %}
 {% load static %}
 
-{% block title %}Vista General del Proyecto | Smart Mud{% endblock %}
+{% block title %}Pozos &bull; Smart Mud{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
 {% endblock %}
 
+{% block migas %}<span class="migas-actual">Pozos</span>{% endblock %}
+
 {% block content %}
-<div class="subpage">
+<div class="tablero">
 
-  <div class="subpage-header">
+  <div class="tablero-cabecera">
     <div>
-      <h1 class="subpage-title">Vista General del Proyecto</h1>
-      <div class="subpage-breadcrumb">Selecciona un pozo para acceder a su configuracion y modulos operativos.</div>
+      <div class="etiqueta-tecnica">Operación</div>
+      <h1 class="tablero-titulo">Pozos</h1>
     </div>
-    {% if total_papelera %}
-    <a class="enlace-papelera" href="{% url 'operaciones:pozos_papelera' %}">Papelera ({{ total_papelera }})</a>
-    {% endif %}
+    <div class="tablero-acciones">
+      {% if total_papelera %}
+      <a class="boton" href="{% url 'operaciones:pozos_papelera' %}">
+        <svg class="icono" aria-hidden="true"><use href="#i-papelera"></use></svg>Papelera ({{ total_papelera }})
+      </a>
+      {% endif %}
+      <a class="boton boton-principal" href="{% url 'operaciones:pozo_wizard_nuevo' %}">
+        <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>Nuevo pozo
+      </a>
+    </div>
   </div>
 
-  <div class="project-grid">
-    {% for pozo in pozos %}
-    <a class="project-card" href="{% url 'operaciones:pozo_main' pozo.id %}">
-      <div class="project-card-icon">🛢️</div>
-      <div>
-        <div class="project-card-title">{{ pozo.nombre }}</div>
-        <div class="project-card-sub">
-          {{ pozo.well_header_info.operador|default:"Operador no definido" }}
-          {% if pozo.well_header_info.spud_date %} · Inicio: {{ pozo.well_header_info.spud_date|date:"d/M/Y" }}{% endif %}
-        </div>
-      </div>
-      <span class="project-card-badge badge-ready">{{ pozo.get_estado_display }}</span>
-    </a>
-    {% empty %}
-    <div class="project-card is-disabled" style="grid-column:1/-1; justify-content:center; cursor:default;">
-      <div class="project-card-icon">📭</div>
-      <div>
-        <div class="project-card-title">No hay pozos creados</div>
-        <div class="project-card-sub">Utiliza "Nuevo Pozo" en la barra lateral para comenzar.</div>
+  <section class="panel-tecnico">
+    {% if pozos %}
+    <div class="panel-filtros">
+      <label class="sr-only" for="filtroPozos">Filtrar pozos</label>
+      <input type="search" id="filtroPozos" class="filtro-texto" placeholder="Filtrar por pozo, operador o campo" autocomplete="off">
+      <div class="segmentos" role="group" aria-label="Filtrar por estado">
+        <button type="button" class="is-active" data-estado="">Todos</button>
+        <button type="button" data-estado="ACTIVO">Activos</button>
+        <button type="button" data-estado="BORRADOR">En creación</button>
+        <button type="button" data-estado="CERRADO">Cerrados</button>
       </div>
     </div>
-    {% endfor %}
-  </div>
+    <div class="tabla-desplazable">
+      <table class="tabla-tecnica">
+        <thead>
+          <tr>
+            <th>Pozo</th>
+            <th>Estado</th>
+            <th class="ocultar-en-movil">Operador</th>
+            <th class="ocultar-en-movil">Campo / área</th>
+            <th class="numero">Reportes</th>
+            <th>Último reporte</th>
+          </tr>
+        </thead>
+        <tbody id="tablaPozos">
+          {% for pozo in pozos %}
+          <tr class="fila-enlace" data-estado="{{ pozo.estado }}" data-texto="{{ pozo.nombre|lower }} {{ pozo.operador|lower }} {{ pozo.well_header_info.field_area|lower }}">
+            <td><a class="dato enlace-fila" href="{% url 'operaciones:pozo_main' pozo.id %}">{{ pozo.nombre }}</a></td>
+            <td>
+              <span class="estado-chip {% if pozo.estado == 'ACTIVO' %}estado-ok{% elif pozo.estado == 'BORRADOR' %}estado-aviso{% endif %}">
+                <span class="estado-punto"></span>{% if pozo.estado == 'BORRADOR' %}En creación{% else %}{{ pozo.get_estado_display }}{% endif %}
+              </span>
+            </td>
+            <td class="ocultar-en-movil">{{ pozo.operador|default:"—" }}</td>
+            <td class="ocultar-en-movil">{{ pozo.well_header_info.field_area|default:"—" }}</td>
+            <td class="numero dato">{{ pozo.cantidad_reportes }}</td>
+            <td class="dato">{{ pozo.ultimo_reporte|date:"d/m/Y"|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="panel-vacio" id="pozosSinResultados" hidden>Ningún pozo coincide con el filtro. Prueba con otra parte del nombre o elige «Todos».</p>
+    <div class="panel-pie"><span id="pozosContador">{{ pozos|length }} pozo{{ pozos|length|pluralize }}</span><span class="ocultar-en-movil">Ordenados por el último reporte</span></div>
+    {% else %}
+    <div class="panel-vacio">
+      <strong>Crea tu primer pozo</strong><br>
+      Con «Nuevo pozo» se cargan los datos básicos, las unidades y la moneda en cuatro pasos.
+    </div>
+    {% endif %}
+  </section>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'operaciones/js/pozos_lista.js' %}"></script>
 {% endblock %}

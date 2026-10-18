@@ -552,6 +552,7 @@
    header con volver + tabs + tablas editables
    ============================================================ */
 .subpage {
+  width: 100%;
   padding: 24px 32px 40px 32px;
   max-width: 1080px;
   margin: 0 auto;
@@ -1371,4 +1372,480 @@
   border-right: 1px solid var(--color-border, #e2dbc9);
   border-radius: 8px 0 0 8px;
   margin-right: 4px;
+}
+
+/* ============================================================
+   Diseño técnico (rama refactorizacion_ui): lista de pozos y
+   tablero del pozo. Paneles con borde fino, números en mono.
+   ============================================================ */
+.tablero {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 20px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tablero-cabecera {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px 16px;
+  flex-wrap: wrap;
+}
+
+.tablero-titulo {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+.tablero-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+}
+
+.tablero-acciones {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.etiqueta-tecnica {
+  font-family: var(--font-datos);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--radio);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.boton:hover {
+  border-color: var(--color-text-muted);
+}
+
+.boton-principal {
+  background: var(--color-orange);
+  border-color: var(--color-orange);
+  color: #1a0e02;
+}
+
+.boton-principal:hover {
+  background: var(--color-orange-hover);
+  border-color: var(--color-orange-hover);
+}
+
+.boton-icono {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radio);
+  color: var(--color-text-secondary);
+}
+
+.boton-icono:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-dark);
+}
+
+.enlace-accion {
+  color: #b35a12;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.enlace-accion:hover {
+  text-decoration: underline;
+}
+
+.estado-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-family: var(--font-datos);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-bg);
+  white-space: nowrap;
+}
+
+.estado-punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.estado-chip.estado-ok {
+  background: var(--color-ok-bg);
+  border-color: transparent;
+  color: var(--color-ok);
+}
+
+.estado-chip.estado-aviso {
+  background: var(--color-aviso-bg);
+  border-color: transparent;
+  color: var(--color-aviso);
+}
+
+/* Indicadores: celdas unidas por una línea de 1px */
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radio);
+  overflow: hidden;
+}
+
+.indicador {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--color-bg);
+}
+
+.indicador-valor {
+  font-family: var(--font-datos);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.indicador-valor small {
+  margin-left: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.indicador-nota {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tablero-columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.panel-tecnico {
+  min-width: 0;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radio);
+  overflow: hidden;
+}
+
+.panel-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.panel-titulo h2 {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.panel-titulo > :last-child:not(h2) {
+  margin-left: auto;
+}
+
+.panel-titulo-dato {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.panel-vacio {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.panel-vacio strong {
+  color: var(--color-text-primary);
+}
+
+.panel-pie {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.lista-tecnica {
+  list-style: none;
+}
+
+.lista-tecnica > li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.fila-reporte {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+}
+
+.fila-reporte:hover,
+.fila-configuracion:hover {
+  background: var(--color-surface-muted);
+}
+
+.fila-reporte-numero {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.fila-reporte-texto {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+}
+
+.fila-reporte-meta {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.fila-configuracion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 8px 14px;
+  color: var(--color-text-primary);
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.fila-configuracion .fila-reporte-meta {
+  margin-left: auto;
+}
+
+.estado-icono-ok { color: var(--color-ok); }
+.estado-icono-aviso { color: var(--color-aviso); }
+.estado-icono-neutro { color: var(--color-text-muted); }
+
+.barra-avance-contenedor {
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.barra-avance {
+  display: block;
+  width: 100%;
+  height: 6px;
+  border: none;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--color-surface-muted);
+  appearance: none;
+}
+
+.barra-avance::-webkit-progress-bar { background: var(--color-surface-muted); }
+.barra-avance::-webkit-progress-value { background: var(--color-orange); }
+.barra-avance::-moz-progress-bar { background: var(--color-orange); }
+
+.zona-peligro {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.zona-peligro .btn-eliminar-pozo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Lista de pozos: filtros y tabla */
+.panel-filtros {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.filtro-texto {
+  flex: 1;
+  min-width: 180px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--radio);
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 0.88rem;
+}
+
+.filtro-texto:focus {
+  outline: none;
+  border-color: var(--color-orange);
+  box-shadow: 0 0 0 3px var(--color-orange-soft-bg);
+}
+
+.segmentos {
+  display: inline-flex;
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--radio);
+  overflow: hidden;
+}
+
+.segmentos button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: none;
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.segmentos button + button {
+  border-left: 1px solid var(--color-border);
+}
+
+.segmentos button.is-active {
+  background: var(--color-navy);
+  color: #ffffff;
+}
+
+.tabla-desplazable {
+  overflow-x: auto;
+}
+
+.tabla-tecnica {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.tabla-tecnica th {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  font-family: var(--font-datos);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.tabla-tecnica td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.tabla-tecnica .numero {
+  text-align: right;
+}
+
+.fila-enlace {
+  cursor: pointer;
+}
+
+.fila-enlace:hover td {
+  background: var(--color-surface-muted);
+}
+
+.enlace-fila {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Celular y tablet */
+@media (max-width: 900px) {
+  .tablero {
+    padding: 16px 16px 32px;
+  }
+
+  .indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tablero-columnas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tablero-acciones {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .tablero-acciones .boton {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .ocultar-en-movil {
+    display: none;
+  }
+}
+
+.info-pozo-nav-inicio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-pozo-nav-inicio .icono {
+  width: 15px;
+  height: 15px;
 }

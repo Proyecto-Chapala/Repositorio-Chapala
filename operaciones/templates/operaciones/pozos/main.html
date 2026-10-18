@@ -7,129 +7,127 @@
 <link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
 {% endblock %}
 
+{% block migas %}
+<a href="{% url 'operaciones:pozos_list' %}">Pozos</a>
+<svg class="icono" aria-hidden="true"><use href="#i-flecha"></use></svg>
+<span class="migas-actual dato">{{ pozo.nombre }}</span>
+{% endblock %}
+
 {% block content %}
-<div class="project-page">
+<div class="tablero">
 
-  <header class="project-header">
+  <div class="tablero-cabecera">
     <div>
-      <h1 class="project-header-title">{{ pozo.nombre }}</h1>
-      <div class="project-header-sub">Pantalla Principal del Pozo</div>
+      <div class="etiqueta-tecnica">
+        {{ pozo.operador|default:"Operador sin definir" }}{% if pozo.well_header_info.field_area %} · {{ pozo.well_header_info.field_area }}{% endif %}
+      </div>
+      <h1 class="tablero-titulo dato">{{ pozo.nombre }}</h1>
     </div>
-    <div class="project-header-chips">
-      <span class="project-chip chip-accent">{{ pozo.get_sistema_unidades_display }}</span>
-      <span class="project-chip">{{ pozo.moneda_simbolo }}</span>
-      <span class="project-chip">{{ pozo.get_estado_display }}</span>
-      <button type="button" class="btn btn-eliminar btn-eliminar-pozo" id="btnEliminarPozo">Eliminar pozo</button>
+    <div class="tablero-chips">
+      <span class="estado-chip {% if pozo.estado == 'ACTIVO' %}estado-ok{% endif %}"><span class="estado-punto"></span>{{ pozo.get_estado_display }}</span>
+      <span class="estado-chip">{{ pozo.get_sistema_unidades_display }}</span>
+      <span class="estado-chip">{{ pozo.moneda_simbolo }}</span>
     </div>
-  </header>
-
-  <div class="project-section-title">Información del Pozo</div>
-  <div class="project-grid">
-
-    <a class="project-card" href="{% url 'operaciones:well_header' pozo.pk %}">
-      <div class="project-card-icon">📋</div>
-      <div>
-        <div class="project-card-title">Información General del Pozo</div>
-        <div class="project-card-sub">Datos generales y Códigos de Mercadeo</div>
-      </div>
-      <span class="project-card-badge {% if pozo.well_header_info.completado %}badge-ready{% endif %}">
-        {% if pozo.well_header_info.completado %}Listo{% else %}Pendiente{% endif %}
-      </span>
-    </a>
-    <a class="project-card" href="{% url 'operaciones:general_setup' pozo.pk %}">
-      <div class="project-card-icon">🧾</div>
-      <div>
-        <div class="project-card-title">Configuración General</div>
-        <div class="project-card-sub">Moneda, impuestos, almacenes y distribución de tiempo</div>
-      </div>
-    </a>
-
-    <a class="project-card" href="{% url 'operaciones:casing_intervals' pozo.pk %}">
-      <div class="project-card-icon">🛢️</div>
-      <div>
-        <div class="project-card-title">Intervalos de Revestimiento (Costo)</div>
-        <div class="project-card-sub">Intervalos de revestimiento y costo</div>
-      </div>
-      <span class="project-card-badge {% if pozo.intervalos_revestimiento.count %}badge-ready{% endif %}">
-        {{ pozo.intervalos_revestimiento.count }} intervalo{{ pozo.intervalos_revestimiento.count|pluralize }}
-      </span>
-    </a>
-
-    <a class="project-card" href="{% url 'operaciones:loss_setup' pozo.pk %}">
-      <div class="project-card-icon">📉</div>
-      <div>
-        <div class="project-card-title">Configuración de Pérdidas</div>
-        <div class="project-card-sub">Categorías de pérdida de fluido</div>
-      </div>
-      <span class="project-card-badge {% if pozo.categorias_perdida.count %}badge-ready{% endif %}">
-        {{ pozo.categorias_perdida.count }} categoría{{ pozo.categorias_perdida.count|pluralize:"s" }}
-      </span>
-    </a>
-
-    <a class="project-card" href="{% url 'operaciones:active_items' pozo.pk %}">
-      <div class="project-card-icon">🧰</div>
-      <div>
-        <div class="project-card-title">Productos / Equipos / Mallas Activos</div>
-        <div class="project-card-sub">Catálogo maestro y lista activa del pozo</div>
-      </div>
-      <span class="project-card-badge {% if pozo.productos_activos.count %}badge-ready{% endif %}">
-        {{ pozo.productos_activos.count }} producto{{ pozo.productos_activos.count|pluralize:"s" }}
-      </span>
-    </a>
-
-    <a class="project-card" href="{% url 'operaciones:benchmark_setup' pozo.pk %}">
-      <div class="project-card-icon">📊</div>
-      <div>
-        <div class="project-card-title">Configuración de Benchmark</div>
-        <div class="project-card-sub">Parámetros objetivo por intervalo</div>
-      </div>
-      <span class="project-card-badge {% if pozo.benchmarks_seleccionados.count %}badge-ready{% endif %}">
-        {{ pozo.benchmarks_seleccionados.count }} parámetro{{ pozo.benchmarks_seleccionados.count|pluralize:"s" }}
-      </span>
-    </a>
-
-    <a class="project-card" href="{% url 'operaciones:pits' pozo.pk %}">
-      <div class="project-card-icon">🪣</div>
-      <div>
-        <div class="project-card-title">Información de Tanques</div>
-        <div class="project-card-sub">Tanques y tipos de tanque</div>
-      </div>
-      <span class="project-card-badge {% if pozo.fosas.count %}badge-ready{% endif %}">
-        {{ pozo.fosas.count }} tanque{{ pozo.fosas.count|pluralize }}
-      </span>
-    </a>
-
-    <a class="project-card" href="{% url 'operaciones:equipment_properties_setup' pozo.pk %}">
-      <div class="project-card-icon">⚙️</div>
-      <div>
-        <div class="project-card-title">Configuración de Propiedades de Equipo</div>
-        <div class="project-card-sub">Propiedades a monitorear por tipo de equipo</div>
-      </div>
-    </a>
-
+    <div class="tablero-acciones">
+      <a class="boton" href="{% url 'operaciones:recap_pozo' pozo.pk %}">
+        <svg class="icono" aria-hidden="true"><use href="#i-final"></use></svg>Reporte final
+      </a>
+      <a class="boton boton-principal" href="{% url 'operaciones:daily_reports_hub' pozo.pk %}">
+        <svg class="icono" aria-hidden="true"><use href="#i-mas"></use></svg>Reporte del día
+      </a>
+    </div>
   </div>
 
-  <div class="project-section-title">Módulos Smart Mud</div>
-  <div class="project-grid">
+  <div class="indicadores">
+    <div class="indicador">
+      <span class="etiqueta-tecnica">Último reporte</span>
+      {% if ultimo_reporte %}
+        <span class="indicador-valor">#{{ ultimo_reporte.numero_reporte|default:total_reportes }}<small>{{ ultimo_reporte.fecha|date:"d/m/Y" }}</small></span>
+        <span class="indicador-nota">{{ ultimo_reporte.actividad_actual|default:"Sin actividad cargada" }}</span>
+      {% else %}
+        <span class="indicador-valor">—</span>
+        <span class="indicador-nota">Todavía no hay reportes</span>
+      {% endif %}
+    </div>
+    <div class="indicador">
+      <span class="etiqueta-tecnica">Profundidad</span>
+      <span class="indicador-valor">{% if ultimo_reporte %}{{ ultimo_reporte.profundidad_actual|floatformat:"0g" }}<small>ft MD</small>{% else %}—{% endif %}</span>
+      <span class="indicador-nota">{% if ultimo_reporte %}TVD {{ ultimo_reporte.profundidad_tvd|floatformat:"0g" }} ft{% else %}del último reporte{% endif %}</span>
+    </div>
+    <div class="indicador">
+      <span class="etiqueta-tecnica">Reportes</span>
+      <span class="indicador-valor">{{ total_reportes }}</span>
+      <span class="indicador-nota">{% if ultimo_reporte %}lodo {{ ultimo_reporte.tipo_lodo }}{% else %}reportes diarios{% endif %}</span>
+    </div>
+    <div class="indicador">
+      <span class="etiqueta-tecnica">Días de operación</span>
+      <span class="indicador-valor">{% if dias_desde_inicio is not None %}{{ dias_desde_inicio }}{% else %}—{% endif %}</span>
+      <span class="indicador-nota">{% if pozo.well_header_info.spud_date %}desde el {{ pozo.well_header_info.spud_date|date:"d/m/Y" }}{% else %}sin fecha de inicio{% endif %}</span>
+    </div>
+  </div>
 
-    <a class="project-card" href="{% url 'operaciones:daily_reports_hub' pozo.pk %}">
-      <div class="project-card-icon">💧</div>
-      <div>
-        <div class="project-card-title">Fluidos de Perforación y Equipos</div>
-        <div class="project-card-sub">Reporte diario &middot; 8 pestañas &middot; Activo</div>
+  <div class="tablero-columnas">
+    <section class="panel-tecnico">
+      <div class="panel-titulo">
+        <h2>Últimos reportes</h2>
+        {% if total_reportes %}<a class="enlace-accion" href="{% url 'operaciones:daily_reports_hub' pozo.pk %}">Ver los {{ total_reportes }}</a>{% endif %}
       </div>
-    </a>
+      {% if ultimos_reportes %}
+      <ul class="lista-tecnica">
+        {% for reporte in ultimos_reportes %}
+        <li class="fila-reporte">
+          <span class="dato fila-reporte-numero">#{{ reporte.numero_reporte|default:"—" }}</span>
+          <span class="fila-reporte-texto">
+            <span class="dato">{{ reporte.fecha|date:"d/m/Y" }}</span>
+            <span class="fila-reporte-meta">{{ reporte.tipo_lodo }} · {{ reporte.profundidad_actual|floatformat:"0g" }} ft</span>
+          </span>
+          <a class="boton-icono" href="{% url 'operaciones:reporte_diario_excel' pozo.pk reporte.pk %}" title="Descargar Excel" aria-label="Descargar Excel del reporte del {{ reporte.fecha|date:'d/m/Y' }}">
+            <svg class="icono" aria-hidden="true"><use href="#i-excel"></use></svg>
+          </a>
+          <a class="enlace-accion" href="{% url 'operaciones:reporte_diario_detalle' pozo.pk reporte.pk %}">Abrir</a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="panel-vacio">
+        <strong>Crea el primer reporte</strong><br>
+        Con «Reporte del día» se abre el reporte diario del pozo.
+      </div>
+      {% endif %}
+    </section>
 
-    <a class="project-card" href="{% url 'operaciones:recap_pozo' pozo.pk %}">
-      <div class="project-card-icon">📑</div>
-      <div>
-        <div class="project-card-title">Reporte Final del Pozo</div>
-        <div class="project-card-sub">Recap consolidado &middot; Excel o PDF</div>
+    <section class="panel-tecnico">
+      <div class="panel-titulo">
+        <h2>Configuración del pozo</h2>
+        <span class="dato panel-titulo-dato">{{ pantallas_listas }}/{{ pantallas_medibles }}</span>
       </div>
-      <span class="project-card-badge {% if pozo.recap.conclusiones %}badge-ready{% endif %}">
-        {% if pozo.recap.conclusiones %}Con conclusiones{% else %}Sin conclusiones{% endif %}
-      </span>
-    </a>
+      <div class="barra-avance-contenedor">
+        <progress class="barra-avance" value="{{ pantallas_listas }}" max="{{ pantallas_medibles }}" aria-label="Pantallas de configuración con datos">{{ pantallas_listas }} de {{ pantallas_medibles }}</progress>
+      </div>
+      <ul class="lista-tecnica">
+        {% for pantalla in pantallas %}
+        <li>
+          <a class="fila-configuracion" href="{{ pantalla.url }}">
+            {% if pantalla.lista %}
+              <svg class="icono estado-icono-ok" aria-hidden="true"><use href="#i-ok"></use></svg>
+            {% elif pantalla.lista is None %}
+              <svg class="icono estado-icono-neutro" aria-hidden="true"><use href="#{{ pantalla.icono }}"></use></svg>
+            {% else %}
+              <svg class="icono estado-icono-aviso" aria-hidden="true"><use href="#i-aviso"></use></svg>
+            {% endif %}
+            <span>{{ pantalla.etiqueta }}</span>
+            <span class="fila-reporte-meta">{% if pantalla.lista %}Lista{% elif pantalla.lista is None %}Revisar{% else %}Pendiente{% endif %}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <div class="zona-peligro">
+    <button type="button" class="btn btn-eliminar btn-eliminar-pozo" id="btnEliminarPozo">
+      <svg class="icono" aria-hidden="true"><use href="#i-papelera"></use></svg>Eliminar pozo
+    </button>
   </div>
 
   <!-- ===================== Modal: Eliminar pozo ===================== -->
@@ -141,7 +139,7 @@
       </div>
       <div class="modal-body">
         <p class="eliminar-pozo-aviso">
-          <strong>{{ pozo.nombre }}</strong> tiene <strong>{{ pozo.reportes_diarios.count }} reporte{{ pozo.reportes_diarios.count|pluralize }} diario{{ pozo.reportes_diarios.count|pluralize }}</strong>.
+          <strong>{{ pozo.nombre }}</strong> tiene <strong>{{ total_reportes }} reporte{{ total_reportes|pluralize }} diario{{ total_reportes|pluralize }}</strong>.
           El pozo se enviará a la papelera con toda su información y dejará de aparecer en el sistema.
           Se puede restaurar desde <strong>Pozos › Papelera</strong>.
         </p>

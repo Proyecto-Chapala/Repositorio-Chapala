@@ -1,5 +1,5 @@
 """
-Panel "Reportes" de la barra lateral (docs/06_REPORTE_DIARIO_PESTANAS_1_A_5.md).
+Buscador Ctrl+K y botón "Reportes" de la barra lateral (docs/06_REPORTE_DIARIO_PESTANAS_1_A_5.md).
 
 Lista cada pozo como "Reportes pozo X" con acceso directo a su historial de reportes,
 primero el de reporte más reciente. Los pozos de la papelera no aparecen.
@@ -25,12 +25,18 @@ class ReportesBarraLateralTests(TestCase):
         html = self.client.get(reverse('operaciones:pozos_list')).content.decode()
         self.assertIn('title="Reportes pozo POZO PRUEBA"', html)
         self.assertIn(f'href="{reverse("operaciones:daily_reports_hub", args=[self.pozo.pk])}"', html)
-        self.assertIn('Último: 13/10/2026', html)
+        self.assertIn('último 13/10/2026', html)
         self.assertNotIn('POZO BORRADO', html)
 
-    def test_en_los_reportes_del_pozo_ese_pozo_queda_resaltado(self):
+    def test_en_los_reportes_del_pozo_el_boton_reportes_queda_resaltado(self):
         html = self.client.get(reverse('operaciones:daily_reports_hub', args=[self.pozo.pk])).content.decode()
-        self.assertIn('class="panel-reportes-item active"', html)
+        self.assertIn('class="nav-item nav-boton active" data-abrir-buscador="reportes "', html)
+
+    def test_en_un_pozo_el_buscador_incluye_sus_pantallas_de_configuracion(self):
+        html = self.client.get(reverse('operaciones:daily_reports_hub', args=[self.pozo.pk])).content.decode()
+        self.assertIn(f'href="{reverse("operaciones:pits", args=[self.pozo.pk])}"', html)
+        html_lista = self.client.get(reverse('operaciones:pozos_list')).content.decode()
+        self.assertNotIn('data-grupo="pantallas"', html_lista)
 
     def test_primero_el_pozo_con_el_reporte_mas_reciente(self):
         Pozo.objects.create(nombre='AAA SIN REPORTES')

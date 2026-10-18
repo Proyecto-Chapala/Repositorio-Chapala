@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Propiedades del lodo · {{ pozo.nombre }} · {{ reporte.fecha|date:"d/m/Y" }}</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'operaciones/css/reporte_propiedades.css' %}?v={{ version_estaticos }}">
 </head>
 <body data-url-comentario="{% url 'operaciones:api_reporte_propiedades_comentario' pozo.pk reporte.pk %}"

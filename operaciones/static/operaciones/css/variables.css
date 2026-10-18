@@ -2,19 +2,19 @@
   /* ==========================================================================
      Colores Principales / Marca
      ========================================================================== */
-  --color-navy: #14213d;           /* Encabezados, barra superior, nav y cabeceras */
-  --color-orange: #f2994a;         /* Acento principal suave, foco, acciones primarias */
-  --color-orange-hover: #e2853a;
-  --color-orange-soft-bg: #fff4e8; /* Fondo suave para resaltados, hover y chips */
+  --color-navy: #0f1b2d;           /* Encabezados, barra superior, nav y cabeceras */
+  --color-orange: #e8822f;         /* Acento principal suave, foco, acciones primarias */
+  --color-orange-hover: #d4721f;
+  --color-orange-soft-bg: #fbe7d4; /* Fondo suave para resaltados, hover y chips */
   --color-red: #d7263d;            /* Acciones destructivas (Eliminar, Salir) y errores */
   --color-red-hover: #b91c30;
   --color-bg: #ffffff;             /* Fondo general de tarjetas, modales y paneles */
-  --color-bg-app: #faf8f6;         /* Fondo exterior general de la aplicación (blanco suave) */
+  --color-bg-app: #eef1f4;         /* Fondo exterior general de la aplicación (blanco suave) */
 
   /* Alias usados por pozos.css (wizard y pantallas de pozo) */
   --color-surface: var(--color-bg);
-  --color-surface-muted: #f7f3ef;
-  --color-border-soft: #efe8e0;
+  --color-surface-muted: #f6f8fa;
+  --color-border-soft: #e6eaef;
   --color-accent: var(--color-orange);
   --color-accent-soft: var(--color-orange-soft-bg);
   --color-danger: var(--color-red);
@@ -22,19 +22,19 @@
   /* ==========================================================================
      Texto y Neutros de Soporte
      ========================================================================== */
-  --color-text-primary: #14213d;   /* Texto principal / títulos */
-  --color-text-secondary: #5a6472; /* Etiquetas (labels), subtítulos y notas */
-  --color-text-muted: #8c97ae;     /* Texto deshabilitado o notas secundarias */
-  --color-border: #e4e7ec;         /* Bordes de inputs, tablas y divisores */
-  --color-border-dark: #cdd4df;
-  --color-btn-neutral: #f4f5f7;    /* Fondo de botones neutros (Limpiar, Regresar) */
+  --color-text-primary: #16202c;   /* Texto principal / títulos */
+  --color-text-secondary: #4b5868; /* Etiquetas (labels), subtítulos y notas */
+  --color-text-muted: #7a8796;     /* Texto deshabilitado o notas secundarias */
+  --color-border: #d5dbe2;         /* Bordes de inputs, tablas y divisores */
+  --color-border-dark: #c2cad4;
+  --color-btn-neutral: #f1f4f7;    /* Fondo de botones neutros (Limpiar, Regresar) */
   --color-icon-muted: #8c97ae;     /* Iconos secundarios, chevrons, lupas */
 
   /* ==========================================================================
      Tablas y Estados de Filas
      ========================================================================== */
-  --color-row-selected: #fff2e2;   /* Fondo de fila seleccionada en tablas */
-  --color-row-zebra: #f7f8fa;      /* Fila alterna (efecto cebra) */
+  --color-row-selected: #fbe7d4;   /* Fondo de fila seleccionada en tablas */
+  --color-row-zebra: #f6f8fa;      /* Fila alterna (efecto cebra) */
 
   /* ==========================================================================
      Semánticos / Indicadores de Inventario (Regla 1-20 Bajo, 21-50 Medio, >50 Alto)
@@ -57,15 +57,23 @@
   /* ==========================================================================
      Sombras Corporativas (basadas en tema_qt.py)
      ========================================================================== */
-  --shadow-ventana: 0 10px 28px rgba(20, 33, 61, 0.10);
-  --shadow-tarjeta: 0 6px 20px rgba(20, 33, 61, 0.08);
+  --shadow-ventana: 0 10px 28px rgba(15, 27, 45, 0.12);
+  --shadow-tarjeta: 0 1px 2px rgba(15, 27, 45, 0.06);
   --shadow-btn-nav: 0 6px 14px rgba(20, 33, 61, 0.20);
   --shadow-btn-outline: 0 2px 8px rgba(20, 33, 61, 0.06);
 
   /* Dimensiones y Animación */
-  --sidebar-width: 250px;
-  --sidebar-collapsed-width: 72px;
-  --header-height: 64px;
+  --sidebar-width: 224px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 56px;
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, -apple-system, sans-serif;
+  --font-datos: 'JetBrains Mono', Consolas, 'Courier New', monospace; /* Números, códigos y nombres de pozo */
+  --color-rail-texto: #9fb0c6;     /* Texto de la barra lateral */
+  --color-rail-linea: #22324a;     /* Divisores de la barra lateral */
+  --color-ok: #1f8a4c;
+  --color-ok-bg: #dcf1e4;
+  --color-aviso: #a86400;
+  --color-aviso-bg: #fbedd2;
+  --radio: 6px;
 }

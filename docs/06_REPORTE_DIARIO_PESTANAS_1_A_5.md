@@ -131,10 +131,4 @@ Como referencia se muestra el resumen del reporte anterior. La ventana de **Even
 
 ## Acceso directo desde la barra lateral (18-oct-2026)
 
-La barra lateral tiene un botón **📄 Reportes** que abre un panel junto a ella (no despliega la lista dentro de la barra, para que con 100 o más pozos no se llene). El panel tiene:
-
-- Un **buscador** que filtra los pozos mientras se escribe; Enter abre el primero que coincide y la flecha abajo pasa a la lista.
-- Una línea **"Reportes pozo X"** por pozo con la fecha del último reporte y la cantidad de reportes. Los pozos con el reporte más reciente van arriba; los que no tienen reportes, al final.
-- Se cierra con ×, con Escape o haciendo clic fuera. En el hub de un pozo, ese pozo queda resaltado.
-
-Los datos salen del procesador de contexto `operaciones/context_processors.pozos_barra_lateral` (usa `Pozo.objects`, así que no muestra la papelera); el comportamiento está en `App.initPanelReportes` (`app.js`) y los estilos `.panel-reportes*` en `layout.css`.
+El botón **📄 Reportes** de la barra lateral (y del menú inferior en celular) abre el **buscador Ctrl+K** con "reportes " ya escrito: se completa con parte del nombre del pozo y Enter abre su hub. Los pozos con el reporte más reciente aparecen primero; los de la papelera no aparecen. Detalle del buscador en [28](28_REDISENO_UI_TECNICO.md).

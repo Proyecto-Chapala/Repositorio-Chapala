@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import date
 from decimal import Decimal
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
@@ -646,15 +647,32 @@ def pozo_main_view(request, pk):
         return redirect('operaciones:pozo_wizard_continuar', pk=pozo.pk)
     if not pozo.spud_date_completado:
         return redirect('operaciones:pozo_spud_date', pk=pozo.pk)
-    return render(request, 'operaciones/pozos/main.html', {'pozo': pozo})
+    from .navegacion import estado_configuracion
+    reportes = pozo.reportes_diarios.order_by('-fecha')
+    pantallas = estado_configuracion(pozo)
+    medibles = [p for p in pantallas if p['lista'] is not None]
+    inicio = getattr(getattr(pozo, 'well_header_info', None), 'spud_date', None)
+    return render(request, 'operaciones/pozos/main.html', {
+        'pozo': pozo,
+        'ultimos_reportes': reportes[:6],
+        'ultimo_reporte': reportes.first(),
+        'total_reportes': reportes.count(),
+        'dias_desde_inicio': (date.today() - inicio).days if inicio else None,
+        'pantallas': pantallas,
+        'pantallas_listas': sum(1 for p in medibles if p['lista']),
+        'pantallas_medibles': len(medibles),
+    })
 
 
 
 
 def pozos_list_view(request):
-    """Vista temporal/placeholder para la lista de pozos en el sidebar."""
-    from .models import Pozo
-    pozos = Pozo.objects.all()
+    """Lista de pozos: tabla con estado, reportes y fecha del último, el más reciente primero."""
+    from django.db.models import F, Max
+    pozos = (Pozo.objects.select_related('well_header_info')
+             .annotate(cantidad_reportes=Count('reportes_diarios'),
+                       ultimo_reporte=Max('reportes_diarios__fecha'))
+             .order_by(F('ultimo_reporte').desc(nulls_last=True), 'nombre'))
     total_papelera = Pozo.todos.filter(eliminado_en__isnull=False).count()
     return render(request, 'operaciones/pozos_list.html', {'pozos': pozos, 'total_papelera': total_papelera})
 

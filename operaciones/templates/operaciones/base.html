@@ -6,12 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Smart Mud &bull; Operaciones{% endblock %}</title>
   <link rel="icon" type="image/png" href="{% static 'operaciones/img/favicon.png' %}">
-  
-  <!-- Tipografía Inter -->
+
+  <!-- Tipografía: IBM Plex Sans (textos) y JetBrains Mono (números). Sin internet se usan Segoe UI y Consolas. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
   <!-- Estilos Modulares -->
   <link rel="stylesheet" href="{% static 'operaciones/css/variables.css' %}">
   <link rel="stylesheet" href="{% static 'operaciones/css/layout.css' %}">
@@ -19,6 +19,7 @@
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+  {% include 'operaciones/componentes/iconos.html' %}
 
   <div class="app-container">
     <!-- Componente Sidebar Modular -->
@@ -26,9 +27,22 @@
 
     <!-- Wrapper Principal -->
     <main class="main-wrapper">
+      <header class="barra-superior">
+        <a class="barra-superior-logo" href="{% url 'operaciones:pozos_list' %}" aria-label="Ir a pozos">
+          <img src="{% static 'operaciones/img/smartmud_icono.png' %}" alt="">
+        </a>
+        <nav class="migas" aria-label="Ubicación">{% block migas %}{% endblock %}</nav>
+        <button type="button" class="boton-buscar" id="btnBuscarGlobal" aria-label="Buscar pozo, reporte o pantalla">
+          <svg class="icono" aria-hidden="true"><use href="#i-buscar"></use></svg>
+          <span class="boton-buscar-texto">Buscar pozo, reporte o pantalla</span>
+          <kbd>Ctrl K</kbd>
+        </button>
+      </header>
       {% block content %}{% endblock %}
     </main>
   </div>
+
+  {% include 'operaciones/componentes/buscador.html' %}
 
   <!-- Contenedor Global de Toasts -->
   <div class="toast-container" id="toastContainer"></div>

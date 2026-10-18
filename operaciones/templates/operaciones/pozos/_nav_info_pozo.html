@@ -1,16 +1,14 @@
 {% comment %}
-Barra de navegación entre las pantallas de "Información del Pozo".
+Barra de navegación entre las pantallas de configuración del pozo.
 Uso: {% include 'operaciones/pozos/_nav_info_pozo.html' with seccion_activa='well_header' %}
-seccion_activa es el nombre de la URL de la pantalla actual.
+seccion_activa es el nombre de la URL de la pantalla actual. La lista de pantallas
+sale de operaciones/navegacion.py (procesador de contexto).
 {% endcomment %}
-<nav class="info-pozo-nav" aria-label="Información del pozo">
-  <a class="info-pozo-nav-item info-pozo-nav-inicio" href="{% url 'operaciones:pozo_main' pozo.pk %}">🏠 Pantalla principal</a>
-  <a class="info-pozo-nav-item{% if seccion_activa == 'well_header' %} is-active{% endif %}" href="{% url 'operaciones:well_header' pozo.pk %}"{% if seccion_activa == 'well_header' %} aria-current="page"{% endif %}>📋 Información General</a>
-  <a class="info-pozo-nav-item{% if seccion_activa == 'general_setup' %} is-active{% endif %}" href="{% url 'operaciones:general_setup' pozo.pk %}"{% if seccion_activa == 'general_setup' %} aria-current="page"{% endif %}>🧾 Configuración General</a>
-  <a class="info-pozo-nav-item{% if seccion_activa == 'casing_intervals' %} is-active{% endif %}" href="{% url 'operaciones:casing_intervals' pozo.pk %}"{% if seccion_activa == 'casing_intervals' %} aria-current="page"{% endif %}>🛢️ Intervalos</a>
-  <a class="info-pozo-nav-item{% if seccion_activa == 'loss_setup' %} is-active{% endif %}" href="{% url 'operaciones:loss_setup' pozo.pk %}"{% if seccion_activa == 'loss_setup' %} aria-current="page"{% endif %}>📉 Pérdidas</a>
-  <a class="info-pozo-nav-item{% if seccion_activa == 'active_items' %} is-active{% endif %}" href="{% url 'operaciones:active_items' pozo.pk %}"{% if seccion_activa == 'active_items' %} aria-current="page"{% endif %}>🧰 Productos / Equipos</a>
-  <a class="info-pozo-nav-item{% if seccion_activa == 'benchmark_setup' %} is-active{% endif %}" href="{% url 'operaciones:benchmark_setup' pozo.pk %}"{% if seccion_activa == 'benchmark_setup' %} aria-current="page"{% endif %}>📊 Benchmark</a>
-  <a class="info-pozo-nav-item{% if seccion_activa == 'pits' %} is-active{% endif %}" href="{% url 'operaciones:pits' pozo.pk %}"{% if seccion_activa == 'pits' %} aria-current="page"{% endif %}>🪣 Tanques</a>
-  <a class="info-pozo-nav-item{% if seccion_activa == 'equipment_properties_setup' %} is-active{% endif %}" href="{% url 'operaciones:equipment_properties_setup' pozo.pk %}"{% if seccion_activa == 'equipment_properties_setup' %} aria-current="page"{% endif %}>⚙️ Propiedades de Equipo</a>
+<nav class="info-pozo-nav" aria-label="Configuración del pozo">
+  <a class="info-pozo-nav-item info-pozo-nav-inicio" href="{% url 'operaciones:pozo_main' pozo.pk %}">
+    <svg class="icono" aria-hidden="true"><use href="#i-pozo"></use></svg>Tablero del pozo
+  </a>
+  {% for pantalla in pantallas_info_pozo %}
+    <a class="info-pozo-nav-item{% if seccion_activa == pantalla.nombre_url %} is-active{% endif %}" href="{{ pantalla.url }}"{% if seccion_activa == pantalla.nombre_url %} aria-current="page"{% endif %}>{{ pantalla.etiqueta }}</a>
+  {% endfor %}
 </nav>

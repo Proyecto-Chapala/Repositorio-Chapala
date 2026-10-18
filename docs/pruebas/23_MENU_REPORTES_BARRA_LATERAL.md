@@ -1,4 +1,6 @@
-# 23 — Panel "Reportes" en la barra lateral (18-oct-2026)
+# 23 — Panel "Reportes" en la barra lateral (18-oct-2026) — reemplazado
+
+> En la rama `refactorizacion_ui` este panel se reemplazó por el buscador Ctrl+K. Probar con [pruebas/24](24_REDISENO_UI_TECNICO.md).
 
 ## Cómo funciona
 

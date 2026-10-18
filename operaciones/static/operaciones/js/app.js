@@ -1,13 +1,14 @@
 /**
  * app.js - Funcionalidad Global y Shell de la Aplicación
  * - Control de colapso de barra lateral (Sidebar)
+ * - Buscador global (Ctrl+K)
  * - Sistema centralizado de notificaciones (Toast)
  */
 
 window.App = {
   init() {
     this.initSidebar();
-    this.initPanelReportes();
+    this.initBuscador();
   },
 
   initSidebar() {
@@ -28,58 +29,94 @@ window.App = {
     }
   },
 
-  // Panel "Reportes": lista de pozos con buscador, se abre desde la barra lateral
-  initPanelReportes() {
-    const boton = document.getElementById('btnPanelReportes');
-    const panel = document.getElementById('panelReportes');
-    if (!boton || !panel) return;
+  // Buscador global (Ctrl+K): pozos, sus reportes y las pantallas del pozo abierto.
+  // Cada palabra escrita debe aparecer en el texto del resultado ("reportes prueba").
+  initBuscador() {
+    const velo = document.getElementById('buscadorGlobal');
+    if (!velo) return;
 
-    const buscador = document.getElementById('buscarPozoReportes');
-    const filas = panel.querySelectorAll('li[data-nombre]');
-    const sinResultados = document.getElementById('sinResultadosReportes');
+    const entrada = document.getElementById('buscadorTexto');
+    const lista = document.getElementById('buscadorResultados');
+    const vacio = document.getElementById('buscadorVacio');
+    const filas = Array.from(lista.querySelectorAll('li[data-texto]'));
+    const MAXIMO_POR_GRUPO = 6;
+    const TITULOS = { reportes: 'Reportes', pozos: 'Pozos', pantallas: 'Configuración del pozo' };
+    let enlacesVisibles = [];
+    let seleccionado = 0;
+    let focoAnterior = null;
 
-    const abrir = () => {
-      panel.hidden = false;
-      boton.setAttribute('aria-expanded', 'true');
-      buscador.focus();
+    // Un título por grupo, antes de su primer resultado
+    const titulos = {};
+    Object.keys(TITULOS).forEach((grupo) => {
+      const primera = filas.find((fila) => fila.dataset.grupo === grupo);
+      if (!primera) return;
+      const titulo = document.createElement('li');
+      titulo.className = 'buscador-grupo';
+      titulo.textContent = TITULOS[grupo];
+      lista.insertBefore(titulo, primera);
+      titulos[grupo] = titulo;
+    });
+
+    const marcar = () => {
+      lista.querySelectorAll('.seleccionado').forEach((enlace) => enlace.classList.remove('seleccionado'));
+      const actual = enlacesVisibles[seleccionado];
+      if (!actual) return;
+      actual.classList.add('seleccionado');
+      actual.scrollIntoView({ block: 'nearest' });
+    };
+
+    const filtrar = () => {
+      const palabras = entrada.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      const porGrupo = {};
+      filas.forEach((fila) => {
+        const grupo = fila.dataset.grupo;
+        const coincide = palabras.every((palabra) => fila.dataset.texto.includes(palabra));
+        porGrupo[grupo] = (porGrupo[grupo] || 0) + (coincide ? 1 : 0);
+        fila.hidden = !coincide || porGrupo[grupo] > MAXIMO_POR_GRUPO;
+      });
+      Object.entries(titulos).forEach(([grupo, titulo]) => { titulo.hidden = !porGrupo[grupo]; });
+      enlacesVisibles = filas.filter((fila) => !fila.hidden).map((fila) => fila.querySelector('a'));
+      vacio.hidden = enlacesVisibles.length > 0;
+      seleccionado = 0;
+      marcar();
+    };
+
+    const abrir = (texto = '') => {
+      focoAnterior = document.activeElement;
+      velo.hidden = false;
+      entrada.value = texto;
+      filtrar();
+      entrada.focus();
     };
     const cerrar = () => {
-      panel.hidden = true;
-      boton.setAttribute('aria-expanded', 'false');
-    };
-    const filtrar = () => {
-      const texto = buscador.value.trim().toLowerCase();
-      let visibles = 0;
-      filas.forEach((fila) => {
-        const coincide = fila.dataset.nombre.includes(texto);
-        fila.hidden = !coincide;
-        if (coincide) visibles += 1;
-      });
-      sinResultados.hidden = visibles > 0 || filas.length === 0;
+      velo.hidden = true;
+      if (focoAnterior) focoAnterior.focus();
     };
 
-    boton.addEventListener('click', () => (panel.hidden ? abrir() : cerrar()));
-    document.getElementById('btnCerrarPanelReportes').addEventListener('click', () => {
-      cerrar();
-      boton.focus();
+    entrada.addEventListener('input', filtrar);
+    entrada.addEventListener('keydown', (evento) => {
+      if (evento.key === 'ArrowDown' || evento.key === 'ArrowUp') {
+        evento.preventDefault();
+        const paso = evento.key === 'ArrowDown' ? 1 : -1;
+        seleccionado = Math.min(Math.max(seleccionado + paso, 0), enlacesVisibles.length - 1);
+        marcar();
+      } else if (evento.key === 'Enter' && enlacesVisibles[seleccionado]) {
+        evento.preventDefault();
+        enlacesVisibles[seleccionado].click();
+      }
     });
-    buscador.addEventListener('input', filtrar);
-    // Flecha abajo pasa a la lista; Enter abre el primer pozo que coincide
-    buscador.addEventListener('keydown', (evento) => {
-      if (evento.key !== 'ArrowDown' && evento.key !== 'Enter') return;
-      const primero = panel.querySelector('li[data-nombre]:not([hidden]) a');
-      if (!primero) return;
-      evento.preventDefault();
-      if (evento.key === 'Enter') primero.click();
-      else primero.focus();
+    velo.addEventListener('keydown', (evento) => { if (evento.key === 'Escape') cerrar(); });
+    velo.addEventListener('click', (evento) => { if (evento.target === velo) cerrar(); });
+
+    document.addEventListener('keydown', (evento) => {
+      if ((evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === 'k') {
+        evento.preventDefault();
+        if (velo.hidden) abrir(); else cerrar();
+      }
     });
-    panel.addEventListener('keydown', (evento) => {
-      if (evento.key !== 'Escape') return;
-      cerrar();
-      boton.focus();
-    });
-    document.addEventListener('click', (evento) => {
-      if (!panel.hidden && !panel.contains(evento.target) && !boton.contains(evento.target)) cerrar();
+    document.getElementById('btnBuscarGlobal').addEventListener('click', () => abrir());
+    document.querySelectorAll('[data-abrir-buscador]').forEach((boton) => {
+      boton.addEventListener('click', () => abrir(boton.dataset.abrirBuscador));
     });
   },
 
