@@ -128,3 +128,13 @@ Equivale a *Daily Casing / Volume* de ONE-TRAX. Por sección: longitud, diámetr
 | **Observaciones del día** (*Remarks*) | Comentarios generales |
 
 Como referencia se muestra el resumen del reporte anterior. La ventana de **Eventos no programados** quedó **oculta** el 02-oct-2026 (pedido de AOS); ver [12](12_MODULOS_OPCIONALES.md).
+
+## Acceso directo desde la barra lateral (18-oct-2026)
+
+La barra lateral tiene un botón **📄 Reportes** que abre un panel junto a ella (no despliega la lista dentro de la barra, para que con 100 o más pozos no se llene). El panel tiene:
+
+- Un **buscador** que filtra los pozos mientras se escribe; Enter abre el primero que coincide y la flecha abajo pasa a la lista.
+- Una línea **"Reportes pozo X"** por pozo con la fecha del último reporte y la cantidad de reportes. Los pozos con el reporte más reciente van arriba; los que no tienen reportes, al final.
+- Se cierra con ×, con Escape o haciendo clic fuera. En el hub de un pozo, ese pozo queda resaltado.
+
+Los datos salen del procesador de contexto `operaciones/context_processors.pozos_barra_lateral` (usa `Pozo.objects`, así que no muestra la papelera); el comportamiento está en `App.initPanelReportes` (`app.js`) y los estilos `.panel-reportes*` en `layout.css`.

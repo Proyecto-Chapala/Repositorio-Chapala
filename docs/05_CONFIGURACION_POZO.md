@@ -81,6 +81,8 @@ Es el equivalente al *Project Main Screen* de ONE-TRAX. Muestra tarjetas con su 
 
 **Orden (02-oct-2026):** Configuración General va justo después de Información General, a pedido de AOS (primero los datos del pozo, luego unidades y moneda).
 
+**Barra de navegación (18-oct-2026):** cada una de las 8 pantallas de *Información del Pozo* muestra, bajo el título, una barra fija con 🏠 Pantalla principal y las demás pantallas; la actual queda resaltada (`aria-current="page"`). Parcial `pozos/_nav_info_pozo.html`, se incluye con `with seccion_activa='<nombre de la URL>'`; estilos `.info-pozo-nav` en `pozos.css`. Si se agrega una pantalla nueva, se agrega su enlace en el parcial y en `tests/test_nav_info_pozo.py`.
+
 **Eliminar pozo (02-oct-2026):** botón rojo en el encabezado. Abre una ventana que exige escribir el nombre exacto del pozo; llama a `api_pozo_eliminar`, que dentro de una transacción devuelve al inventario general lo consumido por cada reporte (`devolver_stock_reporte`) y borra el pozo. JS: `static/operaciones/js/pozo_main.js`.
 
 Las tarjetas "Próximamente" ya no se muestran.

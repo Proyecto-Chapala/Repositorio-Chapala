@@ -19,6 +19,11 @@
       <span class="nav-icon">💧</span>
       <span class="nav-text">Pozos</span>
     </a>
+    <button type="button" class="nav-item nav-boton {% if 'daily_reports_hub' in request.resolver_match.url_name %}active{% endif %}" id="btnPanelReportes" aria-expanded="false" aria-controls="panelReportes" title="Reportes por pozo">
+      <span class="nav-icon">📄</span>
+      <span class="nav-text">Reportes</span>
+      <span class="nav-text nav-boton-flecha" aria-hidden="true">›</span>
+    </button>
     <a class="nav-item {% if request.resolver_match.url_name == 'index' %}active{% endif %}" id="navInventario" href="{% url 'operaciones:index' %}" title="Inventario de Productos">
       <span class="nav-icon">📦</span>
       <span class="nav-text">Inventario</span>
@@ -35,5 +40,36 @@
 
   <div class="sidebar-footer">
     AOS &bull; Operaciones
+  </div>
+
+  <!-- Panel "Reportes": buscador de pozos para ir directo a sus reportes -->
+  <div class="panel-reportes" id="panelReportes" role="dialog" aria-labelledby="panelReportesTitulo" hidden>
+    <div class="panel-reportes-header">
+      <div>
+        <h2 class="panel-reportes-titulo" id="panelReportesTitulo">Reportes por pozo</h2>
+        <p class="panel-reportes-sub">Ordenados por el reporte más reciente</p>
+      </div>
+      <button type="button" class="panel-reportes-cerrar" id="btnCerrarPanelReportes" aria-label="Cerrar">&times;</button>
+    </div>
+    <label class="panel-reportes-buscar">
+      <span class="sr-only">Buscar pozo</span>
+      <input type="search" id="buscarPozoReportes" placeholder="Buscar pozo…" autocomplete="off">
+    </label>
+    <ul class="panel-reportes-lista">
+      {% for pozo_lateral in pozos_barra_lateral %}
+        <li data-nombre="{{ pozo_lateral.nombre|lower }}">
+          <a class="panel-reportes-item {% if request.resolver_match.kwargs.pk == pozo_lateral.pk and 'daily_reports_hub' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'operaciones:daily_reports_hub' pozo_lateral.pk %}" title="Reportes pozo {{ pozo_lateral.nombre }}">
+            <span class="panel-reportes-item-texto">
+              <span class="panel-reportes-item-nombre">Reportes pozo {{ pozo_lateral.nombre }}</span>
+              <span class="panel-reportes-item-detalle">{% if pozo_lateral.ultimo_reporte %}Último: {{ pozo_lateral.ultimo_reporte|date:"d/m/Y" }}{% else %}Sin reportes todavía{% endif %}</span>
+            </span>
+            <span class="panel-reportes-item-cantidad" title="{{ pozo_lateral.cantidad_reportes }} reporte{{ pozo_lateral.cantidad_reportes|pluralize }}">{{ pozo_lateral.cantidad_reportes }}</span>
+          </a>
+        </li>
+      {% empty %}
+        <li class="panel-reportes-vacio">No hay pozos todavía. Crea uno desde <strong>Nuevo Pozo</strong>.</li>
+      {% endfor %}
+    </ul>
+    <p class="panel-reportes-vacio" id="sinResultadosReportes" hidden>Ningún pozo coincide con la búsqueda.</p>
   </div>
 </aside>

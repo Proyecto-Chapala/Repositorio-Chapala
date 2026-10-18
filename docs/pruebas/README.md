@@ -27,6 +27,8 @@ Las pruebas automáticas (`python manage.py test operaciones`) cubren los cálcu
 | 19 | [Dotación por tickets y recibido/devuelto manual](19_INVENTARIO_TICKETS_Y_MANUAL.md) | — (doc 09, 23) | 0037 | Sin probar |
 | 20 | [Correcciones de lógica en reportes diarios](20_CORRECCIONES_LOGICA_REPORTES.md) | — (doc 16 C1, C2, C4, C5, C6, C9) | 0038 | Sin probar |
 | 21 | [Volumen calculado en el Excel, tickets como recibido y pérdidas del sistema activo](21_VOLUMEN_CALCULADO_TICKETS_PERDIDAS.md) | — (doc 27) | — | Sin probar |
+| 22 | [Barra de navegación de Información del Pozo](22_BARRA_INFORMACION_POZO.md) | [05](../05_CONFIGURACION_POZO.md) | — | Sin probar |
+| 23 | [Panel "Reportes" en la barra lateral](23_MENU_REPORTES_BARRA_LATERAL.md) | [06](../06_REPORTE_DIARIO_PESTANAS_1_A_5.md) | — | Sin probar |
 
 ## Antes de empezar
 
