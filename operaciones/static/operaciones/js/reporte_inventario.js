@@ -331,8 +331,16 @@ function vaAplicar(data, conservar){
       const p = previo.inventario.find(x => x.producto_id === r.producto_id);
       if(p){
         r.inicial_manual = csNum(p.inicial_manual);
-        r.recibido = csNum(p.recibido) || 0;
-        r.devuelto = csNum(p.devuelto) || 0;
+        const recPrevio = csNum(p.recibido) || 0;
+        const recOld = csNum(p._recibido_guardado) || 0;
+        if(recPrevio !== recOld){
+          r.recibido = recPrevio;
+        }
+        const devPrevio = csNum(p.devuelto) || 0;
+        const devOld = csNum(p._devuelto_guardado) || 0;
+        if(devPrevio !== devOld){
+          r.devuelto = devPrevio;
+        }
         r.usado_fluido = csNum(p.usado_fluido) || 0;
         r.usado_otro = csNum(p.usado_otro) || 0;
         r.ajuste = csNum(p.ajuste) || 0;
@@ -383,6 +391,8 @@ function vaCapturar(){
       inicial_manual: r.inicial_manual,
       recibido: r.recibido,
       devuelto: r.devuelto,
+      _recibido_guardado: r._recibido_guardado,
+      _devuelto_guardado: r._devuelto_guardado,
       usado_fluido: r.usado_fluido,
       usado_otro: r.usado_otro,
       ajuste: r.ajuste,
@@ -656,8 +666,8 @@ function vaRenderInventario(){
       <td class="cs-num">${r.gravedad ? csFmt(r.gravedad, 2) : '—'}</td>
       <td class="cs-num" ${r.cobro_por === 'BARRIL' ? `title="Equivale a ${csDinero(r.precio)} por unidad"` : ''}>${r.cobro_por === 'BARRIL' ? `${csDinero(r.precio_cargado)} /bbl` : csDinero(r.precio)}</td>
       <td class="cs-num cs-grupo-nuevas"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="inicial_manual" value="${valIni}" placeholder="0" title="Existencia inicial (final del día anterior). Puedes escribir un número para fijarla a mano." ${r.servicio ? 'disabled' : ''}></td>
-      <td class="cs-num cs-grupo-nuevas cs-mas"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="recibido" value="${r.recibido || ''}" placeholder="0" title="Recibido sin ticket (los tickets del día se suman solos)" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}>${vaChipsTicket(r.tickets_recibido)}${vaTicketDelDia(r.recibido_ticket)}</td>
-      <td class="cs-num cs-grupo-nuevas cs-menos"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="devuelto" value="${r.devuelto || ''}" placeholder="0" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}>${vaChipsTicket(r.tickets_devuelto)}${vaTicketDelDia(r.devuelto_ticket)}</td>
+      <td class="cs-num cs-grupo-nuevas cs-mas"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="recibido" value="${r.recibido || ''}" placeholder="0" title="Recibido (incluye tickets del día; puedes sumar cantidad adicional si no tiene ticket)" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}>${vaChipsTicket(r.tickets_recibido)}</td>
+      <td class="cs-num cs-grupo-nuevas cs-menos"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="devuelto" value="${r.devuelto || ''}" placeholder="0" title="Devuelto (incluye tickets del día; puedes sumar cantidad adicional si no tiene ticket)" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}>${vaChipsTicket(r.tickets_devuelto)}</td>
       <td class="cs-num cs-grupo-nuevas cs-menos">
         <input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="usado_fluido" value="${r.usado_fluido || ''}" placeholder="0" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}>
         ${r.agregado_balance > 0 ? `<div class="cs-tenue">Balance: ${csFmt(r.agregado_balance)}</div>` : ''}
@@ -1292,13 +1302,13 @@ document.addEventListener('DOMContentLoaded', function(){
       const co = document.querySelector(`[data-inv-costo="${id}"]`);
       if(co) co.textContent = csDinero(vaCostoVivo(r));
       const fa = document.querySelector(`[data-inv-fluido-acum="${id}"]`);
-      if(fa) fa.textContent = vaCant(r.usado_fluido_acum - r._fluido_guardado + (csNum(r.usado_fluido) || 0));
+      if(fa) fa.innerHTML = vaCant(r.usado_fluido_acum - r._fluido_guardado + (csNum(r.usado_fluido) || 0));
       const oa = document.querySelector(`[data-inv-otro-acum="${id}"]`);
-      if(oa) oa.textContent = vaCant(r.usado_otro_acum - r._otro_guardado + (csNum(r.usado_otro) || 0));
+      if(oa) oa.innerHTML = vaCant(r.usado_otro_acum - r._otro_guardado + (csNum(r.usado_otro) || 0));
       const ra = document.querySelector(`[data-inv-recibido-acum="${id}"]`);
-      if(ra) ra.textContent = vaCant(r.recibido_acum - (r._recibido_guardado || 0) + (csNum(r.recibido) || 0));
+      if(ra) ra.innerHTML = vaCant(r.recibido_acum - (r._recibido_guardado || 0) + (csNum(r.recibido) || 0));
       const da = document.querySelector(`[data-inv-devuelto-acum="${id}"]`);
-      if(da) da.textContent = vaCant(r.devuelto_acum - (r._devuelto_guardado || 0) + (csNum(r.devuelto) || 0));
+      if(da) da.innerHTML = vaCant(r.devuelto_acum - (r._devuelto_guardado || 0) + (csNum(r.devuelto) || 0));
       vaRenderCostos();
     } else if(el.dataset.srv){
       const s = vaDatos.servicios.find(x => x.servicio_id === Number(el.dataset.srv));
