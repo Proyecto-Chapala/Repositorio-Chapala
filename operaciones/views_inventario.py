@@ -452,6 +452,24 @@ def numeros_ticket_por_producto(reporte):
     return resultado
 
 
+def cantidades_ticket_por_producto(reporte):
+    """
+    Cantidades oficiales (ticket si > 0, si no real) de los tickets del reporte
+    por sentido y producto:
+    {'ENTRADA': {producto_id: cant}, 'SALIDA': {producto_id: cant}}.
+    """
+    resultado = {'ENTRADA': defaultdict(float), 'SALIDA': defaultdict(float)}
+    for ticket in reporte.tickets_producto.select_related('tipo').prefetch_related('detalles'):
+        sentido = ticket.tipo.sentido
+        por_producto = resultado['ENTRADA' if sentido == 'ENTRADA' else 'SALIDA']
+        for detalle in ticket.detalles.all():
+            cant_tk = float(detalle.cantidad_ticket or 0)
+            cant_rl = float(detalle.cantidad_real or 0)
+            cant = cant_tk if cant_tk else cant_rl
+            por_producto[detalle.producto_id] += cant
+    return resultado
+
+
 def _redondear(d, n=2):
     return {k: (None if v is None else round(v, n)) for k, v in d.items()}
 
@@ -552,9 +570,12 @@ def _estado_volumetria(pozo, reporte):
             p,
             inicial=round(s.get('inicial', 0.0), 3), inicial_auto=round(s.get('inicial_auto', 0.0), 3),
             inicial_manual=float(m.inicial) if m and m.inicial is not None else None,
-            # recibido/devuelto: lo escrito a mano; *_total suma además lo de los tickets del día.
-            recibido=float(m.recibido) if m and m.recibido is not None else 0.0,
-            devuelto=float(m.devuelto) if m and m.devuelto is not None else 0.0,
+            # recibido/devuelto: reflejan el total del día (tickets + manual) para que el campo
+            # muestre la cantidad del ticket en vez de 0.
+            recibido=round(s.get('recibido', 0.0), 3),
+            devuelto=round(s.get('devuelto', 0.0), 3),
+            recibido_manual=float(m.recibido) if m and m.recibido is not None else 0.0,
+            devuelto_manual=float(m.devuelto) if m and m.devuelto is not None else 0.0,
             recibido_total=round(s.get('recibido', 0.0), 3),
             devuelto_total=round(s.get('devuelto', 0.0), 3),
             recibido_ticket=round(s.get('recibido_ticket', 0.0), 3),
@@ -754,6 +775,10 @@ def api_volumetria_guardar(request, pk, reporte_pk):
         no_fluido = {k: _num(h.get(k), f"Volumen no ocupado por fluido ({etq})", 0, 100000) or 0.0
                      for k, etq in (('anular', 'anular'), ('sarta', 'sarta'), ('bajo_mecha', 'bajo la mecha'))}
 
+        cantidades_tk = cantidades_ticket_por_producto(reporte)
+        rec_tickets = cantidades_tk['ENTRADA']
+        dev_tickets = cantidades_tk['SALIDA']
+
         filas_inv = []
         for item in body.get('inventario') or []:
             try:
@@ -765,8 +790,16 @@ def api_volumetria_guardar(request, pk, reporte_pk):
                 continue
             etq = f"{p['descripcion']} ({p['codigo']})"
             fluido = 0.0 if p['servicio'] else (_num(item.get('usado_fluido'), f"{etq} — usado en fluidos", 0) or 0.0)
-            recibido = 0.0 if p['servicio'] else (_num(item.get('recibido'), f"{etq} — recibido", 0) or 0.0)
-            devuelto = 0.0 if p['servicio'] else (_num(item.get('devuelto'), f"{etq} — devuelto", 0) or 0.0)
+            recibido_campo = 0.0 if p['servicio'] else (_num(item.get('recibido'), f"{etq} — recibido", 0) or 0.0)
+            devuelto_campo = 0.0 if p['servicio'] else (_num(item.get('devuelto'), f"{etq} — devuelto", 0) or 0.0)
+            # En la pantalla el campo 'recibido' / 'devuelto' muestra el total (ticket + manual).
+            # Para no duplicar en volumetria.py (que suma manual + ticket), descontamos el ticket del día:
+            recibido = max(0.0, round(recibido_campo - rec_tickets.get(pid, 0.0), 3))
+            devuelto = max(0.0, round(devuelto_campo - dev_tickets.get(pid, 0.0), 3))
+            if abs(recibido) < 1e-6:
+                recibido = 0.0
+            if abs(devuelto) < 1e-6:
+                devuelto = 0.0
             otro = _num(item.get('usado_otro'), f"{etq} — usado en otro módulo", 0) or 0.0
             ajuste = _num(item.get('ajuste'), f"{etq} — ajuste") or 0.0
             pedido = _num(item.get('en_pedido'), f"{etq} — en pedido", 0) or 0.0

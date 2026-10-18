@@ -37,10 +37,11 @@ class TicketSegunGuiaTests(TestCase):
         datos = self._guardar_ticket(200).json()
         self.assertTrue(datos['ok'])
         fila = self._fila_barita(datos)
-        # Lo del ticket es lo recibido del día (el campo 'recibido' es solo lo escrito a mano).
+        # Lo del ticket se plasma en el campo recibido (200), recibido_manual es 0, y el total es 200.
         self.assertEqual(fila['inicial'], 0)
         self.assertEqual(fila['recibido_total'], 200)
-        self.assertEqual(fila['recibido'], 0)
+        self.assertEqual(fila['recibido'], 200)
+        self.assertEqual(fila['recibido_manual'], 0)
         self.assertEqual(fila['final'], 200)
         self.assertFalse(datos['tickets'][0]['tiene_diferencias'])
 
@@ -48,6 +49,7 @@ class TicketSegunGuiaTests(TestCase):
         datos = self._guardar_ticket(200, 190).json()
         fila = self._fila_barita(datos)
         self.assertEqual(fila['recibido_total'], 200)
+        self.assertEqual(fila['recibido'], 200)
         self.assertEqual(fila['final'], 200)
         self.assertTrue(datos['tickets'][0]['tiene_diferencias'])
 
@@ -56,4 +58,71 @@ class TicketSegunGuiaTests(TestCase):
         self.assertEqual(respuesta.status_code, 200)
         fila = self._fila_barita(respuesta.json())
         self.assertEqual(fila['recibido_total'], 50)
+        self.assertEqual(fila['recibido'], 50)
+
+    def test_guardar_inventario_con_ticket_no_duplica_y_admite_manual(self):
+        # 1. Se registra un ticket de entrada de 200 sacos
+        datos = self._guardar_ticket(200).json()
+        fila = self._fila_barita(datos)
+        self.assertEqual(fila['recibido'], 200)
+        self.assertEqual(fila['final'], 200)
+
+        # 2. Guardar la volumetría con el valor del campo (200) no duplica la existencia
+        cuerpo = {
+            'inventario': [
+                {'producto_id': self.barita.id, 'recibido': 200, 'devuelto': 0}
+            ]
+        }
+        resp = self.client.post(self.base + 'guardar/', json.dumps(cuerpo), content_type='application/json')
+        self.assertEqual(resp.status_code, 200)
+        datos_guardados = resp.json()
+        fila = self._fila_barita(datos_guardados)
+        self.assertEqual(fila['recibido'], 200)
+        self.assertEqual(fila['recibido_manual'], 0)
+        self.assertEqual(fila['recibido_total'], 200)
+        self.assertEqual(fila['final'], 200)
+
+        # 3. Si el usuario escribe 210 (200 de ticket + 10 adicionales a mano sin ticket)
+        cuerpo['inventario'][0]['recibido'] = 210
+        resp = self.client.post(self.base + 'guardar/', json.dumps(cuerpo), content_type='application/json')
+        self.assertEqual(resp.status_code, 200)
+        fila = self._fila_barita(resp.json())
+        self.assertEqual(fila['recibido'], 210)
+        self.assertEqual(fila['recibido_manual'], 10)
+        self.assertEqual(fila['recibido_total'], 210)
+        self.assertEqual(fila['final'], 210)
+
+    def test_ticket_salida_devuelto_se_plasma_en_campo_y_no_duplica(self):
+        salida = TipoTicketMalla.objects.create(pozo=self.pozo, nombre='Devolución', sentido='SALIDA')
+        # Primero fijamos existencia inicial a 200 para poder devolver
+        cuerpo_ini = {
+            'inventario': [
+                {'producto_id': self.barita.id, 'inicial_manual': 200}
+            ]
+        }
+        self.client.post(self.base + 'guardar/', json.dumps(cuerpo_ini), content_type='application/json')
+
+        # Se registra un ticket de salida de 30 sacos
+        cuerpo_tk = {'tipo_id': salida.id, 'numero': 'S-1',
+                     'detalles': [{'producto_id': self.barita.id, 'cantidad_ticket': 30, 'cantidad_real': ''}]}
+        resp_tk = self.client.post(self.base + 'ticket/guardar/', json.dumps(cuerpo_tk), content_type='application/json')
+        fila = self._fila_barita(resp_tk.json())
+        self.assertEqual(fila['devuelto'], 30)
+        self.assertEqual(fila['devuelto_total'], 30)
+        self.assertEqual(fila['final'], 170)
+
+        # Guardar inventario con 30 no duplica
+        cuerpo_save = {
+            'inventario': [
+                {'producto_id': self.barita.id, 'inicial_manual': 200, 'devuelto': 30}
+            ]
+        }
+        resp_save = self.client.post(self.base + 'guardar/', json.dumps(cuerpo_save), content_type='application/json')
+        fila = self._fila_barita(resp_save.json())
+        self.assertEqual(fila['devuelto'], 30)
+        self.assertEqual(fila['devuelto_manual'], 0)
+        self.assertEqual(fila['final'], 170)
+
+
+
 

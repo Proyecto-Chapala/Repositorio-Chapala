@@ -20,7 +20,8 @@ Usar un pozo nuevo con un tanque activo y uno de reserva y dos reportes (día 1 
 - [ ] Día 2: el *Volumen inicial* del sistema activo es 382 (más el hoyo). Medir otro valor (por ejemplo 700).
 - [ ] Día 2, Excel: *Tanques activos* sigue en 382, no 700.
 - [ ] Balance de volumen: la columna *Reserva* no tiene pérdidas.
-- [ ] Ticket de recepción del día 1 con 35 sacos de un producto: en *Inventario de productos* el inicial es 0, debajo de *Recibido* aparece "Ticket: 35" y el final es 35.
-- [ ] Día 2: el inicial de ese producto es 35. Un ticket nuevo de 6 deja el final en 41.
+- [ ] Ticket de recepción del día 1 con 35 sacos de un producto: en *Inventario de productos* el inicial es 0, en la casilla de *Recibido* aparece **35** (con el chip del número de ticket) y el final es 35. No aparece texto redundante "Ticket: 35".
+- [ ] Guardar volumetría: *Recibido* se mantiene en 35 y *Final* en 35 (no se duplica a 70). Si se modifica la casilla a 40 (añadiendo 5 manuales adicionales), el final se calcula en 40.
+- [ ] Día 2: el inicial de ese producto es 35 (o 40). Un ticket nuevo de 6 se plasma en la casilla *Recibido* como 6 y deja el final en 41 (o 46).
 - [ ] Excel, hoja de inventario: la columna *Recibido* incluye lo de los tickets.
 - [ ] *Agregar químicos*: se ven *Existencia* y *Quedan*; al escribir 40 de un producto con 35, *Quedan* sale −5 en rojo. Abajo aparece el volumen del tanque antes → después.
