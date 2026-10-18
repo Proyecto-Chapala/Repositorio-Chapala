@@ -37,7 +37,9 @@ class TicketSegunGuiaTests(TestCase):
         datos = self._guardar_ticket(200).json()
         self.assertTrue(datos['ok'])
         fila = self._fila_barita(datos)
-        self.assertEqual(fila['inicial'], 200)
+        # Lo del ticket es lo recibido del día (el campo 'recibido' es solo lo escrito a mano).
+        self.assertEqual(fila['inicial'], 0)
+        self.assertEqual(fila['recibido_total'], 200)
         self.assertEqual(fila['recibido'], 0)
         self.assertEqual(fila['final'], 200)
         self.assertFalse(datos['tickets'][0]['tiene_diferencias'])
@@ -45,7 +47,7 @@ class TicketSegunGuiaTests(TestCase):
     def test_real_distinta_marca_diferencia_pero_no_cambia_el_inventario(self):
         datos = self._guardar_ticket(200, 190).json()
         fila = self._fila_barita(datos)
-        self.assertEqual(fila['inicial'], 200)
+        self.assertEqual(fila['recibido_total'], 200)
         self.assertEqual(fila['final'], 200)
         self.assertTrue(datos['tickets'][0]['tiene_diferencias'])
 
@@ -53,5 +55,5 @@ class TicketSegunGuiaTests(TestCase):
         respuesta = self._guardar_ticket('', 50)
         self.assertEqual(respuesta.status_code, 200)
         fila = self._fila_barita(respuesta.json())
-        self.assertEqual(fila['inicial'], 50)
+        self.assertEqual(fila['recibido_total'], 50)
 

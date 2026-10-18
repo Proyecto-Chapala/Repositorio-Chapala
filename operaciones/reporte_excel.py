@@ -208,7 +208,8 @@ def _sarta_y_revestidor(ws, d):
 def _volumen_y_circulacion(ws, d):
     vol = d['vol']
     hoyo = _f((vol.get('hoyo') or {}).get('total_fluido')) or 0.0
-    activas = sum(_f(f.get('real')) or 0.0 for f in vol.get('fosas', []) if f.get('grupo') == 'ACTIVO')
+    # Lo calculado de los tanques (no lo medido): el final calculado es el inicial del próximo reporte.
+    activas = sum(_f(f.get('calculado')) or 0.0 for f in vol.get('fosas', []) if f.get('grupo') == 'ACTIVO')
     ws['E10'].value = round(hoyo, 0)
     ws['F10'].value = round(activas, 0)
     total = hoyo + activas
@@ -357,7 +358,7 @@ def _especificacion_y_textos(ws, d, variante):
         _poner(ws, 'J50', _num(filtrado, 1))
     base_agua = variante in ('WBM', 'WBM_CACL2')
     fila_res = 50 if base_agua else 51
-    reserva = sum(_f(f.get('real')) or 0.0 for f in d['vol'].get('fosas', []) if f.get('grupo') in ('RESERVA', 'PREMEZCLA'))
+    reserva = sum(_f(f.get('calculado')) or 0.0 for f in d['vol'].get('fosas', []) if f.get('grupo') in ('RESERVA', 'PREMEZCLA'))
     ws[f'B{fila_res}'].value = 'bbl'
     ws[f'C{fila_res}'].value = round(reserva, 0)
     fila_txt = 52 if base_agua else 53
@@ -788,7 +789,7 @@ def _hoja_inventario(ws, d, productos):
             servicio = p.get('servicio')
             valores = {
                 'E': None if servicio else p.get('inicial'), 'F': p.get('usado_dia'), 'G': p.get('usado_acum'),
-                'H': p.get('recibido'), 'I': p.get('recibido_acum'), 'J': p.get('devuelto'),
+                'H': p.get('recibido_total'), 'I': p.get('recibido_acum'), 'J': p.get('devuelto_total'),
                 'K': p.get('devuelto_acum'), 'L': None if servicio else p.get('final'), 'M': p.get('costo_diario'),
             }
             for col, v in valores.items():

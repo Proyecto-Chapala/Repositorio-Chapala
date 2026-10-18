@@ -21,6 +21,7 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 | **Servicios del pozo** (migración 0035) | Pestaña 8 › Servicios | Guía [pruebas/15](pruebas/15_SERVICIOS_DEL_POZO.md) |
 | **Lodo reciclado solo volumen** | Pestaña 8 | Guía [pruebas/16](pruebas/16_LODO_RECICLADO_SOLO_VOLUMEN.md) |
 | **Acumulados por columna en inventario** | Pestaña 8 | Guía [pruebas/17](pruebas/17_ACUMULADOS_INVENTARIO.md) |
+| **Volumen calculado, tickets y pérdidas (18-oct)** | Pestaña 8 y Excel | Guía [pruebas/21](pruebas/21_VOLUMEN_CALCULADO_TICKETS_PERDIDAS.md). Pozos con pérdidas ya guardadas en tanques de reserva: siguen igual; al editarlas piden un tanque activo |
 | **Correcciones de octubre (20 puntos)** | Varias | 13 guías con pasos y casillas en [`pruebas/`](pruebas/README.md) (01 a 13), más verificar los puntos 6 y 19 del [23](23_CORRECCIONES_REVISION_OCT.md) |
 | Tanques (antes fosas) | Pestaña 8 y Excel | Textos, mensajes de error y hoja *Contabilidad de Volumen* |
 | Excel diario | Botón Excel | Logo AOS arriba a la izquierda, una sola hoja de inventario, **sin páginas 2 y 3 vacías**, "Fecha Inicial" |
@@ -88,6 +89,8 @@ Nada de esto se vio corriendo todavía. Si algo falla, pedir el traceback comple
 - **Nombres internos heredados**: `Fosa`, `LODO_ENTERO`, `es_producto_mi`, `ingeniero_miswaco_*`, `mi_representante_*`, plantilla `reporte_diario_onetrax.xlsx`. En pantalla ya no se ven; renombrarlos exige migraciones.
 
 ## F. Historial de lo resuelto
+
+- **18-oct-2026:** Excel diario con volumen calculado en tanques activos y circulación; tickets → recibido/devuelto; pérdidas solo en el sistema activo; existencia en *Agregar químicos* ([27](27_VOLUMEN_CALCULADO_TICKETS_Y_PERDIDAS.md)).
 
 ### 13-oct-2026 (tickets de productos)
 - El inventario usa la cantidad **"según ticket"** (antes la "real": un ticket con solo la cantidad de la guía entraba en 0). La "real" es opcional y marca "≠ real". Sin precio en la ventana de tickets. Falta probar en pantalla: [pruebas/19](pruebas/19_TICKET_SEGUN_GUIA.md).

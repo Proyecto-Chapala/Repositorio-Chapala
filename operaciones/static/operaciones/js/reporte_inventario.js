@@ -632,6 +632,10 @@ function vaChipsTicket(numeros){
   return (numeros || []).map(n => ` <span class="va-chip-ticket" title="Ticket N° ${csEsc(n)}">N° ${csEsc(n)}</span>`).join('');
 }
 
+function vaTicketDelDia(cantidad){
+  return cantidad > 0 ? `<div class="cs-tenue">Ticket: ${csFmt(cantidad)}</div>` : '';
+}
+
 function vaRenderInventario(){
   const solo = document.getElementById('vaSoloMovimiento').checked;
   const filas = vaDatos.inventario.filter(r => !solo || r.inicial || r.final || r.usado_dia || csNum(r.recibido) || csNum(r.devuelto) || csNum(r.usado_fluido) || csNum(r.usado_otro) || r.costo_acumulado || r.usado_fluido_acum || r.usado_otro_acum || r.recibido_acum || r.devuelto_acum);
@@ -651,9 +655,9 @@ function vaRenderInventario(){
       <td>${csEsc(r.unidad ? `${r.tamano ? csFmt(r.tamano, r.tamano % 1 ? 2 : 0) + ' ' : ''}${r.unidad}` : '—')}${r.empaque ? ` <span class="cs-tenue">${csEsc(r.empaque)}</span>` : ''}</td>
       <td class="cs-num">${r.gravedad ? csFmt(r.gravedad, 2) : '—'}</td>
       <td class="cs-num" ${r.cobro_por === 'BARRIL' ? `title="Equivale a ${csDinero(r.precio)} por unidad"` : ''}>${r.cobro_por === 'BARRIL' ? `${csDinero(r.precio_cargado)} /bbl` : csDinero(r.precio)}</td>
-      <td class="cs-num cs-grupo-nuevas"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="inicial_manual" value="${valIni}" placeholder="0" title="Existencia inicial (ticket o final del día anterior). Puedes escribir un número para fijarla a mano." ${r.servicio ? 'disabled' : ''}>${vaChipsTicket(r.tickets_recibido)}</td>
-      <td class="cs-num cs-grupo-nuevas cs-mas"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="recibido" value="${r.recibido || ''}" placeholder="0" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}></td>
-      <td class="cs-num cs-grupo-nuevas cs-menos"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="devuelto" value="${r.devuelto || ''}" placeholder="0" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}>${vaChipsTicket(r.tickets_devuelto)}</td>
+      <td class="cs-num cs-grupo-nuevas"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="inicial_manual" value="${valIni}" placeholder="0" title="Existencia inicial (final del día anterior). Puedes escribir un número para fijarla a mano." ${r.servicio ? 'disabled' : ''}></td>
+      <td class="cs-num cs-grupo-nuevas cs-mas"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="recibido" value="${r.recibido || ''}" placeholder="0" title="Recibido sin ticket (los tickets del día se suman solos)" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}>${vaChipsTicket(r.tickets_recibido)}${vaTicketDelDia(r.recibido_ticket)}</td>
+      <td class="cs-num cs-grupo-nuevas cs-menos"><input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="devuelto" value="${r.devuelto || ''}" placeholder="0" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}>${vaChipsTicket(r.tickets_devuelto)}${vaTicketDelDia(r.devuelto_ticket)}</td>
       <td class="cs-num cs-grupo-nuevas cs-menos">
         <input type="number" class="cs-input-cant va-input" min="0" step="any" data-inv="${id}" data-campo="usado_fluido" value="${r.usado_fluido || ''}" placeholder="0" ${r.servicio ? 'disabled title="Los servicios no llevan existencias"' : ''}>
         ${r.agregado_balance > 0 ? `<div class="cs-tenue">Balance: ${csFmt(r.agregado_balance)}</div>` : ''}
@@ -864,8 +868,7 @@ function vaFosasConTipo(){
   return vaDatos.fosas.filter(f => vaGrupoDeTipo(f._tipo_guardado) !== null && f.en_pozo);
 }
 
-function vaOpcionesFosa(seleccion){
-  const fs = vaFosasConTipo();
+function vaOpcionesFosa(seleccion, fs = vaFosasConTipo()){
   if(!fs.length) return '<option value="">No hay tanques con tipo asignado</option>';
   return fs.map(f => `<option value="${f.numero}" ${f.numero === seleccion ? 'selected' : ''}>${csEsc(f.descripcion)} — ${csEsc(f.tipo_descripcion || vaDatos.tipos_fosa.find(t => t.codigo === f._tipo_guardado)?.descripcion || '')}</option>`).join('');
 }
@@ -920,15 +923,17 @@ function vaRenderModal(inicial = false){
       </div>
       <div class="cs-tabla-wrapper va-tabla-scroll">
         <table class="cs-tabla">
-          <thead><tr><th>Código</th><th>Descripción</th><th>Unidad</th><th class="cs-num">GE</th><th class="cs-num">3. Cantidad</th><th class="cs-num">Volumen (bbl)</th></tr></thead>
+          <thead><tr><th>Código</th><th>Descripción</th><th>Unidad</th><th class="cs-num">GE</th><th class="cs-num">Existencia</th><th class="cs-num">3. Cantidad</th><th class="cs-num">Quedan</th><th class="cs-num">Volumen (bbl)</th></tr></thead>
           <tbody id="vaQFilas">${prods.map(r => `
             <tr data-buscar="${csEsc((r.codigo + ' ' + r.descripcion).toLowerCase())}">
               <td class="cs-codigo">${csEsc(r.codigo)}</td><td>${csEsc(r.descripcion)}</td>
               <td>${csEsc(r.unidad ? `${r.tamano ? csFmt(r.tamano, r.tamano % 1 ? 2 : 0) + ' ' : ''}${r.unidad}` : '—')}</td>
               <td class="cs-num">${r.gravedad ? csFmt(r.gravedad, 2) : '—'}</td>
+              <td class="cs-num">${csFmt(vaFinalVivo(r))}</td>
               <td class="cs-num"><input type="number" class="cs-input-cant va-q-cant" min="0" step="any" data-prod="${r.producto_id}" placeholder="0"></td>
+              <td class="cs-num" data-q-quedan="${r.producto_id}">—</td>
               <td class="cs-num" data-q-vol="${r.producto_id}">—</td>
-            </tr>`).join('') || '<tr class="cs-fila-vacia"><td colspan="6">No hay productos activos que se agreguen a tanques.</td></tr>'}</tbody>
+            </tr>`).join('') || '<tr class="cs-fila-vacia"><td colspan="8">No hay productos activos que se agreguen a tanques.</td></tr>'}</tbody>
         </table>
       </div>
       <div class="va-resumen-mov" id="vaQResumen"></div>
@@ -1049,13 +1054,24 @@ function vaQRecalcular(){
     vq += v;
     const celda = document.querySelector(`[data-q-vol="${el.dataset.prod}"]`);
     if(celda) celda.textContent = cant ? csFmt(v, 2) : '—';
+    // Informativo: cuánto quedaría en existencia (el consumo se registra en Inventario de productos).
+    const quedan = document.querySelector(`[data-q-quedan="${el.dataset.prod}"]`);
+    if(quedan && r){
+      const resto = vaFinalVivo(r) - cant;
+      quedan.textContent = cant ? csFmt(resto) : '—';
+      quedan.classList.toggle('cs-negativo', cant > 0 && resto < 0);
+    }
   });
   const aceite = csNum(document.getElementById('vaQAceite')?.value) || 0;
   const agua = csNum(document.getElementById('vaQAgua')?.value) || 0;
+  const total = vq + aceite + agua;
+  const tanque = vaDatos.fosas.find(f => String(f.numero) === document.getElementById('vaQFosa')?.value);
+  const volTanque = tanque ? (csNum(tanque.calculado) || 0) : null;
   const res = document.getElementById('vaQResumen');
   if(res) res.innerHTML = `
     <div class="cs-resultado"><span>Volumen de químicos</span><strong>${csFmt(vq)} <em>bbl</em></strong></div>
-    <div class="cs-resultado"><span>Volumen total agregado</span><strong>${csFmt(vq + aceite + agua)} <em>bbl</em></strong></div>`;
+    <div class="cs-resultado"><span>Volumen total agregado</span><strong>${csFmt(total)} <em>bbl</em></strong></div>
+    ${volTanque === null ? '' : `<div class="cs-resultado"><span>Tanque (calculado)</span><strong>${csFmt(volTanque)} &rarr; ${csFmt(volTanque + total)} <em>bbl</em></strong></div>`}`;
 }
 
 async function vaRegistrarQuimicos(){
@@ -1090,15 +1106,11 @@ function vaCambiarOperacion(op){
   if(labelFosa){
     labelFosa.textContent = op === 'PERDIDA' ? 'Tanque de la pérdida (volumen circulante)' : 'Tanque de origen';
   }
-  if(op === 'PERDIDA'){
-    const selFosa = document.getElementById('vaTFosa');
-    const activas = vaFosasActivas();
-    if(selFosa && activas.length){
-      const actualEsActivo = activas.some(f => String(f.numero) === String(selFosa.value));
-      if(!actualEsActivo){
-        selFosa.value = String(activas[0].numero);
-      }
-    }
+  // La pérdida se descuenta del volumen circulante: solo se ofrecen los tanques del sistema activo.
+  const selFosa = document.getElementById('vaTFosa');
+  if(selFosa){
+    const actual = Number(selFosa.value);
+    selFosa.innerHTML = vaOpcionesFosa(actual, op === 'PERDIDA' ? vaFosasActivas() : vaFosasConTipo());
   }
 }
 
@@ -1359,7 +1371,7 @@ document.addEventListener('DOMContentLoaded', function(){
   });
   modal.addEventListener('input', function(ev){
     const el = ev.target;
-    if(el.classList.contains('va-q-cant') || el.id === 'vaQAceite' || el.id === 'vaQAgua') vaQRecalcular();
+    if(el.classList.contains('va-q-cant') || ['vaQAceite', 'vaQAgua', 'vaQFosa'].includes(el.id)) vaQRecalcular();
     else if(el.id === 'vaQBuscar') vaFiltrar('vaQFilas', el.value);
     else if(el.id === 'vaTkBuscar') vaFiltrar('vaTkFilas', el.value);
     else if(el.classList.contains('va-tk-cant')) vaTkMarcarDiferencias();

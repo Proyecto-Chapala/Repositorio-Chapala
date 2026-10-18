@@ -26,6 +26,7 @@ Las pruebas automáticas (`python manage.py test operaciones`) cubren los cálcu
 | 18 | [Inventario de consumo separado del balance](18_INVENTARIO_DE_CONSUMO.md) | — (doc 26) | 0036 | Sin probar |
 | 19 | [Dotación por tickets y recibido/devuelto manual](19_INVENTARIO_TICKETS_Y_MANUAL.md) | — (doc 09, 23) | 0037 | Sin probar |
 | 20 | [Correcciones de lógica en reportes diarios](20_CORRECCIONES_LOGICA_REPORTES.md) | — (doc 16 C1, C2, C4, C5, C6, C9) | 0038 | Sin probar |
+| 21 | [Volumen calculado en el Excel, tickets como recibido y pérdidas del sistema activo](21_VOLUMEN_CALCULADO_TICKETS_PERDIDAS.md) | — (doc 27) | — | Sin probar |
 
 ## Antes de empezar
 

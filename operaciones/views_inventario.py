@@ -552,8 +552,11 @@ def _estado_volumetria(pozo, reporte):
             p,
             inicial=round(s.get('inicial', 0.0), 3), inicial_auto=round(s.get('inicial_auto', 0.0), 3),
             inicial_manual=float(m.inicial) if m and m.inicial is not None else None,
-            recibido=float(m.recibido) if m and m.recibido is not None else round(s.get('recibido', 0.0), 3),
-            devuelto=float(m.devuelto) if m and m.devuelto is not None else round(s.get('devuelto', 0.0), 3),
+            # recibido/devuelto: lo escrito a mano; *_total suma además lo de los tickets del día.
+            recibido=float(m.recibido) if m and m.recibido is not None else 0.0,
+            devuelto=float(m.devuelto) if m and m.devuelto is not None else 0.0,
+            recibido_total=round(s.get('recibido', 0.0), 3),
+            devuelto_total=round(s.get('devuelto', 0.0), 3),
             recibido_ticket=round(s.get('recibido_ticket', 0.0), 3),
             devuelto_ticket=round(s.get('devuelto_ticket', 0.0), 3),
             tickets_recibido=tickets_hoy['ENTRADA'].get(pid, []),
@@ -925,6 +928,9 @@ def _llenar_movimiento_de_volumen(pozo, reporte, t, body):
         if not t.origen_destino:
             raise _Rechazo('Indica a dónde se devuelve el fluido (almacén u otro taladro).')
     else:
+        # La pérdida se descuenta del volumen circulante (sistema activo), nunca de la reserva.
+        if _grupo_del_tanque(pozo, reporte, t.fosa_numero) != ACTIVO:
+            raise _Rechazo('La pérdida se descuenta del volumen circulante: elige un tanque del sistema activo.')
         codigo = int(body.get('perdida_codigo') or 0)
         cat = pozo.categorias_perdida.filter(codigo=codigo).first()
         if cat is None:
@@ -1057,8 +1063,6 @@ def api_volumetria_dejar_en_hoyo(request, pk, reporte_pk):
         if parte not in PARTES_HOYO:
             raise _Rechazo('Parte del hoyo no válida.')
         fosa = _fosa_valida(pozo, reporte, body.get('fosa'), 'el tanque activo')
-        if _grupo_del_tanque(pozo, reporte, fosa.numero) != ACTIVO:
-            raise _Rechazo('Elige un tanque del sistema activo: el hoyo es parte del sistema activo.')
         t = TransaccionVolumen(reporte=reporte, tipo=TransaccionVolumen.PERDIDA, fosa_numero=fosa.numero,
                                fosa_descripcion=fosa.descripcion[:100])
         _llenar_movimiento_de_volumen(pozo, reporte, t, body)

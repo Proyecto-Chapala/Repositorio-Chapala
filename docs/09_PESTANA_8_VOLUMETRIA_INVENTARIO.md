@@ -82,7 +82,7 @@ final = inicial + recibido − devuelto − usado en fluidos (a mano) − usado 
 | Columna | Origen |
 |---|---|
 | Inicial | Final del día anterior **del pozo** (0 el primer día, o escrito a mano) |
-| Recibido / devuelto | **Tickets de productos** del día: la entrada a mano son los tickets (recepción suma, devolución resta) |
+| Recibido / devuelto | **Tickets de productos** del día (recepción → recibido, devolución → devuelto) más lo escrito a mano ([27](27_VOLUMEN_CALCULADO_TICKETS_Y_PERDIDAS.md)) |
 | Usado en fluidos | A mano: consumo del día en el lodo del pozo |
 | Usado en otro módulo | A mano: productos transferidos a otra línea (ej. cementación). Genera costo y no cuenta en las concentraciones |
 | Ajuste | A mano (+/−) |
@@ -97,7 +97,7 @@ final = inicial + recibido − devuelto − usado en fluidos (a mano) − usado 
 
 > ### Inventario por pozo (desde la revisión de octubre 2026)
 > Revierte el *inventario unificado* del 25-sep (migración `0022`), a pedido del cliente ([23](23_CORRECCIONES_REVISION_OCT.md), puntos 2 y 4). La **matriz** (pantalla *Inventario*, `Producto`) es **solo catálogo**: código, descripción, libraje y gravedad específica. No aporta cantidades ni precios al pozo, y el reporte diario no modifica `Producto.cantidad`.
-> - La existencia del pozo la calcula el motor (`volumetria.simular`) a partir de sus tickets: los de **entrada** suman y los de **salida** restan.
+> - La existencia del pozo la calcula el motor (`volumetria.simular`) a partir de sus tickets: los de **entrada** son lo recibido del día y los de **salida** lo devuelto (desde el 18-oct; antes la entrada iba al inicial).
 > - Migración `0028_inventario_por_pozo`: elimina los campos `stock_aplicado`. Pruebas en `operaciones/tests/`.
 
 ### Tickets de productos (`TicketProducto`)

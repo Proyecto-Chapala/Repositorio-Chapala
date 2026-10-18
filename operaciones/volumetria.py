@@ -3,14 +3,13 @@ Motor de la volumetría e inventario de productos (pestaña 8).
 
 Función pura, sin Django. Repite, día por día y en orden, los movimientos de todo el pozo:
 
-- Volumen de cada fosa: inicial (= real medido del día anterior, o el calculado si no se
-  midió) + químicos, fluido base y agua, lodo reciclado, transferencias, devoluciones y pérdidas.
+- Volumen de cada fosa: inicial (= volumen final calculado del día anterior) + químicos, fluido base y agua, lodo reciclado, transferencias, devoluciones y pérdidas.
 - Sistema activo: incluye el HOYO. Inicial = tanques activos + fluido en el hoyo del día
   anterior. Real = tanques activos medidos + fluido en el hoyo de hoy. Por eso el calculado de
   el tanque activo y su volumen real NO tienen que coincidir (nota especial del manual, pág. 146).
 - "No contabilizado" = real − calculado, por grupo (activo, reserva, premezcla). Al cierre
   de cada día debe ser cero.
-- Inventario de productos: inicial + recibido − devuelto − usado en fluidos (a mano) − usado en otro
+- Inventario de productos: inicial (= final del día anterior) + recibido (tickets de entrada + a mano) − devuelto − usado en fluidos (a mano) − usado en otro
   módulo (a mano) ± ajuste. Si algún día queda negativo se rechaza (misma regla que las mallas).
 - Costos por categoría y concentración de cada producto (lb/bbl) por compartimento: el sistema
   activo (tanques activos + hoyo, que se mezclan) y cada una de las demás fosas.
@@ -172,7 +171,6 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
     fin_fosa = {}                     # volumen final (real o calculado) por fosa
     hoyo_prev = 0.0
     stock = defaultdict(float)
-    iniciados = set()
     costo_acum_cat = defaultdict(float)
     costo_acum_prod = defaultdict(float)
     acum_usado = defaultdict(float)      # acumulados del pozo por producto (reporte de inventario)
@@ -228,7 +226,6 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
         costo_dia_cat = defaultdict(float)
         recibido_ticket = defaultdict(float)
         devuelto_ticket = defaultdict(float)
-        ticket_dotacion = defaultdict(float)
         avisos = []
 
         def g_de(n, etiqueta):
@@ -254,11 +251,9 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 cant_rl = float(d.get('real') or 0)
                 cant_oficial = cant_tk if cant_tk else cant_rl
                 if t['sentido'] == 'ENTRADA':
-                    ticket_dotacion[d['producto']] += cant_oficial
-                    recibido_ticket[d['producto']] += cant_tk
+                    recibido_ticket[d['producto']] += cant_oficial
                 else:
-                    ticket_dotacion[d['producto']] -= cant_oficial
-                    devuelto_ticket[d['producto']] += cant_tk
+                    devuelto_ticket[d['producto']] += cant_oficial
 
         # ---- Movimientos ----
         for tr in sorted(dia.get('transacciones', []), key=lambda x: x['secuencia']):
@@ -350,7 +345,7 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
 
         # ---- Inventario de productos ----
         manual = dia.get('manual', {})
-        ids = set(stock) | set(ticket_dotacion) | set(manual)
+        ids = set(stock) | set(recibido_ticket) | set(devuelto_ticket) | set(manual)
         inventario = {}
         for p in ids:
             m = manual.get(p, {})
@@ -364,22 +359,12 @@ def simular(dias, objetivo_id=None, nombres_producto=None, nombres_fosa=None, se
                 costo = usado_dia * float(m.get('precio') or 0)
                 costo_dia_prod[p] += costo
                 costo_dia_cat[m.get('categoria') or 1] += costo
-            # Dotación de tickets alimenta la existencia inicial del producto al ingresar al pozo.
-            # Una vez iniciado, el inicial del día siguiente es el final del día anterior (stock).
-            if p not in iniciados:
-                dotacion = ticket_dotacion[p]
-                ini_auto = stock[p] + dotacion
-                if dotacion != 0 or m.get('inicial') is not None or stock[p] != 0:
-                    iniciados.add(p)
-            else:
-                dotacion = 0.0
-                ini_auto = stock[p]
-
+            # Lo de los tickets es lo recibido (o devuelto) del día. El inicial es el final del
+            # día anterior (el primer día, 0), salvo que se fije a mano.
+            ini_auto = stock[p]
             ini = ini_auto if m.get('inicial') is None or p in servicios else float(m['inicial'])
-            if m.get('inicial') is not None:
-                iniciados.add(p)
-            recibido_dia = rec_manual
-            devuelto_dia = dev_manual
+            recibido_dia = rec_manual + recibido_ticket[p]
+            devuelto_dia = dev_manual + devuelto_ticket[p]
             if p in servicios:
                 fin = ini
             else:

@@ -1,6 +1,6 @@
 # 00 — Traspaso: estado actual y cómo se trabaja
 
-> **Léelo primero** (después de `AGENTS.md`). Actualizado el **13-oct-2026**. Con este archivo, [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y el documento del tema se retoma el proyecto sin la conversación anterior.
+> **Léelo primero** (después de `AGENTS.md`). Actualizado el **18-oct-2026**. Con este archivo, [16](16_PROBLEMAS_CONOCIDOS_Y_PENDIENTES.md) y el documento del tema se retoma el proyecto sin la conversación anterior.
 
 ## 0. Cómo se trabaja (reglas del usuario)
 
@@ -36,7 +36,8 @@
 - **Continuidad del balance volumétrico y pérdidas del sistema circulante (15-oct-2026):**
   - El volumen final calculado del reporte $N$ (`calc_fosa`) pasa directamente como volumen inicial (`inicio_fosa`) del reporte $N+1$, garantizando que las pérdidas operacionales y adiciones queden descontadas en la línea de tiempo en vez de reiniciarse al aforo (`real`).
   - En el modal de registro de pérdidas, se preselecciona automáticamente el tanque activo del sistema circulante (`vaFosasActivas()`) y se actualiza la etiqueta a *"Tanque de la pérdida (volumen circulante)"*, evitando descuentos accidentales en tanques de reserva.
-- **Pruebas automáticas:** 143, todas pasan (`python manage.py test operaciones`).
+- **Revisión del cliente del 15-oct (18-oct-2026):** el Excel diario muestra lo **calculado** en *Tanques activos* y *Volumen total de circulación* (era la causa de que al día siguiente apareciera el real); los **tickets son lo recibido/devuelto** del día y el inicial es el final del día anterior (reemplaza la "dotación en Inicial" del 14-oct); las **pérdidas solo se registran en tanques del sistema activo**; *Agregar químicos* muestra existencia y cuánto queda. Sin migraciones. Ver [27](27_VOLUMEN_CALCULADO_TICKETS_Y_PERDIDAS.md) y [pruebas/21](pruebas/21_VOLUMEN_CALCULADO_TICKETS_PERDIDAS.md).
+- **Pruebas automáticas:** 147, todas pasan (`python manage.py test operaciones`).
 - **Migraciones:** el usuario aplicó hasta la **0034**. Faltan por aplicar: `0035_servicios_del_pozo`, `0036_inventario_usado_fluido_manual`, `0037_inventarioproductodia_devuelto_and_more` y `0038_reportediario_numero_reporte` (`python manage.py migrate`).
 
 ### Cadena de migraciones

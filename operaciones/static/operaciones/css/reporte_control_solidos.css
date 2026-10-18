@@ -1364,3 +1364,9 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Agregar químicos: lo que quedaría en existencia es negativo */
+.cs-negativo {
+  color: #c0392b;
+  font-weight: 600;
+}

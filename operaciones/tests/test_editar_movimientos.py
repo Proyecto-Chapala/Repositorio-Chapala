@@ -50,13 +50,22 @@ class EditarMovimientosTests(TestCase):
         self.assertEqual(self.calculado(datos, 'ACTIVO'), 130)      # 150 − 20 de pérdida
         self.assertEqual(self.calculado(datos, 'RESERVA'), 140)     # 300 − 150 − 10
 
-    def test_editar_el_tipo_de_perdida_y_el_tanque(self):
+    def test_editar_el_tipo_y_el_volumen_de_la_perdida(self):
         otra = self.pozo.categorias_perdida.order_by('codigo')[1].codigo
-        estado, datos = self.post('3/editar/', {'fosa': 2, 'volumen': 5, 'perdida_codigo': otra})
+        estado, datos = self.post('3/editar/', {'fosa': 1, 'volumen': 5, 'perdida_codigo': otra})
         self.assertEqual(estado, 200, datos)
         perdida = TransaccionVolumen.objects.get(secuencia=3)
-        self.assertEqual((perdida.fosa_numero, perdida.perdida_codigo), (2, otra))
-        self.assertEqual(self.calculado(datos, 'ACTIVO'), 100)
+        self.assertEqual((perdida.fosa_numero, perdida.perdida_codigo), (1, otra))
+        self.assertEqual(self.calculado(datos, 'ACTIVO'), 95)       # 100 − 5
+
+    def test_la_perdida_no_se_descuenta_de_la_reserva(self):
+        # La pérdida sale del volumen circulante (sistema activo), al registrarla o al editarla.
+        estado, datos = self.post('', {'tipo': 'PERDIDA', 'fosa': 2, 'volumen': 18, 'perdida_codigo': self.codigo_perdida})
+        self.assertEqual(estado, 400, datos)
+        self.assertIn('sistema activo', datos['error'])
+        estado, datos = self.post('3/editar/', {'fosa': 2, 'volumen': 20, 'perdida_codigo': self.codigo_perdida})
+        self.assertEqual(estado, 400, datos)
+        self.assertEqual(TransaccionVolumen.objects.get(secuencia=3).fosa_numero, 1)
 
     def test_eliminar_un_movimiento_que_no_es_el_ultimo(self):
         estado, datos = self.post('2/eliminar/')
