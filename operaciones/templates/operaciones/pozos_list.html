@@ -4,7 +4,7 @@
 {% block title %}Pozos &bull; Smart Mud{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}?v={{ version_base }}">
 {% endblock %}
 
 {% block migas %}<span class="migas-actual">Pozos</span>{% endblock %}
@@ -85,5 +85,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'operaciones/js/pozos_lista.js' %}"></script>
+<script src="{% static 'operaciones/js/pozos_lista.js' %}?v={{ version_base }}"></script>
 {% endblock %}

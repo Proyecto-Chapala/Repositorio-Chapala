@@ -19,7 +19,7 @@
   padding: 10px 12px;
   border: 1px dashed var(--color-border-dark);
   border-radius: 8px;
-  background: #fcfcfd;
+  background: var(--color-surface-muted);
 }
 
 .cs-kpi-label {
@@ -113,7 +113,7 @@
 .cs-subnav-tag {
   padding: 1px 7px;
   border-radius: 999px;
-  background: #f1f5f9;
+  background: var(--color-btn-neutral);
   color: var(--color-text-muted);
   font-size: 10px;
   font-weight: 700;
@@ -174,7 +174,7 @@
   padding: 14px;
   border: 1px dashed var(--color-border-dark);
   border-radius: 8px;
-  background: #fcfcfd;
+  background: var(--color-surface-muted);
   font-size: 12px;
   line-height: 1.5;
   color: var(--color-text-secondary);
@@ -221,7 +221,7 @@
   padding: 6px 12px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fcfcfd;
+  background: var(--color-surface-muted);
 }
 
 .cs-resumen-item span {
@@ -273,7 +273,7 @@
 
 .cs-tabla thead th {
   padding: 6px 8px;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   border-bottom: 1px solid var(--color-border);
   font-size: 10px;
   font-weight: 700;
@@ -292,7 +292,7 @@
 
 .cs-tabla tbody td {
   padding: 5px 8px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--color-btn-neutral);
   vertical-align: middle;
   white-space: nowrap;
 }
@@ -335,7 +335,7 @@
 .cs-menos { color: #b45309; font-weight: 700; }
 
 .cs-cero {
-  color: #cbd5e1;
+  color: var(--color-border-dark);
   font-weight: 500;
 }
 
@@ -364,7 +364,7 @@
 .cs-fila-total td {
   padding: 7px 8px;
   border-top: 2px solid var(--color-border);
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   font-weight: 800;
   color: var(--color-text-primary);
 }
@@ -466,7 +466,7 @@
   width: 9px;
   height: 9px;
   border-radius: 2px;
-  background: #e2e8f0;
+  background: var(--color-border);
 }
 
 .cs-ocup-punto.is-llena {
@@ -535,7 +535,7 @@
 
 .cs-posicion.is-vacia {
   border-style: dashed;
-  background: #fcfcfd;
+  background: var(--color-surface-muted);
 }
 
 .cs-posicion.is-llena {
@@ -561,7 +561,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #e2e8f0;
+  background: var(--color-border);
   color: var(--color-text-secondary);
   font-size: 11px;
   font-weight: 800;
@@ -594,7 +594,7 @@
   margin-top: 10px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
 }
 
@@ -944,7 +944,7 @@
 .cs-tipos {
   padding: 14px 18px;
   border-top: 1px solid var(--color-border);
-  background: #fcfcfd;
+  background: var(--color-surface-muted);
 }
 
 .cs-tipo-fila {
@@ -1142,7 +1142,7 @@
 }
 
 .cs-arbol-item:hover {
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   border-color: var(--color-border);
 }
 

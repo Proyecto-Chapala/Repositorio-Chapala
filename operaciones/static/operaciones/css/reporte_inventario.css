@@ -33,7 +33,7 @@
 .iv-contador {
   padding: 1px 8px;
   border-radius: 999px;
-  background: #f1f5f9;
+  background: var(--color-btn-neutral);
   color: var(--color-text-secondary);
   font-size: 10.5px;
   letter-spacing: 0;
@@ -57,7 +57,7 @@
 }
 
 .iv-lista-seleccion {
-  background: #fcfcfd;
+  background: var(--color-surface-muted);
 }
 
 .iv-item {
@@ -75,7 +75,7 @@
 }
 
 .iv-item:hover {
-  background: #f8fafc;
+  background: var(--color-surface-muted);
 }
 
 .iv-item.is-marcado {
@@ -214,7 +214,7 @@
 .va-kpi-error     { border-left-color: var(--color-red); background: var(--stock-bajo-bg); }
 .va-kpi-error strong { color: var(--stock-bajo-text); }
 .va-kpi-pendiente { border-left-color: #f59e0b; background: #fffbeb; }
-.va-kpi-neutro    { border-left-color: var(--color-navy); background: #fcfcfd; }
+.va-kpi-neutro    { border-left-color: var(--color-navy); background: var(--color-surface-muted); }
 
 /* Barra de acciones */
 .va-barra {
@@ -238,7 +238,7 @@
 
 .va-grid-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
   align-items: start;
 }
@@ -277,8 +277,8 @@
 .va-grupo-activo    { background: var(--color-orange); }
 .va-grupo-reserva   { background: #0ea5e9; }
 .va-grupo-premezcla { background: #8b5cf6; }
-.va-grupo-otras     { background: #64748b; }
-.va-grupo-ninguno   { background: #e2e8f0; }
+.va-grupo-otras     { background: var(--color-text-secondary); }
+.va-grupo-ninguno   { background: var(--color-border); }
 
 .va-fila-ninguno td {
   color: var(--color-text-muted);
@@ -290,7 +290,7 @@
 }
 
 .va-fila-base td {
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   font-weight: 700;
 }
 
@@ -344,8 +344,8 @@
   margin-left: 2px;
   padding: 0 6px;
   border-radius: 999px;
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--color-btn-neutral);
+  color: var(--color-text-primary);
   font-size: 10px;
   font-weight: 600;
   white-space: nowrap;
@@ -380,7 +380,7 @@
   gap: 8px;
   padding: 12px 18px;
   border-top: 1px solid var(--color-border);
-  background: #fcfcfd;
+  background: var(--color-surface-muted);
 }
 
 .va-pie-nota {
@@ -501,7 +501,7 @@
 @media (max-width: 1100px) {
   .va-grid-2,
   .va-grid-balance {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -567,6 +567,6 @@
 }
 
 /* Grupo de acumulados del pozo en la tabla de inventario */
-.cs-tabla .cs-grupo-acumulados      { background-color: #f8fafc; }
+.cs-tabla .cs-grupo-acumulados      { background-color: var(--color-surface-muted); }
 .cs-tabla thead .cs-grupo-acumulados { background-color: #edf2f7; }
 

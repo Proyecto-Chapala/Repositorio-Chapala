@@ -4,7 +4,7 @@
 {% block title %}Fluidos de Perforación y Equipos &middot; {{ pozo.nombre }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}?v={{ version_base }}">
 <link rel="stylesheet" href="{% static 'operaciones/css/daily_reports.css' %}">
 {% endblock %}
 
@@ -44,7 +44,7 @@
         <div class="df-left">
           <div class="section-title">Reporte Diario</div>
           <div class="btn-grid">
-            <button type="button" class="btn-action" onclick="openNewReportModal()" style="grid-column: 1 / -1; font-weight: 800; background: #fff7ed; border-color: #fdba74; color: #c2410c;">+ Nuevo Reporte</button>
+            <button type="button" class="btn-action" onclick="openNewReportModal()" style="grid-column: 1 / -1; font-weight: 800; background: var(--color-orange-soft-bg); border-color: #fdba74; color: #c2410c;">+ Nuevo Reporte</button>
           </div>
           <p class="hub-nota-bloqueo">
             Esta página solo sirve para <strong>crear</strong> el reporte del día y <strong>abrir</strong> los anteriores.
@@ -148,21 +148,21 @@
       </div>
 
       <!-- SECCIÓN INFERIOR: HISTORIAL DE REPORTES DIARIOS -->
-      <div class="historial-section" id="seccionHistorial" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+      <div class="historial-section" id="seccionHistorial" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border);">
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 22px;">&#128197;</span>
             <div>
-              <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.01em;">Historial de Reportes Diarios</h3>
-              <p style="font-size: 12px; color: #64748b; margin: 3px 0 0 0;">Reportes registrados cronológicamente para este pozo</p>
+              <h3 style="font-size: 16px; font-weight: 800; color: var(--color-text-primary); margin: 0; letter-spacing: -0.01em;">Historial de Reportes Diarios</h3>
+              <p style="font-size: 12px; color: var(--color-text-secondary); margin: 3px 0 0 0;">Reportes registrados cronológicamente para este pozo</p>
             </div>
           </div>
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn-action" id="btnToggleEliminar" onclick="toggleModoEliminar()" style="font-size: 12px; padding: 6px 14px; border-radius: 16px; background: #fef2f2; border-color: #fca5a5; color: #b91c1c; font-weight: 700;">
               &#128465; Eliminar Reporte
             </button>
-            <button type="button" class="btn-action" onclick="openNewReportModal()" style="font-size: 12px; padding: 6px 14px; border-radius: 16px; background: #fff7ed; border-color: #fdba74; color: #c2410c; font-weight: 700;">
+            <button type="button" class="btn-action" onclick="openNewReportModal()" style="font-size: 12px; padding: 6px 14px; border-radius: 16px; background: var(--color-orange-soft-bg); border-color: #fdba74; color: #c2410c; font-weight: 700;">
               + Nuevo Reporte
             </button>
           </div>
@@ -301,10 +301,10 @@
       <button type="button" class="modal-close-btn" onclick="cerrarModalEliminar()">&times;</button>
     </div>
     <div class="modal-body-modern">
-      <p style="font-size:13.5px; color:#334155; line-height:1.5; margin:0 0 12px 0;">
+      <p style="font-size:13.5px; color:var(--color-text-primary); line-height:1.5; margin:0 0 12px 0;">
         ¿Estás seguro de que deseas eliminar permanentemente el reporte diario del <strong id="deleteFechaTarget" style="color:#dc2626;"></strong>?
       </p>
-      <p style="font-size:12px; color:#64748b; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin:0;">
+      <p style="font-size:12px; color:var(--color-text-secondary); background:var(--color-surface-muted); border:1px solid var(--color-border); border-radius:8px; padding:10px; margin:0;">
         Se eliminarán todos los registros de profundidades, propiedades de lodo, equipos de sólidos y costos cargados en esta fecha.
       </p>
     </div>

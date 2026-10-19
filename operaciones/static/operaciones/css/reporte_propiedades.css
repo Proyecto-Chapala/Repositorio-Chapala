@@ -2,9 +2,9 @@
    REPORTE CORTO DE PROPIEDADES DEL LODO (imprimible)
    ===================================================================== */
 :root {
-  --rp-naranja: #f2994a;
+  --rp-naranja: var(--color-orange);
   --rp-texto: #1f2937;
-  --rp-suave: #64748b;
+  --rp-suave: var(--color-text-secondary);
   --rp-borde: #e5e7eb;
   --rp-fondo: #faf8f6;
 }
@@ -86,7 +86,7 @@ body {
 
 .rp-tabla { width: 100%; border-collapse: collapse; }
 .rp-tabla th, .rp-tabla td { padding: 6px 10px; border-bottom: 1px solid var(--rp-borde); text-align: left; }
-.rp-tabla th { background: #f8fafc; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--rp-suave); }
+.rp-tabla th { background: var(--color-surface-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--rp-suave); }
 .rp-tabla tbody tr:nth-child(even) { background: #fcfbfa; }
 .rp-num { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .rp-unidad { color: var(--rp-suave); font-size: 12px; }

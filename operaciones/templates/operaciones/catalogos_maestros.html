@@ -4,56 +4,55 @@
 {% block title %}Catálogos Maestros &bull; Smart Mud{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'operaciones/css/inventario.css' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/inventario.css' %}?v={{ version_estaticos }}">
 <link rel="stylesheet" href="{% static 'operaciones/css/catalogos_maestros.css' %}?v={{ version_estaticos }}">
 {% endblock %}
 
+{% block migas %}<span class="migas-actual">Catálogos maestros</span>{% endblock %}
+
 {% block content %}
 <div style="display:none;">{% csrf_token %}</div>
-<!-- BARRA SUPERIOR CON TÍTULO, BÚSQUEDA Y PESTAÑAS SEGMENTADAS RESPONSIVAS -->
-<header class="catalogos-header">
-  <div class="catalogos-header-row">
-    <div class="catalogos-title-area">
-      <h1 class="catalogos-title">Catálogos Maestros</h1>
-      <p class="catalogos-subtitle">Configuración y mantenimiento de componentes, equipos y parámetros globales</p>
-    </div>
-
-    <div class="catalogos-search-box search-box">
-      <span class="catalogos-search-icon search-icon">🔍</span>
-      <input type="text" id="searchInput" class="catalogos-search-input search-input" placeholder="Buscar por código o nombre...">
-    </div>
+<!-- CABECERA: título, búsqueda y pestañas de catálogos -->
+<header class="modulo-cabecera">
+  <div>
+    <div class="etiqueta-tecnica">Datos globales de todos los pozos</div>
+    <h1 class="modulo-titulo">Catálogos maestros</h1>
   </div>
-
-  <div class="catalogos-tabs-nav-wrapper">
-    <div class="catalogos-tabs category-badges" role="tablist" aria-label="Catálogos">
-      <button type="button" class="catalogos-tab-btn cat-badge active" id="tabEquipos">
-        <span class="catalogos-tab-icon">⚙️</span>
-        <span>Equipos</span>
-        <span class="catalogos-tab-counter" id="tabBadgeEquipos">{{ counts.equipos|default:0 }}</span>
-      </button>
-      <button type="button" class="catalogos-tab-btn cat-badge" id="tabMallas">
-        <span class="catalogos-tab-icon">▦</span>
-        <span>Mallas de Zaranda</span>
-        <span class="catalogos-tab-counter" id="tabBadgeMallas">{{ counts.mallas|default:0 }}</span>
-      </button>
-      <button type="button" class="catalogos-tab-btn cat-badge" id="tabPropiedades">
-        <span class="catalogos-tab-icon">📋</span>
-        <span>Propiedades de Equipo</span>
-        <span class="catalogos-tab-counter" id="tabBadgePropiedades">{{ counts.propiedades|default:0 }}</span>
-      </button>
-      <button type="button" class="catalogos-tab-btn cat-badge" id="tabBenchmark">
-        <span class="catalogos-tab-icon">📊</span>
-        <span>Parámetros de Benchmark</span>
-        <span class="catalogos-tab-counter" id="tabBadgeBenchmark">{{ counts.benchmark|default:0 }}</span>
-      </button>
-      <button type="button" class="catalogos-tab-btn cat-badge" id="tabComponentes">
-        <span class="catalogos-tab-icon">🔩</span>
-        <span>Componentes de Sarta</span>
-        <span class="catalogos-tab-counter" id="tabBadgeComponentes">{{ counts.componentes|default:0 }}</span>
-      </button>
-    </div>
-  </div>
+  <label class="modulo-buscar">
+    <svg class="icono" aria-hidden="true"><use href="#i-buscar"></use></svg>
+    <span class="sr-only">Buscar en el catálogo</span>
+    <input type="search" id="searchInput" placeholder="Buscar por código o nombre">
+  </label>
 </header>
+<div class="catalogos-tabs-nav-wrapper">
+  <div class="catalogos-tabs" role="tablist" aria-label="Catálogos">
+    <button type="button" class="catalogos-tab-btn active" id="tabEquipos" role="tab">
+      <svg class="icono" aria-hidden="true"><use href="#i-ajustes"></use></svg>
+      <span>Equipos</span>
+      <span class="catalogos-tab-counter dato" id="tabBadgeEquipos">{{ counts.equipos|default:0 }}</span>
+    </button>
+    <button type="button" class="catalogos-tab-btn" id="tabMallas" role="tab">
+      <svg class="icono" aria-hidden="true"><use href="#i-catalogo"></use></svg>
+      <span>Mallas de zaranda</span>
+      <span class="catalogos-tab-counter dato" id="tabBadgeMallas">{{ counts.mallas|default:0 }}</span>
+    </button>
+    <button type="button" class="catalogos-tab-btn" id="tabPropiedades" role="tab">
+      <svg class="icono" aria-hidden="true"><use href="#i-reporte"></use></svg>
+      <span>Propiedades de equipo</span>
+      <span class="catalogos-tab-counter dato" id="tabBadgePropiedades">{{ counts.propiedades|default:0 }}</span>
+    </button>
+    <button type="button" class="catalogos-tab-btn" id="tabBenchmark" role="tab">
+      <svg class="icono" aria-hidden="true"><use href="#i-grafico"></use></svg>
+      <span>Parámetros de benchmark</span>
+      <span class="catalogos-tab-counter dato" id="tabBadgeBenchmark">{{ counts.benchmark|default:0 }}</span>
+    </button>
+    <button type="button" class="catalogos-tab-btn" id="tabComponentes" role="tab">
+      <svg class="icono" aria-hidden="true"><use href="#i-inventario"></use></svg>
+      <span>Componentes de sarta</span>
+      <span class="catalogos-tab-counter dato" id="tabBadgeComponentes">{{ counts.componentes|default:0 }}</span>
+    </button>
+  </div>
+</div>
 
 <!-- CONTENEDOR PRINCIPAL: TARJETA WIREFRAME -->
 <div class="catalogos-content content-area">

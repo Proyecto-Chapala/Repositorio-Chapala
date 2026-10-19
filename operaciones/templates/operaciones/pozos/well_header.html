@@ -4,7 +4,7 @@
 {% block title %}Información General &bull; {{ pozo.nombre }} &bull; Smart Mud{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}?v={{ version_base }}">
 {% endblock %}
 
 {% block content %}

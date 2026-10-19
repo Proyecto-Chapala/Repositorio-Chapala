@@ -4,7 +4,7 @@
 {% block title %}Reporte Final &bull; {{ pozo.nombre }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}?v={{ version_base }}">
 <link rel="stylesheet" href="{% static 'operaciones/css/recap.css' %}?v={{ version_estaticos }}">
 {% endblock %}
 

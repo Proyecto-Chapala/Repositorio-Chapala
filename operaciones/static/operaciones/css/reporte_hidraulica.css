@@ -51,7 +51,7 @@
   margin-top: 4px;
   border-radius: 999px;
   overflow: hidden;
-  background: #f1f5f9;
+  background: var(--color-btn-neutral);
 }
 
 .hd-seg {
@@ -60,7 +60,7 @@
 }
 
 .hd-seg-sarta  { background: var(--color-navy); }
-.hd-seg-anular { background: #f2994a; }
+.hd-seg-anular { background: var(--color-orange); }
 .hd-seg-mecha  { background: #06b6d4; }
 
 .hd-reograma {
@@ -71,7 +71,7 @@
 }
 
 .hd-grid {
-  stroke: #e2e8f0;
+  stroke: var(--color-border);
   stroke-width: 1;
 }
 

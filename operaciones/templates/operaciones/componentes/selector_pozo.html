@@ -1,0 +1,30 @@
+{% comment %}
+Selector de pozo de la barra superior: el nombre del pozo abre una lista con buscador.
+Al elegir otro pozo se abre la misma pantalla de ese pozo (context_processors.selector_pozo).
+{% endcomment %}
+<div class="selector-pozo" id="selectorPozo">
+  <button type="button" class="selector-pozo-boton dato" id="selectorPozoBoton" aria-haspopup="listbox" aria-expanded="false" aria-controls="selectorPozoMenu" title="Cambiar de pozo">
+    {% for pozo_lateral in pozos_barra_lateral %}{% if pozo_lateral.pk == selector_pozo.pozo_id %}{{ pozo_lateral.nombre }}{% endif %}{% endfor %}
+    <svg class="icono" aria-hidden="true"><use href="#i-selector"></use></svg>
+  </button>
+  <div class="selector-pozo-menu" id="selectorPozoMenu" hidden>
+    <label class="selector-pozo-buscar">
+      <span class="sr-only">Buscar pozo</span>
+      <input type="search" id="selectorPozoTexto" placeholder="Cambiar a otro pozo" autocomplete="off">
+    </label>
+    <a class="selector-pozo-tablero" href="{% url 'operaciones:pozo_main' selector_pozo.pozo_id %}">
+      <svg class="icono" aria-hidden="true"><use href="#i-pozo"></use></svg>Tablero de este pozo
+    </a>
+    <ul class="selector-pozo-lista" role="listbox" aria-label="Pozos">
+      {% for pozo_lateral in pozos_barra_lateral %}
+        <li data-texto="{{ pozo_lateral.nombre|lower }}">
+          <a class="selector-pozo-item{% if pozo_lateral.pk == selector_pozo.pozo_id %} is-active{% endif %}" role="option" href="{% url selector_pozo.destino pozo_lateral.pk %}"{% if pozo_lateral.pk == selector_pozo.pozo_id %} aria-selected="true"{% endif %}>
+            <span class="dato">{{ pozo_lateral.nombre }}</span>
+            <span class="selector-pozo-detalle dato">{{ pozo_lateral.ultimo_reporte|date:"d/m/Y"|default:"sin reportes" }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    <p class="selector-pozo-vacio" id="selectorPozoVacio" hidden>Ningún pozo coincide.</p>
+  </div>
+</div>

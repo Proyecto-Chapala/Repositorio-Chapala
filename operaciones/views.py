@@ -31,7 +31,8 @@ from .forms_pozo import (
 
 def index(request):
     """Renderiza la SPA principal de Operaciones."""
-    return render(request, 'operaciones/index.html')
+    version_estaticos = _version_estaticos('operaciones/css/inventario.css', 'operaciones/js/inventario.js')
+    return render(request, 'operaciones/index.html', {'version_estaticos': version_estaticos})
 
 
 @require_http_methods(["GET"])
@@ -1533,6 +1534,7 @@ def catalogos_maestros_view(request):
         'componentes': ComponenteSarta.objects.count(),
     }
     version_estaticos = _version_estaticos(
+        'operaciones/css/inventario.css',
         'operaciones/css/catalogos_maestros.css',
         'operaciones/js/catalogos_maestros.js',
     )

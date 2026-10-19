@@ -136,7 +136,7 @@
   margin: 0;
   background: var(--rc-fondo);
   color: var(--rc-texto);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
   font-size: 12px;
 }
 

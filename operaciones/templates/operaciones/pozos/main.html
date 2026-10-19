@@ -4,13 +4,7 @@
 {% block title %}{{ pozo.nombre }} &bull; Smart Mud{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}">
-{% endblock %}
-
-{% block migas %}
-<a href="{% url 'operaciones:pozos_list' %}">Pozos</a>
-<svg class="icono" aria-hidden="true"><use href="#i-flecha"></use></svg>
-<span class="migas-actual dato">{{ pozo.nombre }}</span>
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}?v={{ version_base }}">
 {% endblock %}
 
 {% block content %}

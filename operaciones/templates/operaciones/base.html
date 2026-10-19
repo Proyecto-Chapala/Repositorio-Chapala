@@ -7,15 +7,13 @@
   <title>{% block title %}Smart Mud &bull; Operaciones{% endblock %}</title>
   <link rel="icon" type="image/png" href="{% static 'operaciones/img/favicon.png' %}">
 
-  <!-- Tipografía: IBM Plex Sans (textos) y JetBrains Mono (números). Sin internet se usan Segoe UI y Consolas. -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Tipografía: IBM Plex Sans (textos) y JetBrains Mono (números), guardadas en el proyecto (funcionan sin internet) -->
+  <link rel="stylesheet" href="{% static 'operaciones/css/fuentes.css' %}?v={{ version_base }}">
 
   <!-- Estilos Modulares -->
-  <link rel="stylesheet" href="{% static 'operaciones/css/variables.css' %}">
-  <link rel="stylesheet" href="{% static 'operaciones/css/layout.css' %}">
-  <link rel="stylesheet" href="{% static 'operaciones/css/styles.css' %}">
+  <link rel="stylesheet" href="{% static 'operaciones/css/variables.css' %}?v={{ version_base }}">
+  <link rel="stylesheet" href="{% static 'operaciones/css/layout.css' %}?v={{ version_base }}">
+  <link rel="stylesheet" href="{% static 'operaciones/css/styles.css' %}?v={{ version_base }}">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -31,7 +29,19 @@
         <a class="barra-superior-logo" href="{% url 'operaciones:pozos_list' %}" aria-label="Ir a pozos">
           <img src="{% static 'operaciones/img/smartmud_icono.png' %}" alt="">
         </a>
-        <nav class="migas" aria-label="Ubicación">{% block migas %}{% endblock %}</nav>
+        <nav class="migas" aria-label="Ubicación">
+          {% block migas %}
+            {% if selector_pozo %}
+              <a href="{% url 'operaciones:pozos_list' %}">Pozos</a>
+              <svg class="icono" aria-hidden="true"><use href="#i-flecha"></use></svg>
+              {% include 'operaciones/componentes/selector_pozo.html' %}
+              {% if selector_pozo.pantalla %}
+                <svg class="icono" aria-hidden="true"><use href="#i-flecha"></use></svg>
+                <span class="migas-actual">{{ selector_pozo.pantalla }}</span>
+              {% endif %}
+            {% endif %}
+          {% endblock %}
+        </nav>
         <button type="button" class="boton-buscar" id="btnBuscarGlobal" aria-label="Buscar pozo, reporte o pantalla">
           <svg class="icono" aria-hidden="true"><use href="#i-buscar"></use></svg>
           <span class="boton-buscar-texto">Buscar pozo, reporte o pantalla</span>
@@ -48,7 +58,7 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Scripts Modulares -->
-  <script src="{% static 'operaciones/js/app.js' %}"></script>
+  <script src="{% static 'operaciones/js/app.js' %}?v={{ version_base }}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

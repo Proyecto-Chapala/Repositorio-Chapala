@@ -7,13 +7,13 @@
 
 /* ---------- Paleta de actividades (10 colores, se repiten en orden) ---------- */
 .tt-color-0 { background: #14213d; }
-.tt-color-1 { background: #f2994a; }
+.tt-color-1 { background: var(--color-orange); }
 .tt-color-2 { background: #06b6d4; }
 .tt-color-3 { background: #d7263d; }
 .tt-color-4 { background: #10b981; }
 .tt-color-5 { background: #8b5cf6; }
 .tt-color-6 { background: #eab308; }
-.tt-color-7 { background: #64748b; }
+.tt-color-7 { background: var(--color-text-secondary); }
 .tt-color-8 { background: #ec4899; }
 .tt-color-9 { background: #0ea5e9; }
 
@@ -98,7 +98,7 @@
 
 .tt-chip-ok      { background: var(--stock-alto-bg);  color: var(--stock-alto-text); }
 .tt-chip-error   { background: var(--stock-bajo-bg);  color: var(--stock-bajo-text); }
-.tt-chip-neutro  { background: #f1f5f9;               color: var(--color-text-secondary); }
+.tt-chip-neutro  { background: var(--color-btn-neutral);               color: var(--color-text-secondary); }
 
 /* ---------- Barra apilada del período ---------- */
 .tt-barra {
@@ -108,7 +108,7 @@
   margin-top: 14px;
   border-radius: 999px;
   overflow: hidden;
-  background: #f1f5f9;
+  background: var(--color-btn-neutral);
   gap: 2px;
 }
 
@@ -121,8 +121,8 @@
 .tt-segmento-faltante {
   background: repeating-linear-gradient(
     45deg,
-    #f8fafc 0 6px,
-    #e2e8f0 6px 12px
+    var(--color-surface-muted) 0 6px,
+    var(--color-border) 6px 12px
   );
 }
 
@@ -176,8 +176,8 @@
 }
 
 .tt-punto-faltante {
-  background: repeating-linear-gradient(45deg, #f8fafc 0 3px, #cbd5e1 3px 6px);
-  border: 1px solid #cbd5e1;
+  background: repeating-linear-gradient(45deg, var(--color-surface-muted) 0 3px, var(--color-border-dark) 3px 6px);
+  border: 1px solid var(--color-border-dark);
 }
 
 /* ---------- Tabla de actividades ---------- */
@@ -196,7 +196,7 @@
 
 .tt-tabla thead th {
   padding: 8px 10px;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   border-bottom: 1px solid var(--color-border);
   font-size: 10px;
   font-weight: 700;
@@ -209,12 +209,12 @@
 
 .tt-tabla tbody td {
   padding: 5px 10px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--color-btn-neutral);
   vertical-align: middle;
 }
 
 .tt-fila-fija td {
-  background: #fcfcfd;
+  background: var(--color-surface-muted);
 }
 
 .tt-fila-opcional td {
@@ -243,7 +243,7 @@
   padding: 2px 8px;
   border: 1.5px solid var(--color-border);
   border-radius: 6px;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   color: var(--color-text-primary);
   font-size: 12.5px;
   font-family: inherit;
@@ -280,7 +280,7 @@
 .tt-mini-barra {
   height: 8px;
   border-radius: 999px;
-  background: #f1f5f9;
+  background: var(--color-btn-neutral);
   overflow: hidden;
 }
 
@@ -322,7 +322,7 @@
 .tt-fila-total td {
   padding: 8px 10px;
   border-top: 2px solid var(--color-border);
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   font-weight: 800;
   color: var(--color-text-primary);
 }

@@ -9,6 +9,7 @@ window.App = {
   init() {
     this.initSidebar();
     this.initBuscador();
+    this.initSelectorPozo();
   },
 
   initSidebar() {
@@ -117,6 +118,59 @@ window.App = {
     document.getElementById('btnBuscarGlobal').addEventListener('click', () => abrir());
     document.querySelectorAll('[data-abrir-buscador]').forEach((boton) => {
       boton.addEventListener('click', () => abrir(boton.dataset.abrirBuscador));
+    });
+  },
+
+  // Selector de pozo de la barra superior: lista con buscador; cada pozo abre la misma pantalla.
+  initSelectorPozo() {
+    const boton = document.getElementById('selectorPozoBoton');
+    const menu = document.getElementById('selectorPozoMenu');
+    if (!boton || !menu) return;
+
+    const entrada = document.getElementById('selectorPozoTexto');
+    const filas = Array.from(menu.querySelectorAll('li[data-texto]'));
+    const vacio = document.getElementById('selectorPozoVacio');
+
+    const abrir = () => {
+      menu.hidden = false;
+      boton.setAttribute('aria-expanded', 'true');
+      entrada.value = '';
+      filtrar();
+      entrada.focus();
+    };
+    const cerrar = () => {
+      menu.hidden = true;
+      boton.setAttribute('aria-expanded', 'false');
+    };
+    const filtrar = () => {
+      const texto = entrada.value.trim().toLowerCase();
+      let visibles = 0;
+      filas.forEach((fila) => {
+        fila.hidden = !fila.dataset.texto.includes(texto);
+        if (!fila.hidden) visibles += 1;
+      });
+      vacio.hidden = visibles > 0;
+    };
+
+    boton.addEventListener('click', () => (menu.hidden ? abrir() : cerrar()));
+    entrada.addEventListener('input', filtrar);
+    entrada.addEventListener('keydown', (evento) => {
+      const primero = menu.querySelector('li[data-texto]:not([hidden]) a');
+      if (evento.key === 'Enter' && primero) {
+        evento.preventDefault();
+        primero.click();
+      } else if (evento.key === 'ArrowDown' && primero) {
+        evento.preventDefault();
+        primero.focus();
+      }
+    });
+    menu.addEventListener('keydown', (evento) => {
+      if (evento.key !== 'Escape') return;
+      cerrar();
+      boton.focus();
+    });
+    document.addEventListener('click', (evento) => {
+      if (!menu.hidden && !menu.contains(evento.target) && !boton.contains(evento.target)) cerrar();
     });
   },
 

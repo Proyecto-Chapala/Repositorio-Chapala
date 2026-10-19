@@ -212,7 +212,6 @@ body {
   font-size: 0.85rem;
   color: var(--color-text-muted);
   white-space: nowrap;
-  overflow: hidden;
 }
 
 .migas a {
@@ -268,6 +267,121 @@ body {
   padding: 1px 5px;
   border: 1px solid var(--color-border-dark);
   border-radius: 4px;
+}
+
+/* Selector de pozo (componentes/selector_pozo.html) */
+.selector-pozo {
+  position: relative;
+  min-width: 0;
+}
+
+.selector-pozo-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--radio);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selector-pozo-boton:hover,
+.selector-pozo-boton[aria-expanded="true"] {
+  border-color: var(--color-text-muted);
+}
+
+.selector-pozo-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-dark);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(5, 10, 17, 0.18);
+  white-space: normal;
+}
+
+.selector-pozo-buscar input {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--radio);
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.selector-pozo-buscar input:focus {
+  outline: none;
+  border-color: var(--color-orange);
+}
+
+.selector-pozo-tablero {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 4px;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+.selector-pozo-lista {
+  list-style: none;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.selector-pozo-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 4px;
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.selector-pozo-item:hover,
+.selector-pozo-item:focus-visible,
+.selector-pozo-tablero:hover {
+  background: var(--color-orange-soft-bg);
+  outline: none;
+}
+
+.selector-pozo-item.is-active {
+  box-shadow: inset 2px 0 0 var(--color-orange);
+  font-weight: 600;
+}
+
+.selector-pozo-detalle {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.selector-pozo-vacio {
+  padding: 10px 8px;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
 }
 
 /* ==========================================================================
@@ -556,6 +670,20 @@ body {
   .boton-buscar-texto,
   .boton-buscar kbd {
     display: none;
+  }
+
+  /* En celular la lista de pozos ocupa el ancho de la pantalla */
+  .selector-pozo-menu {
+    position: fixed;
+    top: calc(var(--header-height) + 4px);
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-width: none;
+  }
+
+  .selector-pozo-boton {
+    max-width: 150px;
   }
 
   .main-wrapper {
