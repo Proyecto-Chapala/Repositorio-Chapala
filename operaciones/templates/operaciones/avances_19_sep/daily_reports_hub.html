@@ -35,6 +35,25 @@
     <div class="wi-value">{% if pozo.sistema_unidades == 'STANDARD_OILFIELD' %}Estándar Petrolero (Oilfield){% else %}{{ pozo.get_sistema_unidades_display }}{% endif %}</div>
   </div>
 
+  {% if pozo.estado == 'CERRADO' %}
+  <div class="hub-aviso-cerrado" style="margin-bottom: 20px; padding: 14px 20px; border-radius: 12px; background: #f8fafc; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 22px;">&#128274;</span>
+      <div>
+        <strong style="color: #334155; font-size: 14px;">Este pozo se encuentra Cerrado</strong>
+        <p style="margin: 3px 0 0; color: #64748b; font-size: 12.5px;">Las operaciones han concluido. Puedes consultar y descargar todos los reportes. Para agregar nuevos reportes o modificarlos, reabre el pozo.</p>
+      </div>
+    </div>
+    <form method="post" action="{% url 'operaciones:api_pozo_reabrir' pozo.pk %}" style="margin: 0;">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <button type="submit" class="btn-action" style="font-size: 12px; padding: 8px 16px; border-radius: 16px; background: #fff; border-color: #94a3b8; color: #334155; font-weight: 700; cursor: pointer;">
+        &#128275; Reabrir pozo
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
   <!-- MAIN WORKSPACE CARD -->
   <div class="subpage-card">
     <div class="tab-panel" style="padding: 24px;">
@@ -173,8 +192,8 @@
           <div class="dmb-left">
             <span class="dmb-icon">&#9888;&#65039;</span>
             <div>
-              <strong>Modo de Eliminación Activo</strong>
-              <p>Haz clic en el botón rojo de la fila para eliminar permanentemente el reporte de ese día.</p>
+              <strong>Modo de Eliminación Activo (Regla LIFO)</strong>
+              <p>Por integridad de volumetría e inventario, solo se puede eliminar el <strong>último reporte</strong> del pozo (botón rojo activo). Para reportes anteriores, elimine en orden cronológico inverso.</p>
             </div>
           </div>
           <button type="button" class="btn-exit-delete-mode" onclick="desactivarModoEliminar()">
@@ -226,11 +245,16 @@
         <label class="field-title">Fecha del Reporte</label>
         <div class="date-input-container">
           <span class="date-input-icon">&#128197;</span>
-          <input type="date" id="modalFecha" value="{{ sugerencia_fecha }}" onclick="this.showPicker && this.showPicker()" oninput="actualizarInfoFecha(this.value)">
+          <input type="date" id="modalFecha" value="{{ sugerencia_fecha }}" {% if spud_date_str %}min="{{ spud_date_str }}"{% endif %} onclick="this.showPicker && this.showPicker()" oninput="actualizarInfoFecha(this.value)">
         </div>
         <div id="previewFechaTexto" class="date-feedback-text">
           <span>&#10003;</span> <span id="fechaLegibleTexto">Cargando fecha...</span>
         </div>
+        {% if spud_date_str %}
+          <div style="font-size:11.5px; color:#64748b; margin-top:4px;">
+            <span>ℹ️ Inicio de perforación (Spud Date): <strong>{{ spud_date_str }}</strong></span>
+          </div>
+        {% endif %}
         <div class="date-shortcuts-bar">
           <button type="button" id="btnChipConsecutivo" class="date-chip-btn" onclick="fijarFechaSugerida()">&#9197; Consecutivo ({{ sugerencia_fecha }})</button>
           <button type="button" class="date-chip-btn" onclick="fijarFechaHoy()">&#128197; Hoy</button>
@@ -302,10 +326,10 @@
     </div>
     <div class="modal-body-modern">
       <p style="font-size:13.5px; color:var(--color-text-primary); line-height:1.5; margin:0 0 12px 0;">
-        ¿Estás seguro de que deseas eliminar permanentemente el reporte diario del <strong id="deleteFechaTarget" style="color:#dc2626;"></strong>?
+        ¿Estás seguro de que deseas eliminar permanentemente el último reporte diario correspondiente a <strong id="deleteFechaTarget" style="color:#dc2626;"></strong>?
       </p>
       <p style="font-size:12px; color:var(--color-text-secondary); background:var(--color-surface-muted); border:1px solid var(--color-border); border-radius:8px; padding:10px; margin:0;">
-        Se eliminarán todos los registros de profundidades, propiedades de lodo, equipos de sólidos y costos cargados en esta fecha.
+        Se eliminarán todos los registros de profundidades, propiedades de lodo, equipos de sólidos, tickets y consumos asociados a esta fecha.
       </p>
     </div>
     <div class="modal-actions-modern">
@@ -382,6 +406,15 @@ function desactivarModoEliminar(){
 }
 
 function toggleModoEliminar(){
+  {% if pozo.estado == 'CERRADO' %}
+  alert('Este pozo se encuentra cerrado. Para eliminar reportes debes reabrir el pozo primero.');
+  return;
+  {% endif %}
+  const tb = document.getElementById('reportesBody');
+  if(!tb || tb.querySelector('.table-empty-hint')){
+    showToast('No hay reportes registrados para eliminar', false);
+    return;
+  }
   if(modoEliminarActivo){
     desactivarModoEliminar();
   } else {
@@ -389,9 +422,10 @@ function toggleModoEliminar(){
   }
 }
 
-function solicitarEliminar(id, fecha){
+function solicitarEliminar(id, fecha, numReporte){
   reporteIdAEliminar = id;
-  document.getElementById('deleteFechaTarget').textContent = fecha;
+  const texto = numReporte ? `Reporte #${numReporte} (${fecha})` : fecha;
+  document.getElementById('deleteFechaTarget').textContent = texto;
   document.getElementById('confirmDeleteModal').classList.add('open');
 }
 
@@ -414,7 +448,11 @@ async function ejecutarEliminarReporte(){
     if(d.ok){
       showToast('Reporte diario eliminado con éxito');
       cerrarModalEliminar();
-      cargarReportes();
+      await cargarReportes();
+      const tb = document.getElementById('reportesBody');
+      if(tb && tb.querySelector('.table-empty-hint')){
+        desactivarModoEliminar();
+      }
     } else {
       showToast(d.error||'Error al eliminar', false);
     }
@@ -480,25 +518,34 @@ async function cargarReportes(){
       tb.innerHTML='<tr><td colspan="5" class="table-empty-hint">No hay reportes diarios registrados aún. Haz clic en "+ Nuevo Reporte" para crear el primero.</td></tr>';
       return;
     }
-    tb.innerHTML=d.reportes.map(r=>{
+    tb.innerHTML=d.reportes.map((r, index)=>{
       const esReciente = r.id === idReporteReciente;
+      const esUltimo = index === 0;
+      const numTxt = r.numero_reporte ? `Reporte #${r.numero_reporte}` : '';
       return `
-      <tr class="${modoEliminarActivo ? 'row-danger-highlight' : ''}" style="${esReciente ? 'background: #f0fdf4; border-left: 4px solid #22c55e;' : ''}">
+      <tr class="${modoEliminarActivo ? (esUltimo ? 'row-danger-highlight' : '') : ''}" style="${esReciente ? 'background: #f0fdf4; border-left: 4px solid #22c55e;' : ''}">
         <td>
           <a href="/pozos/${POZO_ID}/daily-report/${r.id}/" style="color:var(--color-accent); font-weight:700; text-decoration:none;">
             ${r.fecha}
           </a>
+          ${numTxt ? `<span style="color:#64748b; font-size:11px; margin-left:6px; font-weight:600;">(${numTxt})</span>` : ''}
           ${esReciente ? '<span style="background:#22c55e; color:#fff; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:8px; display:inline-block;">NUEVO</span>' : ''}
         </td>
         <td>${r.profundidad_actual} ft</td>
         <td>${r.actividad_actual||'&mdash;'}</td>
         <td><span class="project-chip" style="font-size:11px;">${r.tipo_lodo_display}</span></td>
         <td style="text-align:center;">
-          ${modoEliminarActivo ? `
-            <button type="button" class="btn-delete-row-prominent" onclick="solicitarEliminar(${r.id}, '${r.fecha}')">
-              &#128465; Eliminar
-            </button>
-          ` : `
+          ${modoEliminarActivo ? (
+            esUltimo ? `
+              <button type="button" class="btn-delete-row-prominent" onclick="solicitarEliminar(${r.id}, '${r.fecha}', '${r.numero_reporte || ''}')">
+                &#128465; Eliminar
+              </button>
+            ` : `
+              <span style="font-size:11px; color:#94a3b8; font-weight:600;" title="Solo se puede eliminar el último reporte del pozo. Debe eliminar los reportes posteriores en orden inverso.">
+                🔒 Bloqueado
+              </span>
+            `
+          ) : `
             <a href="/pozos/${POZO_ID}/daily-report/${r.id}/" class="btn-nav" style="text-decoration:none; color:var(--color-text-primary); font-size: 11px; padding: 4px 10px; margin-right: 5px; font-weight:700;">&#9998; Abrir</a>
           `}
         </td>
@@ -514,6 +561,10 @@ async function cargarReportes(){
 
 /* === MODAL NUEVO REPORTE === */
 function openNewReportModal(){
+  {% if pozo.estado == 'CERRADO' %}
+  alert('Este pozo se encuentra cerrado. Para registrar un nuevo reporte diario debes reabrir el pozo primero.');
+  return;
+  {% endif %}
   const el = document.getElementById('modalFecha');
   if(!el.value && SUGERENCIA_FECHA_DEFECTO){
     el.value = SUGERENCIA_FECHA_DEFECTO;
@@ -609,6 +660,13 @@ async function crearReporte(){
 
   if(!f){
     showToast('Selecciona una fecha válida', false);
+    return;
+  }
+
+  const inputFechaEl = document.getElementById('modalFecha');
+  const spudMin = inputFechaEl ? inputFechaEl.getAttribute('min') : null;
+  if(spudMin && f < spudMin){
+    showToast(`La fecha no puede ser anterior a la fecha de inicio / Spud Date (${spudMin})`, false);
     return;
   }
 

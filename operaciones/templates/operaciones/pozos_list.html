@@ -58,7 +58,7 @@
           <tr class="fila-enlace" data-estado="{{ pozo.estado }}" data-texto="{{ pozo.nombre|lower }} {{ pozo.operador|lower }} {{ pozo.well_header_info.field_area|lower }}">
             <td><a class="dato enlace-fila" href="{% url 'operaciones:pozo_main' pozo.id %}">{{ pozo.nombre }}</a></td>
             <td>
-              <span class="estado-chip {% if pozo.estado == 'ACTIVO' %}estado-ok{% elif pozo.estado == 'BORRADOR' %}estado-aviso{% endif %}">
+              <span class="estado-chip {% if pozo.estado == 'ACTIVO' %}estado-ok{% elif pozo.estado == 'BORRADOR' %}estado-aviso{% elif pozo.estado == 'CERRADO' %}estado-cerrado{% endif %}">
                 <span class="estado-punto"></span>{% if pozo.estado == 'BORRADOR' %}En creación{% else %}{{ pozo.get_estado_display }}{% endif %}
               </span>
             </td>

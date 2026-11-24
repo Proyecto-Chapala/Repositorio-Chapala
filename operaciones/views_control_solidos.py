@@ -253,6 +253,7 @@ def _resumen(pozo, reporte):
 
     return {
         'ok': True,
+        'success': True,
         'error_linea_tiempo': error_linea_tiempo,
         'inventario': inventario,
         'totales': {
@@ -294,8 +295,18 @@ def _obtener(pk, reporte_pk):
     return pozo, reporte
 
 
+def _validar_pozo_abierto(pozo):
+    """Verifica que el pozo no esté en estado CERRADO antes de permitir modificaciones."""
+    if pozo.estado == 'CERRADO':
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": "El pozo está cerrado. Para modificar datos del pozo o sus reportes debes reabrirlo primero."
+        }, status=400)
+    return None
+
+
 def _error(mensaje, status=400):
-    return JsonResponse({'ok': False, 'error': mensaje}, status=status)
+    return JsonResponse({'ok': False, 'success': False, 'error': mensaje}, status=status)
 
 
 @require_http_methods(["GET"])
@@ -313,6 +324,9 @@ def api_control_solidos_detail(request, pk, reporte_pk):
 def api_transaccion_malla_crear(request, pk, reporte_pk):
     """Registra un movimiento de malla: instalar, pasar al almacén o desechar."""
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = _leer_json(request)
         accion = str(body.get('accion') or '')
@@ -377,6 +391,9 @@ def api_transaccion_malla_crear(request, pk, reporte_pk):
 def api_transaccion_malla_deshacer(request, pk, reporte_pk):
     """Deshace la última transacción del pozo, solo si pertenece a este reporte."""
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     ultima = (TransaccionMalla.objects.filter(reporte__pozo=pozo)
               .select_related('reporte').order_by('-secuencia').first())
     if ultima is None:
@@ -404,6 +421,9 @@ def api_transaccion_malla_deshacer(request, pk, reporte_pk):
 def api_ticket_malla_guardar(request, pk, reporte_pk):
     """Crea o actualiza un ticket con sus cantidades por malla."""
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = _leer_json(request)
 
@@ -477,6 +497,9 @@ def api_ticket_malla_guardar(request, pk, reporte_pk):
 @require_http_methods(["POST"])
 def api_ticket_malla_eliminar(request, pk, reporte_pk, ticket_pk):
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     ticket = get_object_or_404(TicketMalla, pk=ticket_pk, reporte=reporte)
     try:
         with transaction.atomic():
@@ -495,6 +518,9 @@ def api_ticket_malla_eliminar(request, pk, reporte_pk, ticket_pk):
 @require_http_methods(["POST"])
 def api_tipo_ticket_malla_guardar(request, pk, reporte_pk):
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = _leer_json(request)
         nombre = ' '.join(str(body.get('nombre') or '').split())[:80]
@@ -532,6 +558,9 @@ def api_tipo_ticket_malla_guardar(request, pk, reporte_pk):
 @require_http_methods(["POST"])
 def api_tipo_ticket_malla_eliminar(request, pk, reporte_pk, tipo_pk):
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     tipo = get_object_or_404(TipoTicketMalla, pk=tipo_pk, pozo=pozo)
     try:
         tipo.delete()
@@ -783,6 +812,7 @@ def _resumen_equipos(pozo, reporte):
 
     return {
         'ok': True,
+        'success': True,
         'contexto': contexto,
         'equipos': filas,
         'categorias_perdida': categorias,
@@ -818,6 +848,9 @@ def _decimal_rango(valor, etiqueta, minimo, maximo):
 def api_uso_equipos_guardar(request, pk, reporte_pk):
     """Guarda el rendimiento, los costos y las paradas del día de todos los equipos."""
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = _leer_json(request)
         activos = {e.numero_serie: e for e in pozo.equipos_activos.select_related('equipo')}

@@ -32,6 +32,8 @@
 | 26 | [Rediseño del inventario y del lodo reciclado](26_REDISENO_INVENTARIO_Y_LODO_RECICLADO.md) | Orden de trabajo: lodo reciclado solo volumen, acumulados por columna; columnas manuales pendientes |
 | 28 | [Rediseño técnico de la interfaz](28_REDISENO_UI_TECNICO.md) | Rama `refactorizacion_ui`: estilo técnico, buscador Ctrl+K, lista de pozos en tabla, tablero del pozo, menú inferior en celular |
 | 25 | [Servicios del pozo](25_SERVICIOS_DEL_POZO.md) | Ingenieros y trailers cobrados por día con su categoría y tarifa; "usado en otro módulo" solo para transferencias a otra línea |
+| 29 | [Cerrar y reabrir pozo](29_CERRAR_Y_REABRIR_POZOS.md) | Ciclo de vida activo / cerrado, protección de reportes, recap y filtro en lista |
+| 30 | [Modificar pozo](30_MODIFICAR_POZO.md) | Matriz centralizada para corregir parámetros iniciales del pozo |
 | — | [Pruebas en pantalla](pruebas/README.md) | Un archivo por cambio: cómo funciona y pasos para verificar |
 
 ### Usuario

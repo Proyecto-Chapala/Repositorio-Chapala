@@ -1,0 +1,310 @@
+{% extends 'operaciones/base.html' %}
+{% load static %}
+
+{% block title %}Modificar Pozo &bull; {{ pozo.nombre }} &bull; Smart Mud{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'operaciones/css/pozos.css' %}?v={{ version_base }}">
+{% endblock %}
+
+{% block migas %}
+<a href="{% url 'operaciones:pozos_list' %}">Pozos</a>
+<svg class="icono" aria-hidden="true"><use href="#i-flecha"></use></svg>
+<a href="{% url 'operaciones:pozo_main' pozo.pk %}">{{ pozo.nombre }}</a>
+<svg class="icono" aria-hidden="true"><use href="#i-flecha"></use></svg>
+<span class="migas-actual">Modificar pozo</span>
+{% endblock %}
+
+{% block content %}
+<div class="modificar-contenedor">
+
+  <!-- Cabecera de la Pantalla -->
+  <div class="modificar-cabecera">
+    <div class="modificar-cabecera-izq">
+      <a class="modificar-volver" href="{% url 'operaciones:pozo_main' pozo.pk %}" title="Volver a la pantalla principal" aria-label="Volver">&larr;</a>
+      <div class="modificar-titulo-grupo">
+        <span class="etiqueta-tecnica">PARÁMETROS INICIALES &bull; {{ pozo.nombre }}</span>
+        <h1 class="modificar-titulo">Modificar Parámetros del Pozo</h1>
+      </div>
+    </div>
+    <div class="modificar-chips">
+      <span class="estado-chip {% if pozo.estado == 'ACTIVO' %}estado-ok{% elif pozo.estado == 'CERRADO' %}estado-cerrado{% endif %}">
+        <span class="estado-punto"></span>{{ pozo.get_estado_display }}
+      </span>
+      <span class="estado-chip">{{ pozo.get_sistema_unidades_display }}</span>
+      <span class="estado-chip">{{ pozo.moneda_simbolo }}</span>
+    </div>
+  </div>
+
+  <!-- Banner de Alerta / Contexto -->
+  {% if total_reportes %}
+  <div class="alerta-modificar">
+    <div class="alerta-modificar-icono">
+      <svg class="icono" aria-hidden="true"><use href="#i-aviso"></use></svg>
+    </div>
+    <div class="alerta-modificar-texto">
+      <strong>Atención:</strong> Este pozo cuenta con <strong>{{ total_reportes }} reporte{{ total_reportes|pluralize }} diario{{ total_reportes|pluralize }}</strong> registrado{{ total_reportes|pluralize }}.
+      Las modificaciones aplicadas en esta matriz corregirán los datos base del pozo y su cabecera operativa sin alterar los reportes históricos ya generados.
+    </div>
+  </div>
+  {% endif %}
+
+  {% if pozo_cerrado %}
+  <div class="alerta-modificar alerta-error" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; margin-bottom:20px;">
+    <div class="alerta-modificar-icono">
+      <svg class="icono" aria-hidden="true" style="color:#dc2626;"><use href="#i-aviso"></use></svg>
+    </div>
+    <div class="alerta-modificar-texto">
+      <strong>Pozo Cerrado:</strong> Este pozo se encuentra actualmente en estado <strong>CERRADO</strong>. Para modificar sus parámetros maestros debes reabrir el pozo primero desde la pantalla principal o el reporte final (Recap).
+    </div>
+  </div>
+  {% endif %}
+
+  <form method="post" id="formModificarPozo">
+    {% csrf_token %}
+
+    <fieldset {% if pozo_cerrado %}disabled{% endif %} style="border:none; padding:0; margin:0;">
+
+    {% if form.non_field_errors %}
+      <div class="alerta-modificar alerta-error">
+        <div class="alerta-modificar-icono">
+          <svg class="icono" aria-hidden="true"><use href="#i-aviso"></use></svg>
+        </div>
+        <div class="alerta-modificar-texto">
+          {% for error in form.non_field_errors %}{{ error }}<br>{% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- 1. Identificación del Pozo -->
+    <section class="modificar-seccion">
+      <div class="modificar-seccion-cabecera">
+        <div class="modificar-seccion-badge">01</div>
+        <div class="modificar-seccion-info">
+          <h2 class="modificar-seccion-titulo">Identificación del Pozo</h2>
+          <p class="modificar-seccion-subtitulo">Nombre oficial del pozo, operador asignado, campo petrolero y contratista de perforación.</p>
+        </div>
+      </div>
+
+      <div class="modificar-grid-2">
+        <div class="form-group">
+          <label for="id_nombre">Nombre del Pozo *</label>
+          <input type="text" name="nombre" id="id_nombre" class="form-input" value="{{ form.nombre.value|default:'' }}" required>
+          {% if form.nombre.errors %}<span class="field-error">{{ form.nombre.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="id_operador">Operador</label>
+          <input type="text" name="operador" id="id_operador" class="form-input" value="{{ form.operador.value|default:'' }}" placeholder="Ej: PDVSA, Chevron, Repsol">
+          {% if form.operador.errors %}<span class="field-error">{{ form.operador.errors.0 }}</span>{% endif %}
+        </div>
+      </div>
+
+      <div class="modificar-grid-3 modificar-grid-fila">
+        <div class="form-group">
+          <label for="id_field_area">Campo / Área</label>
+          <input type="text" name="field_area" id="id_field_area" class="form-input" value="{{ form.field_area.value|default:'' }}" placeholder="Ej: Faja del Orinoco">
+          {% if form.field_area.errors %}<span class="field-error">{{ form.field_area.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="id_nombre_taladro">Nombre del Taladro</label>
+          <input type="text" name="nombre_taladro" id="id_nombre_taladro" class="form-input" value="{{ form.nombre_taladro.value|default:'' }}" placeholder="Ej: CPV-12, PDV-45">
+          {% if form.nombre_taladro.errors %}<span class="field-error">{{ form.nombre_taladro.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="id_contratista">Contratista</label>
+          <input type="text" name="contratista" id="id_contratista" class="form-input" value="{{ form.contratista.value|default:'' }}" placeholder="Ej: Nabors, DLS">
+          {% if form.contratista.errors %}<span class="field-error">{{ form.contratista.errors.0 }}</span>{% endif %}
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Sistema de Unidades -->
+    <section class="modificar-seccion">
+      <div class="modificar-seccion-cabecera">
+        <div class="modificar-seccion-badge">02</div>
+        <div class="modificar-seccion-info">
+          <h2 class="modificar-seccion-titulo">Sistema de Unidades</h2>
+          <p class="modificar-seccion-subtitulo">Define el estándar de medidas utilizado para la presentación y reportes del pozo.</p>
+        </div>
+      </div>
+
+      <div class="modificar-grid-2">
+        <div class="form-group">
+          <label for="id_sistema_unidades">Sistema de Unidades *</label>
+          <select name="sistema_unidades" id="id_sistema_unidades" class="form-select">
+            {% for val, label in form.fields.sistema_unidades.choices %}
+              <option value="{{ val }}" {% if form.sistema_unidades.value == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          {% if form.sistema_unidades.errors %}<span class="field-error">{{ form.sistema_unidades.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="campo-nota-card">
+          <span class="campo-nota-titulo">Estándar de Campo</span>
+          <span class="campo-nota-texto">Los motores de ingeniería (hidráulica API RP 13D, geometría y volumetría) calculan internamente en unidades estándar petroleras (ft, in, bbl, gpm, lb/gal, psi).</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Parámetros Financieros y Monedas -->
+    <section class="modificar-seccion">
+      <div class="modificar-seccion-cabecera">
+        <div class="modificar-seccion-badge">03</div>
+        <div class="modificar-seccion-info">
+          <h2 class="modificar-seccion-titulo">Monedas y Parámetros Financieros</h2>
+          <p class="modificar-seccion-subtitulo">Moneda de facturación, precisión decimal, tasa impositiva y opción de cobro en moneda secundaria.</p>
+        </div>
+      </div>
+
+      <div class="modificar-grid-3">
+        <div class="form-group">
+          <label for="id_moneda_simbolo">
+            Moneda Principal *
+            {% if tiene_reportes %}<span style="font-size:11px; font-weight:700; color:#b45309; margin-left:6px;">🔒 Bloqueada</span>{% endif %}
+          </label>
+          <select name="moneda_simbolo" id="id_moneda_simbolo" class="form-select" {% if tiene_reportes %}disabled title="No se puede cambiar la moneda porque ya existen reportes diarios." style="background:#f8fafc; cursor:not-allowed;"{% endif %}>
+            {% for code, name in monedas_comunes %}
+              <option value="{{ code }}" {% if form.moneda_simbolo.value == code %}selected{% endif %}>{{ code }} — {{ name }}</option>
+            {% endfor %}
+          </select>
+          {% if tiene_reportes %}
+            <input type="hidden" name="moneda_simbolo" value="{{ form.moneda_simbolo.value|default:pozo.moneda_simbolo }}">
+          {% endif %}
+          {% if form.moneda_simbolo.errors %}<span class="field-error">{{ form.moneda_simbolo.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="id_moneda_decimales">Decimales de Moneda *</label>
+          <input type="number" name="moneda_decimales" id="id_moneda_decimales" class="form-input" min="0" max="4" value="{{ form.moneda_decimales.value|default:'2' }}" required>
+          {% if form.moneda_decimales.errors %}<span class="field-error">{{ form.moneda_decimales.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="id_tasa_impuesto">Tasa de Impuesto (%)</label>
+          <input type="number" step="0.01" name="tasa_impuesto" id="id_tasa_impuesto" class="form-input" min="0" max="100" value="{{ form.tasa_impuesto.value|default:'0' }}">
+          {% if form.tasa_impuesto.errors %}<span class="field-error">{{ form.tasa_impuesto.errors.0 }}</span>{% endif %}
+        </div>
+      </div>
+
+      <div class="modificar-grid-2 modificar-grid-fila">
+        <div class="form-group">
+          <label for="id_moneda_secundaria">Segunda Moneda (opcional)</label>
+          <select name="moneda_secundaria" id="id_moneda_secundaria" class="form-select">
+            <option value="">— Ninguna —</option>
+            {% for code, name in monedas_comunes %}
+              <option value="{{ code }}" {% if form.moneda_secundaria.value == code %}selected{% endif %}>{{ code }} — {{ name }}</option>
+            {% endfor %}
+          </select>
+          {% if form.moneda_secundaria.errors %}<span class="field-error">{{ form.moneda_secundaria.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label class="sr-only">Opción de cobro secundario</label>
+          <label class="checkbox-card" for="id_cobrar_en_secundaria" {% if tiene_reportes %}style="background:#f8fafc; cursor:not-allowed; opacity:0.8;" title="No se puede cambiar el cobro secundario porque ya existen reportes diarios."{% endif %}>
+            <input type="checkbox" name="cobrar_en_secundaria" id="id_cobrar_en_secundaria" {% if form.cobrar_en_secundaria.value %}checked{% endif %} {% if tiene_reportes %}disabled{% endif %}>
+            <div class="checkbox-card-content">
+              <span class="checkbox-card-titulo">
+                Cobrar en la segunda moneda
+                {% if tiene_reportes %}<span style="font-size:11px; font-weight:700; color:#b45309; margin-left:6px;">🔒 Bloqueado</span>{% endif %}
+              </span>
+              <span class="checkbox-card-desc">Emite los costos diarios y totales valorados en la moneda secundaria del contrato.</span>
+            </div>
+          </label>
+          {% if tiene_reportes and form.cobrar_en_secundaria.value %}
+            <input type="hidden" name="cobrar_en_secundaria" value="on">
+          {% endif %}
+          {% if form.cobrar_en_secundaria.errors %}<span class="field-error">{{ form.cobrar_en_secundaria.errors.0 }}</span>{% endif %}
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Fecha de Inicio y Fluido Inicial -->
+    <section class="modificar-seccion">
+      <div class="modificar-seccion-cabecera">
+        <div class="modificar-seccion-badge">04</div>
+        <div class="modificar-seccion-info">
+          <h2 class="modificar-seccion-titulo">Fecha de Inicio y Fluido Inicial</h2>
+          <p class="modificar-seccion-subtitulo">Parámetros operativos de arranque (Spud Date) y fluido para el primer tramo de perforación.</p>
+        </div>
+      </div>
+
+      <div class="modificar-grid-2">
+        <div class="form-group">
+          <label for="id_spud_date">Fecha Inicial (Spud Date)</label>
+          <input type="date" name="spud_date" id="id_spud_date" class="form-input" value="{{ form.spud_date.value|default:'' }}">
+          {% if tiene_reportes %}
+            <span style="display:block; font-size:11px; color:var(--color-text-muted); margin-top:4px;">No puede ser posterior a la fecha del primer reporte diario.</span>
+          {% endif %}
+          {% if form.spud_date.errors %}<span class="field-error">{{ form.spud_date.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="id_tipo_fluido_inicial">Tipo de Fluido Inicial</label>
+          <select name="tipo_fluido_inicial" id="id_tipo_fluido_inicial" class="form-select">
+            {% for val, label in form.fields.tipo_fluido_inicial.choices %}
+              <option value="{{ val }}" {% if form.tipo_fluido_inicial.value == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          {% if form.tipo_fluido_inicial.errors %}<span class="field-error">{{ form.tipo_fluido_inicial.errors.0 }}</span>{% endif %}
+        </div>
+      </div>
+
+      <div class="modificar-grid-2 modificar-grid-fila">
+        <div class="form-group">
+          <label for="id_numero_control_logit">N° de Control Log-It</label>
+          <input type="text" name="numero_control_logit" id="id_numero_control_logit" class="form-input" value="{{ form.numero_control_logit.value|default:'' }}" placeholder="Opcional">
+          {% if form.numero_control_logit.errors %}<span class="field-error">{{ form.numero_control_logit.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label class="sr-only">Tratamiento ambiental</label>
+          <label class="checkbox-card" for="id_con_tratamiento_disposicion">
+            <input type="checkbox" name="con_tratamiento_disposicion" id="id_con_tratamiento_disposicion" {% if form.con_tratamiento_disposicion.value %}checked{% endif %}>
+            <div class="checkbox-card-content">
+              <span class="checkbox-card-titulo">Con tratamiento y disposición de desechos</span>
+              <span class="checkbox-card-desc">Habilita la contabilidad ambiental y manejo de cortes en el pozo.</span>
+            </div>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Categorías de Pérdida -->
+    <section class="modificar-seccion">
+      <div class="modificar-seccion-cabecera">
+        <div class="modificar-seccion-badge">05</div>
+        <div class="modificar-seccion-info">
+          <h2 class="modificar-seccion-titulo">Categorías de Pérdida</h2>
+          <p class="modificar-seccion-subtitulo">Estructura normativa base para la contabilidad de eventos y pérdidas de volumen en tanques y hoyo.</p>
+        </div>
+      </div>
+
+      <div class="modificar-grid-2">
+        <div class="form-group">
+          <label for="id_categoria_perdida_tipo">Norma / Catálogo de Pérdida *</label>
+          <select name="categoria_perdida_tipo" id="id_categoria_perdida_tipo" class="form-select">
+            {% for val, label in form.fields.categoria_perdida_tipo.choices %}
+              <option value="{{ val }}" {% if form.categoria_perdida_tipo.value == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          {% if form.categoria_perdida_tipo.errors %}<span class="field-error">{{ form.categoria_perdida_tipo.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="campo-nota-card">
+          <span class="campo-nota-titulo">Catálogo Estándar</span>
+          <span class="campo-nota-texto">La norma estándar clasifica 15 eventos operativos clásicos entre superficie (zarandas, centrífuga, evaporación, etc.) y subsuelo (formación, detrás del revestidor).</span>
+        </div>
+      </div>
+    </section>
+
+    </fieldset>
+
+    <!-- Pie / Acciones -->
+    <div class="modificar-pie">
+      <span class="modificar-pie-nota">Revise con atención cada campo antes de confirmar los cambios maestros.</span>
+      <div class="modificar-pie-acciones">
+        <a href="{% url 'operaciones:pozo_main' pozo.pk %}" class="boton">Cancelar</a>
+        <button type="submit" class="boton boton-principal" id="btnGuardarModificacion" {% if pozo_cerrado %}disabled title="Reabre el pozo para guardar modificaciones" style="opacity:0.5; cursor:not-allowed;"{% endif %}>
+          <svg class="icono" aria-hidden="true"><use href="#i-ok"></use></svg>
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+
+  </form>
+
+</div>
+{% endblock %}

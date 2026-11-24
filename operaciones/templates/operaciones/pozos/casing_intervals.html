@@ -61,7 +61,7 @@
       </div>
 
       <div class="form-grid-3">
-        <div class="form-group"><label for="dInterval">Número de Intervalo</label><input type="number" id="dInterval" class="form-input"></div>
+        <div class="form-group"><label for="dInterval">Número de Intervalo</label><input type="number" id="dInterval" class="form-input" readonly title="El número de intervalo es correlativo y automático."></div>
         <div class="form-group">
           <label for="dTipo">Tipo</label>
           <select id="dTipo" class="form-select">
@@ -120,6 +120,7 @@
 {% block extra_js %}
 <script>
   window.POZO_ID = {{ pozo.id }};
+  window.POZO_ESTADO = "{{ pozo.estado }}";
 </script>
 <script src="{% static 'operaciones/js/casing_intervals.js' %}"></script>
 {% endblock %}

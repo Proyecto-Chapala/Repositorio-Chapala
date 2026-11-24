@@ -5,15 +5,15 @@ Este documento cubre todo lo que se hace **antes** de llenar reportes diarios: e
 ## 1. Ciclo de vida de un pozo
 
 ```
-BORRADOR  ──(wizard paso 4: confirmar)──►  ACTIVO  ──(sin pantalla aún)──►  CERRADO
-   │                                          │
-   └─ se puede retomar en                     └─ la 1ª vez que se abre → pantalla Spud Date (una sola vez)
+BORRADOR  ──(wizard paso 4: confirmar)──►  ACTIVO  ──(Reporte Final / Configuración)──►  CERRADO
+   │                                          │                                                      │
+   └─ se puede retomar en                     └─ la 1ª vez que se abre → Spud Date                   └─ Reabrir pozo
       /pozos/<id>/continuar/
 ```
 
 - Mientras está en **BORRADOR**, cada paso del wizard se guarda solo, y `paso_wizard_actual` recuerda dónde quedó el usuario.
 - Si alguien entra a `/pozos/<id>/` (pantalla principal) o a Spud Date con el pozo en borrador, el sistema lo **redirige al wizard**.
-- **CERRADO** existe como opción del modelo, pero ninguna pantalla lo asigna.
+- **CERRADO** (19-oct-2026): se asigna desde el Reporte Final (Recap) o la Pantalla Principal del pozo. Pasa al filtro *Cerrados* y protege la carga de reportes. Se puede **reabrir** en cualquier momento. Ver [29](29_CERRAR_Y_REABRIR_POZOS.md).
 
 ## 2. Wizard de creación (`/pozos/nuevo/`)
 
@@ -83,7 +83,11 @@ Es el equivalente al *Project Main Screen* de ONE-TRAX. Muestra tarjetas con su 
 
 **Barra de navegación (18-oct-2026):** cada una de las 8 pantallas de *Información del Pozo* muestra, bajo el título, una barra fija con 🏠 Pantalla principal y las demás pantallas; la actual queda resaltada (`aria-current="page"`). Parcial `pozos/_nav_info_pozo.html`, se incluye con `with seccion_activa='<nombre de la URL>'`; estilos `.info-pozo-nav` en `pozos.css`. Si se agrega una pantalla nueva, se agrega su enlace en el parcial y en `tests/test_nav_info_pozo.py`.
 
-**Eliminar pozo (02-oct-2026):** botón rojo en el encabezado. Abre una ventana que exige escribir el nombre exacto del pozo; llama a `api_pozo_eliminar`, que dentro de una transacción devuelve al inventario general lo consumido por cada reporte (`devolver_stock_reporte`) y borra el pozo. JS: `static/operaciones/js/pozo_main.js`.
+**Modificar pozo (19-oct-2026):** botón en la barra de acciones superior (`⚙️ Modificar pozo`). Permite corregir en una única matriz técnica los datos definidos en el alta del pozo (nombre, operador, contratista, taladro, sistema de unidades, monedas/impuestos, Spud Date, tipo de fluido inicial y categorías de pérdidas) sin alterar la continuidad histórica. Ver [30](30_MODIFICAR_POZO.md) y [pruebas/26](pruebas/26_MODIFICAR_POZO.md).
+
+**Cerrar y Reabrir pozo (19-oct-2026):** botones en la barra de acciones superior y en el Reporte Final. Permiten alternar el estado del pozo entre `ACTIVO` y `CERRADO`. Al cerrarse, el pozo pasa a la pestaña *Cerrados* del directorio y bloquea la creación/eliminación de reportes diarios en el Hub para proteger el histórico. Ver [29](29_CERRAR_Y_REABRIR_POZOS.md) y [pruebas/25](pruebas/25_CERRAR_Y_REABRIR_POZO.md).
+
+**Eliminar pozo (02-oct-2026):** botón rojo en el encabezado. Abre una ventana que exige escribir el nombre exacto del pozo; llama a `api_pozo_eliminar`, que dentro de una transacción devuelve al inventario general lo consumido por cada reporte (`devolver_stock_reporte`) y envía el pozo a la papelera (0034). JS: `static/operaciones/js/pozo_main.js`.
 
 Las tarjetas "Próximamente" ya no se muestran.
 
@@ -175,4 +179,8 @@ Compartidos por **todos** los pozos. La pantalla tiene 5 pestañas con buscador 
 
 Los componentes de sarta alimentan la sarta de la pestaña 4: se escogen de la lista y se copian sus diámetros.
 
+**Comportamiento del formulario en las 5 pestañas:**
+Para prevenir escrituras accidentales y mantener consistencia visual, los formularios de las 5 pestañas inician en estado `Bloqueado` (campos y botones de guardar/cancelar deshabilitados). Se desbloquean en modo `Creando` al pulsar el botón `+ Nuevo ...`, o en modo `Editando` al seleccionar un elemento de la tabla. Al guardar, cancelar o eliminar, el formulario regresa a `Bloqueado`.
+
 El **catálogo de productos** es el del módulo **Inventario** (ver [15](15_INVENTARIO_ALMACEN.md)).
+

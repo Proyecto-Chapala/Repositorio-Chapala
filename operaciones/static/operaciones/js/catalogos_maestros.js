@@ -339,6 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
         equipoSeleccionadoId = id;
         const eq = equipos.find(function (e) { return e.id === id; });
         if (!eq) return;
+        setEquipoFormDisabled(false);
         inputEquipoCodigo.value = eq.codigo;
         inputEquipoNombre.value = eq.nombre;
         inputEquipoTipo.value = eq.tipo_equipo;
@@ -355,6 +356,7 @@ document.addEventListener('DOMContentLoaded', function () {
         mallaSeleccionadaId = id;
         const m = mallas.find(function (x) { return x.id === id; });
         if (!m) return;
+        setMallaFormDisabled(false);
         inputMallaCodigo.value = m.codigo;
         inputMallaDescripcion.value = m.descripcion;
         inputMallaMesh.value = m.mesh_size;
@@ -370,6 +372,7 @@ document.addEventListener('DOMContentLoaded', function () {
         propiedadSeleccionadaId = id;
         const p = propiedades.find(function (x) { return x.id === id; });
         if (!p) return;
+        setPropiedadFormDisabled(false);
         inputPropiedadTipo.value = p.tipo_equipo;
         inputPropiedadDescripcion.value = p.descripcion;
         inputPropiedadUnidad.value = p.unidad;
@@ -386,6 +389,7 @@ document.addEventListener('DOMContentLoaded', function () {
         benchmarkSeleccionadoId = id;
         const b = benchmarks.find(function (x) { return x.id === id; });
         if (!b) return;
+        setBenchmarkFormDisabled(false);
         inputBenchmarkGrupo.value = b.grupo;
         inputBenchmarkDescripcion.value = b.descripcion;
         inputBenchmarkUnidad.value = b.unidad;
@@ -399,7 +403,31 @@ document.addEventListener('DOMContentLoaded', function () {
         renderBenchmarks();
     }
 
-    function limpiarFormEquipo() {
+    function setEquipoFormDisabled(bloqueado) {
+        inputEquipoCodigo.disabled = bloqueado;
+        inputEquipoTipo.disabled = bloqueado;
+        inputEquipoNombre.disabled = bloqueado;
+        inputEquipoPosiciones.disabled = bloqueado;
+        btnGuardarEquipo.disabled = bloqueado;
+        btnCancelarEquipo.disabled = bloqueado;
+    }
+
+    function bloquearFormEquipo() {
+        equipoSeleccionadoId = null;
+        inputEquipoCodigo.value = '';
+        inputEquipoNombre.value = '';
+        inputEquipoTipo.value = 'CENTRIFUGA';
+        inputEquipoPosiciones.value = 0;
+        formTituloEquipo.textContent = 'Nuevo Equipo';
+        formModoEquipo.textContent = 'Bloqueado';
+        formModoEquipo.className = 'catalogos-mode-badge bloqueado form-mode-tag';
+        errorEquipo.textContent = '';
+        btnEliminarEquipo.disabled = true;
+        setEquipoFormDisabled(true);
+        renderEquipos();
+    }
+
+    function activarNuevoEquipo() {
         equipoSeleccionadoId = null;
         inputEquipoCodigo.value = '';
         inputEquipoNombre.value = '';
@@ -410,10 +438,34 @@ document.addEventListener('DOMContentLoaded', function () {
         formModoEquipo.className = 'catalogos-mode-badge creando form-mode-tag';
         errorEquipo.textContent = '';
         btnEliminarEquipo.disabled = true;
+        setEquipoFormDisabled(false);
         renderEquipos();
+        inputEquipoCodigo.focus();
     }
 
-    function limpiarFormMalla() {
+    function setMallaFormDisabled(bloqueado) {
+        inputMallaCodigo.disabled = bloqueado;
+        inputMallaDescripcion.disabled = bloqueado;
+        inputMallaMesh.disabled = bloqueado;
+        btnGuardarMalla.disabled = bloqueado;
+        btnCancelarMalla.disabled = bloqueado;
+    }
+
+    function bloquearFormMalla() {
+        mallaSeleccionadaId = null;
+        inputMallaCodigo.value = '';
+        inputMallaDescripcion.value = '';
+        inputMallaMesh.value = '';
+        formTituloMalla.textContent = 'Nueva Malla';
+        formModoMalla.textContent = 'Bloqueado';
+        formModoMalla.className = 'catalogos-mode-badge bloqueado form-mode-tag';
+        errorMalla.textContent = '';
+        btnEliminarMalla.disabled = true;
+        setMallaFormDisabled(true);
+        renderMallas();
+    }
+
+    function activarNuevaMalla() {
         mallaSeleccionadaId = null;
         inputMallaCodigo.value = '';
         inputMallaDescripcion.value = '';
@@ -423,10 +475,36 @@ document.addEventListener('DOMContentLoaded', function () {
         formModoMalla.className = 'catalogos-mode-badge creando form-mode-tag';
         errorMalla.textContent = '';
         btnEliminarMalla.disabled = true;
+        setMallaFormDisabled(false);
         renderMallas();
+        inputMallaCodigo.focus();
     }
 
-    function limpiarFormPropiedad() {
+    function setPropiedadFormDisabled(bloqueado) {
+        inputPropiedadTipo.disabled = bloqueado;
+        inputPropiedadDescripcion.disabled = bloqueado;
+        inputPropiedadUnidad.disabled = bloqueado;
+        inputPropiedadOrden.disabled = bloqueado;
+        btnGuardarPropiedad.disabled = bloqueado;
+        btnCancelarPropiedad.disabled = bloqueado;
+    }
+
+    function bloquearFormPropiedad() {
+        propiedadSeleccionadaId = null;
+        inputPropiedadTipo.value = 'CENTRIFUGA';
+        inputPropiedadDescripcion.value = '';
+        inputPropiedadUnidad.value = '';
+        inputPropiedadOrden.value = '';
+        formTituloPropiedad.textContent = 'Nueva Propiedad';
+        formModoPropiedad.textContent = 'Bloqueado';
+        formModoPropiedad.className = 'catalogos-mode-badge bloqueado form-mode-tag';
+        errorPropiedad.textContent = '';
+        btnEliminarPropiedad.disabled = true;
+        setPropiedadFormDisabled(true);
+        renderPropiedades();
+    }
+
+    function activarNuevaPropiedad() {
         propiedadSeleccionadaId = null;
         inputPropiedadTipo.value = 'CENTRIFUGA';
         inputPropiedadDescripcion.value = '';
@@ -437,10 +515,38 @@ document.addEventListener('DOMContentLoaded', function () {
         formModoPropiedad.className = 'catalogos-mode-badge creando form-mode-tag';
         errorPropiedad.textContent = '';
         btnEliminarPropiedad.disabled = true;
+        setPropiedadFormDisabled(false);
         renderPropiedades();
+        inputPropiedadDescripcion.focus();
     }
 
-    function limpiarFormBenchmark() {
+    function setBenchmarkFormDisabled(bloqueado) {
+        inputBenchmarkGrupo.disabled = bloqueado;
+        inputBenchmarkDescripcion.disabled = bloqueado;
+        inputBenchmarkUnidad.disabled = bloqueado;
+        inputBenchmarkFluido.disabled = bloqueado;
+        inputBenchmarkTipoDato.disabled = bloqueado;
+        btnGuardarBenchmark.disabled = bloqueado;
+        btnCancelarBenchmark.disabled = bloqueado;
+    }
+
+    function bloquearFormBenchmark() {
+        benchmarkSeleccionadoId = null;
+        inputBenchmarkGrupo.value = '';
+        inputBenchmarkDescripcion.value = '';
+        inputBenchmarkUnidad.value = '';
+        inputBenchmarkFluido.value = 'NA';
+        inputBenchmarkTipoDato.value = 'MIN_MAX';
+        formTituloBenchmark.textContent = 'Nuevo Parámetro';
+        formModoBenchmark.textContent = 'Bloqueado';
+        formModoBenchmark.className = 'catalogos-mode-badge bloqueado form-mode-tag';
+        errorBenchmark.textContent = '';
+        btnEliminarBenchmark.disabled = true;
+        setBenchmarkFormDisabled(true);
+        renderBenchmarks();
+    }
+
+    function activarNuevoBenchmark() {
         benchmarkSeleccionadoId = null;
         inputBenchmarkGrupo.value = '';
         inputBenchmarkDescripcion.value = '';
@@ -452,12 +558,14 @@ document.addEventListener('DOMContentLoaded', function () {
         formModoBenchmark.className = 'catalogos-mode-badge creando form-mode-tag';
         errorBenchmark.textContent = '';
         btnEliminarBenchmark.disabled = true;
+        setBenchmarkFormDisabled(false);
         renderBenchmarks();
+        inputBenchmarkGrupo.focus();
     }
 
     // ---------- CRUD Equipos ----------
-    btnNuevoEquipo.addEventListener('click', limpiarFormEquipo);
-    btnCancelarEquipo.addEventListener('click', limpiarFormEquipo);
+    btnNuevoEquipo.addEventListener('click', activarNuevoEquipo);
+    btnCancelarEquipo.addEventListener('click', bloquearFormEquipo);
 
     btnGuardarEquipo.addEventListener('click', async function () {
         const codigo = inputEquipoCodigo.value.trim();
@@ -486,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify(payload),
             });
             showToast(esEdicion ? 'Equipo actualizado correctamente.' : 'Equipo creado correctamente.', 'success');
-            limpiarFormEquipo();
+            bloquearFormEquipo();
             await cargarEquipos(searchInput.value.trim());
         } catch (err) {
             const msg = (err.data && err.data.error) || 'No se pudo guardar el equipo.';
@@ -500,7 +608,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             await apiFetch('/api/equipos/' + equipoSeleccionadoId + '/eliminar/', { method: 'POST' });
             showToast('Equipo eliminado correctamente.', 'success');
-            limpiarFormEquipo();
+            bloquearFormEquipo();
             await cargarEquipos(searchInput.value.trim());
         } catch (err) {
             const msg = (err.data && err.data.error) || 'No se pudo eliminar el equipo.';
@@ -509,8 +617,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ---------- CRUD Mallas ----------
-    btnNuevaMalla.addEventListener('click', limpiarFormMalla);
-    btnCancelarMalla.addEventListener('click', limpiarFormMalla);
+    btnNuevaMalla.addEventListener('click', activarNuevaMalla);
+    btnCancelarMalla.addEventListener('click', bloquearFormMalla);
 
     btnGuardarMalla.addEventListener('click', async function () {
         const codigo = inputMallaCodigo.value.trim();
@@ -536,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify(payload),
             });
             showToast(esEdicion ? 'Malla actualizada correctamente.' : 'Malla creada correctamente.', 'success');
-            limpiarFormMalla();
+            bloquearFormMalla();
             await cargarMallas(searchInput.value.trim());
         } catch (err) {
             const msg = (err.data && err.data.error) || 'No se pudo guardar la malla.';
@@ -550,7 +658,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             await apiFetch('/api/mallas/' + mallaSeleccionadaId + '/eliminar/', { method: 'POST' });
             showToast('Malla eliminada correctamente.', 'success');
-            limpiarFormMalla();
+            bloquearFormMalla();
             await cargarMallas(searchInput.value.trim());
         } catch (err) {
             const msg = (err.data && err.data.error) || 'No se pudo eliminar la malla.';
@@ -559,8 +667,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ---------- CRUD Propiedades de Equipo ----------
-    btnNuevaPropiedad.addEventListener('click', limpiarFormPropiedad);
-    btnCancelarPropiedad.addEventListener('click', limpiarFormPropiedad);
+    btnNuevaPropiedad.addEventListener('click', activarNuevaPropiedad);
+    btnCancelarPropiedad.addEventListener('click', bloquearFormPropiedad);
 
     btnGuardarPropiedad.addEventListener('click', async function () {
         const tipoEquipo = inputPropiedadTipo.value;
@@ -587,7 +695,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify(payload),
             });
             showToast(esEdicion ? 'Propiedad actualizada correctamente.' : 'Propiedad creada correctamente.', 'success');
-            limpiarFormPropiedad();
+            bloquearFormPropiedad();
             await cargarPropiedades(searchInput.value.trim());
         } catch (err) {
             const msg = (err.data && err.data.error) || 'No se pudo guardar la propiedad.';
@@ -601,7 +709,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             await apiFetch('/api/propiedades-equipo/' + propiedadSeleccionadaId + '/eliminar/', { method: 'POST' });
             showToast('Propiedad eliminada correctamente.', 'success');
-            limpiarFormPropiedad();
+            bloquearFormPropiedad();
             await cargarPropiedades(searchInput.value.trim());
         } catch (err) {
             const msg = (err.data && err.data.error) || 'No se pudo eliminar la propiedad.';
@@ -610,8 +718,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ---------- CRUD Parámetros de Benchmark ----------
-    btnNuevoBenchmark.addEventListener('click', limpiarFormBenchmark);
-    btnCancelarBenchmark.addEventListener('click', limpiarFormBenchmark);
+    btnNuevoBenchmark.addEventListener('click', activarNuevoBenchmark);
+    btnCancelarBenchmark.addEventListener('click', bloquearFormBenchmark);
 
     btnGuardarBenchmark.addEventListener('click', async function () {
         const grupo = inputBenchmarkGrupo.value.trim();
@@ -642,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify(payload),
             });
             showToast(esEdicion ? 'Parámetro actualizado correctamente.' : 'Parámetro creado correctamente.', 'success');
-            limpiarFormBenchmark();
+            bloquearFormBenchmark();
             await cargarBenchmarks(searchInput.value.trim());
         } catch (err) {
             const msg = (err.data && err.data.error) || 'No se pudo guardar el parámetro.';
@@ -656,7 +764,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             await apiFetch('/api/parametros-benchmark/' + benchmarkSeleccionadoId + '/eliminar/', { method: 'POST' });
             showToast('Parámetro eliminado correctamente.', 'success');
-            limpiarFormBenchmark();
+            bloquearFormBenchmark();
             await cargarBenchmarks(searchInput.value.trim());
         } catch (err) {
             const msg = (err.data && err.data.error) || 'No se pudo eliminar el parámetro.';
@@ -713,6 +821,7 @@ document.addEventListener('DOMContentLoaded', function () {
         componenteSeleccionadoId = id;
         const c = componentes.find(function (x) { return x.id === id; });
         if (!c) return;
+        setComponenteFormDisabled(false);
         inputComponenteCodigo.value = c.codigo;
         inputComponenteDescripcion.value = c.descripcion;
         inputComponenteTipo.value = c.tipo;
@@ -730,7 +839,41 @@ document.addEventListener('DOMContentLoaded', function () {
         renderComponentes();
     }
 
-    function limpiarFormComponente() {
+    function setComponenteFormDisabled(bloqueado) {
+        inputComponenteCodigo.disabled = bloqueado;
+        inputComponenteDescripcion.disabled = bloqueado;
+        inputComponenteTipo.disabled = bloqueado;
+        inputComponenteOd.disabled = bloqueado;
+        inputComponenteId.disabled = bloqueado;
+        inputComponenteTjOd.disabled = bloqueado;
+        inputComponenteTjId.disabled = bloqueado;
+        inputComponenteTjLen.disabled = bloqueado;
+        inputComponenteLargoTramo.disabled = bloqueado;
+        btnGuardarComponente.disabled = bloqueado;
+        btnCancelarComponente.disabled = bloqueado;
+    }
+
+    function bloquearFormComponente() {
+        componenteSeleccionadoId = null;
+        inputComponenteCodigo.value = '';
+        inputComponenteDescripcion.value = '';
+        inputComponenteTipo.value = 'DRILL_PIPE';
+        inputComponenteOd.value = '';
+        inputComponenteId.value = '';
+        inputComponenteTjOd.value = '';
+        inputComponenteTjId.value = '';
+        inputComponenteTjLen.value = '';
+        inputComponenteLargoTramo.value = 31;
+        formTituloComponente.textContent = 'Nuevo Componente';
+        formModoComponente.textContent = 'Bloqueado';
+        formModoComponente.className = 'catalogos-mode-badge bloqueado form-mode-tag';
+        errorComponente.textContent = '';
+        btnEliminarComponente.disabled = true;
+        setComponenteFormDisabled(true);
+        renderComponentes();
+    }
+
+    function activarNuevoComponente() {
         componenteSeleccionadoId = null;
         inputComponenteCodigo.value = '';
         inputComponenteDescripcion.value = '';
@@ -746,11 +889,13 @@ document.addEventListener('DOMContentLoaded', function () {
         formModoComponente.className = 'catalogos-mode-badge creando form-mode-tag';
         errorComponente.textContent = '';
         btnEliminarComponente.disabled = true;
+        setComponenteFormDisabled(false);
         renderComponentes();
+        inputComponenteCodigo.focus();
     }
 
-    btnNuevoComponente.addEventListener('click', limpiarFormComponente);
-    btnCancelarComponente.addEventListener('click', limpiarFormComponente);
+    btnNuevoComponente.addEventListener('click', activarNuevoComponente);
+    btnCancelarComponente.addEventListener('click', bloquearFormComponente);
 
     btnGuardarComponente.addEventListener('click', async function () {
         errorComponente.textContent = '';
@@ -787,7 +932,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify(payload),
             });
             showToast(esEdicion ? 'Componente actualizado correctamente.' : 'Componente creado correctamente.', 'success');
-            limpiarFormComponente();
+            bloquearFormComponente();
             await cargarComponentes(searchInput.value.trim());
         } catch (err) {
             const msg = (err.data && err.data.error) || 'No se pudo guardar el componente.';
@@ -801,7 +946,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             await apiFetch('/api/componentes-sarta/' + componenteSeleccionadoId + '/eliminar/', { method: 'POST' });
             showToast('Componente eliminado correctamente.', 'success');
-            limpiarFormComponente();
+            bloquearFormComponente();
             await cargarComponentes(searchInput.value.trim());
         } catch (err) {
             const msg = (err.data && err.data.error) || 'No se pudo eliminar el componente.';
@@ -830,6 +975,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ---------- Carga inicial ----------
+    bloquearFormEquipo();
+    bloquearFormMalla();
+    bloquearFormPropiedad();
+    bloquearFormBenchmark();
+    bloquearFormComponente();
     cargarEquipos('');
     cargarMallas('');
     cargarPropiedades('');

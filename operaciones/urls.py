@@ -31,6 +31,8 @@ urlpatterns = [
     path('api/pozos/<int:pk>/', views.api_pozo_detail, name='api_pozo_detail'),
     path('api/pozos/<int:pk>/eliminar/', views.api_pozo_eliminar, name='api_pozo_eliminar'),
     path('api/pozos/<int:pk>/restaurar/', views.api_pozo_restaurar, name='api_pozo_restaurar'),
+    path('api/pozos/<int:pk>/cerrar/', views.api_pozo_cerrar, name='api_pozo_cerrar'),
+    path('api/pozos/<int:pk>/reabrir/', views.api_pozo_reabrir, name='api_pozo_reabrir'),
     path('api/pozos/paso1/', views.api_pozo_paso1, name='api_pozo_paso1_crear'),
     path('api/pozos/<int:pk>/paso1/', views.api_pozo_paso1, name='api_pozo_paso1_actualizar'),
     path('api/pozos/<int:pk>/paso2/', views.api_pozo_paso2, name='api_pozo_paso2'),
@@ -43,6 +45,7 @@ urlpatterns = [
 
     # --- Project Main Screen ---
     path('pozos/<int:pk>/', views.pozo_main_view, name='pozo_main'),
+    path('pozos/<int:pk>/modificar/', views.pozo_modificar_view, name='pozo_modificar'),
     path('pozos/<int:pk>/reporte-final/', views_recap.recap_view, name='recap_pozo'),
     path('pozos/<int:pk>/reporte-final/excel/', views_recap.recap_excel_view, name='recap_excel'),
     path('pozos/<int:pk>/reporte-final/pdf/', views_recap.recap_imprimible_view, name='recap_imprimible'),

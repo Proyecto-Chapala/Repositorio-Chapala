@@ -126,6 +126,77 @@
 }
 
 .rc-aviso-ok { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+.rc-aviso-error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.rc-aviso-info { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+
+.rc-tarjeta textarea[readonly] { background: #f8fafc; color: #64748b; cursor: not-allowed; }
+.rc-tarjeta textarea[readonly]:focus { border-color: var(--rc-borde); box-shadow: none; }
+.rc-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.rc-columna-derecha {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rc-tarjeta-cierre {
+  border-top: 3px solid #64748b;
+}
+
+.rc-paso-cierre {
+  background: #64748b;
+}
+
+.rc-btn-block {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.rc-btn-cerrar {
+  background: #334155;
+  border-color: #1e293b;
+  color: #fff;
+}
+.rc-btn-cerrar:hover {
+  background: #1e293b;
+}
+
+.rc-cierre-info {
+  margin: 6px 0 12px;
+}
+
+.rc-badge-cerrado {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 3px 8px;
+  margin-bottom: 6px;
+}
+
+.chip-cerrado {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.chip-activo {
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+  border-color: #bbf7d0 !important;
+}
+
+.modal-cerrar-pozo {
+  max-width: 460px;
+}
 
 @media (max-width: 900px) {
   .rc-grid { grid-template-columns: 1fr; }

@@ -85,9 +85,16 @@
   }
 
   function renderEstadoNuevo() {
+    const esCerrado = window.POZO_ESTADO === 'CERRADO';
     const abierto = intervaloAbierto();
     const btn = document.getElementById('btnNuevoIntervalo');
     const aviso = document.getElementById('avisoIntervaloAbierto');
+    if (esCerrado) {
+      btn.disabled = true;
+      btn.title = 'El pozo está cerrado. Reábrelo para agregar o modificar intervalos.';
+      aviso.hidden = true;
+      return;
+    }
     btn.disabled = !!abierto;
     btn.title = abierto ? `Cierra primero el intervalo ${abierto.numero_intervalo}` : '';
     aviso.hidden = !abierto;
@@ -121,15 +128,22 @@
 
   function abrirDetalle(intervalo) {
     limpiarDetalle();
+    const esCerrado = window.POZO_ESTADO === 'CERRADO';
     state.editandoId = intervalo ? intervalo.id : null;
     document.getElementById('detailTitle').textContent = intervalo
-      ? `Intervalo ${intervalo.numero_intervalo}` : 'Nuevo Intervalo';
-    document.getElementById('btnEliminarIntervalo').hidden = !intervalo;
+      ? `Intervalo ${intervalo.numero_intervalo}${esCerrado ? ' (Solo lectura)' : ''}` : 'Nuevo Intervalo';
     const ultimo = state.intervalos.length
       ? Math.max(...state.intervalos.map((i) => i.numero_intervalo)) : 0;
-    document.getElementById('btnCerrarIntervalo').hidden = !intervalo || intervalo.cerrado;
+    document.getElementById('btnEliminarIntervalo').hidden = !intervalo
+      || intervalo.numero_intervalo !== ultimo || esCerrado;
+    document.getElementById('btnCerrarIntervalo').hidden = !intervalo || intervalo.cerrado || esCerrado;
     document.getElementById('btnReabrirIntervalo').hidden = !intervalo || !intervalo.cerrado
-      || intervalo.numero_intervalo !== ultimo;
+      || intervalo.numero_intervalo !== ultimo || esCerrado;
+    document.getElementById('btnGuardarIntervalo').hidden = esCerrado;
+
+    const inputs = document.querySelectorAll('#detailPanel input, #detailPanel select, #detailPanel textarea');
+    inputs.forEach((inp) => { inp.disabled = esCerrado; });
+    document.getElementById('dInterval').readOnly = true;
 
     if (intervalo) {
       document.getElementById('dInterval').value = intervalo.numero_intervalo;

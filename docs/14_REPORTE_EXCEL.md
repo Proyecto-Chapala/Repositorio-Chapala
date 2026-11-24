@@ -17,9 +17,7 @@ Ruta de descarga: `GET /pozos/<id>/daily-report/<id_reporte>/excel/`. Nombre del
 | **Prop Extra Base Agua / Prop Extra Aceite-Sint** | Solo queda la del tipo de fluido. Propiedades extra 9-60 que tienen orden de impresión **o un valor cargado ese día** (misma regla que la pantalla: `propiedades_extra_del_reporte`) |
 | **Contabilidad de Volumen** | Tanques (capacidad, peso, volumen con 1 decimal, clase), suma por grupo, lodo en el hoyo (total, no fluido, fluido), balance por grupo (activo, reserva, premezcla), transferencias entre grupos y desglose de pérdidas. **Balance, hoyo y pérdidas sin decimales**, como se reporta en campo (formato *Mud Volume Accounting*) |
 | **Concentraciones** | *Nueva (27-sep).* Formato del reporte "Sistema Activo" de ONE-TRAX. Un bloque por compartimento (primero el sistema activo, luego cada tanque, cada uno en su página): encabezado del pozo, volúmenes del día en bbl y m³ (fluido base, agua, aumento por material, lodo reciclado, volumen inicial, final y cambio) y por producto: tamaño, cantidad agregada, concentración inicial/cambio/final en **lb/bbl y kg/m³**, con total. Ver [20](20_CONCENTRACIONES_Y_CASOS_ESPECIALES.md) |
-| **Inv Quimico (DF)** | Inventario de productos con movimiento, sin los marcados *No imprimir*, ordenado por código |
-| **Inv Quimico (por nombre)** | La misma lista, ordenada por descripción |
-| **Inv Quimico (completo)** | Todos los productos activos o con movimiento, incluidos los *No imprimir* |
+| **Inv Quimico (completo)** | Única hoja de inventario químico: consolida todos los productos asignados y con movimiento en la locación/pozo |
 | **Equipos** | Hasta 36 equipos: horas, rendimiento, cobro, tarifa y costo |
 | **Inventario de Mallas** | Existencias nuevas/usadas, instaladas y costo por malla |
 
@@ -30,13 +28,13 @@ Ruta de descarga: `GET /pozos/<id>/daily-report/<id_reporte>/excel/`. Nombre del
 - En el encabezado van el costo del día, el **impuesto** (`costo × tasa_impuesto`) y el costo acumulado.
 - **Solo quedan las páginas usadas** (02-oct-2026): `_quitar_paginas_vacias()` borra las filas, uniones y saltos de página de las páginas 2 y 3 si no hay más de 50 productos. Probado con la plantilla: 1 página al imprimir.
 
-## Hojas o páginas "repetidas y sin datos" (resuelto)
+## Hojas de inventario químico y productos usados (actualizado 20-oct-2026)
 
-Era el bug 3 de la lista del usuario. El Excel **siempre es de un solo pozo y un solo reporte**. Hoy:
-
-1. De las tres hojas de inventario químico queda **una sola**, *Inv Quimico (completo)* (pedido de AOS: "con el inventario químico es suficiente"); las otras dos se eliminan del libro.
-2. Las páginas 2 y 3 sin productos se **borran** (ver arriba).
-3. *Equipos* e *Inventario de Mallas* se quitan si ese día no tienen datos.
+1. **Hoja única de inventario químico:** se mantiene una sola hoja oficial de inventario, `Inv Quimico (completo)`, eliminando las hojas redundantes o vacías `Inv Quimico (DF)` e `Inv Quimico (por nombre)`.
+2. **Productos usados en hoja de lodo (filas 19-33):** se calcula el consumo tomando `max(usado_dia, usado_fluido, agregado_balance)`, asegurando que tanto los agregados en fosa como los anotados a mano en inventario se reporten. Las celdas sobrantes se limpian a `None` para evitar ceros residuales de la plantilla.
+3. Las páginas 2 y 3 de inventario sin productos se **borran** (ver arriba).
+4. *Equipos* e *Inventario de Mallas* se quitan si ese día no tienen datos.
+5. **Rediseño visual y cuadrícula:** pestañas con colores corporativos diferenciados (azul marino `#1E3A8A`, teal `#0D9488`, celeste `#0284C7`, esmeralda `#059669`, púrpura `#7C3AED`, índigo `#4F46E5`) y líneas de división (gridlines) activas en todas las hojas.
 
 ## Logo y textos (02-oct-2026)
 
@@ -51,6 +49,18 @@ Era el bug 3 de la lista del usuario. El Excel **siempre es de un solo pozo y un
 ## Hidráulica en el Excel
 
 Usa la edición configurada en el pozo (*Configuración General → Usar API 5ª edición*). **Ojo**: la pantalla abre por defecto en la 5ª, pero el ajuste del pozo por defecto está desactivado (4ª). Si la pantalla y el Excel no coinciden, revisa ese ajuste.
+
+## Configuración de impresión predeterminada (hoja Carta / Letter)
+
+Todas las hojas de los reportes en Excel (`generar_reporte_excel`, `generar_reporte_propiedades_excel` y `generar_recap_excel`) vienen configuradas de forma predeterminada para impresión:
+- **Papel:** Tamaño Carta (`paperSize = 1`, Letter, 8.5" × 11").
+- **Ajuste:** `fitToPage = True`, `scale = None`.
+- **Ancho:** `fitToWidth = 1` (todo el contenido cabe exactamente en 1 página de ancho sin dividir columnas ni cortar información a la derecha).
+- **Alto:**
+  - Hojas de una sola página (`Lodo Base Agua/Aceite/CALDRIL/Sintética`, `Prop Extra`, `Contabilidad de Volumen`, `Equipos`, `Inventario de Mallas`): `fitToHeight = 1` (cabe exactamente en 1 página vertical u horizontal según corresponda).
+  - Hojas tabulares o por bloques (`Concentraciones`, `Inv Quimico (completo)`, `Reportito de Propiedades`, `Recap del Pozo`): `fitToHeight = 0` (flujo vertical dinámico que respeta los saltos de página por compartimento o bloque de 50 productos).
+- **Márgenes:** Estrechos y balanceados (0.3" a 0.4") para aprovechar el área imprimible.
+- **Cuadrícula y aspecto visual:** Líneas de división visibles activas (`showGridLines = True`) y colores corporativos elegantes en las pestañas.
 
 ## Errores
 

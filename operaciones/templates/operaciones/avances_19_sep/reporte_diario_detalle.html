@@ -90,7 +90,7 @@
         <div>
           <div class="report-field-row">
             <label class="report-field-label" title="Fecha del Reporte">Fecha</label>
-            <input type="date" id="f_fecha" class="report-input" value="{{ reporte.fecha|date:'Y-m-d' }}">
+            <input type="date" id="f_fecha" class="report-input" value="{{ reporte.fecha|date:'Y-m-d' }}" {% if spud_date %}min="{{ spud_date|date:'Y-m-d' }}"{% endif %}>
           </div>
           <div class="report-field-row">
             <label class="report-field-label" title="Fecha de inicio de perforación (Heredada del pozo)">Fecha Inicio</label>
@@ -4255,8 +4255,15 @@ document.addEventListener('DOMContentLoaded', function(){
 
 /* Save General Tab Data */
 async function guardarGeneral(silent = false) {
+  const f_fecha_el = document.getElementById('f_fecha');
+  const fechaVal = f_fecha_el ? f_fecha_el.value : '';
+  const spudMin = f_fecha_el ? f_fecha_el.getAttribute('min') : null;
+  if (spudMin && fechaVal && fechaVal < spudMin) {
+    showToast(`La fecha del reporte no puede ser anterior a la fecha de inicio / Spud Date (${spudMin})`, false);
+    return;
+  }
   const data = {
-    fecha: document.getElementById('f_fecha').value,
+    fecha: fechaVal,
     numero_reporte: document.getElementById('f_numero_reporte') ? document.getElementById('f_numero_reporte').value : '',
     profundidad_actual: document.getElementById('f_profundidad_actual').value || 0,
     profundidad_tvd: document.getElementById('f_profundidad_tvd').value || 0,

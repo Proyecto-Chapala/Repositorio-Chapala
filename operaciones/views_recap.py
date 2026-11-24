@@ -38,6 +38,8 @@ def recap_view(request, pk):
     recap, _ = RecapPozo.objects.get_or_create(pozo=pozo)
 
     if request.method == 'POST':
+        if pozo.estado == 'CERRADO':
+            return redirect(reverse('operaciones:recap_pozo', args=[pozo.pk]) + '?error_cerrado=1')
         for campo in ('resumen', 'conclusiones', 'recomendaciones', 'lecciones'):
             setattr(recap, campo, (request.POST.get(campo) or '').strip()[:LIMITE_TEXTO])
         recap.save()
@@ -50,7 +52,10 @@ def recap_view(request, pk):
         'primero': primero, 'ultimo': ultimo,
         'total_reportes': pozo.reportes_diarios.count(),
         'guardado': request.GET.get('guardado') == '1',
-        'version_estaticos': _version_estaticos('operaciones/css/recap.css'),
+        'cerrado': request.GET.get('cerrado') == '1',
+        'reabierto': request.GET.get('reabierto') == '1',
+        'error_cerrado': request.GET.get('error_cerrado') == '1',
+        'version_estaticos': _version_estaticos('operaciones/css/recap.css', 'operaciones/js/recap.js'),
     })
 
 

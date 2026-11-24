@@ -12,3 +12,10 @@ sale de operaciones/navegacion.py (procesador de contexto).
     <a class="info-pozo-nav-item{% if seccion_activa == pantalla.nombre_url %} is-active{% endif %}" href="{{ pantalla.url }}"{% if seccion_activa == pantalla.nombre_url %} aria-current="page"{% endif %}>{{ pantalla.etiqueta }}</a>
   {% endfor %}
 </nav>
+
+{% if pozo.estado == 'CERRADO' %}
+<div class="pozo-cerrado-banner" style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; margin-top:12px; margin-bottom:16px; display:flex; align-items:center; gap:10px; color:#991b1b; font-size:13px;">
+  <span style="font-size:18px;">🔒</span>
+  <span><strong>Pozo Cerrado:</strong> La configuración de este pozo está protegida en modo solo lectura. Para realizar modificaciones debes reabrir el pozo primero.</span>
+</div>
+{% endif %}

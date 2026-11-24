@@ -25,7 +25,7 @@ from .forms_pozo import (
     FosaForm, TipoFosaForm, GeneralSetupForm, AlmacenCodigoForm,
     TipoDistribucionTiempoForm, ProductoActivoPozoForm, EquipoActivoPozoForm,
     MallaActivaPozoForm, PropiedadEquipoTipoForm, ParametroBenchmarkForm,
-    CentrifugaUnidadConfigForm,
+    CentrifugaUnidadConfigForm, PozoModificarForm,
 )
 
 
@@ -71,6 +71,7 @@ def api_productos_list(request):
 
     return JsonResponse({
         "success": True,
+        "ok": True,
         "productos": productos,
         "totales": {
             "total": total_productos,
@@ -86,6 +87,7 @@ def api_producto_detail(request, pk):
     producto = get_object_or_404(Producto, pk=pk)
     return JsonResponse({
         "success": True,
+        "ok": True,
         "producto": producto.to_dict()
     })
 
@@ -97,7 +99,7 @@ def api_producto_create(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     codigo = str(data.get('codigo', '')).strip()
     descripcion = str(data.get('descripcion', '')).strip()
@@ -156,7 +158,7 @@ def api_producto_create(request):
         errores['cantidad'] = "La cantidad debe ser un número válido."
 
     if errores:
-        return JsonResponse({"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
 
     producto = Producto.objects.create(
         codigo=codigo,
@@ -174,6 +176,7 @@ def api_producto_create(request):
 
     return JsonResponse({
         "success": True,
+        "ok": True,
         "mensaje": f"Producto '{producto.codigo}' creado exitosamente.",
         "producto": producto.to_dict()
     }, status=201)
@@ -188,7 +191,7 @@ def api_producto_update(request, pk):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     codigo = str(data.get('codigo', producto.codigo)).strip()
     descripcion = str(data.get('descripcion', producto.descripcion)).strip()
@@ -245,7 +248,7 @@ def api_producto_update(request, pk):
         errores['cantidad'] = "La cantidad debe ser un número válido."
 
     if errores:
-        return JsonResponse({"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
 
     producto.codigo = codigo
     producto.descripcion = descripcion
@@ -262,6 +265,7 @@ def api_producto_update(request, pk):
 
     return JsonResponse({
         "success": True,
+        "ok": True,
         "mensaje": f"Producto '{producto.codigo}' actualizado correctamente.",
         "producto": producto.to_dict()
     })
@@ -278,6 +282,7 @@ def api_producto_delete(request, pk):
     if producto.cantidad > 0:
         return JsonResponse({
             "success": False,
+            "ok": False,
             "error": f"No se puede eliminar el producto '{producto.codigo}' porque tiene {producto.cantidad} unidades en stock disponible. La cantidad debe ser 0 para permitir su eliminación."
         }, status=400)
 
@@ -295,11 +300,13 @@ def api_producto_delete(request, pk):
             motivo = "tiene movimientos, tickets o inventarios registrados en reportes diarios."
         return JsonResponse({
             "success": False,
+            "ok": False,
             "error": f"No se puede eliminar el producto '{codigo}' porque {motivo}"
         }, status=400)
 
     return JsonResponse({
         "success": True,
+        "ok": True,
         "mensaje": f"Producto '{codigo}' eliminado satisfactoriamente."
     })
 
@@ -349,6 +356,7 @@ def api_pozos_plantillas(request):
     pozos = Pozo.objects.filter(estado='ACTIVO').order_by('-created_at')[:50]
     return JsonResponse({
         "success": True,
+        "ok": True,
         "pozos": [{"id": p.id, "nombre": p.nombre, "created_at": p.created_at.isoformat()} for p in pozos]
     })
 
@@ -356,7 +364,7 @@ def api_pozos_plantillas(request):
 @require_http_methods(["GET"])
 def api_pozo_detail(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
-    return JsonResponse({"success": True, "pozo": pozo_to_dict(pozo)})
+    return JsonResponse({"success": True, "ok": True, "pozo": pozo_to_dict(pozo)})
 
 
 @csrf_exempt
@@ -369,12 +377,13 @@ def api_pozo_paso1(request, pk=None):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     instance = get_object_or_404(Pozo, pk=pk) if pk else Pozo()
     if instance.pk and instance.estado != 'BORRADOR':
         return JsonResponse({
             "success": False,
+            "ok": False,
             "error": "Este pozo ya fue creado; no se puede modificar desde el wizard."
         }, status=400)
 
@@ -384,7 +393,7 @@ def api_pozo_paso1(request, pk=None):
     }
     form = PozoPaso1Form(form_data, instance=instance)
     if not form.is_valid():
-        return JsonResponse({"success": False, "errores": form.errors, "error": next(iter(form.errors.values()))[0]}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": form.errors, "error": next(iter(form.errors.values()))[0]}, status=400)
 
     pozo = form.save(commit=False)
     pozo.estado = 'BORRADOR'
@@ -419,6 +428,7 @@ def api_pozo_paso1(request, pk=None):
 
     return JsonResponse({
         "success": True,
+        "ok": True,
         "mensaje": "Datos básicos guardados.",
         "pozo": pozo_to_dict(pozo)
     }, status=201 if not pk else 200)
@@ -434,16 +444,16 @@ def api_pozo_paso2(request, pk):
     """
     pozo = get_object_or_404(Pozo, pk=pk)
     if pozo.unidades_bloqueadas:
-        return JsonResponse({"success": False, "error": "Las unidades de este pozo ya están bloqueadas."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Las unidades de este pozo ya están bloqueadas."}, status=400)
 
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     form = PozoPaso2Form({'sistema_unidades': data.get('sistema_unidades', '')}, instance=pozo)
     if not form.is_valid():
-        return JsonResponse({"success": False, "errores": form.errors, "error": next(iter(form.errors.values()))[0]}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": form.errors, "error": next(iter(form.errors.values()))[0]}, status=400)
 
     with transaction.atomic():
         pozo = form.save(commit=False)
@@ -465,6 +475,7 @@ def api_pozo_paso2(request, pk):
             if errores_filas:
                 return JsonResponse({
                     "success": False,
+                    "ok": False,
                     "error": "Hay unidades personalizadas inválidas.",
                     "errores_filas": errores_filas
                 }, status=400)
@@ -477,7 +488,7 @@ def api_pozo_paso2(request, pk):
         pozo.paso_wizard_actual = max(pozo.paso_wizard_actual, 3)
         pozo.save()
 
-    return JsonResponse({"success": True, "mensaje": "Unidades guardadas.", "pozo": pozo_to_dict(pozo)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Unidades guardadas.", "pozo": pozo_to_dict(pozo)})
 
 
 @csrf_exempt
@@ -492,7 +503,7 @@ def api_pozo_paso3(request, pk):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     form = PozoPaso3Form({
         'moneda_simbolo': data.get('moneda_simbolo', pozo.moneda_simbolo),
@@ -508,7 +519,7 @@ def api_pozo_paso3(request, pk):
         pass
 
     if not form.is_valid():
-        return JsonResponse({"success": False, "errores": form.errors, "error": next(iter(form.errors.values()))[0]}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": form.errors, "error": next(iter(form.errors.values()))[0]}, status=400)
 
     with transaction.atomic():
         pozo = form.save(commit=False)
@@ -531,6 +542,7 @@ def api_pozo_paso3(request, pk):
             if errores_filas:
                 return JsonResponse({
                     "success": False,
+                    "ok": False,
                     "error": "Hay categorías de pérdida inválidas.",
                     "errores_filas": errores_filas
                 }, status=400)
@@ -542,7 +554,7 @@ def api_pozo_paso3(request, pk):
         pozo.paso_wizard_actual = max(pozo.paso_wizard_actual, 4)
         pozo.save()
 
-    return JsonResponse({"success": True, "mensaje": "Ajustes financieros guardados.", "pozo": pozo_to_dict(pozo)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Ajustes financieros guardados.", "pozo": pozo_to_dict(pozo)})
 
 
 @csrf_exempt
@@ -552,22 +564,24 @@ def api_pozo_confirmar(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
 
     if pozo.estado == 'ACTIVO':
-        return JsonResponse({"success": False, "error": "Este pozo ya fue creado."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Este pozo ya fue creado."}, status=400)
 
     if pozo.paso_wizard_actual < 4:
         return JsonResponse({
             "success": False,
+            "ok": False,
             "error": "Faltan pasos por completar antes de crear el pozo. "
                      f"Vas en el paso {pozo.paso_wizard_actual} de 4."
         }, status=400)
 
     if not pozo.nombre:
-        return JsonResponse({"success": False, "error": "Faltan datos básicos del pozo."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Faltan datos básicos del pozo."}, status=400)
 
     pozo.activar()
 
     return JsonResponse({
         "success": True,
+        "ok": True,
         "mensaje": f"Pozo '{pozo.nombre}' creado exitosamente.",
         "pozo": pozo_to_dict(pozo)
     })
@@ -603,13 +617,14 @@ def api_pozo_spud_date(request, pk):
     if pozo.estado != 'ACTIVO':
         return JsonResponse({
             "success": False,
+            "ok": False,
             "error": "El pozo debe estar creado (ACTIVO) antes de registrar la fecha de inicio."
         }, status=400)
 
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     form = PozoSpudDateForm({
         'fecha_primera_captura': data.get('fecha_primera_captura'),
@@ -620,14 +635,27 @@ def api_pozo_spud_date(request, pk):
 
     if not form.is_valid():
         primer_error = next(iter(form.errors.values()))[0]
-        return JsonResponse({"success": False, "errores": form.errors, "error": primer_error}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": form.errors, "error": primer_error}, status=400)
 
-    pozo = form.save(commit=False)
-    pozo.spud_date_completado = True
-    pozo.save()
+    with transaction.atomic():
+        pozo = form.save(commit=False)
+        pozo.spud_date_completado = True
+        pozo.save()
+
+        # Sincronizar atómicamente con WellHeaderInfo
+        info, _ = WellHeaderInfo.objects.get_or_create(pozo=pozo)
+        info.spud_date = pozo.fecha_primera_captura
+        if pozo.numero_control_logit:
+            info.numero_control_logit = pozo.numero_control_logit
+        if pozo.tipo_fluido_inicial:
+            desc_dict = dict(Pozo.TIPO_FLUIDO_INICIAL_CHOICES)
+            info.primary_mud_type_codigo = pozo.tipo_fluido_inicial
+            info.primary_mud_type_descripcion = desc_dict.get(pozo.tipo_fluido_inicial, pozo.tipo_fluido_inicial)
+        info.save()
 
     return JsonResponse({
         "success": True,
+        "ok": True,
         "mensaje": "Fecha de inicio registrada. El pozo está listo para la captura diaria.",
         "pozo": pozo_to_dict(pozo)
     })
@@ -662,6 +690,103 @@ def pozo_main_view(request, pk):
         'pantallas': pantallas,
         'pantallas_listas': sum(1 for p in medibles if p['lista']),
         'pantallas_medibles': len(medibles),
+        'modificado': request.GET.get('modificado') == '1',
+    })
+
+
+def pozo_modificar_view(request, pk):
+    """
+    Matriz de modificación del pozo: permite corregir errores cometidos durante
+    la creación inicial del pozo (identificación, unidades, moneda, spud date, etc.).
+    """
+    pozo = get_object_or_404(Pozo, pk=pk)
+    info, _ = WellHeaderInfo.objects.get_or_create(pozo=pozo)
+
+    if request.method == 'POST':
+        if pozo.estado == 'CERRADO':
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
+                return JsonResponse({
+                    "success": False,
+                    "ok": False,
+                    "error": "El pozo está cerrado. Para modificar sus parámetros debes reabrirlo primero desde la pantalla principal o el reporte final."
+                }, status=400)
+            from django.urls import reverse
+            return redirect(reverse('operaciones:pozo_main', args=[pozo.pk]))
+
+        form = PozoModificarForm(request.POST, pozo=pozo)
+        if form.is_valid():
+            with transaction.atomic():
+                pozo.nombre = form.cleaned_data['nombre']
+                pozo.sistema_unidades = form.cleaned_data['sistema_unidades']
+                pozo.moneda_simbolo = form.cleaned_data['moneda_simbolo']
+                pozo.moneda_decimales = form.cleaned_data['moneda_decimales']
+                pozo.tasa_impuesto = form.cleaned_data['tasa_impuesto']
+                pozo.moneda_secundaria = form.cleaned_data['moneda_secundaria']
+                pozo.cobrar_en_secundaria = form.cleaned_data['cobrar_en_secundaria']
+                pozo.con_tratamiento_disposicion = form.cleaned_data['con_tratamiento_disposicion']
+                pozo.numero_control_logit = form.cleaned_data['numero_control_logit']
+                if form.cleaned_data.get('tipo_fluido_inicial'):
+                    pozo.tipo_fluido_inicial = form.cleaned_data['tipo_fluido_inicial']
+                pozo.categoria_perdida_tipo = form.cleaned_data['categoria_perdida_tipo']
+                spud = form.cleaned_data.get('spud_date')
+                if spud:
+                    pozo.fecha_primera_captura = spud
+                    pozo.spud_date_completado = True
+                pozo.save()
+
+                info.operador = form.cleaned_data['operador']
+                info.field_area = form.cleaned_data['field_area']
+                info.nombre_taladro = form.cleaned_data['nombre_taladro']
+                info.contratista = form.cleaned_data['contratista']
+                info.numero_control_logit = form.cleaned_data['numero_control_logit']
+                if spud:
+                    info.spud_date = spud
+                fluido = form.cleaned_data.get('tipo_fluido_inicial')
+                if fluido:
+                    desc_dict = dict(Pozo.TIPO_FLUIDO_INICIAL_CHOICES)
+                    info.primary_mud_type_codigo = fluido
+                    info.primary_mud_type_descripcion = desc_dict.get(fluido, fluido)
+                info.save()
+
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
+                return JsonResponse({"success": True, "ok": True, "mensaje": "Pozo modificado correctamente."})
+
+            from django.urls import reverse
+            return redirect(reverse('operaciones:pozo_main', args=[pozo.pk]) + '?modificado=1')
+        else:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
+                primer_error = next(iter(form.errors.values()))[0]
+                return JsonResponse({"success": False, "ok": False, "errores": form.errors, "error": primer_error}, status=400)
+    else:
+        spud_val = info.spud_date or pozo.fecha_primera_captura
+        initial = {
+            'nombre': pozo.nombre,
+            'operador': info.operador or '',
+            'field_area': info.field_area or '',
+            'nombre_taladro': info.nombre_taladro or '',
+            'contratista': info.contratista or '',
+            'sistema_unidades': pozo.sistema_unidades,
+            'moneda_simbolo': pozo.moneda_simbolo,
+            'moneda_decimales': pozo.moneda_decimales,
+            'tasa_impuesto': pozo.tasa_impuesto,
+            'moneda_secundaria': pozo.moneda_secundaria or '',
+            'cobrar_en_secundaria': pozo.cobrar_en_secundaria,
+            'spud_date': spud_val.isoformat() if spud_val else '',
+            'tipo_fluido_inicial': pozo.tipo_fluido_inicial or info.primary_mud_type_codigo or '',
+            'con_tratamiento_disposicion': pozo.con_tratamiento_disposicion,
+            'numero_control_logit': pozo.numero_control_logit or info.numero_control_logit or '',
+            'categoria_perdida_tipo': pozo.categoria_perdida_tipo,
+        }
+        form = PozoModificarForm(initial=initial, pozo=pozo)
+
+    return render(request, 'operaciones/pozos/modificar.html', {
+        'pozo': pozo,
+        'info': info,
+        'form': form,
+        'total_reportes': pozo.reportes_diarios.count(),
+        'tiene_reportes': pozo.reportes_diarios.exists(),
+        'pozo_cerrado': pozo.estado == 'CERRADO',
+        'monedas_comunes': Pozo.MONEDAS_COMUNES,
     })
 
 
@@ -681,6 +806,16 @@ def pozos_list_view(request):
 # ============================================================
 # Well Header Information (2 pestañas)
 # ============================================================
+
+def _validar_pozo_abierto(pozo):
+    """Verifica que el pozo no esté en estado CERRADO antes de permitir modificaciones."""
+    if pozo.estado == 'CERRADO':
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": "El pozo está cerrado. Para modificar su configuración debes reabrirlo primero."
+        }, status=400)
+    return None
+
 
 def well_header_view(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
@@ -718,7 +853,7 @@ def _well_header_to_dict(info):
 def api_well_header_detail(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     info, _ = WellHeaderInfo.objects.get_or_create(pozo=pozo)
-    return JsonResponse({"success": True, "well_header": _well_header_to_dict(info)})
+    return JsonResponse({"success": True, "ok": True, "well_header": _well_header_to_dict(info)})
 
 
 @csrf_exempt
@@ -726,26 +861,42 @@ def api_well_header_detail(request, pk):
 def api_well_header_guardar(request, pk):
     """Guarda la pestaña 1 (Well Information)."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     info, _ = WellHeaderInfo.objects.get_or_create(pozo=pozo)
 
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     form = WellHeaderInfoForm(data, instance=info)
     if not form.is_valid():
         return JsonResponse({
-            "success": False, "errores": form.errors,
+            "success": False, "ok": False, "errores": form.errors,
             "error": next(iter(form.errors.values()))[0]
         }, status=400)
 
-    info = form.save(commit=False)
-    info.completado = True
-    info.save()
+    with transaction.atomic():
+        info = form.save(commit=False)
+        info.completado = True
+        info.save()
+
+        # Mantener sincronizado el pozo con la información del encabezado
+        update_fields = []
+        if info.spud_date and pozo.fecha_primera_captura != info.spud_date:
+            pozo.fecha_primera_captura = info.spud_date
+            update_fields.append('fecha_primera_captura')
+        if info.numero_control_logit and pozo.numero_control_logit != info.numero_control_logit:
+            pozo.numero_control_logit = info.numero_control_logit
+            update_fields.append('numero_control_logit')
+        if update_fields:
+            update_fields.append('updated_at')
+            pozo.save(update_fields=update_fields)
 
     return JsonResponse({
-        "success": True, "mensaje": "Well Information guardada.",
+        "success": True, "ok": True, "mensaje": "Well Information guardada.",
         "well_header": _well_header_to_dict(info)
     })
 
@@ -755,17 +906,20 @@ def api_well_header_guardar(request, pk):
 def api_marketing_codes_guardar(request, pk):
     """Guarda la pestaña 2 (Marketing Codes)."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     info, _ = WellHeaderInfo.objects.get_or_create(pozo=pozo)
 
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     form = MarketingCodesForm(data, instance=info)
     if not form.is_valid():
         return JsonResponse({
-            "success": False, "errores": form.errors,
+            "success": False, "ok": False, "errores": form.errors,
             "error": next(iter(form.errors.values()))[0]
         }, status=400)
 
@@ -774,7 +928,7 @@ def api_marketing_codes_guardar(request, pk):
     info.save()
 
     return JsonResponse({
-        "success": True, "mensaje": "Marketing Codes guardado.",
+        "success": True, "ok": True, "mensaje": "Marketing Codes guardado.",
         "well_header": _well_header_to_dict(info)
     })
 
@@ -811,6 +965,7 @@ def api_intervalos_list(request, pk):
     intervalos = pozo.intervalos_revestimiento.all()
     return JsonResponse({
         "success": True,
+        "ok": True,
         "intervalos": [_intervalo_to_dict(i) for i in intervalos],
         "tipo_choices": IntervaloRevestimiento.TIPO_CHOICES,
     })
@@ -820,15 +975,21 @@ def api_intervalos_list(request, pk):
 @require_http_methods(["POST"])
 def api_intervalo_crear(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
+    if pozo.estado == 'CERRADO':
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": "El pozo está cerrado. Para crear intervalos debes reabrirlo primero."
+        }, status=400)
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     abierto = pozo.intervalos_revestimiento.filter(cerrado=False).order_by('numero_intervalo').first()
     if abierto:
         return JsonResponse({
             "success": False,
+            "ok": False,
             "error": f"El intervalo {abierto.numero_intervalo} sigue abierto. Ciérralo (cuando se baje el revestidor) antes de crear el siguiente.",
         }, status=400)
 
@@ -840,7 +1001,7 @@ def api_intervalo_crear(request, pk):
     form = IntervaloRevestimientoForm(data, instance=IntervaloRevestimiento(pozo=pozo))
     if not form.is_valid():
         return JsonResponse({
-            "success": False, "errores": form.errors,
+            "success": False, "ok": False, "errores": form.errors,
             "error": next(iter(form.errors.values()))[0]
         }, status=400)
 
@@ -849,7 +1010,7 @@ def api_intervalo_crear(request, pk):
     intervalo.save()
 
     return JsonResponse({
-        "success": True, "mensaje": f"Intervalo {intervalo.numero_intervalo} creado.",
+        "success": True, "ok": True, "mensaje": f"Intervalo {intervalo.numero_intervalo} creado.",
         "intervalo": _intervalo_to_dict(intervalo)
     }, status=201)
 
@@ -862,11 +1023,11 @@ def _formulario_intervalo(request, intervalo):
     try:
         data = json.loads(request.body.decode('utf-8') or '{}')
     except Exception:
-        return None, JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return None, JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
     form = IntervaloRevestimientoForm(data, instance=intervalo)
     if not form.is_valid():
         return None, JsonResponse({
-            "success": False, "errores": form.errors,
+            "success": False, "ok": False, "errores": form.errors,
             "error": next(iter(form.errors.values()))[0]
         }, status=400)
     return form, None
@@ -876,12 +1037,17 @@ def _formulario_intervalo(request, intervalo):
 @require_http_methods(["POST", "PUT"])
 def api_intervalo_actualizar(request, pk, intervalo_pk):
     intervalo = get_object_or_404(IntervaloRevestimiento, pk=intervalo_pk, pozo_id=pk)
+    if intervalo.pozo.estado == 'CERRADO':
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": "El pozo está cerrado. Para modificar intervalos debes reabrirlo primero."
+        }, status=400)
     form, error = _formulario_intervalo(request, intervalo)
     if error:
         return error
     intervalo = form.save()
     return JsonResponse({
-        "success": True, "mensaje": "Intervalo actualizado.",
+        "success": True, "ok": True, "mensaje": "Intervalo actualizado.",
         "intervalo": _intervalo_to_dict(intervalo)
     })
 
@@ -895,8 +1061,13 @@ def api_intervalo_cerrar(request, pk, intervalo_pk):
     sin guardar (por ejemplo, tipo = Side Track) se perdía y el intervalo quedaba como estaba.
     """
     intervalo = get_object_or_404(IntervaloRevestimiento, pk=intervalo_pk, pozo_id=pk)
+    if intervalo.pozo.estado == 'CERRADO':
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": "El pozo está cerrado. Para cerrar intervalos debes reabrirlo primero."
+        }, status=400)
     if intervalo.cerrado:
-        return JsonResponse({"success": False, "error": "El intervalo ya está cerrado."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "El intervalo ya está cerrado."}, status=400)
     form, error = _formulario_intervalo(request, intervalo)
     if error:
         return error
@@ -909,12 +1080,14 @@ def api_intervalo_cerrar(request, pk, intervalo_pk):
     if faltan:
         return JsonResponse({
             "success": False,
+            "ok": False,
             "error": "Para cerrar el intervalo indica " + " y ".join(faltan) + ".",
         }, status=400)
     intervalo.cerrado = True
     intervalo.save()
     return JsonResponse({
         "success": True,
+        "ok": True,
         "mensaje": f"Intervalo {intervalo.numero_intervalo} ({intervalo.get_tipo_display()}) cerrado. "
                    "Ya puedes crear el siguiente.",
         "intervalo": _intervalo_to_dict(intervalo),
@@ -926,14 +1099,19 @@ def api_intervalo_cerrar(request, pk, intervalo_pk):
 def api_intervalo_reabrir(request, pk, intervalo_pk):
     """Reabre un intervalo cerrado por error. Solo el último y si no hay otro abierto."""
     intervalo = get_object_or_404(IntervaloRevestimiento, pk=intervalo_pk, pozo_id=pk)
+    if intervalo.pozo.estado == 'CERRADO':
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": "El pozo está cerrado. Para reabrir intervalos debes reabrirlo primero."
+        }, status=400)
     otros = IntervaloRevestimiento.objects.filter(pozo_id=pk).exclude(pk=intervalo.pk)
     if otros.filter(numero_intervalo__gt=intervalo.numero_intervalo).exists():
-        return JsonResponse({"success": False, "error": "Solo se puede reabrir el último intervalo."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Solo se puede reabrir el último intervalo."}, status=400)
     if otros.filter(cerrado=False).exists():
-        return JsonResponse({"success": False, "error": "Hay otro intervalo abierto."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Hay otro intervalo abierto."}, status=400)
     intervalo.cerrado = False
     intervalo.save(update_fields=['cerrado', 'updated_at'])
-    return JsonResponse({"success": True, "mensaje": f"Intervalo {intervalo.numero_intervalo} reabierto.",
+    return JsonResponse({"success": True, "ok": True, "mensaje": f"Intervalo {intervalo.numero_intervalo} reabierto.",
                          "intervalo": _intervalo_to_dict(intervalo)})
 
 
@@ -941,9 +1119,28 @@ def api_intervalo_reabrir(request, pk, intervalo_pk):
 @require_http_methods(["POST", "DELETE"])
 def api_intervalo_eliminar(request, pk, intervalo_pk):
     intervalo = get_object_or_404(IntervaloRevestimiento, pk=intervalo_pk, pozo_id=pk)
+    if intervalo.pozo.estado == 'CERRADO':
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": "El pozo está cerrado. Para eliminar intervalos debes reabrirlo primero."
+        }, status=400)
+    otros = IntervaloRevestimiento.objects.filter(pozo_id=pk).exclude(pk=intervalo.pk)
+    if otros.filter(numero_intervalo__gt=intervalo.numero_intervalo).exists():
+        ultimo_num = otros.aggregate(models.Max('numero_intervalo'))['numero_intervalo__max']
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": f"Solo se puede eliminar el último intervalo registrado (Intervalo {ultimo_num}). Para eliminar el intervalo {intervalo.numero_intervalo} debes eliminar los intervalos posteriores primero."
+        }, status=400)
+
+    if intervalo.reportes_asignados.exists():
+        cant = intervalo.reportes_asignados.count()
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": f"No se puede eliminar el intervalo {intervalo.numero_intervalo} porque tiene {cant} reporte(s) diario(s) asignado(s). Para eliminarlo debes desvincular o eliminar primero esos reportes."
+        }, status=400)
     numero = intervalo.numero_intervalo
     intervalo.delete()
-    return JsonResponse({"success": True, "mensaje": f"Intervalo {numero} eliminado."})
+    return JsonResponse({"success": True, "ok": True, "mensaje": f"Intervalo {numero} eliminado."})
 
 
 @csrf_exempt
@@ -957,16 +1154,17 @@ def api_pozo_eliminar(request, pk):
     try:
         data = json.loads(request.body.decode('utf-8') or '{}')
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     if (data.get('confirmar') or '').strip() != pozo.nombre:
         return JsonResponse({
             "success": False,
+            "ok": False,
             "error": "Para eliminar, escribe el nombre del pozo exactamente como aparece.",
         }, status=400)
 
     pozo.enviar_a_papelera(request.user)
-    return JsonResponse({"success": True, "mensaje": f"Pozo {pozo.nombre} enviado a la papelera."})
+    return JsonResponse({"success": True, "ok": True, "mensaje": f"Pozo {pozo.nombre} enviado a la papelera."})
 
 
 def pozos_papelera_view(request):
@@ -982,8 +1180,74 @@ def pozos_papelera_view(request):
 @require_http_methods(["POST"])
 def api_pozo_restaurar(request, pk):
     pozo = get_object_or_404(Pozo.todos, pk=pk, eliminado_en__isnull=False)
+    if Pozo.objects.filter(nombre__iexact=pozo.nombre).exclude(pk=pozo.pk).exists():
+        return JsonResponse({
+            "success": False,
+            "ok": False,
+            "error": f"No se puede restaurar el pozo porque ya existe un pozo activo o cerrado con el nombre '{pozo.nombre}'."
+        }, status=400)
     pozo.restaurar()
-    return JsonResponse({"success": True, "mensaje": f"Pozo {pozo.nombre} restaurado."})
+    return JsonResponse({"success": True, "ok": True, "mensaje": f"Pozo {pozo.nombre} restaurado."})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_pozo_cerrar(request, pk):
+    """
+    Cierra el pozo: pasa su estado a CERRADO.
+    El pozo queda archivado para consulta histórica y pasa al filtro 'Cerrados'.
+    """
+    pozo = get_object_or_404(Pozo, pk=pk)
+    if pozo.estado == 'CERRADO':
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
+            return JsonResponse({"success": False, "ok": False, "error": "El pozo ya está cerrado."}, status=400)
+        return redirect('operaciones:recap_pozo', pk=pozo.pk)
+
+    if pozo.estado != 'ACTIVO':
+        msg = "Solo se pueden cerrar pozos que se encuentren en estado ACTIVO."
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
+            return JsonResponse({"success": False, "ok": False, "error": msg}, status=400)
+        from django.contrib import messages
+        messages.error(request, msg)
+        from django.urls import reverse
+        return redirect(reverse('operaciones:pozos_list'))
+
+    pozo.estado = 'CERRADO'
+    pozo.save(update_fields=['estado', 'updated_at'])
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
+        return JsonResponse({"success": True, "ok": True, "mensaje": f"Pozo {pozo.nombre} cerrado exitosamente.", "estado": "CERRADO"})
+
+    from django.urls import reverse
+    next_url = request.POST.get('next')
+    if next_url:
+        return redirect(next_url)
+    return redirect(reverse('operaciones:recap_pozo', args=[pozo.pk]) + '?cerrado=1')
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_pozo_reabrir(request, pk):
+    """
+    Reabre un pozo cerrado: pasa su estado a ACTIVO.
+    """
+    pozo = get_object_or_404(Pozo, pk=pk)
+    if pozo.estado != 'CERRADO':
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
+            return JsonResponse({"success": False, "ok": False, "error": "El pozo no está cerrado."}, status=400)
+        return redirect('operaciones:recap_pozo', pk=pozo.pk)
+
+    pozo.estado = 'ACTIVO'
+    pozo.save(update_fields=['estado', 'updated_at'])
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
+        return JsonResponse({"success": True, "ok": True, "mensaje": f"Pozo {pozo.nombre} reabierto exitosamente.", "estado": "ACTIVO"})
+
+    from django.urls import reverse
+    next_url = request.POST.get('next')
+    if next_url:
+        return redirect(next_url)
+    return redirect(reverse('operaciones:recap_pozo', args=[pozo.pk]) + '?reabierto=1')
 
 
 # ============================================================
@@ -1004,6 +1268,7 @@ def api_pits_list(request, pk):
     tipos = pozo.tipos_fosa.all()
     return JsonResponse({
         "success": True,
+        "ok": True,
         "fosas": [
             {"id": f.id, "numero": f.numero, "descripcion": f.descripcion, "capacidad": float(f.capacidad)}
             for f in fosas
@@ -1020,10 +1285,13 @@ def api_pits_list(request, pk):
 def api_fosas_guardar(request, pk):
     """Reemplaza el listado completo de fosas del pozo (guardado en bloque, como la grilla de ONE-TRAX)."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     filas = data.get('fosas', [])
     errores = []
@@ -1046,13 +1314,13 @@ def api_fosas_guardar(request, pk):
         ))
 
     if errores:
-        return JsonResponse({"success": False, "error": "Hay fosas inválidas.", "errores_filas": errores}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Hay fosas inválidas.", "errores_filas": errores}, status=400)
 
     with transaction.atomic():
         pozo.fosas.all().delete()
         Fosa.objects.bulk_create(nuevas)
 
-    return JsonResponse({"success": True, "mensaje": "Fosas guardadas.", "total": len(nuevas)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Fosas guardadas.", "total": len(nuevas)})
 
 
 @csrf_exempt
@@ -1060,12 +1328,18 @@ def api_fosas_guardar(request, pk):
 def api_tipos_fosa_guardar(request, pk):
     """Reemplaza el listado completo de Pit Type Setup del pozo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     filas = data.get('tipos_fosa', [])
+    if not filas:
+        return JsonResponse({"success": False, "ok": False, "error": "Debe especificar al menos un tipo de fosa."}, status=400)
+
     errores = []
     nuevas = []
     codigos_vistos = set()
@@ -1082,13 +1356,13 @@ def api_tipos_fosa_guardar(request, pk):
         nuevas.append(TipoFosa(pozo=pozo, codigo=codigo, descripcion=t_form.cleaned_data['descripcion']))
 
     if errores:
-        return JsonResponse({"success": False, "error": "Hay tipos de fosa inválidos.", "errores_filas": errores}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Hay tipos de fosa inválidos.", "errores_filas": errores}, status=400)
 
     with transaction.atomic():
         pozo.tipos_fosa.all().delete()
         TipoFosa.objects.bulk_create(nuevas)
 
-    return JsonResponse({"success": True, "mensaje": "Pit Type Setup guardado.", "total": len(nuevas)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Pit Type Setup guardado.", "total": len(nuevas)})
 
 
 # ============================================================
@@ -1108,6 +1382,7 @@ def api_categorias_perdida_list(request, pk):
     categorias = pozo.categorias_perdida.all()
     return JsonResponse({
         "success": True,
+        "ok": True,
         "categorias": [
             {"id": c.id, "codigo": c.codigo, "descripcion": c.descripcion, "tipo": c.tipo}
             for c in categorias
@@ -1121,12 +1396,18 @@ def api_categorias_perdida_list(request, pk):
 def api_categorias_perdida_guardar(request, pk):
     """Reemplaza el listado completo de categorías de pérdida del pozo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     filas = data.get('categorias', [])
+    if not filas:
+        return JsonResponse({"success": False, "ok": False, "error": "Debe especificar al menos una categoría de pérdida."}, status=400)
+
     errores = []
     nuevas = []
     codigos_vistos = set()
@@ -1147,13 +1428,13 @@ def api_categorias_perdida_guardar(request, pk):
         ))
 
     if errores:
-        return JsonResponse({"success": False, "error": "Hay categorías inválidas.", "errores_filas": errores}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Hay categorías inválidas.", "errores_filas": errores}, status=400)
 
     with transaction.atomic():
         pozo.categorias_perdida.all().delete()
         CategoriaPerdidaItem.objects.bulk_create(nuevas)
 
-    return JsonResponse({"success": True, "mensaje": "Categorías de pérdida guardadas.", "total": len(nuevas)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Categorías de pérdida guardadas.", "total": len(nuevas)})
 
 
 # ============================================================
@@ -1187,6 +1468,7 @@ def api_general_setup_detail(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     return JsonResponse({
         "success": True,
+        "ok": True,
         "general_setup": _general_setup_dto(pozo),
         "ecuacion_solidos_choices": Pozo.ECUACION_SOLIDOS_CHOICES,
         "monedas": Pozo.MONEDAS_COMUNES,
@@ -1197,21 +1479,24 @@ def api_general_setup_detail(request, pk):
 @require_http_methods(["POST"])
 def api_general_setup_guardar(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     form = GeneralSetupForm(data, instance=pozo)
     if not form.is_valid():
         return JsonResponse({
-            "success": False, "errores": form.errors,
+            "success": False, "ok": False, "errores": form.errors,
             "error": next(iter(form.errors.values()))[0]
         }, status=400)
 
     pozo = form.save()
     return JsonResponse({
-        "success": True, "mensaje": "Configuración General guardada.",
+        "success": True, "ok": True, "mensaje": "Configuración General guardada.",
         "general_setup": _general_setup_dto(pozo),
     })
 
@@ -1221,6 +1506,7 @@ def api_almacenes_list(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     return JsonResponse({
         "success": True,
+        "ok": True,
         "almacenes": [
             {"id": a.id, "codigo": a.codigo, "nombre": a.nombre}
             for a in pozo.almacenes.all()
@@ -1233,10 +1519,13 @@ def api_almacenes_list(request, pk):
 def api_almacenes_guardar(request, pk):
     """Reemplaza el listado completo de códigos de almacén del pozo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     filas = data.get('almacenes', [])
     errores = []
@@ -1255,13 +1544,13 @@ def api_almacenes_guardar(request, pk):
         nuevas.append(AlmacenCodigo(pozo=pozo, codigo=codigo, nombre=a_form.cleaned_data['nombre']))
 
     if errores:
-        return JsonResponse({"success": False, "error": "Hay almacenes inválidos.", "errores_filas": errores}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Hay almacenes inválidos.", "errores_filas": errores}, status=400)
 
     with transaction.atomic():
         pozo.almacenes.all().delete()
         AlmacenCodigo.objects.bulk_create(nuevas)
 
-    return JsonResponse({"success": True, "mensaje": "Códigos de almacén guardados.", "total": len(nuevas)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Códigos de almacén guardados.", "total": len(nuevas)})
 
 
 @require_http_methods(["GET"])
@@ -1269,6 +1558,7 @@ def api_tipos_distribucion_list(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     return JsonResponse({
         "success": True,
+        "ok": True,
         "tipos_distribucion": [
             {"id": t.id, "numero": t.numero, "descripcion": t.descripcion, "tipo": t.tipo}
             for t in pozo.tipos_distribucion_tiempo.all()
@@ -1282,10 +1572,13 @@ def api_tipos_distribucion_list(request, pk):
 def api_tipos_distribucion_guardar(request, pk):
     """Reemplaza el listado completo de Time Distribution Setup del pozo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     filas = data.get('tipos_distribucion', [])
     errores = []
@@ -1308,13 +1601,13 @@ def api_tipos_distribucion_guardar(request, pk):
         ))
 
     if errores:
-        return JsonResponse({"success": False, "error": "Hay tipos inválidos.", "errores_filas": errores}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Hay tipos inválidos.", "errores_filas": errores}, status=400)
 
     with transaction.atomic():
         pozo.tipos_distribucion_tiempo.all().delete()
         TipoDistribucionTiempo.objects.bulk_create(nuevas)
 
-    return JsonResponse({"success": True, "mensaje": "Time Distribution Setup guardado.", "total": len(nuevas)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Time Distribution Setup guardado.", "total": len(nuevas)})
 
 
 # ============================================================
@@ -1342,7 +1635,7 @@ def api_equipos_list(request):
         qs = qs.filter(Q(codigo__icontains=search) | Q(nombre__icontains=search))
     if tipo_equipo:
         qs = qs.filter(tipo_equipo=tipo_equipo)
-    return JsonResponse({"success": True, "equipos": [e.to_dict() for e in qs]})
+    return JsonResponse({"success": True, "ok": True, "equipos": [e.to_dict() for e in qs]})
 
 
 @require_http_methods(["GET"])
@@ -1352,7 +1645,7 @@ def api_mallas_list(request):
     qs = MallaZaranda.objects.all()
     if search:
         qs = qs.filter(Q(codigo__icontains=search) | Q(descripcion__icontains=search))
-    return JsonResponse({"success": True, "mallas": [m.to_dict() for m in qs]})
+    return JsonResponse({"success": True, "ok": True, "mallas": [m.to_dict() for m in qs]})
 
 
 @require_http_methods(["GET"])
@@ -1360,6 +1653,7 @@ def api_productos_activos_list(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     return JsonResponse({
         "success": True,
+        "ok": True,
         "productos_activos": [p.to_dict() for p in pozo.productos_activos.select_related('producto').all()],
     })
 
@@ -1369,10 +1663,13 @@ def api_productos_activos_list(request, pk):
 def api_productos_activos_guardar(request, pk):
     """Reemplaza el listado completo de productos activos del pozo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     filas = data.get('productos_activos', [])
     errores = []
@@ -1390,13 +1687,13 @@ def api_productos_activos_guardar(request, pk):
         nuevas.append(item)
 
     if errores:
-        return JsonResponse({"success": False, "error": " | ".join(errores), "errores_filas": errores}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": " | ".join(errores), "errores_filas": errores}, status=400)
 
     with transaction.atomic():
         pozo.productos_activos.all().delete()
         ProductoActivoPozo.objects.bulk_create(nuevas)
 
-    return JsonResponse({"success": True, "mensaje": "Productos Activos guardados.", "total": len(nuevas)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Productos Activos guardados.", "total": len(nuevas)})
 
 
 @require_http_methods(["GET"])
@@ -1404,6 +1701,7 @@ def api_equipos_activos_list(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     return JsonResponse({
         "success": True,
+        "ok": True,
         "equipos_activos": [e.to_dict() for e in pozo.equipos_activos.select_related('equipo').all()],
     })
 
@@ -1413,10 +1711,13 @@ def api_equipos_activos_list(request, pk):
 def api_equipos_activos_guardar(request, pk):
     """Reemplaza el listado completo de equipos activos del pozo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     filas = data.get('equipos_activos', [])
     errores = []
@@ -1439,13 +1740,13 @@ def api_equipos_activos_guardar(request, pk):
         nuevas.append(item)
 
     if errores:
-        return JsonResponse({"success": False, "error": "Hay equipos activos inválidos.", "errores_filas": errores}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Hay equipos activos inválidos.", "errores_filas": errores}, status=400)
 
     with transaction.atomic():
         pozo.equipos_activos.all().delete()
         EquipoActivoPozo.objects.bulk_create(nuevas)
 
-    return JsonResponse({"success": True, "mensaje": "Equipos Activos guardados.", "total": len(nuevas)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Equipos Activos guardados.", "total": len(nuevas)})
 
 
 @require_http_methods(["GET"])
@@ -1453,6 +1754,7 @@ def api_mallas_activas_list(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     return JsonResponse({
         "success": True,
+        "ok": True,
         "mallas_activas": [m.to_dict() for m in pozo.mallas_activas.select_related('malla').all()],
     })
 
@@ -1462,10 +1764,13 @@ def api_mallas_activas_list(request, pk):
 def api_mallas_activas_guardar(request, pk):
     """Reemplaza el listado completo de mallas activas del pozo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     filas = data.get('mallas_activas', [])
     errores = []
@@ -1488,13 +1793,13 @@ def api_mallas_activas_guardar(request, pk):
         nuevas.append(item)
 
     if errores:
-        return JsonResponse({"success": False, "error": "Hay mallas activas inválidas.", "errores_filas": errores}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Hay mallas activas inválidas.", "errores_filas": errores}, status=400)
 
     with transaction.atomic():
         pozo.mallas_activas.all().delete()
         MallaActivaPozo.objects.bulk_create(nuevas)
 
-    return JsonResponse({"success": True, "mensaje": "Mallas Activas guardadas.", "total": len(nuevas)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Mallas Activas guardadas.", "total": len(nuevas)})
 
 
 # ============================================================
@@ -1564,7 +1869,7 @@ def api_equipo_create(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     codigo = str(data.get('codigo', '')).strip()
     nombre = str(data.get('nombre', '')).strip()
@@ -1584,13 +1889,13 @@ def api_equipo_create(request):
         errores['posiciones_malla'] = error_pos
 
     if errores:
-        return JsonResponse({"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
 
     equipo = Equipo.objects.create(
         codigo=codigo, nombre=nombre, tipo_equipo=tipo_equipo, posiciones_malla=posiciones_malla
     )
     return JsonResponse({
-        "success": True, "mensaje": f"Equipo '{equipo.codigo}' creado.",
+        "success": True, "ok": True, "mensaje": f"Equipo '{equipo.codigo}' creado.",
         "equipo": equipo.to_dict()
     }, status=201)
 
@@ -1602,7 +1907,7 @@ def api_equipo_update(request, pk):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     codigo = str(data.get('codigo', equipo.codigo)).strip()
     nombre = str(data.get('nombre', equipo.nombre)).strip()
@@ -1622,7 +1927,7 @@ def api_equipo_update(request, pk):
         errores['posiciones_malla'] = error_pos
 
     if errores:
-        return JsonResponse({"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
 
     equipo.codigo = codigo
     equipo.nombre = nombre
@@ -1630,7 +1935,7 @@ def api_equipo_update(request, pk):
     equipo.posiciones_malla = posiciones_malla
     equipo.save()
     return JsonResponse({
-        "success": True, "mensaje": f"Equipo '{equipo.codigo}' actualizado.",
+        "success": True, "ok": True, "mensaje": f"Equipo '{equipo.codigo}' actualizado.",
         "equipo": equipo.to_dict()
     })
 
@@ -1644,10 +1949,10 @@ def api_equipo_delete(request, pk):
         equipo.delete()
     except ProtectedError:
         return JsonResponse({
-            "success": False,
+            "success": False, "ok": False,
             "error": f"No se puede eliminar el equipo '{codigo}' porque ya está en uso en la lista activa de uno o más pozos."
         }, status=400)
-    return JsonResponse({"success": True, "mensaje": f"Equipo '{codigo}' eliminado."})
+    return JsonResponse({"success": True, "ok": True, "mensaje": f"Equipo '{codigo}' eliminado."})
 
 
 @csrf_exempt
@@ -1656,7 +1961,7 @@ def api_malla_create(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     codigo = str(data.get('codigo', '')).strip()
     descripcion = str(data.get('descripcion', '')).strip()
@@ -1676,11 +1981,11 @@ def api_malla_create(request):
         errores['mesh_size'] = "El tamaño de malla (mesh) debe ser un número válido."
 
     if errores:
-        return JsonResponse({"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
 
     malla = MallaZaranda.objects.create(codigo=codigo, descripcion=descripcion, mesh_size=mesh_size)
     return JsonResponse({
-        "success": True, "mensaje": f"Malla '{malla.codigo}' creada.",
+        "success": True, "ok": True, "mensaje": f"Malla '{malla.codigo}' creada.",
         "malla": malla.to_dict()
     }, status=201)
 
@@ -1692,7 +1997,7 @@ def api_malla_update(request, pk):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     codigo = str(data.get('codigo', malla.codigo)).strip()
     descripcion = str(data.get('descripcion', malla.descripcion)).strip()
@@ -1712,14 +2017,14 @@ def api_malla_update(request, pk):
         errores['mesh_size'] = "El tamaño de malla (mesh) debe ser un número válido."
 
     if errores:
-        return JsonResponse({"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": errores, "error": next(iter(errores.values()))}, status=400)
 
     malla.codigo = codigo
     malla.descripcion = descripcion
     malla.mesh_size = mesh_size
     malla.save()
     return JsonResponse({
-        "success": True, "mensaje": f"Malla '{malla.codigo}' actualizada.",
+        "success": True, "ok": True, "mensaje": f"Malla '{malla.codigo}' actualizada.",
         "malla": malla.to_dict()
     })
 
@@ -1733,10 +2038,10 @@ def api_malla_delete(request, pk):
         malla.delete()
     except ProtectedError:
         return JsonResponse({
-            "success": False,
+            "success": False, "ok": False,
             "error": f"No se puede eliminar la malla '{codigo}' porque ya está en uso en la lista activa de uno o más pozos."
         }, status=400)
-    return JsonResponse({"success": True, "mensaje": f"Malla '{codigo}' eliminada."})
+    return JsonResponse({"success": True, "ok": True, "mensaje": f"Malla '{codigo}' eliminada."})
 
 
 # ============================================================
@@ -1753,7 +2058,7 @@ def api_propiedades_equipo_list(request):
         qs = qs.filter(descripcion__icontains=search)
     if tipo_equipo:
         qs = qs.filter(tipo_equipo=tipo_equipo)
-    return JsonResponse({"success": True, "propiedades": [p.to_dict() for p in qs]})
+    return JsonResponse({"success": True, "ok": True, "propiedades": [p.to_dict() for p in qs]})
 
 
 @csrf_exempt
@@ -1762,16 +2067,16 @@ def api_propiedad_equipo_create(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     form = PropiedadEquipoTipoForm(data)
     if not form.is_valid():
         primer_error = next(iter(form.errors.values()))[0]
-        return JsonResponse({"success": False, "errores": form.errors, "error": primer_error}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": form.errors, "error": primer_error}, status=400)
 
     propiedad = form.save()
     return JsonResponse({
-        "success": True, "mensaje": f"Propiedad '{propiedad.descripcion}' creada.",
+        "success": True, "ok": True, "mensaje": f"Propiedad '{propiedad.descripcion}' creada.",
         "propiedad": propiedad.to_dict()
     }, status=201)
 
@@ -1783,16 +2088,16 @@ def api_propiedad_equipo_update(request, pk):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     form = PropiedadEquipoTipoForm(data, instance=propiedad)
     if not form.is_valid():
         primer_error = next(iter(form.errors.values()))[0]
-        return JsonResponse({"success": False, "errores": form.errors, "error": primer_error}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": form.errors, "error": primer_error}, status=400)
 
     propiedad = form.save()
     return JsonResponse({
-        "success": True, "mensaje": f"Propiedad '{propiedad.descripcion}' actualizada.",
+        "success": True, "ok": True, "mensaje": f"Propiedad '{propiedad.descripcion}' actualizada.",
         "propiedad": propiedad.to_dict()
     })
 
@@ -1806,10 +2111,10 @@ def api_propiedad_equipo_delete(request, pk):
         propiedad.delete()
     except ProtectedError:
         return JsonResponse({
-            "success": False,
+            "success": False, "ok": False,
             "error": f"No se puede eliminar '{descripcion}' porque ya está seleccionada en uno o más pozos."
         }, status=400)
-    return JsonResponse({"success": True, "mensaje": f"Propiedad '{descripcion}' eliminada."})
+    return JsonResponse({"success": True, "ok": True, "mensaje": f"Propiedad '{descripcion}' eliminada."})
 
 
 @require_http_methods(["GET"])
@@ -1822,7 +2127,7 @@ def api_parametros_benchmark_list(request):
         qs = qs.filter(descripcion__icontains=search)
     if grupo:
         qs = qs.filter(grupo=grupo)
-    return JsonResponse({"success": True, "parametros": [p.to_dict() for p in qs]})
+    return JsonResponse({"success": True, "ok": True, "parametros": [p.to_dict() for p in qs]})
 
 
 @csrf_exempt
@@ -1831,16 +2136,16 @@ def api_parametro_benchmark_create(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     form = ParametroBenchmarkForm(data)
     if not form.is_valid():
         primer_error = next(iter(form.errors.values()))[0]
-        return JsonResponse({"success": False, "errores": form.errors, "error": primer_error}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": form.errors, "error": primer_error}, status=400)
 
     parametro = form.save()
     return JsonResponse({
-        "success": True, "mensaje": f"Parámetro '{parametro.descripcion}' creado.",
+        "success": True, "ok": True, "mensaje": f"Parámetro '{parametro.descripcion}' creado.",
         "parametro": parametro.to_dict()
     }, status=201)
 
@@ -1852,16 +2157,16 @@ def api_parametro_benchmark_update(request, pk):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     form = ParametroBenchmarkForm(data, instance=parametro)
     if not form.is_valid():
         primer_error = next(iter(form.errors.values()))[0]
-        return JsonResponse({"success": False, "errores": form.errors, "error": primer_error}, status=400)
+        return JsonResponse({"success": False, "ok": False, "errores": form.errors, "error": primer_error}, status=400)
 
     parametro = form.save()
     return JsonResponse({
-        "success": True, "mensaje": f"Parámetro '{parametro.descripcion}' actualizado.",
+        "success": True, "ok": True, "mensaje": f"Parámetro '{parametro.descripcion}' actualizado.",
         "parametro": parametro.to_dict()
     })
 
@@ -1875,10 +2180,10 @@ def api_parametro_benchmark_delete(request, pk):
         parametro.delete()
     except ProtectedError:
         return JsonResponse({
-            "success": False,
+            "success": False, "ok": False,
             "error": f"No se puede eliminar '{descripcion}' porque ya está en uso en uno o más pozos."
         }, status=400)
-    return JsonResponse({"success": True, "mensaje": f"Parámetro '{descripcion}' eliminado."})
+    return JsonResponse({"success": True, "ok": True, "mensaje": f"Parámetro '{descripcion}' eliminado."})
 
 
 # ============================================================
@@ -1901,7 +2206,7 @@ def api_equipment_properties_detail(request, pk):
 
     if not tipos_activos:
         return JsonResponse({
-            "success": True, "sin_equipo_activo": True, "tipos": [],
+            "success": True, "ok": True, "sin_equipo_activo": True, "tipos": [],
         })
 
     tipos_dict = dict(Equipo.TIPO_EQUIPO_CHOICES)
@@ -1928,7 +2233,7 @@ def api_equipment_properties_detail(request, pk):
         centrifuga_config = cfg.to_dict()
 
     return JsonResponse({
-        "success": True, "sin_equipo_activo": False,
+        "success": True, "ok": True, "sin_equipo_activo": False,
         "tipos": tipos, "centrifuga_config": centrifuga_config,
     })
 
@@ -1937,10 +2242,13 @@ def api_equipment_properties_detail(request, pk):
 @require_http_methods(["POST"])
 def api_equipment_properties_guardar(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     propiedades_seleccionadas = data.get('propiedades_seleccionadas', [])
     extras = data.get('extras', [])
@@ -1972,7 +2280,7 @@ def api_equipment_properties_guardar(request, pk):
         ))
 
     if errores:
-        return JsonResponse({"success": False, "error": "Hay propiedades extra inválidas.", "errores_filas": errores}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Hay propiedades extra inválidas.", "errores_filas": errores}, status=400)
 
     with transaction.atomic():
         pozo.propiedades_equipo_seleccionadas.all().delete()
@@ -1986,7 +2294,7 @@ def api_equipment_properties_guardar(request, pk):
             if form.is_valid():
                 form.save()
 
-    return JsonResponse({"success": True, "mensaje": "Configuración de Propiedades de Equipo guardada."})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Configuración de Propiedades de Equipo guardada."})
 
 
 # ============================================================
@@ -2015,6 +2323,7 @@ def api_benchmark_definiciones_detail(request, pk):
 
     return JsonResponse({
         "success": True,
+        "ok": True,
         "grupos": grupos,
         "parametros": [dict(p.to_dict(), seleccionado=(p.id in seleccionados_ids)) for p in qs],
     })
@@ -2025,10 +2334,13 @@ def api_benchmark_definiciones_detail(request, pk):
 def api_benchmark_definiciones_guardar(request, pk):
     """Reemplaza el listado completo de parámetros de benchmark elegidos para el pozo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     parametro_ids = data.get('parametro_ids', [])
     nuevas = [BenchmarkSeleccionado(pozo=pozo, parametro_id=pid) for pid in parametro_ids]
@@ -2043,7 +2355,7 @@ def api_benchmark_definiciones_guardar(request, pk):
         pozo.benchmarks_seleccionados.all().delete()
         BenchmarkSeleccionado.objects.bulk_create(nuevas)
 
-    return JsonResponse({"success": True, "mensaje": "Definiciones de Benchmark guardadas.", "total": len(nuevas)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Definiciones de Benchmark guardadas.", "total": len(nuevas)})
 
 
 @require_http_methods(["GET"])
@@ -2063,6 +2375,7 @@ def api_benchmark_targets_detail(request, pk):
 
     return JsonResponse({
         "success": True,
+        "ok": True,
         "parametros": [p.to_dict() for p in parametros],
         "intervalos": intervalos,
         "targets": targets,
@@ -2074,10 +2387,13 @@ def api_benchmark_targets_detail(request, pk):
 def api_benchmark_targets_guardar(request, pk):
     """Reemplaza el listado completo de objetivos (Target Entry) del pozo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     filas = data.get('targets', [])
     nuevas = []
@@ -2097,7 +2413,7 @@ def api_benchmark_targets_guardar(request, pk):
         pozo.benchmark_targets.all().delete()
         BenchmarkTarget.objects.bulk_create(nuevas)
 
-    return JsonResponse({"success": True, "mensaje": "Objetivos de Benchmark guardados.", "total": len(nuevas)})
+    return JsonResponse({"success": True, "ok": True, "mensaje": "Objetivos de Benchmark guardados.", "total": len(nuevas)})
 
 
 # ============================================================
@@ -2160,6 +2476,9 @@ def _validar_componente_sarta(data, instancia=None):
     if od is not None and diam_int is not None and diam_int >= od and od > 0:
         errores['id_in'] = "El diámetro interno debe ser menor que el externo."
 
+    if tj_od is not None and tj_id is not None and tj_id >= tj_od and tj_od > 0:
+        errores['tool_joint_id_in'] = "El diámetro interno de la junta debe ser menor que su diámetro externo."
+
     if tj_len and tj_len > 0 and (not largo_tramo or largo_tramo <= 0):
         errores['largo_tramo_ft'] = "Para ponderar la junta se necesita el largo del tramo."
 
@@ -2188,6 +2507,7 @@ def api_componentes_sarta_list(request):
         qs = qs.filter(tipo=tipo)
     return JsonResponse({
         "success": True,
+        "ok": True,
         "componentes": [c.to_dict() for c in qs],
     })
 
@@ -2198,17 +2518,18 @@ def api_componente_sarta_create(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     valores, errores = _validar_componente_sarta(data)
     if errores:
         return JsonResponse(
-            {"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400
+            {"success": False, "ok": False, "errores": errores, "error": next(iter(errores.values()))}, status=400
         )
 
     componente = ComponenteSarta.objects.create(**valores)
     return JsonResponse({
         "success": True,
+        "ok": True,
         "mensaje": f"Componente '{componente.codigo}' creado.",
         "componente": componente.to_dict(),
     }, status=201)
@@ -2221,12 +2542,12 @@ def api_componente_sarta_update(request, pk):
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
-        return JsonResponse({"success": False, "error": "Datos JSON inválidos."}, status=400)
+        return JsonResponse({"success": False, "ok": False, "error": "Datos JSON inválidos."}, status=400)
 
     valores, errores = _validar_componente_sarta(data, instancia=componente)
     if errores:
         return JsonResponse(
-            {"success": False, "errores": errores, "error": next(iter(errores.values()))}, status=400
+            {"success": False, "ok": False, "errores": errores, "error": next(iter(errores.values()))}, status=400
         )
 
     for campo, valor in valores.items():
@@ -2234,6 +2555,7 @@ def api_componente_sarta_update(request, pk):
     componente.save()
     return JsonResponse({
         "success": True,
+        "ok": True,
         "mensaje": f"Componente '{componente.codigo}' actualizado.",
         "componente": componente.to_dict(),
     })
@@ -2249,6 +2571,7 @@ def api_componente_sarta_delete(request, pk):
     except ProtectedError:
         return JsonResponse({
             "success": False,
+            "ok": False,
             "error": f"No se puede eliminar el componente '{codigo}' porque ya está en uso en la sarta de uno o más reportes diarios."
         }, status=400)
-    return JsonResponse({"success": True, "mensaje": f"Componente '{codigo}' eliminado."})
+    return JsonResponse({"success": True, "ok": True, "mensaje": f"Componente '{codigo}' eliminado."})

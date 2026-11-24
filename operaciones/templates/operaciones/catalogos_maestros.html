@@ -28,7 +28,7 @@
   <div class="catalogos-tabs" role="tablist" aria-label="Catálogos">
     <button type="button" class="catalogos-tab-btn active" id="tabEquipos" role="tab">
       <svg class="icono" aria-hidden="true"><use href="#i-ajustes"></use></svg>
-      <span>Equipos</span>
+      <span>Equipos (ECS)</span>
       <span class="catalogos-tab-counter dato" id="tabBadgeEquipos">{{ counts.equipos|default:0 }}</span>
     </button>
     <button type="button" class="catalogos-tab-btn" id="tabMallas" role="tab">
@@ -94,17 +94,17 @@
             <span class="catalogos-form-icon">⚙️</span>
             <span class="catalogos-form-title" id="formTituloEquipo">Nuevo Equipo</span>
           </div>
-          <span class="catalogos-mode-badge creando form-mode-tag" id="formModoEquipo">Creando</span>
+          <span class="catalogos-mode-badge bloqueado form-mode-tag" id="formModoEquipo">Bloqueado</span>
         </div>
         <div class="catalogos-form-body product-form">
           <div class="form-grid-2cols">
             <div class="catalogos-form-group form-group">
               <label class="catalogos-label">Código de Equipo</label>
-              <input type="text" id="inputEquipoCodigo" class="catalogos-input form-input" placeholder="Ej: NC-014">
+              <input type="text" id="inputEquipoCodigo" class="catalogos-input form-input" placeholder="Ej: NC-014" disabled>
             </div>
             <div class="catalogos-form-group form-group">
               <label class="catalogos-label">Tipo de Equipo</label>
-              <select id="inputEquipoTipo" class="catalogos-select form-select">
+              <select id="inputEquipoTipo" class="catalogos-select form-select" disabled>
                 <option value="CENTRIFUGA">Centrífuga</option>
                 <option value="LIMPIADOR_LODO">Limpiador de Lodo (Mud Cleaner)</option>
                 <option value="ZARANDA">Zaranda (Shale Shaker)</option>
@@ -117,18 +117,18 @@
           </div>
           <div class="catalogos-form-group form-group">
             <label class="catalogos-label">Nombre Oficial</label>
-            <input type="text" id="inputEquipoNombre" class="catalogos-input form-input" placeholder="Ej: 518 FSV Centrífuga">
+            <input type="text" id="inputEquipoNombre" class="catalogos-input form-input" placeholder="Ej: 518 FSV Centrífuga" disabled>
           </div>
           <div class="catalogos-form-group form-group">
             <label class="catalogos-label" for="inputEquipoPosiciones">Posiciones de Malla</label>
-            <input type="number" id="inputEquipoPosiciones" class="catalogos-input form-input catalogos-input-corto" min="0" max="12" step="1" value="0">
+            <input type="number" id="inputEquipoPosiciones" class="catalogos-input form-input catalogos-input-corto" min="0" max="12" step="1" value="0" disabled>
             <span class="catalogos-ayuda">Cuántas mallas lleva el equipo (0 si no usa). Ej.: zaranda BEM 3 = 3, BEM 600 = 5. La posición 1 es la más cercana a la línea de flujo.</span>
           </div>
           <div class="catalogos-error-msg field-error" id="errorEquipo"></div>
         </div>
         <div class="catalogos-form-footer form-footer-actions">
-          <button type="button" class="btn-form-cancel btn btn-cancelar" id="btnCancelarEquipo">Cancelar</button>
-          <button type="button" class="btn-form-save btn btn-guardar" id="btnGuardarEquipo">Guardar Equipo</button>
+          <button type="button" class="btn-form-cancel btn btn-cancelar" id="btnCancelarEquipo" disabled>Cancelar</button>
+          <button type="button" class="btn-form-save btn btn-guardar" id="btnGuardarEquipo" disabled>Guardar Equipo</button>
         </div>
       </div>
     </div>
@@ -169,7 +169,7 @@
             <span class="catalogos-form-icon">▦</span>
             <span class="catalogos-form-title" id="formTituloMalla">Nueva Malla</span>
           </div>
-          <span class="catalogos-mode-badge creando form-mode-tag" id="formModoMalla">Creando</span>
+          <span class="catalogos-mode-badge bloqueado form-mode-tag" id="formModoMalla">Bloqueado</span>
         </div>
         <div class="catalogos-form-body product-form">
           <div class="form-grid-2cols">
@@ -232,7 +232,7 @@
             <span class="catalogos-form-icon">📋</span>
             <span class="catalogos-form-title" id="formTituloPropiedad">Nueva Propiedad</span>
           </div>
-          <span class="catalogos-mode-badge creando form-mode-tag" id="formModoPropiedad">Creando</span>
+          <span class="catalogos-mode-badge bloqueado form-mode-tag" id="formModoPropiedad">Bloqueado</span>
         </div>
         <div class="catalogos-form-body product-form">
           <div class="catalogos-form-group form-group">
@@ -308,7 +308,7 @@
             <span class="catalogos-form-icon">📊</span>
             <span class="catalogos-form-title" id="formTituloBenchmark">Nuevo Parámetro</span>
           </div>
-          <span class="catalogos-mode-badge creando form-mode-tag" id="formModoBenchmark">Creando</span>
+          <span class="catalogos-mode-badge bloqueado form-mode-tag" id="formModoBenchmark">Bloqueado</span>
         </div>
         <div class="catalogos-form-body product-form">
           <div class="form-grid-2cols">
@@ -391,7 +391,7 @@
             <span class="catalogos-form-icon">🔩</span>
             <span class="catalogos-form-title" id="formTituloComponente">Nuevo Componente</span>
           </div>
-          <span class="catalogos-mode-badge creando form-mode-tag" id="formModoComponente">Creando</span>
+          <span class="catalogos-mode-badge bloqueado form-mode-tag" id="formModoComponente">Bloqueado</span>
         </div>
         <div class="catalogos-form-body product-form">
           <div class="form-grid-2cols">

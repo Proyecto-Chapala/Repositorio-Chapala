@@ -20,10 +20,17 @@
     <div class="project-header-chips">
       <span class="project-chip chip-accent">{{ total_reportes }} reporte{{ total_reportes|pluralize }}</span>
       {% if primero %}<span class="project-chip">{{ primero.fecha|date:"d/m/Y" }} &rarr; {{ ultimo.fecha|date:"d/m/Y" }}</span>{% endif %}
+      <span class="project-chip {% if pozo.estado == 'CERRADO' %}chip-cerrado{% else %}chip-activo{% endif %}">
+        {% if pozo.estado == 'CERRADO' %}&#128274; Cerrado{% else %}&#9679; Activo{% endif %}
+      </span>
     </div>
   </header>
 
   {% if guardado %}<div class="rc-aviso rc-aviso-ok">Conclusiones y recomendaciones guardadas.</div>{% endif %}
+  {% if cerrado %}<div class="rc-aviso rc-aviso-ok">El pozo ha sido cerrado exitosamente. Ha pasado al filtro de «Cerrados».</div>{% endif %}
+  {% if reabierto %}<div class="rc-aviso rc-aviso-ok">El pozo ha sido reabierto exitosamente y vuelve a estar activo.</div>{% endif %}
+  {% if error_cerrado %}<div class="rc-aviso rc-aviso-error">&#128274; No se pueden modificar los textos de un pozo cerrado. Reabre el pozo para realizar cambios.</div>{% endif %}
+  {% if pozo.estado == 'CERRADO' and not error_cerrado %}<div class="rc-aviso rc-aviso-info">&#128274; El pozo está cerrado: los textos del reporte final están protegidos contra modificaciones. Para editarlos, reabre el pozo en el Paso 3.</div>{% endif %}
   {% if not total_reportes %}<div class="rc-aviso">El pozo todavía no tiene reportes diarios: el reporte final saldrá vacío.</div>{% endif %}
 
   <div class="rc-grid">
@@ -36,54 +43,139 @@
       <p class="rc-nota">Lo escribe el ingeniero al cierre. Se guarda en el pozo y sale en el reporte. Las observaciones de cada intervalo se toman de <a href="{% url 'operaciones:casing_intervals' pozo.pk %}">Intervalos de Revestimiento</a>.</p>
 
       <label class="rc-label" for="rcResumen">Resumen del pozo</label>
-      <textarea id="rcResumen" name="resumen" rows="4" placeholder="Cómo se desarrolló el pozo en general…">{{ recap.resumen }}</textarea>
+      <textarea id="rcResumen" name="resumen" rows="4" placeholder="Cómo se desarrolló el pozo en general…" {% if pozo.estado == 'CERRADO' %}readonly{% endif %}>{{ recap.resumen }}</textarea>
 
       <label class="rc-label" for="rcConclusiones">Conclusiones</label>
-      <textarea id="rcConclusiones" name="conclusiones" rows="4" placeholder="Qué funcionó, qué no, resultados del sistema de fluidos…">{{ recap.conclusiones }}</textarea>
+      <textarea id="rcConclusiones" name="conclusiones" rows="4" placeholder="Qué funcionó, qué no, resultados del sistema de fluidos…" {% if pozo.estado == 'CERRADO' %}readonly{% endif %}>{{ recap.conclusiones }}</textarea>
 
       <label class="rc-label" for="rcRecomendaciones">Recomendaciones</label>
-      <textarea id="rcRecomendaciones" name="recomendaciones" rows="4" placeholder="Para el próximo pozo o la próxima fase…">{{ recap.recomendaciones }}</textarea>
+      <textarea id="rcRecomendaciones" name="recomendaciones" rows="4" placeholder="Para el próximo pozo o la próxima fase…" {% if pozo.estado == 'CERRADO' %}readonly{% endif %}>{{ recap.recomendaciones }}</textarea>
 
       <label class="rc-label" for="rcLecciones">Lecciones aprendidas / buenas prácticas</label>
-      <textarea id="rcLecciones" name="lecciones" rows="3" placeholder="Opcional">{{ recap.lecciones }}</textarea>
+      <textarea id="rcLecciones" name="lecciones" rows="3" placeholder="Opcional" {% if pozo.estado == 'CERRADO' %}readonly{% endif %}>{{ recap.lecciones }}</textarea>
 
       <div class="rc-acciones">
         {% if recap.actualizado_en %}<span class="rc-nota">Última edición: {{ recap.actualizado_en|date:"d/m/Y H:i" }}</span>{% endif %}
-        <button type="submit" class="rc-btn">Guardar textos</button>
+        <button type="submit" class="rc-btn" {% if pozo.estado == 'CERRADO' %}disabled title="El pozo está cerrado. Reabre el pozo para guardar cambios."{% endif %}>Guardar textos</button>
       </div>
     </form>
 
-    <!-- 2. Qué descargar -->
-    <form method="get" class="rc-tarjeta" action="{% url 'operaciones:recap_imprimible' pozo.pk %}">
-      <div class="rc-paso">2</div>
-      <h2 class="rc-titulo">Generar el reporte</h2>
-      <p class="rc-nota">Guarda primero los textos. Elige hasta qué fecha y qué secciones incluir.</p>
+    <!-- Columna derecha: Descarga y Estado -->
+    <div class="rc-columna-derecha">
 
-      <label class="rc-label" for="rcHasta">Hasta la fecha (opcional)</label>
-      <input type="date" id="rcHasta" name="hasta" class="rc-input"
-             {% if primero %}min="{{ primero.fecha|date:'Y-m-d' }}" max="{{ ultimo.fecha|date:'Y-m-d' }}"{% endif %}>
-      <p class="rc-nota rc-nota-chica">Vacío = todo el pozo, hasta el último reporte.</p>
+      <!-- 2. Qué descargar -->
+      <form method="get" class="rc-tarjeta" action="{% url 'operaciones:recap_imprimible' pozo.pk %}">
+        <div class="rc-paso">2</div>
+        <h2 class="rc-titulo">Generar el reporte</h2>
+        <p class="rc-nota">Guarda primero los textos. Elige hasta qué fecha y qué secciones incluir.</p>
 
-      <div class="rc-label">Secciones</div>
-      <div class="rc-secciones">
-        {% for clave, titulo in secciones.items %}
-        <label class="rc-check"><input type="checkbox" name="s" value="{{ clave }}" checked> {{ titulo }}</label>
-        {% endfor %}
+        <label class="rc-label" for="rcHasta">Hasta la fecha (opcional)</label>
+        <input type="date" id="rcHasta" name="hasta" class="rc-input"
+               {% if primero %}min="{{ primero.fecha|date:'Y-m-d' }}" max="{{ ultimo.fecha|date:'Y-m-d' }}"{% endif %}>
+        <p class="rc-nota rc-nota-chica">Vacío = todo el pozo, hasta el último reporte.</p>
+
+        <div class="rc-label">Secciones</div>
+        <div class="rc-secciones">
+          {% for clave, titulo in secciones.items %}
+          <label class="rc-check"><input type="checkbox" name="s" value="{{ clave }}" checked> {{ titulo }}</label>
+          {% endfor %}
+        </div>
+
+        <div class="rc-formatos">
+          <button type="submit" class="rc-formato" formaction="{% url 'operaciones:recap_excel' pozo.pk %}">
+            <span class="rc-formato-icono">&#128202;</span>
+            <span><strong>Descargar Excel</strong><small>Una hoja por sección (.xlsx)</small></span>
+          </button>
+          <button type="submit" class="rc-formato" formtarget="_blank">
+            <span class="rc-formato-icono">&#128196;</span>
+            <span><strong>Ver / Guardar PDF</strong><small>Se abre listo para imprimir o guardar como PDF</small></span>
+          </button>
+        </div>
+        <p class="rc-nota rc-nota-chica">Con muchos reportes puede tardar unos segundos: se recalcula todo el pozo.</p>
+      </form>
+
+      <!-- 3. Cierre operacional del pozo -->
+      <div class="rc-tarjeta rc-tarjeta-cierre">
+        <div class="rc-paso rc-paso-cierre">3</div>
+        <h2 class="rc-titulo">Estado del pozo</h2>
+        {% if pozo.estado == 'CERRADO' %}
+          <div class="rc-cierre-info">
+            <span class="rc-badge-cerrado">&#128274; Pozo Cerrado</span>
+            <p class="rc-nota">Este pozo se encuentra concluido y archivado en el filtro «Cerrados». Sus datos y reportes están protegidos.</p>
+          </div>
+          <button type="button" class="rc-btn rc-btn-sec rc-btn-block" id="btnAbrirModalReabrir">
+            &#128275; Reabrir pozo
+          </button>
+        {% else %}
+          <p class="rc-nota">Al concluir las operaciones y emitir el reporte final, puedes cerrar el pozo para trasladarlo a «Cerrados» y proteger la carga de reportes.</p>
+          <button type="button" class="rc-btn rc-btn-cerrar rc-btn-block" id="btnAbrirModalCerrar">
+            &#128274; Cerrar pozo
+          </button>
+        {% endif %}
       </div>
 
-      <div class="rc-formatos">
-        <button type="submit" class="rc-formato" formaction="{% url 'operaciones:recap_excel' pozo.pk %}">
-          <span class="rc-formato-icono">&#128202;</span>
-          <span><strong>Descargar Excel</strong><small>Una hoja por sección (.xlsx)</small></span>
-        </button>
-        <button type="submit" class="rc-formato" formtarget="_blank">
-          <span class="rc-formato-icono">&#128196;</span>
-          <span><strong>Ver / Guardar PDF</strong><small>Se abre listo para imprimir o guardar como PDF</small></span>
-        </button>
-      </div>
-      <p class="rc-nota rc-nota-chica">Con muchos reportes puede tardar unos segundos: se recalcula todo el pozo.</p>
-    </form>
+    </div>
 
   </div>
+
+  <!-- Modal: Confirmar Cierre de Pozo -->
+  <div class="modal-backdrop" id="modalCerrarPozo" hidden>
+    <div class="modal-box modal-cerrar-pozo">
+      <div class="modal-header">
+        <span class="modal-title">Cerrar pozo</span>
+        <button type="button" class="wizard-close-btn" id="btnCerrarModalCerrar" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="eliminar-pozo-aviso">
+          ¿Deseas cerrar el pozo <strong>{{ pozo.nombre }}</strong>?
+        </p>
+        <p class="rc-nota">
+          Al cerrarlo, las operaciones se consideran concluidas. El pozo pasará al filtro de <strong>«Cerrados»</strong> en el listado y se bloqueará la creación de nuevos reportes para proteger el histórico.
+        </p>
+        <p class="rc-nota rc-nota-chica">
+          Podrás consultar toda su información y reabrirlo en cualquier momento si lo necesitas.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secundario" id="btnCancelarCerrar">Cancelar</button>
+        <form method="post" action="{% url 'operaciones:api_pozo_cerrar' pozo.pk %}" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit" class="btn btn-principal" id="btnConfirmarCerrar">Confirmar cierre</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmar Reabrir Pozo -->
+  <div class="modal-backdrop" id="modalReabrirPozo" hidden>
+    <div class="modal-box modal-cerrar-pozo">
+      <div class="modal-header">
+        <span class="modal-title">Reabrir pozo</span>
+        <button type="button" class="wizard-close-btn" id="btnCerrarModalReabrir" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="eliminar-pozo-aviso">
+          ¿Deseas reabrir el pozo <strong>{{ pozo.nombre }}</strong>?
+        </p>
+        <p class="rc-nota">
+          El pozo volverá a estado <strong>Activo</strong>, aparecerá en la lista de pozos activos y se habilitará nuevamente la creación y edición de reportes diarios.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secundario" id="btnCancelarReabrir">Cancelar</button>
+        <form method="post" action="{% url 'operaciones:api_pozo_reabrir' pozo.pk %}" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit" class="btn btn-principal" id="btnConfirmarReabrir">Reabrir pozo</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'operaciones/js/recap.js' %}?v={{ version_estaticos }}"></script>
 {% endblock %}

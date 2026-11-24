@@ -19,6 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .models import Pozo
 from .models_daily_reports import ReporteDiario
+from .views import _validar_pozo_abierto
 from . import hidraulica as hid
 
 RPM_VISCOSIMETRO = (600, 300, 200, 100, 6, 3)
@@ -97,6 +98,9 @@ def api_hidraulica_detail(request, pk, reporte_pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
     if request.method == 'POST':
+        error_cerrado = _validar_pozo_abierto(pozo)
+        if error_cerrado:
+            return error_cerrado
         try:
             body = json.loads(request.body.decode('utf-8'))
             edicion = str(body.get('edicion', '')).strip()
@@ -152,7 +156,7 @@ def calcular_hidraulica_reporte(pozo, reporte, edicion='5'):
         faltan.append('la sarta de perforación (pestaña 4)')
 
     base = {
-        'ok': True, 'edicion': edicion,
+        'ok': True, 'success': True, 'edicion': edicion,
         'edicion_pozo': '5' if pozo.usar_api_5ta_edicion_hidraulica else '4',
         'faltan': faltan,
         'entrada': {

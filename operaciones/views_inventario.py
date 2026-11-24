@@ -17,6 +17,16 @@ from .models import Pozo, CategoriaPerdidaItem
 from .models_inventario import PerdidaReportePozo
 
 
+def _validar_pozo_abierto(pozo):
+    """Verifica que el pozo no esté en estado CERRADO antes de permitir modificaciones."""
+    if pozo.estado == 'CERRADO':
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": "El pozo está cerrado. Para modificar datos del pozo o sus reportes debes reabrirlo primero."
+        }, status=400)
+    return None
+
+
 def _estado_perdidas(pozo):
     if not pozo.categorias_perdida.exists():
         CategoriaPerdidaItem.sembrar_estandar(pozo)
@@ -34,6 +44,7 @@ def _estado_perdidas(pozo):
 
     return {
         'ok': True,
+        'success': True,
         'maximo': PerdidaReportePozo.MAXIMO_EN_REPORTE,
         'personalizado': personalizado,
         'disponibles': [dto(c) for c in categorias],
@@ -52,10 +63,13 @@ def api_perdidas_reporte_detail(request, pk):
 @require_http_methods(["POST"])
 def api_perdidas_reporte_guardar(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = json.loads(request.body)
     except (TypeError, ValueError):
-        return JsonResponse({'ok': False, 'error': 'Datos inválidos.'}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': 'Datos inválidos.'}, status=400)
 
     existentes = set(pozo.categorias_perdida.values_list('codigo', flat=True))
     codigos = []
@@ -63,16 +77,16 @@ def api_perdidas_reporte_guardar(request, pk):
         try:
             codigo = int(valor)
         except (TypeError, ValueError):
-            return JsonResponse({'ok': False, 'error': 'Código de pérdida inválido.'}, status=400)
+            return JsonResponse({'ok': False, 'success': False, 'error': 'Código de pérdida inválido.'}, status=400)
         if codigo not in existentes:
-            return JsonResponse({'ok': False, 'error': f'La categoría {codigo} ya no existe en la configuración del pozo.'}, status=400)
+            return JsonResponse({'ok': False, 'success': False, 'error': f'La categoría {codigo} ya no existe en la configuración del pozo.'}, status=400)
         if codigo not in codigos:
             codigos.append(codigo)
 
     if not codigos:
-        return JsonResponse({'ok': False, 'error': 'Elige al menos una categoría para el reporte.'}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': 'Elige al menos una categoría para el reporte.'}, status=400)
     if len(codigos) > PerdidaReportePozo.MAXIMO_EN_REPORTE:
-        return JsonResponse({'ok': False, 'error': f'El reporte diario admite como máximo {PerdidaReportePozo.MAXIMO_EN_REPORTE} categorías.'}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': f'El reporte diario admite como máximo {PerdidaReportePozo.MAXIMO_EN_REPORTE} categorías.'}, status=400)
 
     with transaction.atomic():
         pozo.perdidas_reporte.all().delete()
@@ -121,7 +135,7 @@ def _obtener(pk, reporte_pk):
 
 
 def _error(mensaje, status=400):
-    return JsonResponse({'ok': False, 'error': mensaje}, status=status)
+    return JsonResponse({'ok': False, 'success': False, 'error': mensaje}, status=status)
 
 
 def _num(valor, etiqueta, minimo=None, maximo=None, permitir_vacio=True):
@@ -677,6 +691,7 @@ def _estado_volumetria(pozo, reporte):
 
     return {
         'ok': True,
+        'success': True,
         'error_linea_tiempo': error,
         'fecha': reporte.fecha.strftime('%d/%m/%Y'),
         'moneda': pozo.moneda_cobro,
@@ -736,6 +751,9 @@ def api_volumetria_detail(request, pk, reporte_pk):
 def api_volumetria_guardar(request, pk, reporte_pk):
     """Guarda lo que se mide o se escribe a mano: tipo y volumen real de tanques, hoyo e inventario."""
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = _leer(request)
         tipos = _tipos_fosa(pozo)
@@ -888,6 +906,9 @@ def _leer_servicios_del_dia(pozo, reporte, items):
 def api_servicio_guardar(request, pk, reporte_pk):
     """Crea o modifica un servicio del pozo: descripción, categoría, tarifa diaria y si está activo."""
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = _leer(request)
         servicio = ServicioPozo(pozo=pozo)
@@ -918,6 +939,9 @@ def api_servicio_guardar(request, pk, reporte_pk):
 def api_servicio_eliminar(request, pk, reporte_pk, servicio_pk):
     """Quita un servicio del pozo. Si ya tiene días cobrados solo se desactiva, para conservar su costo."""
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     servicio = get_object_or_404(ServicioPozo, pk=servicio_pk, pozo=pozo)
     if servicio.dias.exists():
         servicio.activo = False
@@ -983,6 +1007,9 @@ def _movimiento_del_reporte(reporte, secuencia):
 def api_volumetria_transaccion(request, pk, reporte_pk):
     """Registra un movimiento: químicos, lodo reciclado, transferencia, devolución o pérdida."""
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = _leer(request)
         tipo = str(body.get('tipo') or '')
@@ -1057,6 +1084,9 @@ def api_volumetria_transaccion_editar(request, pk, reporte_pk, secuencia):
     (tanque sin tipo, producto sin existencia), no se guarda.
     """
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = _leer(request)
         t = _movimiento_del_reporte(reporte, secuencia)
@@ -1090,12 +1120,24 @@ def api_volumetria_dejar_en_hoyo(request, pk, reporte_pk):
     Si se hiciera uno solo, el sistema activo quedaría descuadrado.
     """
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = _leer(request)
         parte = str(body.get('parte') or 'bajo_mecha')
         if parte not in PARTES_HOYO:
             raise _Rechazo('Parte del hoyo no válida.')
         fosa = _fosa_valida(pozo, reporte, body.get('fosa'), 'el tanque activo')
+        # Si no se indica categoría de pérdida, por defecto se usa "En el hoyo" (CATEGORIA_PERDIDA_EN_HOYO = 7)
+        if not body.get('perdida_codigo'):
+            cat_default = pozo.categorias_perdida.filter(codigo=CATEGORIA_PERDIDA_EN_HOYO).first()
+            if cat_default:
+                body['perdida_codigo'] = cat_default.codigo
+            else:
+                cat_subsuelo = pozo.categorias_perdida.filter(tipo='SUBSUELO').first() or pozo.categorias_perdida.first()
+                if cat_subsuelo:
+                    body['perdida_codigo'] = cat_subsuelo.codigo
         t = TransaccionVolumen(reporte=reporte, tipo=TransaccionVolumen.PERDIDA, fosa_numero=fosa.numero,
                                fosa_descripcion=fosa.descripcion[:100])
         _llenar_movimiento_de_volumen(pozo, reporte, t, body)
@@ -1126,6 +1168,9 @@ def _grupo_del_tanque(pozo, reporte, numero):
 def api_volumetria_transaccion_eliminar(request, pk, reporte_pk, secuencia):
     """Elimina cualquier movimiento del reporte (no solo el último). Se repite toda la línea de tiempo."""
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         t = _movimiento_del_reporte(reporte, secuencia)
         with transaction.atomic():
@@ -1140,6 +1185,9 @@ def api_volumetria_transaccion_eliminar(request, pk, reporte_pk, secuencia):
 @require_http_methods(["POST"])
 def api_volumetria_deshacer(request, pk, reporte_pk):
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     ultima = (TransaccionVolumen.objects.filter(reporte__pozo=pozo)
               .select_related('reporte').order_by('-secuencia').first())
     if ultima is None:
@@ -1160,6 +1208,9 @@ def api_volumetria_deshacer(request, pk, reporte_pk):
 @require_http_methods(["POST"])
 def api_ticket_producto_guardar(request, pk, reporte_pk):
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = _leer(request)
         tipo = pozo.tipos_ticket_malla.filter(pk=body.get('tipo_id') or 0).first()
@@ -1224,6 +1275,9 @@ def api_ticket_producto_guardar(request, pk, reporte_pk):
 @require_http_methods(["POST"])
 def api_ticket_producto_eliminar(request, pk, reporte_pk, ticket_pk):
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     ticket = get_object_or_404(TicketProducto, pk=ticket_pk, reporte=reporte)
     try:
         with transaction.atomic():

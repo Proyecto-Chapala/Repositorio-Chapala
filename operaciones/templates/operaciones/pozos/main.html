@@ -18,11 +18,14 @@
       <h1 class="tablero-titulo dato">{{ pozo.nombre }}</h1>
     </div>
     <div class="tablero-chips">
-      <span class="estado-chip {% if pozo.estado == 'ACTIVO' %}estado-ok{% endif %}"><span class="estado-punto"></span>{{ pozo.get_estado_display }}</span>
+      <span class="estado-chip {% if pozo.estado == 'ACTIVO' %}estado-ok{% elif pozo.estado == 'CERRADO' %}estado-cerrado{% endif %}"><span class="estado-punto"></span>{{ pozo.get_estado_display }}</span>
       <span class="estado-chip">{{ pozo.get_sistema_unidades_display }}</span>
       <span class="estado-chip">{{ pozo.moneda_simbolo }}</span>
     </div>
     <div class="tablero-acciones">
+      <a class="boton" href="{% url 'operaciones:pozo_modificar' pozo.pk %}">
+        <svg class="icono" aria-hidden="true"><use href="#i-ajustes"></use></svg>Modificar pozo
+      </a>
       <a class="boton" href="{% url 'operaciones:recap_pozo' pozo.pk %}">
         <svg class="icono" aria-hidden="true"><use href="#i-final"></use></svg>Reporte final
       </a>
@@ -31,6 +34,12 @@
       </a>
     </div>
   </div>
+
+  {% if modificado %}
+  <div class="rc-aviso rc-aviso-ok" style="margin-bottom: 20px;">
+    El pozo y sus datos base han sido modificados exitosamente.
+  </div>
+  {% endif %}
 
   <div class="indicadores">
     <div class="indicador">
@@ -119,9 +128,62 @@
   </div>
 
   <div class="zona-peligro">
+    {% if pozo.estado == 'CERRADO' %}
+      <button type="button" class="btn btn-secundario" id="btnReabrirPozoMain">
+        <svg class="icono" aria-hidden="true"><use href="#i-ok"></use></svg>Reabrir pozo
+      </button>
+    {% else %}
+      <button type="button" class="btn btn-secundario" id="btnCerrarPozoMain">
+        <svg class="icono" aria-hidden="true"><use href="#i-bloqueado"></use></svg>Cerrar pozo
+      </button>
+    {% endif %}
     <button type="button" class="btn btn-eliminar btn-eliminar-pozo" id="btnEliminarPozo">
       <svg class="icono" aria-hidden="true"><use href="#i-papelera"></use></svg>Eliminar pozo
     </button>
+  </div>
+
+  <!-- ===================== Modal: Cerrar pozo ===================== -->
+  <div class="modal-backdrop" id="modalCerrarPozoMain" hidden>
+    <div class="modal-box modal-eliminar-pozo">
+      <div class="modal-header">
+        <span class="modal-title">Cerrar pozo</span>
+        <button type="button" class="wizard-close-btn" id="btnCerrarModalCerrarMain" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="eliminar-pozo-aviso">
+          ¿Deseas cerrar el pozo <strong>{{ pozo.nombre }}</strong>?
+        </p>
+        <p style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; margin: 8px 0 0;">
+          El pozo se considerará finalizado y pasará al filtro de <strong>«Cerrados»</strong> en el directorio. La creación de nuevos reportes quedará bloqueada para proteger los datos históricos. Podrás reabrirlo cuando lo desees.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secundario" id="btnCancelarCerrarMain">Cancelar</button>
+        <button type="button" class="btn btn-principal" id="btnConfirmarCerrarMain">Confirmar cierre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== Modal: Reabrir pozo ===================== -->
+  <div class="modal-backdrop" id="modalReabrirPozoMain" hidden>
+    <div class="modal-box modal-eliminar-pozo">
+      <div class="modal-header">
+        <span class="modal-title">Reabrir pozo</span>
+        <button type="button" class="wizard-close-btn" id="btnCerrarModalReabrirMain" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="eliminar-pozo-aviso">
+          ¿Deseas reabrir el pozo <strong>{{ pozo.nombre }}</strong>?
+        </p>
+        <p style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; margin: 8px 0 0;">
+          El pozo volverá a estado <strong>Activo</strong>, aparecerá en el listado activo y se reanudará la carga normal de reportes.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secundario" id="btnCancelarReabrirMain">Cancelar</button>
+        <button type="button" class="btn btn-principal" id="btnConfirmarReabrirMain">Reabrir pozo</button>
+      </div>
+    </div>
   </div>
 
   <!-- ===================== Modal: Eliminar pozo ===================== -->

@@ -306,12 +306,22 @@ def _propiedades(ws, d, variante):
 
 
 def _productos_y_equipos(ws, d):
-    usados = [p for p in d['vol'].get('inventario', []) if (p.get('usado_dia') or 0) > 0]
-    for i, p in enumerate(usados[:15]):
+    usados = []
+    for p in d['vol'].get('inventario', []):
+        cant = max(_f(p.get('usado_dia')) or 0.0, _f(p.get('usado_fluido')) or 0.0, _f(p.get('agregado_balance')) or 0.0)
+        if cant > 0:
+            usados.append((p, cant))
+    for i, (p, cant) in enumerate(usados[:15]):
         fila = 19 + i
         ws[f'G{fila}'].value = p['descripcion']
         ws[f'I{fila}'].value = _texto_tamano(p)
-        ws[f'J{fila}'].value = _num(p['usado_dia'], 2)
+        ws[f'J{fila}'].value = _num(cant, 2)
+    # Limpiar celdas restantes de la tabla de productos para evitar ceros o residuos
+    for i in range(len(usados), 15):
+        fila = 19 + i
+        ws[f'G{fila}'].value = None
+        ws[f'I{fila}'].value = None
+        ws[f'J{fila}'].value = None
 
     # Modelo/mallas: mallas instaladas hoy en cada equipo ("4X170", "2X140 2X100")
     mallas_por_serie = {}
@@ -334,6 +344,12 @@ def _productos_y_equipos(ws, d):
         ws[f'G{fila}'].value = e['descripcion']
         _poner(ws, f'I{fila}', mallas_por_serie.get(e['serie']))
         ws[f'J{fila}'].value = _num(e['datos'].get('horas'), 1)
+    # Limpiar celdas restantes de equipos
+    for i in range(len(filas), 11):
+        fila = 36 + i
+        ws[f'G{fila}'].value = None
+        ws[f'I{fila}'].value = None
+        ws[f'J{fila}'].value = None
 
 
 def _texto_tamano(p):
@@ -761,7 +777,7 @@ def _hoja_concentraciones(wb, d, despues_de):
 
 # ---------------------------------------------------------------- inventario químico
 
-def _hoja_inventario(ws, d, productos):
+def _hoja_inventario(ws, d, productos, titulo=None):
     pozo, rep, h = d['pozo'], d['reporte'], d['header']
     tasa = _f(getattr(pozo, 'tasa_impuesto', 0)) or 0.0
     costo_dia = round(sum(_f(p.get('costo_diario')) or 0.0 for p in productos), 2)
@@ -769,6 +785,8 @@ def _hoja_inventario(ws, d, productos):
     paginas = max(1, min(3, (len(productos) + 49) // 50))
     for pag in range(paginas):
         base = pag * 60
+        if titulo:
+            ws[f'G{1 + base}'].value = titulo
         _poner(ws, f'C{3 + base}', h.operador if h else '')
         _fecha(ws, f'J{3 + base}', rep.fecha)
         ws[f'C{4 + base}'].value = pozo.nombre
@@ -781,21 +799,35 @@ def _hoja_inventario(ws, d, productos):
         for i, fila in enumerate(FILAS_INV[pag]):
             k = pag * 50 + i
             if k >= len(productos):
-                break
+                ws[f'A{fila}'].value = None
+                ws[f'C{fila}'].value = None
+                ws[f'D{fila}'].value = None
+                for col in ('E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'):
+                    ws[f'{col}{fila}'].value = None
+                continue
             p = productos[k]
             ws[f'A{fila}'].value = p['descripcion']
             ws[f'C{fila}'].value = _texto_tamano(p)
             ws[f'D{fila}'].value = _num(p.get('precio'), 2)
             servicio = p.get('servicio')
+            usado_d = max(_f(p.get('usado_dia')) or 0.0, _f(p.get('usado_fluido')) or 0.0, _f(p.get('agregado_balance')) or 0.0)
             valores = {
-                'E': None if servicio else p.get('inicial'), 'F': p.get('usado_dia'), 'G': p.get('usado_acum'),
-                'H': p.get('recibido_total'), 'I': p.get('recibido_acum'), 'J': p.get('devuelto_total'),
-                'K': p.get('devuelto_acum'), 'L': None if servicio else p.get('final'), 'M': p.get('costo_diario'),
+                'E': None if servicio else p.get('inicial'),
+                'F': usado_d if usado_d else None,
+                'G': p.get('usado_acum'),
+                'H': p.get('recibido_total'),
+                'I': p.get('recibido_acum'),
+                'J': p.get('devuelto_total'),
+                'K': p.get('devuelto_acum'),
+                'L': None if servicio else p.get('final'),
+                'M': p.get('costo_diario'),
             }
             for col, v in valores.items():
                 v = _f(v)
                 if v:
                     ws[f'{col}{fila}'].value = round(v, 2)
+                else:
+                    ws[f'{col}{fila}'].value = None
     _quitar_paginas_vacias(ws, paginas)
     ws.print_area = f'A1:M{paginas * 60}'
 
@@ -820,8 +852,11 @@ def _quitar_paginas_vacias(ws, paginas):
 
 def _listas_inventario(d):
     inv = d['vol'].get('inventario', [])
-    con_movimiento = lambda p: any((_f(p.get(k)) or 0) for k in ('inicial', 'final', 'recibido', 'devuelto',
-                                                                    'usado_dia', 'usado_acum', 'recibido_acum'))
+    con_movimiento = lambda p: any((_f(p.get(k)) or 0) for k in (
+        'inicial', 'final', 'recibido', 'devuelto',
+        'usado_dia', 'usado_acum', 'recibido_acum', 'devuelto_acum',
+        'usado_fluido', 'agregado_balance', 'costo_diario', 'costo_acumulado'
+    ))
     completo = sorted([p for p in inv if con_movimiento(p) or p.get('activo')], key=lambda p: (p.get('codigo') or ''))
     df = [p for p in completo if not p.get('no_imprimir') and con_movimiento(p)]
     por_nombre = sorted(df, key=lambda p: (p.get('descripcion') or '').upper())
@@ -965,6 +1000,25 @@ def generar_reporte_propiedades_excel(d):
     for col in 'CDEF':
         ws.column_dimensions[col].width = 18
 
+    # Ajuste predeterminado de impresión: tamaño Carta (Letter) y cuadrícula visible
+    try:
+        ws.views.sheetView[0].showGridLines = True
+    except Exception:
+        pass
+    try:
+        ws.page_setup.paperSize = ws.PAPERSIZE_LETTER
+        ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+        ws.page_setup.fitToWidth = 1
+        ws.page_setup.fitToHeight = 0
+        ws.page_setup.scale = None
+        ws.page_margins.left = 0.35
+        ws.page_margins.right = 0.35
+        ws.page_margins.top = 0.4
+        ws.page_margins.bottom = 0.4
+    except Exception:
+        pass
+
     salida = io.BytesIO()
     wb.save(salida)
     nombre = f"Propiedades_{reporte.numero_reporte}_{pozo.nombre}_{reporte.fecha.strftime('%Y%m%d')}.xlsx".replace(' ', '_')
@@ -1030,17 +1084,63 @@ def generar_reporte_excel(pozo, reporte):
     _hoja_concentraciones(wb, d, 'Contabilidad de Volumen')
     df, por_nombre, completo = _listas_inventario(d)
     # Las hojas sin datos se quitan del libro: antes salían vacías y parecían repetidas.
+    # Se conserva únicamente 'Inv Quimico (completo)' como la única hoja oficial de inventario químico.
     vacias = ['Inv Quimico (DF)', 'Inv Quimico (por nombre)']
     if completo:
         _hoja_inventario(wb['Inv Quimico (completo)'], d, completo)
     else:
         vacias.append('Inv Quimico (completo)')
+
     if not _hoja_equipos(wb['Equipos'], d):
         vacias.append('Equipos')
     if not _hoja_mallas(wb['Inventario de Mallas'], d):
         vacias.append('Inventario de Mallas')
     for hoja in vacias:
-        wb.remove(wb[hoja])
+        if hoja in wb.sheetnames:
+            wb.remove(wb[hoja])
+
+    # Colores elegantes de pestañas y cuadrícula visible para aspecto profesional
+    COLORES_PESTANAS = {
+        hoja_lodo: '1E3A8A',                  # Azul marino corporativo (Lodo principal)
+        hoja_extra: '2563EB',                 # Azul cobalto (Propiedades extra)
+        'Contabilidad de Volumen': '0D9488',  # Teal / Aguamarina (Volumetría)
+        'Concentraciones': '0284C7',          # Celeste (Concentraciones)
+        'Inv Quimico (completo)': '059669',   # Verde esmeralda (Inventario Químico)
+        'Equipos': '7C3AED',                  # Púrpura (Equipos)
+        'Inventario de Mallas': '4F46E5',     # Índigo (Mallas)
+    }
+    for nombre_h, color_hex in COLORES_PESTANAS.items():
+        if nombre_h in wb.sheetnames:
+            wb[nombre_h].sheet_properties.tabColor = color_hex
+
+    # Ajuste predeterminado de impresión: tamaño Carta (Letter), 1 página de ancho y cuadrícula visible
+    HOJAS_UNA_PAGINA = {
+        hoja_lodo, hoja_extra, 'Contabilidad de Volumen', 'Equipos', 'Inventario de Mallas'
+    }
+    for ws_hoja in wb.worksheets:
+        try:
+            ws_hoja.views.sheetView[0].showGridLines = True
+        except Exception:
+            pass
+        try:
+            ws_hoja.page_setup.paperSize = ws_hoja.PAPERSIZE_LETTER
+            ws_hoja.sheet_properties.pageSetUpPr.fitToPage = True
+            ws_hoja.page_setup.scale = None
+            ws_hoja.page_setup.fitToWidth = 1
+            if ws_hoja.title in HOJAS_UNA_PAGINA:
+                ws_hoja.page_setup.fitToHeight = 1
+                ws_hoja.page_margins.left = 0.3
+                ws_hoja.page_margins.right = 0.3
+                ws_hoja.page_margins.top = 0.4
+                ws_hoja.page_margins.bottom = 0.3
+            else:
+                ws_hoja.page_setup.fitToHeight = 0
+                ws_hoja.page_margins.left = 0.3
+                ws_hoja.page_margins.right = 0.3
+                ws_hoja.page_margins.top = 0.4
+                ws_hoja.page_margins.bottom = 0.4
+        except Exception:
+            pass
 
     if os.path.exists(LOGO) and _pillow_disponible():
         from openpyxl.drawing.image import Image

@@ -27,6 +27,16 @@ class _Rechazo(Exception):
     pass
 
 
+def _validar_pozo_abierto(pozo):
+    """Verifica que el pozo no esté en estado CERRADO antes de permitir modificaciones."""
+    if pozo.estado == 'CERRADO':
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": "El pozo está cerrado. Para modificar datos del pozo o sus reportes debes reabrirlo primero."
+        }, status=400)
+    return None
+
+
 def _obtener(pk, reporte_pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     return pozo, get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
@@ -75,7 +85,7 @@ def _dinero(valor, etiqueta):
 
 
 def _error(e):
-    return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+    return JsonResponse({'ok': False, 'success': False, 'error': str(e)}, status=400)
 
 
 def _equipos(pozo):
@@ -136,7 +146,7 @@ def api_ife(request, pk, reporte_pk):
         for c in CAMPOS_IFE:
             setattr(obj, c, str(body.get(c) or '').strip())
         obj.save()
-    return JsonResponse({'ok': True, 'mensaje': 'Observaciones IFE guardadas.' if request.method == 'POST' else None,
+    return JsonResponse({'ok': True, 'success': True, 'mensaje': 'Observaciones IFE guardadas.' if request.method == 'POST' else None,
                          **{c: getattr(obj, c) if obj else '' for c in CAMPOS_IFE}})
 
 
@@ -255,7 +265,7 @@ CONFIG_MUESTRAS = {
 
 def _lista(pozo, reporte, clave):
     modelo, rel, dto = CONFIG_MUESTRAS[clave]
-    return JsonResponse({'ok': True, 'equipos': _equipos(pozo),
+    return JsonResponse({'ok': True, 'success': True, 'equipos': _equipos(pozo),
                          'muestras': [dto(m) for m in getattr(reporte, rel).all()]})
 
 
@@ -273,6 +283,9 @@ def api_muestras_guardar(request, pk, reporte_pk, clave):
     if clave not in CONFIG_MUESTRAS:
         return _error('Módulo desconocido.')
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     modelo, rel, dto = CONFIG_MUESTRAS[clave]
     try:
         body = _leer(request)
@@ -286,17 +299,52 @@ def api_muestras_guardar(request, pk, reporte_pk, clave):
             obj.tipo_muestra = _texto(body.get('tipo_muestra'), 60)
             campos = ENTRADAS_OBM if obj.tipo_lodo == 'OBM' else ENTRADAS_WBM
             datos = {c: _num(entrada.get(c), c, 0) for c in campos}
+            # Validaciones de consistencia física
+            for pct_field in ('water_pct', 'oil_pct', 'solids_pct'):
+                val = datos.get(pct_field)
+                if val is not None and (val < 0 or val > 100):
+                    raise _Rechazo(f"{pct_field}: el porcentaje debe estar entre 0 y 100.")
+            for sg_field in ('drill_solids_sg', 'wt_additive_sg', 'oil_sg'):
+                val = datos.get(sg_field)
+                if val is not None and val <= 0:
+                    raise _Rechazo(f"{sg_field}: la gravedad específica debe ser mayor a 0.")
+            if datos.get('mud_weight') is not None and datos['mud_weight'] <= 0:
+                raise _Rechazo("mud_weight: el peso del lodo debe ser mayor a 0.")
             if obj.tipo_lodo == 'OBM':
                 datos['sal'] = 'NaCl' if entrada.get('sal') == 'NaCl' else 'CaCl2'
         else:
             obj.diametro_mecha_in = _num(body.get('diametro_mecha_in'), 'Diámetro de mecha', 0, 60)
             datos = {c: _num(entrada.get(c), c, 0) for c in ENTRADAS_RET}
+            # Validaciones de consistencia física
+            cv = datos.get('celda_vacia')
+            ch = datos.get('celda_humedo')
+            cs = datos.get('celda_seco')
+            pt = datos.get('probeta_total')
+            pv = datos.get('probeta_vacia')
+            ag = datos.get('agua_cc')
+            if cv is not None and ch is not None and ch < cv:
+                raise _Rechazo("El peso de celda + húmedo no puede ser menor que la celda vacía.")
+            if cv is not None and cs is not None and cs < cv:
+                raise _Rechazo("El peso de celda + seco no puede ser menor que la celda vacía.")
+            if ch is not None and cs is not None and cs > ch:
+                raise _Rechazo("El peso de celda + seco no puede ser mayor que celda + húmedo.")
+            if pt is not None and pv is not None:
+                if pt < pv + (ag or 0):
+                    raise _Rechazo("El peso de la probeta total no puede ser menor que la probeta vacía más el agua.")
+            for sg_field in ('sg_fluido_base', 'sg_solidos'):
+                val = datos.get(sg_field)
+                if val is not None and val <= 0:
+                    raise _Rechazo(f"{sg_field}: la gravedad específica debe ser mayor a 0.")
+            if datos.get('pct_fluido_base') is not None and (datos['pct_fluido_base'] < 0 or datos['pct_fluido_base'] > 100):
+                raise _Rechazo("pct_fluido_base: el porcentaje debe estar entre 0 y 100.")
+            if datos.get('peso_lodo') is not None and datos['peso_lodo'] <= 0:
+                raise _Rechazo("peso_lodo: el peso del lodo debe ser mayor a 0.")
         obj.datos = {k: v for k, v in datos.items() if v is not None}
         obj.save()
     except _Rechazo as e:
         return _error(e)
     respuesta = json.loads(_lista(pozo, reporte, clave).content)
-    respuesta.update({'mensaje': 'Muestra guardada.', 'id': obj.id})
+    respuesta.update({'ok': True, 'success': True, 'mensaje': 'Muestra guardada.', 'id': obj.id})
     return JsonResponse(respuesta)
 
 
@@ -306,10 +354,13 @@ def api_muestras_eliminar(request, pk, reporte_pk, clave, muestra_pk):
     if clave not in CONFIG_MUESTRAS:
         return _error('Módulo desconocido.')
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     modelo, rel, dto = CONFIG_MUESTRAS[clave]
     getattr(reporte, rel).filter(pk=muestra_pk).delete()
     respuesta = json.loads(_lista(pozo, reporte, clave).content)
-    respuesta['mensaje'] = 'Muestra eliminada.'
+    respuesta.update({'ok': True, 'success': True, 'mensaje': 'Muestra eliminada.'})
     return JsonResponse(respuesta)
 
 
@@ -333,7 +384,7 @@ def _estado_eventos(pozo, reporte):
         d = _dto_evento(e)
         d['es_de_este_reporte'] = e.reporte_id == reporte.id
         eventos.append(d)
-    return {'ok': True, 'eventos': eventos,
+    return {'ok': True, 'success': True, 'eventos': eventos,
             'categorias': [{'codigo': c, 'nombre': n} for c, n in EventoNoProgramado.CATEGORIA_CHOICES],
             'tipo_fluido_sugerido': reporte.tipo_fluido_display or reporte.get_tipo_lodo_display()}
 
@@ -348,6 +399,9 @@ def api_eventos_detail(request, pk, reporte_pk):
 @require_http_methods(["POST"])
 def api_eventos_guardar(request, pk, reporte_pk):
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = _leer(request)
         if body.get('id'):
@@ -371,7 +425,7 @@ def api_eventos_guardar(request, pk, reporte_pk):
     except _Rechazo as e:
         return _error(e)
     datos = _estado_eventos(pozo, reporte)
-    datos.update({'mensaje': 'Evento guardado.', 'id': obj.id})
+    datos.update({'ok': True, 'success': True, 'mensaje': 'Evento guardado.', 'id': obj.id})
     return JsonResponse(datos)
 
 
@@ -379,9 +433,12 @@ def api_eventos_guardar(request, pk, reporte_pk):
 @require_http_methods(["POST"])
 def api_eventos_eliminar(request, pk, reporte_pk, evento_pk):
     pozo, reporte = _obtener(pk, reporte_pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     reporte.eventos_no_programados.filter(pk=evento_pk).delete()
     datos = _estado_eventos(pozo, reporte)
-    datos['mensaje'] = 'Evento eliminado.'
+    datos.update({'ok': True, 'success': True, 'mensaje': 'Evento eliminado.'})
     return JsonResponse(datos)
 
 
@@ -492,4 +549,4 @@ def api_benchmark_evaluacion(request, pk, reporte_pk):
 
     for c in columnas:
         c.pop('id', None)
-    return JsonResponse({'ok': True, 'columnas': columnas, 'filas': filas, 'fecha': reporte.fecha.strftime('%d/%m/%Y')})
+    return JsonResponse({'ok': True, 'success': True, 'columnas': columnas, 'filas': filas, 'fecha': reporte.fecha.strftime('%d/%m/%Y')})

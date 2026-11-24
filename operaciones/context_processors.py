@@ -56,7 +56,7 @@ ESTATICOS_BASE = (
 
 # Pantallas cuyo `pk` es un pozo (las APIs con `pk` de productos o equipos no entran).
 PANTALLAS_CON_POZO = {
-    'pozo_main', 'daily_reports_hub', 'daily_reports_hub_alias', 'recap_pozo',
+    'pozo_main', 'pozo_modificar', 'daily_reports_hub', 'daily_reports_hub_alias', 'recap_pozo',
     'well_header', 'general_setup', 'casing_intervals', 'loss_setup', 'active_items',
     'benchmark_setup', 'pits', 'equipment_properties_setup', 'reporte_diario_detalle',
 }
@@ -70,6 +70,7 @@ DESTINO_AL_CAMBIAR_DE_POZO = {
 # Nombre de la pantalla actual para la barra superior (después del pozo).
 NOMBRE_PANTALLA = {
     **{nombre_url: etiqueta for nombre_url, etiqueta, _ in PANTALLAS_INFO_POZO},
+    'pozo_modificar': 'Modificar pozo',
     'daily_reports_hub': 'Reportes',
     'daily_reports_hub_alias': 'Reportes',
     'recap_pozo': 'Reporte final',

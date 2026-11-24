@@ -25,27 +25,83 @@ from .models_daily_reports import (
 from .geometria_pozo import construir_perfil_confinamiento, calcular_geometria
 
 
+# Mapeo de tipo_fluido_inicial / primary_mud_type a las opciones estándar de ReporteDiario.tipo_lodo
+MAPA_FLUIDO_A_TIPO_LODO = {
+    'WATER_BASE': 'WBM',
+    'WATER_BASE_CACL2': 'WBM_CACL2',
+    'OIL_BASE': 'OBM',
+    'SYNTHETIC_BASE': 'SBM',
+    'COMPLETION_FLUIDS': 'WBM',
+    'WBM': 'WBM',
+    'WBM_CACL2': 'WBM_CACL2',
+    'OBM': 'OBM',
+    'SBM': 'SBM',
+}
+
+
+def _validar_pozo_abierto(pozo):
+    """Verifica que el pozo no esté en estado CERRADO antes de permitir modificaciones."""
+    if pozo.estado == 'CERRADO':
+        return JsonResponse({
+            "success": False, "ok": False,
+            "error": "El pozo está cerrado. Para modificar datos del pozo o sus reportes debes reabrirlo primero."
+        }, status=400)
+    return None
+
+
+def _validar_fecha_reporte_spud(pozo, fecha_obj):
+    """
+    Verifica que la fecha del reporte no sea anterior a la fecha de inicio de perforación (Spud Date)
+    del pozo configurada en WellHeaderInfo o Pozo. Devuelve JsonResponse de error o None si es válida.
+    """
+    spud = None
+    if hasattr(pozo, 'well_header_info') and pozo.well_header_info and pozo.well_header_info.spud_date:
+        spud = pozo.well_header_info.spud_date
+    elif pozo.fecha_primera_captura:
+        spud = pozo.fecha_primera_captura
+
+    if spud and fecha_obj < spud:
+        return JsonResponse({
+            'ok': False,
+            'success': False,
+            'error': (
+                f"La fecha del reporte ({fecha_obj.strftime('%d/%m/%Y')}) no puede ser anterior "
+                f"a la fecha de inicio de perforación / Spud Date ({spud.strftime('%d/%m/%Y')})."
+            )
+        }, status=400)
+    return None
+
+
 @ensure_csrf_cookie
 def daily_reports_hub_view(request, pk):
     """Gateway principal para Drilling Fluids and Equipment (Historial y Setup)."""
     pozo = get_object_or_404(Pozo.objects.select_related('well_header_info'), pk=pk)
     reportes = pozo.reportes_diarios.all().order_by('-fecha')
 
+    spud_date = None
+    if hasattr(pozo, 'well_header_info') and pozo.well_header_info and pozo.well_header_info.spud_date:
+        spud_date = pozo.well_header_info.spud_date
+    elif pozo.fecha_primera_captura:
+        spud_date = pozo.fecha_primera_captura
+
     ultimo = reportes.first()
     if ultimo:
         sugerencia_fecha = (ultimo.fecha + timedelta(days=1)).isoformat()
         sugerencia_lodo = ultimo.tipo_lodo
-    elif hasattr(pozo, 'well_header_info') and pozo.well_header_info and pozo.well_header_info.spud_date:
-        sugerencia_fecha = pozo.well_header_info.spud_date.isoformat()
-        sugerencia_lodo = 'WBM'
+    elif spud_date:
+        sugerencia_fecha = spud_date.isoformat()
+        fluido_raw = (
+            pozo.well_header_info.primary_mud_type_codigo
+            if hasattr(pozo, 'well_header_info') and pozo.well_header_info and pozo.well_header_info.primary_mud_type_codigo
+            else (pozo.tipo_fluido_inicial or 'WBM')
+        )
+        sugerencia_lodo = MAPA_FLUIDO_A_TIPO_LODO.get(fluido_raw, 'WBM')
     else:
         from datetime import date
         sugerencia_fecha = date.today().isoformat()
         sugerencia_lodo = 'WBM'
 
-    spud_date_str = None
-    if hasattr(pozo, 'well_header_info') and pozo.well_header_info and pozo.well_header_info.spud_date:
-        spud_date_str = pozo.well_header_info.spud_date.isoformat()
+    spud_date_str = spud_date.isoformat() if spud_date else None
 
     return render(request, 'operaciones/avances_19_sep/daily_reports_hub.html', {
         'pozo': pozo,
@@ -292,8 +348,10 @@ def reporte_diario_detalle_view(request, pk, reporte_pk):
     ultimo_reporte = reportes_qs.last()
 
     spud_date = None
-    if hasattr(pozo, 'well_header_info') and pozo.well_header_info:
+    if hasattr(pozo, 'well_header_info') and pozo.well_header_info and pozo.well_header_info.spud_date:
         spud_date = pozo.well_header_info.spud_date
+    elif pozo.fecha_primera_captura:
+        spud_date = pozo.fecha_primera_captura
 
     formation_tops = pozo.formation_tops.all().order_by('depth_ft', 'id')
 
@@ -373,7 +431,7 @@ def api_propiedades_extra_list(request, pk):
             'unidad': p.unidad,
         }
 
-    return JsonResponse({'ok': True, 'propiedades': data})
+    return JsonResponse({'ok': True, 'success': True, 'propiedades': data})
 
 
 @csrf_exempt
@@ -381,37 +439,49 @@ def api_propiedades_extra_list(request, pk):
 def api_propiedades_extra_guardar(request, pk):
     """Guarda/actualiza todas las propiedades extra del pozo de una sola vez."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
 
     try:
         body = json.loads(request.body)
         items = body.get('items', [])
     except (json.JSONDecodeError, KeyError):
-        return JsonResponse({'ok': False, 'error': 'JSON invalido'}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': 'JSON inválido.'}, status=400)
 
-    guardados = 0
-    for item in items:
-        tipo = item.get('tipo_fluido', '')
-        numero = item.get('numero', 0)
-        etiqueta = item.get('etiqueta', '').strip()
-        unidad = item.get('unidad', '').strip()
+    validados = []
+    for i, item in enumerate(items):
+        tipo = str(item.get('tipo_fluido', '')).strip()
+        num_raw = item.get('numero', 0)
+        try:
+            numero = int(num_raw)
+        except (ValueError, TypeError):
+            return JsonResponse({'ok': False, 'success': False, 'error': f"Fila {i + 1}: número de propiedad inválido."}, status=400)
 
-        if not tipo or not numero:
+        if not tipo or numero <= 0:
             continue
 
-        if etiqueta or unidad:
-            PropiedadExtraFluido.objects.update_or_create(
-                pozo=pozo,
-                tipo_fluido=tipo,
-                numero=numero,
-                defaults={'etiqueta': etiqueta, 'unidad': unidad},
-            )
-            guardados += 1
-        else:
-            PropiedadExtraFluido.objects.filter(
-                pozo=pozo, tipo_fluido=tipo, numero=numero
-            ).delete()
+        etiqueta = str(item.get('etiqueta', '')).strip()
+        unidad = str(item.get('unidad', '')).strip()
+        validados.append((tipo, numero, etiqueta, unidad))
 
-    return JsonResponse({'ok': True, 'guardados': guardados})
+    guardados = 0
+    with transaction.atomic():
+        for tipo, numero, etiqueta, unidad in validados:
+            if etiqueta or unidad:
+                PropiedadExtraFluido.objects.update_or_create(
+                    pozo=pozo,
+                    tipo_fluido=tipo,
+                    numero=numero,
+                    defaults={'etiqueta': etiqueta, 'unidad': unidad},
+                )
+                guardados += 1
+            else:
+                PropiedadExtraFluido.objects.filter(
+                    pozo=pozo, tipo_fluido=tipo, numero=numero
+                ).delete()
+
+    return JsonResponse({'ok': True, 'success': True, 'guardados': guardados, 'mensaje': 'Propiedades extra guardadas exitosamente.'})
 
 
 # =====================================================================
@@ -420,13 +490,14 @@ def api_propiedades_extra_guardar(request, pk):
 
 @require_http_methods(["GET"])
 def api_reportes_diarios_list(request, pk):
-    pozo = get_object_or_404(Pozo, pk=pk)
+    pozo = get_object_or_404(Pozo.objects.select_related('well_header_info'), pk=pk)
     reportes = pozo.reportes_diarios.all()
 
     data = []
     for r in reportes:
         data.append({
             'id': r.id,
+            'numero_reporte': r.numero_reporte,
             'fecha': r.fecha.isoformat(),
             'tipo_lodo': r.tipo_lodo,
             'tipo_lodo_display': r.get_tipo_lodo_display(),
@@ -438,38 +509,61 @@ def api_reportes_diarios_list(request, pk):
     if ultimo:
         fecha_sug = (ultimo.fecha + timedelta(days=1)).isoformat()
         lodo_sug = ultimo.tipo_lodo
-    elif hasattr(pozo, 'well_header_info') and pozo.well_header_info and pozo.well_header_info.spud_date:
-        fecha_sug = pozo.well_header_info.spud_date.isoformat()
-        lodo_sug = 'WBM'
     else:
-        from datetime import date
-        fecha_sug = date.today().isoformat()
-        lodo_sug = 'WBM'
+        spud_date = None
+        if hasattr(pozo, 'well_header_info') and pozo.well_header_info and pozo.well_header_info.spud_date:
+            spud_date = pozo.well_header_info.spud_date
+        elif pozo.fecha_primera_captura:
+            spud_date = pozo.fecha_primera_captura
+
+        if spud_date:
+            fecha_sug = spud_date.isoformat()
+            fluido_raw = (
+                pozo.well_header_info.primary_mud_type_codigo
+                if hasattr(pozo, 'well_header_info') and pozo.well_header_info and pozo.well_header_info.primary_mud_type_codigo
+                else (pozo.tipo_fluido_inicial or 'WBM')
+            )
+            lodo_sug = MAPA_FLUIDO_A_TIPO_LODO.get(fluido_raw, 'WBM')
+        else:
+            from datetime import date
+            fecha_sug = date.today().isoformat()
+            lodo_sug = 'WBM'
 
     sugerencia = {
         'fecha': fecha_sug,
         'tipo_lodo': lodo_sug,
     }
-    return JsonResponse({'ok': True, 'reportes': data, 'sugerencia': sugerencia})
+    return JsonResponse({'ok': True, 'success': True, 'reportes': data, 'sugerencia': sugerencia})
 
 
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_reporte_diario_crear(request, pk):
     pozo = get_object_or_404(Pozo, pk=pk)
+    if pozo.estado == 'CERRADO':
+        return JsonResponse({'ok': False, 'success': False, 'error': 'El pozo está cerrado. Para agregar nuevos reportes debes reabrirlo primero.'}, status=400)
     try:
         body = json.loads(request.body)
     except json.JSONDecodeError:
-        return JsonResponse({'ok': False, 'error': 'JSON invalido'}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': 'JSON invalido'}, status=400)
 
     fecha = body.get('fecha')
     tipo_lodo = body.get('tipo_lodo', 'WBM')
     copy_data = body.get('copy_data', True)
 
     if not fecha:
-        return JsonResponse({'ok': False, 'error': 'La fecha es obligatoria'}, status=400)
-    if ReporteDiario.objects.filter(pozo=pozo, fecha=fecha).exists():
-        return JsonResponse({'ok': False, 'error': f'Ya existe un reporte para {fecha}'}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': 'La fecha es obligatoria'}, status=400)
+    try:
+        fecha_obj = date.fromisoformat(str(fecha)[:10])
+    except (ValueError, TypeError):
+        return JsonResponse({'ok': False, 'success': False, 'error': f"Fecha inválida: '{fecha}'."}, status=400)
+
+    error_spud = _validar_fecha_reporte_spud(pozo, fecha_obj)
+    if error_spud:
+        return error_spud
+
+    if ReporteDiario.objects.filter(pozo=pozo, fecha=fecha_obj).exists():
+        return JsonResponse({'ok': False, 'success': False, 'error': f'Ya existe un reporte para {fecha_obj.isoformat()}'}, status=400)
 
     # Defaults de WellHeaderInfo
     op_rep = ''
@@ -485,9 +579,9 @@ def api_reporte_diario_crear(request, pk):
 
     reporte_anterior = None
     if copy_data:
-        reporte_anterior = ReporteDiario.objects.filter(pozo=pozo, fecha__lt=fecha).first()
+        reporte_anterior = ReporteDiario.objects.filter(pozo=pozo, fecha__lt=fecha_obj).first()
 
-    reporte = ReporteDiario(pozo=pozo, fecha=fecha, tipo_lodo=tipo_lodo)
+    reporte = ReporteDiario(pozo=pozo, fecha=fecha_obj, tipo_lodo=tipo_lodo)
     num_rep = body.get('numero_reporte')
     if num_rep:
         try:
@@ -518,16 +612,31 @@ def api_reporte_diario_crear(request, pk):
 
     reporte.save()
     fecha_str = reporte.fecha.isoformat() if hasattr(reporte.fecha, 'isoformat') else str(reporte.fecha)
-    return JsonResponse({'ok': True, 'id': reporte.id, 'fecha': fecha_str})
+    return JsonResponse({'ok': True, 'success': True, 'id': reporte.id, 'fecha': fecha_str})
 
 
 @csrf_exempt
 @require_http_methods(["DELETE"])
 def api_reporte_diario_eliminar(request, pk, reporte_pk):
     pozo = get_object_or_404(Pozo, pk=pk)
+    if pozo.estado == 'CERRADO':
+        return JsonResponse({'ok': False, 'success': False, 'error': 'El pozo está cerrado. Para eliminar reportes debes reabrirlo primero.'}, status=400)
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
+
+    # Regla LIFO: solo se puede eliminar el último reporte registrado del pozo para proteger
+    # la continuidad de inventario (químicos/tickets) y volumetría entre días consecutivos.
+    ultimo_reporte = pozo.reportes_diarios.order_by('-fecha', '-id').first()
+    if ultimo_reporte and reporte.pk != ultimo_reporte.pk:
+        num = f" #{ultimo_reporte.numero_reporte}" if ultimo_reporte.numero_reporte else ""
+        fecha_fmt = ultimo_reporte.fecha.strftime('%d/%m/%Y')
+        return JsonResponse({
+            'ok': False,
+            'success': False,
+            'error': f'Solo se puede eliminar el último reporte diario del pozo (Reporte{num} del {fecha_fmt}). Para eliminar reportes anteriores, debe eliminarlos en orden cronológico inverso.'
+        }, status=400)
+
     reporte.delete()
-    return JsonResponse({'ok': True})
+    return JsonResponse({'ok': True, 'success': True})
 
 
 # =====================================================================
@@ -537,6 +646,9 @@ def api_reporte_diario_eliminar(request, pk, reporte_pk):
 @require_http_methods(["POST"])
 def api_reporte_diario_general_guardar(request, pk, reporte_pk):
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
     try:
         body = json.loads(request.body)
@@ -554,11 +666,15 @@ def api_reporte_diario_general_guardar(request, pk, reporte_pk):
             try:
                 nueva_fecha = date.fromisoformat(str(fecha_texto)[:10])
             except ValueError:
-                return JsonResponse({'ok': False, 'error': f"Fecha inválida: '{fecha_texto}'."}, status=400)
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Fecha inválida: '{fecha_texto}'."}, status=400)
+            error_spud = _validar_fecha_reporte_spud(pozo, nueva_fecha)
+            if error_spud:
+                return error_spud
             if nueva_fecha != fecha_anterior and ReporteDiario.objects.filter(
                     pozo=pozo, fecha=nueva_fecha).exclude(pk=reporte.pk).exists():
                 return JsonResponse({
                     'ok': False,
+                    'success': False,
                     'error': f"Ya existe otro reporte del pozo con fecha {nueva_fecha.strftime('%d/%m/%Y')}."
                 }, status=400)
             reporte.fecha = nueva_fecha
@@ -596,7 +712,7 @@ def api_reporte_diario_general_guardar(request, pk, reporte_pk):
 
         if reporte.fecha == fecha_anterior:
             reporte.save()
-            resp = {'ok': True}
+            resp = {'ok': True, 'success': True}
             if advertencia:
                 resp['advertencia'] = advertencia
             return JsonResponse(resp)
@@ -615,14 +731,15 @@ def api_reporte_diario_general_guardar(request, pk, reporte_pk):
         except (ErrorMallas, _Rechazo) as e:
             return JsonResponse({
                 'ok': False,
+                'success': False,
                 'error': f"No se puede cambiar la fecha: {e}"
             }, status=400)
-        resp = {'ok': True, 'fecha_cambiada': True}
+        resp = {'ok': True, 'success': True, 'fecha_cambiada': True}
         if advertencia:
             resp['advertencia'] = advertencia
         return JsonResponse(resp)
     except Exception as e:
-        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': str(e)}, status=400)
 
 
 # =====================================================================
@@ -768,7 +885,7 @@ def api_well_survey_list(request, pk):
                 'comentarios': s.comentarios,
             })
 
-    return JsonResponse({'ok': True, 'estaciones': data})
+    return JsonResponse({'ok': True, 'success': True, 'estaciones': data})
 
 
 @csrf_exempt
@@ -776,22 +893,46 @@ def api_well_survey_list(request, pk):
 def api_well_survey_guardar(request, pk):
     """Guarda y recalcula todas las estaciones direccionales del pozo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = json.loads(request.body)
         raw_stations = body.get('estaciones', [])
         vs_azimuth = body.get('vs_azimuth', None)
 
         if not raw_stations:
-            return JsonResponse({'ok': False, 'error': 'No se enviaron estaciones.'}, status=400)
+            return JsonResponse({'ok': False, 'success': False, 'error': 'No se enviaron estaciones.'}, status=400)
+
+        # Validación geométrica y de límites físicos
+        for idx, st in enumerate(raw_stations, 1):
+            try:
+                md = float(st.get('md_ft', 0) or 0)
+            except (ValueError, TypeError):
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Estación {idx}: la profundidad medida (MD) debe ser un valor numérico."}, status=400)
+            if md < 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Estación {idx}: la profundidad medida (MD) no puede ser negativa ({md:g} ft)."}, status=400)
+
+            try:
+                inc = float(st.get('inclinacion_deg', 0) or 0)
+            except (ValueError, TypeError):
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Estación {idx}: la inclinación debe ser un valor numérico."}, status=400)
+            if inc < 0 or inc > 180:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Estación {idx}: la inclinación debe estar entre 0° y 180° ({inc:g}°)."}, status=400)
+
+            try:
+                az = float(st.get('azimut_deg', 0) or 0)
+            except (ValueError, TypeError):
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Estación {idx}: el azimut debe ser un valor numérico."}, status=400)
+            if az < 0 or az >= 360:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Estación {idx}: el azimut debe estar entre 0° y 359.99° ({az:g}°)."}, status=400)
 
         # Recalcular matemáticamente con curvatura mínima
         calculadas = calcular_survey_curvatura_minima(raw_stations, vs_azimuth=vs_azimuth)
 
-        # Persistir en la base de datos
-        pozo.survey_stations.all().delete()
-        nuevas_instancias = []
-        for item in calculadas:
-            nuevas_instancias.append(WellSurveyStation(
+        # Preparar instancias antes de tocar la base de datos
+        nuevas_instancias = [
+            WellSurveyStation(
                 pozo=pozo,
                 estacion=item['estacion'],
                 md_ft=item['md_ft'],
@@ -801,20 +942,27 @@ def api_well_survey_guardar(request, pk):
                 dls_deg_100ft=item['dls_deg_100ft'],
                 seccion_vertical_ft=item['seccion_vertical_ft'],
                 comentarios=item['comentarios']
-            ))
-        WellSurveyStation.objects.bulk_create(nuevas_instancias)
+            )
+            for item in calculadas
+        ]
+
+        # Persistir atómicamente en la base de datos
+        with transaction.atomic():
+            pozo.survey_stations.all().delete()
+            WellSurveyStation.objects.bulk_create(nuevas_instancias)
 
         # Último TVD calculado
         ultimo_tvd = calculadas[-1]['tvd_ft'] if calculadas else 0.0
 
         return JsonResponse({
             'ok': True,
+            'success': True,
             'estaciones': calculadas,
             'ultimo_tvd': ultimo_tvd,
             'mensaje': f"{len(calculadas)} estaciones guardadas y calculadas exitosamente."
         })
     except Exception as e:
-        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': str(e)}, status=400)
 
 
 # =====================================================================
@@ -835,6 +983,7 @@ def api_cost_overview_detail(request, pk, reporte_pk):
 
     return JsonResponse({
         'ok': True,
+        'success': True,
         'pozo': pozo.nombre,
         'reporte_numero': reporte.numero_reporte,
         'fecha': reporte.fecha.strftime('%d/%m/%Y'),
@@ -978,13 +1127,16 @@ def reporte_propiedades_view(request, pk, reporte_pk):
 def api_reporte_propiedades_comentario(request, pk, reporte_pk):
     """Guarda el comentario del reporte de propiedades."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
     try:
         texto = str(json.loads(request.body).get('comentario') or '').strip()
     except (TypeError, ValueError):
-        return JsonResponse({'ok': False, 'error': 'Datos inválidos.'}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': 'Datos inválidos.'}, status=400)
     ReporteDiarioComentarios.objects.update_or_create(reporte=reporte, defaults={'comentario_propiedades': texto})
-    return JsonResponse({'ok': True, 'mensaje': 'Comentario guardado.'})
+    return JsonResponse({'ok': True, 'success': True, 'mensaje': 'Comentario guardado.'})
 
 
 @require_http_methods(["GET"])
@@ -1017,7 +1169,7 @@ def api_formation_tops_list(request, pk):
             'lithology': t.lithology,
             'porcentaje_arena': t.porcentaje_arena,
         })
-    return JsonResponse({'ok': True, 'formation_tops': data})
+    return JsonResponse({'ok': True, 'success': True, 'formation_tops': data})
 
 
 @csrf_exempt
@@ -1025,19 +1177,52 @@ def api_formation_tops_list(request, pk):
 def api_formation_tops_guardar(request, pk):
     """Guarda/reemplaza la lista completa de topes de formación para el pozo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     try:
         body = json.loads(request.body)
         raw_tops = body.get('formation_tops', [])
 
-        pozo.formation_tops.all().delete()
         nuevos = []
-        for item in raw_tops:
+        for idx, item in enumerate(raw_tops, 1):
             top_name = str(item.get('formation_top', '')).strip()
-            if not top_name and not item.get('depth_ft'):
+            depth_raw = item.get('depth_ft')
+            if not top_name and depth_raw in (None, ''):
                 continue
-            depth = float(item.get('depth_ft', 0) or 0)
+            try:
+                depth = float(depth_raw or 0)
+            except (ValueError, TypeError):
+                return JsonResponse({
+                    'ok': False,
+                    'success': False,
+                    'error': f"Fila {idx} ({top_name or 'Sin nombre'}): la profundidad debe ser un valor numérico."
+                }, status=400)
+
+            if depth < 0:
+                return JsonResponse({
+                    'ok': False,
+                    'success': False,
+                    'error': f"Fila {idx} ({top_name or 'Sin nombre'}): la profundidad no puede ser negativa ({depth:g} ft)."
+                }, status=400)
+
+            try:
+                sand = float(item.get('porcentaje_arena', 0) or 0)
+            except (ValueError, TypeError):
+                return JsonResponse({
+                    'ok': False,
+                    'success': False,
+                    'error': f"Fila {idx} ({top_name or 'Sin nombre'}): el porcentaje de arena debe ser numérico."
+                }, status=400)
+
+            if sand < 0 or sand > 100:
+                return JsonResponse({
+                    'ok': False,
+                    'success': False,
+                    'error': f"Fila {idx} ({top_name or 'Sin nombre'}): el porcentaje de arena debe estar entre 0% y 100% ({sand:g}%)."
+                }, status=400)
+
             lith = str(item.get('lithology', '')).strip()
-            sand = float(item.get('porcentaje_arena', 0) or 0)
             nuevos.append(WellFormationTop(
                 pozo=pozo,
                 depth_ft=depth,
@@ -1046,7 +1231,10 @@ def api_formation_tops_guardar(request, pk):
                 porcentaje_arena=sand
             ))
         nuevos.sort(key=lambda x: x.depth_ft)
-        WellFormationTop.objects.bulk_create(nuevos)
+
+        with transaction.atomic():
+            pozo.formation_tops.all().delete()
+            WellFormationTop.objects.bulk_create(nuevos)
 
         guardados = [{
             'id': t.id,
@@ -1058,11 +1246,12 @@ def api_formation_tops_guardar(request, pk):
 
         return JsonResponse({
             'ok': True,
+            'success': True,
             'formation_tops': guardados,
             'mensaje': f"{len(guardados)} topes de formación guardados exitosamente."
         })
     except Exception as e:
-        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': str(e)}, status=400)
 
 
 # =====================================================================
@@ -1137,6 +1326,7 @@ def api_pumps_bits_detail(request, pk, reporte_pk):
 
     return JsonResponse({
         'ok': True,
+        'success': True,
         'bombas': bombas_data,
         'boquillas': boquillas_data,
         'tfa': round(tfa_total, 2),
@@ -1151,6 +1341,9 @@ def api_pumps_bits_detail(request, pk, reporte_pk):
 def api_pumps_bits_guardar(request, pk, reporte_pk):
     """Guarda todos los cambios de bombas, boquillas y barrena del reporte diario."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
 
     try:
@@ -1162,37 +1355,44 @@ def api_pumps_bits_guardar(request, pk, reporte_pk):
             except (ValueError, TypeError):
                 return default
 
-        # 1. Guardar Bombas
+        # 1. Validar y preparar Bombas
         raw_bombas = body.get('bombas', [])
+        bombas_a_guardar = []
         for b_item in raw_bombas:
             num = int(b_item.get('numero_bomba', 1))
-            b_obj, _ = ReporteDiarioBomba.objects.get_or_create(reporte=reporte, numero_bomba=num)
-            b_obj.make_model = str(b_item.get('make_model', '')).strip()
-            b_obj.liner_diameter = parse_flt(b_item.get('liner_diameter'), 6.5)
-            b_obj.stroke_length = parse_flt(b_item.get('stroke_length'), 12.0)
-            b_obj.rod_diam_duplex = parse_flt(b_item.get('rod_diam_duplex'), 0.0)
-            b_obj.eficiencia_pct = parse_flt(b_item.get('eficiencia_pct'), 97.0)
-            b_obj.pump_rate_spm = parse_flt(b_item.get('pump_rate_spm'), 0.0)
-            b_obj.pump_on_report = bool(b_item.get('pump_on_report', False))
-            b_obj.riser_pump = bool(b_item.get('riser_pump', False))
-            b_obj.save()
+            eff = parse_flt(b_item.get('eficiencia_pct'), 97.0)
+            if eff < 0 or eff > 100:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Bomba {num}: la eficiencia debe estar entre 0% y 100% ({eff:g}%)."}, status=400)
+            liner = parse_flt(b_item.get('liner_diameter'), 6.5)
+            if liner < 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Bomba {num}: el diámetro de camisa no puede ser negativo ({liner:g} in)."}, status=400)
+            stroke = parse_flt(b_item.get('stroke_length'), 12.0)
+            if stroke < 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Bomba {num}: la longitud de embolada no puede ser negativa ({stroke:g} in)."}, status=400)
+            spm = parse_flt(b_item.get('pump_rate_spm'), 0.0)
+            if spm < 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Bomba {num}: los golpes por minuto (SPM) no pueden ser negativos ({spm:g})."}, status=400)
+            bombas_a_guardar.append((num, b_item, liner, stroke, eff, spm))
 
-        # 2. Guardar Boquillas (Reemplazo)
+        # 2. Validar y preparar Boquillas
         raw_boquillas = body.get('boquillas', [])
-        reporte.boquillas.all().delete()
         nuevas_boquillas = []
-        for noz_item in raw_boquillas:
-            sz = int(noz_item.get('size_32nds', 0) or 0)
-            qty = int(noz_item.get('cantidad', 0) or 0)
+        for idx, noz_item in enumerate(raw_boquillas, 1):
+            try:
+                sz = int(noz_item.get('size_32nds', 0) or 0)
+                qty = int(noz_item.get('cantidad', 0) or 0)
+            except (ValueError, TypeError):
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Boquilla {idx}: tamaño y cantidad deben ser valores numéricos enteros."}, status=400)
+            if sz < 0 or qty < 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Boquilla {idx}: tamaño y cantidad no pueden ser negativos."}, status=400)
             if sz > 0 and qty > 0:
                 nuevas_boquillas.append(ReporteDiarioBoquilla(
                     reporte=reporte,
                     size_32nds=sz,
                     cantidad=qty
                 ))
-        ReporteDiarioBoquilla.objects.bulk_create(nuevas_boquillas)
 
-        # 3. Guardar Bit Data
+        # 3. Preparar Bit Data
         raw_bit = body.get('bit_data', {})
         bit_obj, _ = ReporteDiarioBitData.objects.get_or_create(reporte=reporte)
 
@@ -1224,7 +1424,26 @@ def api_pumps_bits_guardar(request, pk, reporte_pk):
         bit_obj.surface_pressure = parse_flt(raw_bit.get('surface_pressure'), bit_obj.surface_pressure)
         bit_obj.ref_flow_rate = parse_flt(raw_bit.get('ref_flow_rate'), bit_obj.ref_flow_rate)
         bit_obj.on_off_bottom_pressure = parse_flt(raw_bit.get('on_off_bottom_pressure'), bit_obj.on_off_bottom_pressure)
-        bit_obj.save()
+
+        # 4. Guardar atómicamente bombas, boquillas y barrena
+        with transaction.atomic():
+            for num, b_item, liner, stroke, eff, spm in bombas_a_guardar:
+                b_obj, _ = ReporteDiarioBomba.objects.get_or_create(reporte=reporte, numero_bomba=num)
+                b_obj.make_model = str(b_item.get('make_model', '')).strip()
+                b_obj.liner_diameter = liner
+                b_obj.stroke_length = stroke
+                b_obj.rod_diam_duplex = parse_flt(b_item.get('rod_diam_duplex'), 0.0)
+                b_obj.eficiencia_pct = eff
+                b_obj.pump_rate_spm = spm
+                b_obj.pump_on_report = bool(b_item.get('pump_on_report', False))
+                b_obj.riser_pump = bool(b_item.get('riser_pump', False))
+                b_obj.save()
+
+            reporte.boquillas.all().delete()
+            if nuevas_boquillas:
+                ReporteDiarioBoquilla.objects.bulk_create(nuevas_boquillas)
+
+            bit_obj.save()
 
         # Recalcular valores
         bombas_actuales = reporte.bombas.all().order_by('numero_bomba')
@@ -1234,6 +1453,7 @@ def api_pumps_bits_guardar(request, pk, reporte_pk):
 
         return JsonResponse({
             'ok': True,
+            'success': True,
             'mensaje': 'Datos de Bombas e Hidráulica guardados correctamente.',
             'total_flow_rate_calculado': round(total_gpm, 1),
             'riser_flow_rate_calculado': round(riser_gpm, 1),
@@ -1241,7 +1461,7 @@ def api_pumps_bits_guardar(request, pk, reporte_pk):
             'tfa': round(tfa_actual, 2),
         })
     except Exception as e:
-        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': str(e)}, status=400)
 
 
 # =====================================================================
@@ -1358,6 +1578,7 @@ def api_mud_properties_detail(request, pk, reporte_pk):
 
     return JsonResponse({
         'ok': True,
+        'success': True,
         'config': config_dict,
         'checks': checks_list,
         'extra_properties': extra_props_list
@@ -1369,6 +1590,9 @@ def api_mud_properties_detail(request, pk, reporte_pk):
 def api_mud_properties_guardar(request, pk, reporte_pk):
     """Guarda los cambios en configuración, chequeos y propiedades extra de lodo."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
 
     try:
@@ -1382,25 +1606,121 @@ def api_mud_properties_guardar(request, pk, reporte_pk):
             except (ValueError, TypeError):
                 return default
 
-        # 1. Guardar Configuración de Lodo y Sólidos
         raw_config = body.get('config', {})
-        mud_config, _ = ReporteDiarioMudConfig.objects.get_or_create(reporte=reporte)
-        mud_config.solids_equation = 'API'
-        if 'is_weighted' in raw_config:
-            mud_config.is_weighted = bool(raw_config['is_weighted'])
-        if 'sg_base_oil' in raw_config:
-            mud_config.sg_base_oil = parse_flt(raw_config['sg_base_oil'], mud_config.sg_base_oil)
-        if 'sg_weight_material' in raw_config:
-            mud_config.sg_weight_material = parse_flt(raw_config['sg_weight_material'], mud_config.sg_weight_material)
-        if 'sg_drill_solids' in raw_config:
-            mud_config.sg_drill_solids = parse_flt(raw_config['sg_drill_solids'], mud_config.sg_drill_solids)
-        if 'obm_salt_type' in raw_config:
-            mud_config.obm_salt_type = str(raw_config['obm_salt_type']).strip()
-        mud_config.save()
-
-        # 2. Guardar Chequeos de Lodo (1 a 4)
         raw_checks = body.get('checks', [])
         primary_check_num = int(body.get('primary_check_number', 1) or 1)
+
+        # Validación en memoria de gravedades específicas en configuración
+        if 'sg_base_oil' in raw_config:
+            val = parse_flt(raw_config['sg_base_oil'])
+            if val is not None and val <= 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': "La gravedad específica del aceite base debe ser mayor a cero."}, status=400)
+        if 'sg_weight_material' in raw_config:
+            val = parse_flt(raw_config['sg_weight_material'])
+            if val is not None and val <= 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': "La gravedad específica del material densificante debe ser mayor a cero."}, status=400)
+        if 'sg_drill_solids' in raw_config:
+            val = parse_flt(raw_config['sg_drill_solids'])
+            if val is not None and val <= 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': "La gravedad específica de los sólidos de perforación debe ser mayor a cero."}, status=400)
+
+        # Definición de reglas de validación física para chequeos
+        campos_no_negativos = [
+            ('flowline_temp', 'Temperatura de línea de flujo'),
+            ('depth', 'Profundidad MD'),
+            ('tvd', 'Profundidad TVD'),
+            ('mud_weight', 'Densidad de lodo'),
+            ('mw_temp', 'Temperatura de densidad'),
+            ('funnel_viscosity', 'Viscosidad de embudo'),
+            ('rheology_temp', 'Temperatura reológica'),
+            ('r600', 'Lectura R600'),
+            ('r300', 'Lectura R300'),
+            ('r200', 'Lectura R200'),
+            ('r100', 'Lectura R100'),
+            ('r6', 'Lectura R6'),
+            ('r3', 'Lectura R3'),
+            ('pv', 'Viscosidad Plástica (PV)'),
+            ('yp', 'Punto Cedente (YP)'),
+            ('gel_10s', 'Gel 10 seg'),
+            ('gel_10m', 'Gel 10 min'),
+            ('gel_30m', 'Gel 30 min'),
+            ('api_fluid_loss', 'Pérdida de fluido API'),
+            ('hthp_fluid_loss', 'Pérdida de fluido HTHP'),
+            ('cake_api', 'Revoque API'),
+            ('cake_hthp', 'Revoque HTHP'),
+            ('retort_mud_weight', 'Densidad de retorta'),
+            ('retort_mud_temp', 'Temperatura de retorta'),
+            ('k_from_kcl', 'K+ de KCl'),
+            ('wt_additive_sg', 'SG material densificante'),
+            ('oil_sg', 'SG fase aceite'),
+            ('frac_bent', 'Fracción de bentonita'),
+            ('chem_conc', 'Concentración química'),
+            ('drill_solids_sg', 'SG sólidos de perforación'),
+            ('pm', 'Pm'),
+            ('pf', 'Pf'),
+            ('mf', 'Mf'),
+            ('chlorides', 'Cloruros'),
+            ('calcium_hardness', 'Dureza de calcio'),
+            ('mbt', 'MBT'),
+            ('electrical_stability', 'Estabilidad eléctrica'),
+            ('excess_lime', 'Cal en exceso'),
+            ('salt_ppb', 'Sal ppb'),
+            ('nacl_ppb', 'NaCl ppb'),
+            ('kcl_ppb', 'KCl ppb'),
+            ('lgs_ppb', 'LGS ppb'),
+            ('bentonite_ppb', 'Bentonita ppb'),
+            ('drill_solids_ppb', 'Sólidos de perforación ppb'),
+            ('hgs_ppb', 'HGS ppb'),
+        ]
+
+        campos_porcentuales = [
+            ('solids_pct', '% Sólidos'),
+            ('oil_pct', '% Aceite'),
+            ('water_pct', '% Agua'),
+            ('sand_pct', '% Arena'),
+            ('salt_pct_wt', '% Sal por peso'),
+            ('nacl_pct', '% NaCl'),
+            ('kcl_pct', '% KCl'),
+            ('lgs_pct', '% LGS'),
+            ('bentonite_pct', '% Bentonita'),
+            ('drill_solids_pct', '% Sólidos de perforación'),
+            ('hgs_pct', '% HGS'),
+        ]
+
+        # Validación previa en memoria de todos los chequeos
+        for item in raw_checks:
+            c_num = int(item.get('check_number', 1) or 1)
+            if c_num < 1 or c_num > 4:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Número de chequeo #{c_num} inválido (debe ser entre 1 y 4)."}, status=400)
+
+            for campo, etiqueta in campos_no_negativos:
+                if campo in item:
+                    val = parse_flt(item.get(campo))
+                    if val is not None and val < 0:
+                        return JsonResponse({
+                            'ok': False,
+                            'success': False,
+                            'error': f"El valor para '{etiqueta}' no puede ser negativo en el chequeo #{c_num}."
+                        }, status=400)
+
+            for campo, etiqueta in campos_porcentuales:
+                if campo in item:
+                    val = parse_flt(item.get(campo))
+                    if val is not None and (val < 0 or val > 100):
+                        return JsonResponse({
+                            'ok': False,
+                            'success': False,
+                            'error': f"El valor para '{etiqueta}' debe estar entre 0% y 100% en el chequeo #{c_num}."
+                        }, status=400)
+
+            if 'ph' in item:
+                val = parse_flt(item.get('ph'))
+                if val is not None and (val < 0 or val > 14):
+                    return JsonResponse({
+                        'ok': False,
+                        'success': False,
+                        'error': f"El valor de pH debe estar entre 0 y 14 en el chequeo #{c_num}."
+                    }, status=400)
 
         def get_item_flt(item_dict, field_name, current_val):
             if field_name not in item_dict:
@@ -1418,121 +1738,140 @@ def api_mud_properties_guardar(request, pk, reporte_pk):
                 return current_val or ''
             return str(item_dict.get(field_name) or '').strip()
 
-        saved_checks_map = {}
-        for item in raw_checks:
-            num = int(item.get('check_number', 1))
-            c_obj, _ = ReporteDiarioMudCheck.objects.get_or_create(reporte=reporte, check_number=num)
-            c_obj.is_primary = (num == primary_check_num)
+        # Persistencia atómica
+        with transaction.atomic():
+            # 1. Guardar Configuración de Lodo y Sólidos
+            mud_config, _ = ReporteDiarioMudConfig.objects.get_or_create(reporte=reporte)
+            mud_config.solids_equation = 'API'
+            if 'is_weighted' in raw_config:
+                mud_config.is_weighted = bool(raw_config['is_weighted'])
+            if 'sg_base_oil' in raw_config:
+                mud_config.sg_base_oil = parse_flt(raw_config['sg_base_oil'], mud_config.sg_base_oil)
+            if 'sg_weight_material' in raw_config:
+                mud_config.sg_weight_material = parse_flt(raw_config['sg_weight_material'], mud_config.sg_weight_material)
+            if 'sg_drill_solids' in raw_config:
+                mud_config.sg_drill_solids = parse_flt(raw_config['sg_drill_solids'], mud_config.sg_drill_solids)
+            if 'obm_salt_type' in raw_config:
+                mud_config.obm_salt_type = str(raw_config['obm_salt_type']).strip()
+            mud_config.save()
 
-            c_obj.sample_from = get_item_str(item, 'sample_from', c_obj.sample_from)
-            c_obj.time_taken = get_item_str(item, 'time_taken', c_obj.time_taken)
-            c_obj.flowline_temp = get_item_flt(item, 'flowline_temp', c_obj.flowline_temp)
-            c_obj.depth = get_item_flt(item, 'depth', c_obj.depth)
-            c_obj.tvd = get_item_flt(item, 'tvd', c_obj.tvd)
+            # 2. Guardar Chequeos de Lodo (1 a 4)
+            saved_checks_map = {}
+            for item in raw_checks:
+                num = int(item.get('check_number', 1) or 1)
+                c_obj, _ = ReporteDiarioMudCheck.objects.get_or_create(reporte=reporte, check_number=num)
+                c_obj.is_primary = (num == primary_check_num)
 
-            c_obj.mud_weight = get_item_flt(item, 'mud_weight', c_obj.mud_weight)
-            c_obj.mw_temp = get_item_flt(item, 'mw_temp', c_obj.mw_temp)
-            c_obj.funnel_viscosity = get_item_flt(item, 'funnel_viscosity', c_obj.funnel_viscosity)
+                c_obj.sample_from = get_item_str(item, 'sample_from', c_obj.sample_from)
+                c_obj.time_taken = get_item_str(item, 'time_taken', c_obj.time_taken)
+                c_obj.flowline_temp = get_item_flt(item, 'flowline_temp', c_obj.flowline_temp)
+                c_obj.depth = get_item_flt(item, 'depth', c_obj.depth)
+                c_obj.tvd = get_item_flt(item, 'tvd', c_obj.tvd)
 
-            c_obj.rheology_temp = get_item_flt(item, 'rheology_temp', c_obj.rheology_temp)
-            c_obj.r600 = get_item_flt(item, 'r600', c_obj.r600)
-            c_obj.r300 = get_item_flt(item, 'r300', c_obj.r300)
-            c_obj.r200 = get_item_flt(item, 'r200', c_obj.r200)
-            c_obj.r100 = get_item_flt(item, 'r100', c_obj.r100)
-            c_obj.r6 = get_item_flt(item, 'r6', c_obj.r6)
-            c_obj.r3 = get_item_flt(item, 'r3', c_obj.r3)
+                c_obj.mud_weight = get_item_flt(item, 'mud_weight', c_obj.mud_weight)
+                c_obj.mw_temp = get_item_flt(item, 'mw_temp', c_obj.mw_temp)
+                c_obj.funnel_viscosity = get_item_flt(item, 'funnel_viscosity', c_obj.funnel_viscosity)
 
-            # Autocalcular PV y YP (o aceptar valor explícito)
-            if c_obj.r600 is not None and c_obj.r300 is not None:
-                c_obj.pv = max(0.0, round(c_obj.r600 - c_obj.r300, 2))
-                c_obj.yp = max(0.0, round(c_obj.r300 - c_obj.pv, 2))
-            else:
-                c_obj.pv = get_item_flt(item, 'pv', c_obj.pv)
-                c_obj.yp = get_item_flt(item, 'yp', c_obj.yp)
+                c_obj.rheology_temp = get_item_flt(item, 'rheology_temp', c_obj.rheology_temp)
+                c_obj.r600 = get_item_flt(item, 'r600', c_obj.r600)
+                c_obj.r300 = get_item_flt(item, 'r300', c_obj.r300)
+                c_obj.r200 = get_item_flt(item, 'r200', c_obj.r200)
+                c_obj.r100 = get_item_flt(item, 'r100', c_obj.r100)
+                c_obj.r6 = get_item_flt(item, 'r6', c_obj.r6)
+                c_obj.r3 = get_item_flt(item, 'r3', c_obj.r3)
 
-            c_obj.gel_10s = get_item_flt(item, 'gel_10s', c_obj.gel_10s)
-            c_obj.gel_10m = get_item_flt(item, 'gel_10m', c_obj.gel_10m)
-            c_obj.gel_30m = get_item_flt(item, 'gel_30m', c_obj.gel_30m)
+                # Autocalcular PV y YP (o aceptar valor explícito)
+                if c_obj.r600 is not None and c_obj.r300 is not None:
+                    c_obj.pv = max(0.0, round(c_obj.r600 - c_obj.r300, 2))
+                    c_obj.yp = max(0.0, round(c_obj.r300 - c_obj.pv, 2))
+                else:
+                    c_obj.pv = get_item_flt(item, 'pv', c_obj.pv)
+                    c_obj.yp = get_item_flt(item, 'yp', c_obj.yp)
 
-            c_obj.api_fluid_loss = get_item_flt(item, 'api_fluid_loss', c_obj.api_fluid_loss)
-            c_obj.hthp_fluid_loss = get_item_flt(item, 'hthp_fluid_loss', c_obj.hthp_fluid_loss)
-            c_obj.cake_api = get_item_flt(item, 'cake_api', c_obj.cake_api)
-            c_obj.cake_hthp = get_item_flt(item, 'cake_hthp', c_obj.cake_hthp)
+                c_obj.gel_10s = get_item_flt(item, 'gel_10s', c_obj.gel_10s)
+                c_obj.gel_10m = get_item_flt(item, 'gel_10m', c_obj.gel_10m)
+                c_obj.gel_30m = get_item_flt(item, 'gel_30m', c_obj.gel_30m)
 
-            c_obj.solids_pct = get_item_flt(item, 'solids_pct', c_obj.solids_pct)
-            c_obj.oil_pct = get_item_flt(item, 'oil_pct', c_obj.oil_pct)
-            c_obj.water_pct = get_item_flt(item, 'water_pct', c_obj.water_pct)
-            c_obj.sand_pct = get_item_flt(item, 'sand_pct', c_obj.sand_pct)
+                c_obj.api_fluid_loss = get_item_flt(item, 'api_fluid_loss', c_obj.api_fluid_loss)
+                c_obj.hthp_fluid_loss = get_item_flt(item, 'hthp_fluid_loss', c_obj.hthp_fluid_loss)
+                c_obj.cake_api = get_item_flt(item, 'cake_api', c_obj.cake_api)
+                c_obj.cake_hthp = get_item_flt(item, 'cake_hthp', c_obj.cake_hthp)
 
-            # Entradas de Retorta y Balance de Sólidos (WBM & OBM)
-            c_obj.retort_mud_weight = get_item_flt(item, 'retort_mud_weight', c_obj.retort_mud_weight or c_obj.mud_weight)
-            c_obj.retort_mud_temp = get_item_flt(item, 'retort_mud_temp', c_obj.retort_mud_temp or 75.0)
-            c_obj.k_from_kcl = get_item_flt(item, 'k_from_kcl', c_obj.k_from_kcl or 0.0)
-            c_obj.wt_additive_sg = get_item_flt(item, 'wt_additive_sg', c_obj.wt_additive_sg or mud_config.sg_weight_material or 4.20)
-            c_obj.oil_sg = get_item_flt(item, 'oil_sg', c_obj.oil_sg or mud_config.sg_base_oil or 0.70)
-            c_obj.frac_bent = get_item_flt(item, 'frac_bent', c_obj.frac_bent or 0.1111)
-            c_obj.chem_conc = get_item_flt(item, 'chem_conc', c_obj.chem_conc or 0.0)
-            c_obj.drill_solids_sg = get_item_flt(item, 'drill_solids_sg', c_obj.drill_solids_sg or mud_config.sg_drill_solids or 2.60)
+                c_obj.solids_pct = get_item_flt(item, 'solids_pct', c_obj.solids_pct)
+                c_obj.oil_pct = get_item_flt(item, 'oil_pct', c_obj.oil_pct)
+                c_obj.water_pct = get_item_flt(item, 'water_pct', c_obj.water_pct)
+                c_obj.sand_pct = get_item_flt(item, 'sand_pct', c_obj.sand_pct)
 
-            c_obj.ph = get_item_flt(item, 'ph', c_obj.ph)
-            c_obj.ph_temp = get_item_flt(item, 'ph_temp', c_obj.ph_temp)
-            c_obj.pm = get_item_flt(item, 'pm', c_obj.pm)
-            c_obj.pf = get_item_flt(item, 'pf', c_obj.pf)
-            c_obj.mf = get_item_flt(item, 'mf', c_obj.mf)
-            c_obj.chlorides = get_item_flt(item, 'chlorides', c_obj.chlorides)
-            c_obj.calcium_hardness = get_item_flt(item, 'calcium_hardness', c_obj.calcium_hardness)
-            c_obj.mbt = get_item_flt(item, 'mbt', c_obj.mbt)
-            c_obj.electrical_stability = get_item_flt(item, 'electrical_stability', c_obj.electrical_stability)
-            c_obj.excess_lime = get_item_flt(item, 'excess_lime', c_obj.excess_lime)
+                # Entradas de Retorta y Balance de Sólidos (WBM & OBM)
+                c_obj.retort_mud_weight = get_item_flt(item, 'retort_mud_weight', c_obj.retort_mud_weight or c_obj.mud_weight)
+                c_obj.retort_mud_temp = get_item_flt(item, 'retort_mud_temp', c_obj.retort_mud_temp or 75.0)
+                c_obj.k_from_kcl = get_item_flt(item, 'k_from_kcl', c_obj.k_from_kcl or 0.0)
+                c_obj.wt_additive_sg = get_item_flt(item, 'wt_additive_sg', c_obj.wt_additive_sg or mud_config.sg_weight_material or 4.20)
+                c_obj.oil_sg = get_item_flt(item, 'oil_sg', c_obj.oil_sg or mud_config.sg_base_oil or 0.70)
+                c_obj.frac_bent = get_item_flt(item, 'frac_bent', c_obj.frac_bent or 0.1111)
+                c_obj.chem_conc = get_item_flt(item, 'chem_conc', c_obj.chem_conc or 0.0)
+                c_obj.drill_solids_sg = get_item_flt(item, 'drill_solids_sg', c_obj.drill_solids_sg or mud_config.sg_drill_solids or 2.60)
 
-            # Entradas directas OBM si se especifican
-            if 'salt_pct_wt' in item: c_obj.salt_pct_wt = get_item_flt(item, 'salt_pct_wt', c_obj.salt_pct_wt)
-            if 'salt_ppb' in item: c_obj.salt_ppb = get_item_flt(item, 'salt_ppb', c_obj.salt_ppb)
+                c_obj.ph = get_item_flt(item, 'ph', c_obj.ph)
+                c_obj.ph_temp = get_item_flt(item, 'ph_temp', c_obj.ph_temp)
+                c_obj.pm = get_item_flt(item, 'pm', c_obj.pm)
+                c_obj.pf = get_item_flt(item, 'pf', c_obj.pf)
+                c_obj.mf = get_item_flt(item, 'mf', c_obj.mf)
+                c_obj.chlorides = get_item_flt(item, 'chlorides', c_obj.chlorides)
+                c_obj.calcium_hardness = get_item_flt(item, 'calcium_hardness', c_obj.calcium_hardness)
+                c_obj.mbt = get_item_flt(item, 'mbt', c_obj.mbt)
+                c_obj.electrical_stability = get_item_flt(item, 'electrical_stability', c_obj.electrical_stability)
+                c_obj.excess_lime = get_item_flt(item, 'excess_lime', c_obj.excess_lime)
 
-            # Ejecutar cálculo de balance de sólidos (WBM u OBM según corresponda)
-            c_obj.calcular_solids_analysis_automatica()
+                # Entradas directas OBM si se especifican
+                if 'salt_pct_wt' in item: c_obj.salt_pct_wt = get_item_flt(item, 'salt_pct_wt', c_obj.salt_pct_wt)
+                if 'salt_ppb' in item: c_obj.salt_ppb = get_item_flt(item, 'salt_ppb', c_obj.salt_ppb)
 
-            # Aceptar sobrescrituras explícitas si vinieron en el payload
-            if 'nacl_pct' in item: c_obj.nacl_pct = get_item_flt(item, 'nacl_pct', c_obj.nacl_pct)
-            if 'nacl_ppb' in item: c_obj.nacl_ppb = get_item_flt(item, 'nacl_ppb', c_obj.nacl_ppb)
-            if 'kcl_pct' in item: c_obj.kcl_pct = get_item_flt(item, 'kcl_pct', c_obj.kcl_pct)
-            if 'kcl_ppb' in item: c_obj.kcl_ppb = get_item_flt(item, 'kcl_ppb', c_obj.kcl_ppb)
-            if 'lgs_pct' in item: c_obj.lgs_pct = get_item_flt(item, 'lgs_pct', c_obj.lgs_pct)
-            if 'lgs_ppb' in item: c_obj.lgs_ppb = get_item_flt(item, 'lgs_ppb', c_obj.lgs_ppb)
-            if 'bentonite_pct' in item: c_obj.bentonite_pct = get_item_flt(item, 'bentonite_pct', c_obj.bentonite_pct)
-            if 'bentonite_ppb' in item: c_obj.bentonite_ppb = get_item_flt(item, 'bentonite_ppb', c_obj.bentonite_ppb)
-            if 'drill_solids_pct' in item: c_obj.drill_solids_pct = get_item_flt(item, 'drill_solids_pct', c_obj.drill_solids_pct)
-            if 'drill_solids_ppb' in item: c_obj.drill_solids_ppb = get_item_flt(item, 'drill_solids_ppb', c_obj.drill_solids_ppb)
-            if 'hgs_pct' in item: c_obj.hgs_pct = get_item_flt(item, 'hgs_pct', c_obj.hgs_pct)
-            if 'hgs_ppb' in item: c_obj.hgs_ppb = get_item_flt(item, 'hgs_ppb', c_obj.hgs_ppb)
-            if 'adjusted_solids_pct' in item: c_obj.adjusted_solids_pct = get_item_flt(item, 'adjusted_solids_pct', c_obj.adjusted_solids_pct)
-            if 'oil_water_ratio' in item: c_obj.oil_water_ratio = get_item_str(item, 'oil_water_ratio', c_obj.oil_water_ratio)
-            if 'avg_sg_solids' in item: c_obj.avg_sg_solids = get_item_flt(item, 'avg_sg_solids', c_obj.avg_sg_solids)
+                # Ejecutar cálculo de balance de sólidos (WBM u OBM según corresponda)
+                c_obj.calcular_solids_analysis_automatica()
 
-            c_obj.save()
-            saved_checks_map[num] = c_obj
+                # Aceptar sobrescrituras explícitas si vinieron en el payload
+                if 'nacl_pct' in item: c_obj.nacl_pct = get_item_flt(item, 'nacl_pct', c_obj.nacl_pct)
+                if 'nacl_ppb' in item: c_obj.nacl_ppb = get_item_flt(item, 'nacl_ppb', c_obj.nacl_ppb)
+                if 'kcl_pct' in item: c_obj.kcl_pct = get_item_flt(item, 'kcl_pct', c_obj.kcl_pct)
+                if 'kcl_ppb' in item: c_obj.kcl_ppb = get_item_flt(item, 'kcl_ppb', c_obj.kcl_ppb)
+                if 'lgs_pct' in item: c_obj.lgs_pct = get_item_flt(item, 'lgs_pct', c_obj.lgs_pct)
+                if 'lgs_ppb' in item: c_obj.lgs_ppb = get_item_flt(item, 'lgs_ppb', c_obj.lgs_ppb)
+                if 'bentonite_pct' in item: c_obj.bentonite_pct = get_item_flt(item, 'bentonite_pct', c_obj.bentonite_pct)
+                if 'bentonite_ppb' in item: c_obj.bentonite_ppb = get_item_flt(item, 'bentonite_ppb', c_obj.bentonite_ppb)
+                if 'drill_solids_pct' in item: c_obj.drill_solids_pct = get_item_flt(item, 'drill_solids_pct', c_obj.drill_solids_pct)
+                if 'drill_solids_ppb' in item: c_obj.drill_solids_ppb = get_item_flt(item, 'drill_solids_ppb', c_obj.drill_solids_ppb)
+                if 'hgs_pct' in item: c_obj.hgs_pct = get_item_flt(item, 'hgs_pct', c_obj.hgs_pct)
+                if 'hgs_ppb' in item: c_obj.hgs_ppb = get_item_flt(item, 'hgs_ppb', c_obj.hgs_ppb)
+                if 'adjusted_solids_pct' in item: c_obj.adjusted_solids_pct = get_item_flt(item, 'adjusted_solids_pct', c_obj.adjusted_solids_pct)
+                if 'oil_water_ratio' in item: c_obj.oil_water_ratio = get_item_str(item, 'oil_water_ratio', c_obj.oil_water_ratio)
+                if 'avg_sg_solids' in item: c_obj.avg_sg_solids = get_item_flt(item, 'avg_sg_solids', c_obj.avg_sg_solids)
 
-        # 3. Guardar Propiedades Extra si se enviaron
-        raw_extra = body.get('extra_values', [])
-        for ev_item in raw_extra:
-            c_num = int(ev_item.get('check_number', 1))
-            prop_id = int(ev_item.get('propiedad_extra_id', 0))
-            val_str = str(ev_item.get('valor', '')).strip()
+                c_obj.save()
+                saved_checks_map[num] = c_obj
 
-            c_target = saved_checks_map.get(c_num) or ReporteDiarioMudCheck.objects.filter(reporte=reporte, check_number=c_num).first()
-            p_extra = PropiedadExtraFluido.objects.filter(id=prop_id, pozo=pozo).first()
-            if c_target and p_extra:
-                ev_obj, _ = ReporteDiarioMudExtraValue.objects.get_or_create(mud_check=c_target, propiedad_extra=p_extra)
-                ev_obj.valor = val_str
-                ev_obj.save()
+            # 3. Guardar Propiedades Extra si se enviaron
+            raw_extra = body.get('extra_values', [])
+            for ev_item in raw_extra:
+                c_num = int(ev_item.get('check_number', 1) or 1)
+                prop_id = int(ev_item.get('propiedad_extra_id', 0) or 0)
+                val_str = str(ev_item.get('valor', '')).strip()
+
+                c_target = saved_checks_map.get(c_num) or ReporteDiarioMudCheck.objects.filter(reporte=reporte, check_number=c_num).first()
+                p_extra = PropiedadExtraFluido.objects.filter(id=prop_id, pozo=pozo).first()
+                if c_target and p_extra:
+                    ev_obj, _ = ReporteDiarioMudExtraValue.objects.get_or_create(mud_check=c_target, propiedad_extra=p_extra)
+                    ev_obj.valor = val_str
+                    ev_obj.save()
 
         return JsonResponse({
             'ok': True,
+            'success': True,
             'mensaje': 'Propiedades de Lodo guardadas exitosamente.',
             'primary_check_number': primary_check_num,
         })
     except Exception as e:
-        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': str(e)}, status=400)
 
 
 # =====================================================================
@@ -1747,6 +2086,7 @@ def api_well_geometry_detail(request, pk, reporte_pk):
 
     return JsonResponse({
         'ok': True,
+        'success': True,
         'tramos': tramos,
         'intervalos': intervalos,
         'riser': obtener_riser_del_pozo(pozo),
@@ -1772,6 +2112,9 @@ def api_well_geometry_detail(request, pk, reporte_pk):
 def api_well_geometry_guardar(request, pk, reporte_pk):
     """Guarda la sarta del día (reemplazo total), el intervalo de costo y el hoyo piloto."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
 
     try:
@@ -1780,48 +2123,94 @@ def api_well_geometry_guardar(request, pk, reporte_pk):
         # 1. Intervalo de costo y orden de impresión
         intervalo_id = body.get('intervalo_costo_id')
         if intervalo_id in ('', None, 'null'):
-            reporte.intervalo_costo = None
+            nuevo_intervalo_costo = None
         else:
-            reporte.intervalo_costo = get_object_or_404(
+            nuevo_intervalo_costo = get_object_or_404(
                 IntervaloRevestimiento, pk=int(intervalo_id), pozo=pozo
             )
 
         orden = body.get('orden_impresion_intervalo')
-        reporte.orden_impresion_intervalo = int(orden) if str(orden or '').strip().isdigit() else None
+        nuevo_orden_impresion = int(orden) if str(orden or '').strip().isdigit() else None
 
-        # 2. Hoyo piloto
-        reporte.pilot_hole_size_in = _float(body.get('pilot_hole_size_in'))
-        reporte.pilot_hole_depth_ft = _float(body.get('pilot_hole_depth_ft'))
+        # 2. Hoyo piloto (validación física no negativa)
+        pilot_hole_size = _float(body.get('pilot_hole_size_in'))
+        pilot_hole_depth = _float(body.get('pilot_hole_depth_ft'))
+        if pilot_hole_size < 0 or pilot_hole_depth < 0:
+            return JsonResponse({
+                'ok': False,
+                'success': False,
+                'error': "Las dimensiones del hoyo piloto no pueden ser negativas."
+            }, status=400)
 
         # 3. Side track: profundidad de kick-off (solo el día en que arranca)
         kickoff = _float(body.get('kickoff_sidetrack_ft'))
         if kickoff < 0:
-            kickoff = 0.0
+            return JsonResponse({
+                'ok': False,
+                'success': False,
+                'error': "La profundidad de kick-off no puede ser negativa."
+            }, status=400)
+
         if kickoff > 0:
             profundidad = _float(reporte.profundidad_actual)
             if profundidad and kickoff >= profundidad:
-                return JsonResponse({'ok': False, 'error': (
-                    f"La profundidad de kick-off ({kickoff:g} ft) debe ser menor que la profundidad "
-                    f"del día ({profundidad:g} ft, pestaña 1).")}, status=400)
+                return JsonResponse({
+                    'ok': False,
+                    'success': False,
+                    'error': (
+                        f"La profundidad de kick-off ({kickoff:g} ft) debe ser menor que la profundidad "
+                        f"del día ({profundidad:g} ft, pestaña 1)."
+                    )
+                }, status=400)
             previo = pozo.reportes_diarios.filter(fecha__lt=reporte.fecha).order_by('-fecha').first()
             if previo and _float(previo.profundidad_actual) and kickoff > _float(previo.profundidad_actual) + 0.5:
-                return JsonResponse({'ok': False, 'error': (
-                    f"La profundidad de kick-off ({kickoff:g} ft) no puede ser mayor que la del hoyo "
-                    f"anterior ({_float(previo.profundidad_actual):g} ft): el desvío sale de un punto "
-                    f"del hoyo que ya existía.")}, status=400)
-        reporte.kickoff_sidetrack_ft = kickoff
-        reporte.save()
+                return JsonResponse({
+                    'ok': False,
+                    'success': False,
+                    'error': (
+                        f"La profundidad de kick-off ({kickoff:g} ft) no puede ser mayor que la del hoyo "
+                        f"anterior ({_float(previo.profundidad_actual):g} ft): el desvío sale de un punto "
+                        f"del hoyo que ya existía."
+                    )
+                }, status=400)
 
-        # 4. Sarta: reemplazo total (mismo patrón que boquillas y listas activas)
+        # 4. Sarta: validación en memoria de consistencia física
         filas = body.get('tramos', [])
         nuevos = []
         orden_actual = 0
-        for fila in filas:
+        for i, fila in enumerate(filas):
             longitud = _float(fila.get('longitud_ft'))
             od = _float(fila.get('od_in'))
+            id_in = _float(fila.get('id_in'))
+            tj_od = _float(fila.get('tool_joint_od_in'))
+            tj_id = _float(fila.get('tool_joint_id_in'))
+            tj_len = _float(fila.get('tool_joint_length_in'))
+            largo_tramo = _float(fila.get('largo_tramo_ft'), 31.0)
             descripcion = str(fila.get('descripcion', '')).strip()
+
             if longitud <= 0 and od <= 0 and not descripcion:
                 continue
+
+            if longitud < 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Fila {i + 1}: la longitud del tramo ({longitud:g} ft) no puede ser negativa."}, status=400)
+            if od < 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Fila {i + 1}: el diámetro exterior (OD: {od:g} in) no puede ser negativo."}, status=400)
+            if id_in < 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Fila {i + 1}: el diámetro interior (ID: {id_in:g} in) no puede ser negativo."}, status=400)
+            if od > 0 and id_in > 0 and id_in >= od:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Fila {i + 1}: el diámetro interior (ID: {id_in:g} in) debe ser menor que el diámetro exterior (OD: {od:g} in)."}, status=400)
+
+            if tj_od < 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Fila {i + 1}: el OD de junta no puede ser negativo."}, status=400)
+            if tj_id < 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Fila {i + 1}: el ID de junta no puede ser negativo."}, status=400)
+            if tj_od > 0 and tj_id > 0 and tj_id >= tj_od:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Fila {i + 1}: el ID de junta ({tj_id:g} in) debe ser menor que el OD de junta ({tj_od:g} in)."}, status=400)
+            if tj_len < 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Fila {i + 1}: el largo de junta no puede ser negativo."}, status=400)
+            if largo_tramo <= 0:
+                return JsonResponse({'ok': False, 'success': False, 'error': f"Fila {i + 1}: el largo de tramo debe ser mayor que cero."}, status=400)
+
             orden_actual += 1
             componente_id = fila.get('componente_id')
             nuevos.append(TramoSarta(
@@ -1831,14 +2220,22 @@ def api_well_geometry_guardar(request, pk, reporte_pk):
                 descripcion=descripcion[:150],
                 longitud_ft=longitud,
                 od_in=od,
-                id_in=_float(fila.get('id_in')),
-                tool_joint_od_in=_float(fila.get('tool_joint_od_in')),
-                tool_joint_id_in=_float(fila.get('tool_joint_id_in')),
-                tool_joint_length_in=_float(fila.get('tool_joint_length_in')),
-                largo_tramo_ft=_float(fila.get('largo_tramo_ft'), 31.0),
+                id_in=id_in,
+                tool_joint_od_in=tj_od,
+                tool_joint_id_in=tj_id,
+                tool_joint_length_in=tj_len,
+                largo_tramo_ft=largo_tramo,
             ))
 
+        # 5. Persistencia Atómica
         with transaction.atomic():
+            reporte.intervalo_costo = nuevo_intervalo_costo
+            reporte.orden_impresion_intervalo = nuevo_orden_impresion
+            reporte.pilot_hole_size_in = pilot_hole_size
+            reporte.pilot_hole_depth_ft = pilot_hole_depth
+            reporte.kickoff_sidetrack_ft = kickoff
+            reporte.save()
+
             reporte.tramos_sarta.all().delete()
             TramoSarta.objects.bulk_create(nuevos)
 
@@ -1847,6 +2244,7 @@ def api_well_geometry_guardar(request, pk, reporte_pk):
 
         return JsonResponse({
             'ok': True,
+            'success': True,
             'mensaje': 'Geometría del pozo guardada correctamente.',
             'tramos': tramos,
             'kickoff_sidetrack_ft': _float(reporte.kickoff_sidetrack_ft),
@@ -1856,7 +2254,7 @@ def api_well_geometry_guardar(request, pk, reporte_pk):
             'geometria': geometria,
         })
     except Exception as e:
-        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': str(e)}, status=400)
 
 
 @require_http_methods(["GET"])
@@ -1867,10 +2265,11 @@ def api_sarta_reporte_anterior(request, pk, reporte_pk):
 
     anterior = pozo.reportes_diarios.filter(fecha__lt=reporte.fecha).order_by('-fecha').first()
     if not anterior:
-        return JsonResponse({'ok': True, 'tramos': [], 'fecha_origen': None})
+        return JsonResponse({'ok': True, 'success': True, 'tramos': [], 'fecha_origen': None})
 
     return JsonResponse({
         'ok': True,
+        'success': True,
         'fecha_origen': anterior.fecha.isoformat(),
         'bit_depth_origen': _float(anterior.bit_depth),
         'tramos': [t.to_dict() for t in anterior.tramos_sarta.all().order_by('orden')],
@@ -1939,6 +2338,7 @@ def api_comentarios_detail(request, pk, reporte_pk):
 
     return JsonResponse({
         'ok': True,
+        'success': True,
         'comentarios': comentarios.to_dict(),
         'recap_anterior': recap_anterior,
     })
@@ -1949,6 +2349,9 @@ def api_comentarios_detail(request, pk, reporte_pk):
 def api_comentarios_guardar(request, pk, reporte_pk):
     """Guarda la especificación de lodo y los tres bloques de comentarios del día."""
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
 
     try:
@@ -1970,11 +2373,12 @@ def api_comentarios_guardar(request, pk, reporte_pk):
 
         return JsonResponse({
             'ok': True,
+            'success': True,
             'mensaje': 'Comentarios guardados correctamente.',
             'comentarios': comentarios.to_dict(),
         })
     except Exception as e:
-        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': str(e)}, status=400)
 
 
 # =====================================================================
@@ -2056,7 +2460,7 @@ def api_tiempo_detail(request, pk, reporte_pk):
     pozo = get_object_or_404(Pozo, pk=pk)
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
     tiempo = obtener_o_crear_tiempo(reporte)
-    return JsonResponse({'ok': True, **_estado_tiempo(reporte, tiempo)})
+    return JsonResponse({'ok': True, 'success': True, **_estado_tiempo(reporte, tiempo)})
 
 
 def _a_horas(valor, etiqueta):
@@ -2084,12 +2488,15 @@ def api_tiempo_guardar(request, pk, reporte_pk):
     marca en rojo, pero en campo hay días que no cuadran y el ingeniero decide.
     """
     pozo = get_object_or_404(Pozo, pk=pk)
+    error_cerrado = _validar_pozo_abierto(pozo)
+    if error_cerrado:
+        return error_cerrado
     reporte = get_object_or_404(ReporteDiario, pk=reporte_pk, pozo=pozo)
 
     try:
         body = json.loads(request.body)
     except (TypeError, ValueError):
-        return JsonResponse({'ok': False, 'error': 'Datos inválidos.'}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': 'Datos inválidos.'}, status=400)
 
     try:
         horas_periodo = _a_horas(body.get('horas_periodo'), 'Horas del período')
@@ -2132,7 +2539,7 @@ def api_tiempo_guardar(request, pk, reporte_pk):
                 descripcion=descripcion[:120], horas=horas,
             ))
     except ValueError as e:
-        return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+        return JsonResponse({'ok': False, 'success': False, 'error': str(e)}, status=400)
 
     with transaction.atomic():
         tiempo = obtener_o_crear_tiempo(reporte)
@@ -2144,6 +2551,7 @@ def api_tiempo_guardar(request, pk, reporte_pk):
     estado = _estado_tiempo(reporte, tiempo)
     return JsonResponse({
         'ok': True,
+        'success': True,
         'mensaje': 'Distribución de tiempo guardada correctamente.',
         **estado,
     })

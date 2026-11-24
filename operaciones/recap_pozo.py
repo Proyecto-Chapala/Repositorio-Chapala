@@ -484,11 +484,23 @@ def generar_recap_excel(d, secciones):
         ws = wb.create_sheet('Resumen')
         ws['A1'] = 'No se eligió ninguna sección.'
     for ws in wb.worksheets:
-        ws.sheet_view.showGridLines = False
-        ws.page_setup.orientation = 'landscape'
-        ws.page_setup.fitToWidth = 1
-        ws.page_setup.fitToHeight = 0
-        ws.sheet_properties.pageSetUpPr.fitToPage = True
+        try:
+            ws.views.sheetView[0].showGridLines = True
+        except Exception:
+            pass
+        try:
+            ws.page_setup.paperSize = ws.PAPERSIZE_LETTER
+            ws.page_setup.orientation = 'landscape'
+            ws.page_setup.fitToWidth = 1
+            ws.page_setup.fitToHeight = 0
+            ws.page_setup.scale = None
+            ws.sheet_properties.pageSetUpPr.fitToPage = True
+            ws.page_margins.left = 0.4
+            ws.page_margins.right = 0.4
+            ws.page_margins.top = 0.4
+            ws.page_margins.bottom = 0.4
+        except Exception:
+            pass
 
     salida = io.BytesIO()
     wb.save(salida)
